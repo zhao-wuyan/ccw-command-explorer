@@ -10,6 +10,7 @@ import {
   DEPRECATED_COMMANDS, STATS, COLORS, CLI_CONFIG
 } from './data/commands';
 import type { Command, CommandCategory, TimelineItem, CLIType } from './data/commands';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import './App.css';
 
 // 图标映射
@@ -485,7 +486,7 @@ const GrandmaGuide = () => (
       老奶奶也能看懂的命令指南
     </h2>
     <p style={{ color: COLORS.textMuted, marginBottom: 24, fontSize: 16 }}>
-      只需要记住这5个命令就够了！其他的让 /ccw 帮你选！
+      只需要记住这5个命令就够了！其他的让 /ccw ���你选！
     </p>
 
     <div style={{ display: 'grid', gap: 12 }}>
@@ -1029,6 +1030,7 @@ function App() {
           />
         )}
       </AnimatePresence>
+      <SpeedInsights />
     </div>
   );
 }

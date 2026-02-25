@@ -10,6 +10,7 @@ import {
   DEPRECATED_COMMANDS, STATS, COLORS, CLI_CONFIG
 } from './data/commands';
 import type { Command, CommandCategory, TimelineItem, CLIType } from './data/commands';
+import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import './App.css';
 
@@ -1030,6 +1031,7 @@ function App() {
           />
         )}
       </AnimatePresence>
+      <Analytics />
       <SpeedInsights />
     </div>
   );

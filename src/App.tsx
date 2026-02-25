@@ -3,13 +3,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Filter, Home, GitBranch, Users, AlertCircle, Database,
   Lightbulb, TestTube, FlaskConical, Search as SearchIcon, Palette,
-  Wrench, X, Clock, Target, Sparkles, BookOpen, Info, Bot
+  Wrench, X, Clock, Target, Sparkles, BookOpen, Info, Bot, Play,
+  ChevronRight, Terminal, MessageSquare, CheckCircle, AlertTriangle,
+  Lightbulb as TipIcon
 } from 'lucide-react';
 import {
   COMMANDS, CATEGORIES, TIMELINE, WORKFLOW_LEVELS, GRANDMA_COMMANDS,
   DEPRECATED_COMMANDS, STATS, COLORS, CLI_CONFIG
 } from './data/commands';
 import type { Command, CommandCategory, TimelineItem, CLIType } from './data/commands';
+import { ALL_CASES, CASES_BY_LEVEL, LEVEL_CONFIG } from './data/cases';
+import type { Case, CaseStep } from './data/cases';
 import './App.css';
 
 // 图标映射
@@ -628,6 +632,429 @@ const DeprecatedCommands = () => (
   </div>
 );
 
+// 案例步骤渲染组件
+const CaseStepItem = ({ step, index }: { step: CaseStep; index: number }) => {
+  const getStyle = () => {
+    switch (step.type) {
+      case 'command':
+        return {
+          bg: 'rgba(99,102,241,0.1)',
+          border: 'rgba(99,102,241,0.3)',
+          icon: <Terminal size={16} style={{ color: '#6366f1' }} />,
+        };
+      case 'response':
+        return {
+          bg: 'rgba(16,185,129,0.1)',
+          border: 'rgba(16,185,129,0.3)',
+          icon: <MessageSquare size={16} style={{ color: '#10b981' }} />,
+        };
+      case 'result':
+        return {
+          bg: step.highlight ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)',
+          border: step.highlight ? '#10b981' : 'rgba(16,185,129,0.3)',
+          icon: <CheckCircle size={16} style={{ color: '#10b981' }} />,
+        };
+      case 'note':
+        return {
+          bg: 'rgba(245,158,11,0.1)',
+          border: 'rgba(245,158,11,0.3)',
+          icon: <AlertTriangle size={16} style={{ color: '#f59e0b' }} />,
+        };
+      case 'choice':
+        return {
+          bg: 'rgba(139,92,246,0.1)',
+          border: 'rgba(139,92,246,0.3)',
+          icon: <ChevronRight size={16} style={{ color: '#8b5cf6' }} />,
+        };
+      default:
+        return {
+          bg: 'rgba(255,255,255,0.05)',
+          border: 'rgba(255,255,255,0.1)',
+          icon: null,
+        };
+    }
+  };
+
+  const style = getStyle();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.05 }}
+      style={{
+        backgroundColor: style.bg,
+        borderRadius: 8,
+        padding: '12px 16px',
+        marginBottom: 8,
+        borderLeft: `3px solid ${style.border}`,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        {style.icon && <div style={{ marginTop: 2 }}>{style.icon}</div>}
+        <div style={{ flex: 1 }}>
+          <span
+            style={{
+              fontSize: 11,
+              color: COLORS.textDim,
+              marginBottom: 4,
+              display: 'block',
+            }}
+          >
+            {step.role === 'user' ? '👤 用户' : '🤖 系统'}
+          </span>
+          <pre
+            style={{
+              margin: 0,
+              fontFamily: step.type === 'command' ? 'monospace' : 'inherit',
+              fontSize: 13,
+              color: step.type === 'command' ? COLORS.secondary : COLORS.text,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              lineHeight: 1.6,
+            }}
+          >
+            {step.content}
+          </pre>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// 案例卡片组件
+const CaseCard = ({ caseItem, onClick }: { caseItem: Case; onClick: () => void }) => {
+  // 获取 level 配置的 key
+  const getLevelKey = (level: CaseLevel): string => {
+    if (typeof level === 'number') {
+      return `Level ${level}`;
+    }
+    // 首字母大写匹配 LEVEL_CONFIG 的 key
+    return level.charAt(0).toUpperCase() + level.slice(1);
+  };
+  const levelConfig = LEVEL_CONFIG[getLevelKey(caseItem.level)];
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02, y: -2 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      onClick={onClick}
+      style={{
+        backgroundColor: isHovered ? 'rgba(255,255,255,0.08)' : COLORS.cardBg,
+        borderRadius: 16,
+        padding: '20px 24px',
+        border: `1px solid ${isHovered ? levelConfig.color + '60' : COLORS.cardBorder}`,
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <span style={{ fontSize: 24 }}>{levelConfig.emoji}</span>
+        <div
+          style={{
+            backgroundColor: levelConfig.color + '20',
+            padding: '4px 12px',
+            borderRadius: 12,
+            fontSize: 12,
+            color: levelConfig.color,
+            fontWeight: 600,
+          }}
+        >
+          {levelConfig.name}
+        </div>
+        <span style={{ fontSize: 12, color: COLORS.textDim }}>{caseItem.category}</span>
+      </div>
+
+      <h3 style={{ fontSize: 18, color: COLORS.text, margin: '0 0 8px 0' }}>{caseItem.title}</h3>
+      <p style={{ fontSize: 14, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{caseItem.scenario}</p>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {caseItem.commands.map((cmd, i) => (
+          <code
+            key={i}
+            style={{
+              fontSize: 12,
+              backgroundColor: 'rgba(0,0,0,0.3)',
+              padding: '4px 10px',
+              borderRadius: 4,
+              color: COLORS.secondary,
+            }}
+          >
+            {cmd.cmd}
+          </code>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// 案例详情弹窗
+const CaseDetail = ({ caseItem, onClose }: { caseItem: Case; onClose: () => void }) => {
+  // 获取 level 配置的 key
+  const getLevelKey = (level: CaseLevel): string => {
+    if (typeof level === 'number') {
+      return `Level ${level}`;
+    }
+    return level.charAt(0).toUpperCase() + level.slice(1);
+  };
+  const levelConfig = LEVEL_CONFIG[getLevelKey(caseItem.level)];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0,0,0,0.85)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 100,
+        padding: 20,
+        overflow: 'auto',
+      }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: '#1a1a2e',
+          borderRadius: 20,
+          padding: 30,
+          maxWidth: 800,
+          width: '100%',
+          maxHeight: '90vh',
+          overflow: 'auto',
+          border: `2px solid ${levelConfig.color}40`,
+        }}
+      >
+        {/* 头部 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+              <span style={{ fontSize: 28 }}>{levelConfig.emoji}</span>
+              <span
+                style={{
+                  backgroundColor: levelConfig.color + '20',
+                  padding: '6px 14px',
+                  borderRadius: 12,
+                  fontSize: 14,
+                  color: levelConfig.color,
+                  fontWeight: 600,
+                }}
+              >
+                {levelConfig.name}
+              </span>
+              <span style={{ fontSize: 14, color: COLORS.textDim }}>{caseItem.category}</span>
+            </div>
+            <h2 style={{ fontSize: 24, color: COLORS.text, margin: 0 }}>{caseItem.title}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: COLORS.textMuted,
+              cursor: 'pointer',
+              padding: 5,
+            }}
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* 场景描述 */}
+        <div
+          style={{
+            backgroundColor: 'rgba(0,0,0,0.3)',
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 20,
+          }}
+        >
+          <h4 style={{ color: COLORS.text, marginBottom: 8, fontSize: 14 }}>📋 场景</h4>
+          <p style={{ color: COLORS.textMuted, fontSize: 15, margin: 0 }}>{caseItem.scenario}</p>
+        </div>
+
+        {/* 涉及命令 */}
+        <div
+          style={{
+            backgroundColor: 'rgba(0,0,0,0.3)',
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 20,
+          }}
+        >
+          <h4 style={{ color: COLORS.text, marginBottom: 12, fontSize: 14 }}>🔧 涉及命令</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {caseItem.commands.map((cmd, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <code
+                  style={{
+                    fontSize: 14,
+                    backgroundColor: levelConfig.color + '20',
+                    padding: '6px 12px',
+                    borderRadius: 6,
+                    color: levelConfig.color,
+                    minWidth: 200,
+                  }}
+                >
+                  {cmd.cmd}
+                </code>
+                <span style={{ fontSize: 14, color: COLORS.textMuted }}>{cmd.desc}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 交互步骤 */}
+        <div
+          style={{
+            backgroundColor: 'rgba(0,0,0,0.3)',
+            borderRadius: 12,
+            padding: 20,
+            marginBottom: 20,
+          }}
+        >
+          <h4 style={{ color: COLORS.text, marginBottom: 16, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Play size={16} style={{ color: levelConfig.color }} />
+            交互过程
+          </h4>
+          <div>
+            {caseItem.steps.map((step, i) => (
+              <CaseStepItem key={i} step={step} index={i} />
+            ))}
+          </div>
+        </div>
+
+        {/* 提示 */}
+        {caseItem.tips && caseItem.tips.length > 0 && (
+          <div
+            style={{
+              backgroundColor: levelConfig.color + '10',
+              borderRadius: 12,
+              padding: 16,
+              border: `1px solid ${levelConfig.color}30`,
+            }}
+          >
+            <h4 style={{ color: COLORS.text, marginBottom: 12, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <TipIcon size={16} style={{ color: levelConfig.color }} />
+              实用提示
+            </h4>
+            <ul style={{ margin: 0, paddingLeft: 20 }}>
+              {caseItem.tips.map((tip, i) => (
+                <li key={i} style={{ color: COLORS.textMuted, marginBottom: 6, fontSize: 14 }}>
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// 案例展示区域组件
+const CasesSection = ({
+  selectedLevel,
+  onSelectLevel,
+  onSelectCase
+}: {
+  selectedLevel: string;
+  onSelectLevel: (level: string) => void;
+  onSelectCase: (caseItem: Case) => void;
+}) => {
+  const filteredCases = selectedLevel === 'all'
+    ? ALL_CASES
+    : CASES_BY_LEVEL[selectedLevel] || [];
+
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <h2 style={{ fontSize: 28, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Play size={28} style={{ color: COLORS.accent3 }} />
+        使用案例
+        <span style={{ fontSize: 14, color: COLORS.textDim, fontWeight: 'normal' }}>
+          ({filteredCases.length} 个案例)
+        </span>
+      </h2>
+
+      {/* 等级筛选 */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => onSelectLevel('all')}
+          style={{
+            backgroundColor: selectedLevel === 'all' ? COLORS.primary + '30' : COLORS.cardBg,
+            border: `1px solid ${selectedLevel === 'all' ? COLORS.primary : COLORS.cardBorder}`,
+            borderRadius: 20,
+            padding: '10px 20px',
+            color: selectedLevel === 'all' ? COLORS.primary : COLORS.textMuted,
+            fontSize: 14,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          全部 ({ALL_CASES.length})
+        </motion.button>
+        {Object.entries(LEVEL_CONFIG).map(([key, config]) => {
+          const count = CASES_BY_LEVEL[key]?.length || 0;
+          return (
+            <motion.button
+              key={key}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onSelectLevel(key)}
+              style={{
+                backgroundColor: selectedLevel === key ? config.color + '30' : COLORS.cardBg,
+                border: `1px solid ${selectedLevel === key ? config.color : COLORS.cardBorder}`,
+                borderRadius: 20,
+                padding: '10px 20px',
+                color: selectedLevel === key ? config.color : COLORS.textMuted,
+                fontSize: 14,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <span>{config.emoji}</span>
+              {config.name}
+              <span style={{ fontSize: 12, opacity: 0.7 }}>({count})</span>
+            </motion.button>
+          );
+        })}
+      </div>
+
+      {/* 案例网格 */}
+      <div className="commands-grid">
+        <AnimatePresence mode="popLayout">
+          {filteredCases.map((caseItem) => (
+            <CaseCard
+              key={caseItem.id}
+              caseItem={caseItem}
+              onClick={() => onSelectCase(caseItem)}
+            />
+          ))}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
 // 版本详情弹窗
 const VersionDetailModal = ({ version, onClose }: { version: TimelineItem; onClose: () => void }) => {
   return (
@@ -793,6 +1220,8 @@ function App() {
   const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
   const [selectedVersion, setSelectedVersion] = useState<TimelineItem | null>(null);
   const [showGrandma, setShowGrandma] = useState(true);
+  const [selectedCaseLevel, setSelectedCaseLevel] = useState<string>('all');
+  const [selectedCase, setSelectedCase] = useState<Case | null>(null);
 
   // 过滤命令
   const filteredCommands = useMemo(() => {
@@ -943,6 +1372,13 @@ function App() {
         {/* 4级工作流 */}
         <WorkflowLevelsSection />
 
+        {/* 使用案例 */}
+        <CasesSection
+          selectedLevel={selectedCaseLevel}
+          onSelectLevel={setSelectedCaseLevel}
+          onSelectCase={setSelectedCase}
+        />
+
         {/* 老奶奶指南 */}
         <AnimatePresence>
           {showGrandma && (
@@ -1026,6 +1462,16 @@ function App() {
           <VersionDetailModal
             version={selectedVersion}
             onClose={() => setSelectedVersion(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* 案例详情弹窗 */}
+      <AnimatePresence>
+        {selectedCase && (
+          <CaseDetail
+            caseItem={selectedCase}
+            onClose={() => setSelectedCase(null)}
           />
         )}
       </AnimatePresence>

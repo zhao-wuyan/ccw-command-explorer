@@ -1213,15 +1213,25 @@ const VersionDetailModal = ({ version, onClose }: { version: TimelineItem; onClo
   );
 };
 
+// Tab 类型定义
+type TabType = 'overview' | 'commands' | 'cases';
+
+// Tab 配置
+const TABS: { key: TabType; label: string; icon: React.ReactNode; desc: string }[] = [
+  { key: 'overview', label: '概览', icon: <Home size={18} />, desc: '成长地图、工作流、快速入门' },
+  { key: 'commands', label: '命令', icon: <Terminal size={18} />, desc: '所有命令列表' },
+  { key: 'cases', label: '案例', icon: <Play size={18} />, desc: '使用案例和场景' },
+];
+
 // 主应用
 function App() {
+  const [activeTab, setActiveTab] = useState<TabType>('commands'); // 默认显示命令
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CommandCategory | 'all'>('all');
   const [selectedLevel, setSelectedLevel] = useState<number | 'all'>('all');
   const [selectedCLI, setSelectedCLI] = useState<CLIType | 'all'>('all');
   const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
   const [selectedVersion, setSelectedVersion] = useState<TimelineItem | null>(null);
-  const [showGrandma, setShowGrandma] = useState(true);
   const [selectedCaseLevel, setSelectedCaseLevel] = useState<string>('all');
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
 
@@ -1287,9 +1297,30 @@ function App() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </header>
 
-          {/* 搜索和筛选 */}
-          <div className="search-filter-row">
+      {/* 浮动卡片式导航栏 */}
+      <div className="floating-nav-card">
+        {/* Tab 导航 */}
+        <nav className="tab-nav-inner-card">
+          {TABS.map((tab) => (
+            <motion.button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`tab-btn ${activeTab === tab.key ? 'active' : ''}`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {tab.icon}
+              <span className="tab-label">{tab.label}</span>
+            </motion.button>
+          ))}
+        </nav>
+
+        {/* 搜索和筛选栏 - 只在命令 Tab 显示 */}
+        {activeTab === 'commands' && (
+          <div className="search-filter-row-card">
             <div className="search-box">
               <Search size={20} style={{ color: COLORS.textDim }} />
               <input
@@ -1354,90 +1385,106 @@ function App() {
               </select>
             </div>
           </div>
-
-          {/* 老奶奶模式切换 */}
-          <button
-            className={`grandma-toggle ${showGrandma ? 'active' : ''}`}
-            onClick={() => setShowGrandma(!showGrandma)}
-          >
-            <Sparkles size={18} />
-            <span>{showGrandma ? '隐藏' : '显示'}老奶奶指南</span>
-          </button>
-        </div>
-      </header>
+        )}
+      </div>
 
       {/* 主内容 */}
       <main className="main-content">
-        {/* 时间线 */}
-        <TimelineSection onVersionClick={setSelectedVersion} />
-
-        {/* 4级工作流 */}
-        <WorkflowLevelsSection />
-
-        {/* 使用案例 */}
-        <CasesSection
-          selectedLevel={selectedCaseLevel}
-          onSelectLevel={setSelectedCaseLevel}
-          onSelectCase={setSelectedCase}
-        />
-
-        {/* 老奶奶指南 */}
-        <AnimatePresence>
-          {showGrandma && (
+        <AnimatePresence mode="wait">
+          {/* 概览 Tab */}
+          {activeTab === 'overview' && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
+              key="overview"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
             >
+              {/* 时间线 */}
+              <TimelineSection onVersionClick={setSelectedVersion} />
+
+              {/* 4级工作流 */}
+              <WorkflowLevelsSection />
+
+              {/* 老奶奶指南 */}
               <GrandmaGuide />
             </motion.div>
           )}
-        </AnimatePresence>
 
-        {/* 命令列表 */}
-        <div style={{ marginBottom: 40 }}>
-          <h2 style={{ fontSize: 28, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <BookOpen size={28} style={{ color: COLORS.primary }} />
-            命令列表
-            <span style={{ fontSize: 16, color: COLORS.textDim, fontWeight: 'normal' }}>
-              ({filteredCommands.length} 个命令)
-            </span>
-          </h2>
+          {/* 命令 Tab */}
+          {activeTab === 'commands' && (
+            <motion.div
+              key="commands"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* 命令列表 */}
+              <div style={{ marginBottom: 40 }}>
+                <h2 style={{ fontSize: 28, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <BookOpen size={28} style={{ color: COLORS.primary }} />
+                  命令列表
+                  <span style={{ fontSize: 16, color: COLORS.textDim, fontWeight: 'normal' }}>
+                    ({filteredCommands.length} 个命令)
+                  </span>
+                </h2>
 
-          {Object.entries(groupedCommands).map(([category, commands]) => (
-            <div key={category} style={{ marginBottom: 30 }}>
-              <h3
-                style={{
-                  fontSize: 20,
-                  marginBottom: 16,
-                  color: CATEGORIES[category as CommandCategory].color,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  flexWrap: 'wrap',
-                }}
-              >
-                {ICON_MAP[CATEGORIES[category as CommandCategory].icon]}
-                {CATEGORIES[category as CommandCategory].label}
-                <span style={{ fontSize: 14, color: COLORS.textDim }}>({commands.length})</span>
-              </h3>
-              <div className="commands-grid">
-                <AnimatePresence mode="popLayout">
-                  {commands.map((cmd) => (
-                    <CommandCard
-                      key={cmd.cmd}
-                      command={cmd}
-                      onClick={() => setSelectedCommand(cmd)}
-                    />
-                  ))}
-                </AnimatePresence>
+                {Object.entries(groupedCommands).map(([category, commands]) => (
+                  <div key={category} style={{ marginBottom: 30 }}>
+                    <h3
+                      style={{
+                        fontSize: 20,
+                        marginBottom: 16,
+                        color: CATEGORIES[category as CommandCategory].color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      {ICON_MAP[CATEGORIES[category as CommandCategory].icon]}
+                      {CATEGORIES[category as CommandCategory].label}
+                      <span style={{ fontSize: 14, color: COLORS.textDim }}>({commands.length})</span>
+                    </h3>
+                    <div className="commands-grid">
+                      <AnimatePresence mode="popLayout">
+                        {commands.map((cmd) => (
+                          <CommandCard
+                            key={cmd.cmd}
+                            command={cmd}
+                            onClick={() => setSelectedCommand(cmd)}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
 
-        {/* 废弃命令 */}
-        <DeprecatedCommands />
+              {/* 废弃命令 */}
+              <DeprecatedCommands />
+            </motion.div>
+          )}
+
+          {/* 案例 Tab */}
+          {activeTab === 'cases' && (
+            <motion.div
+              key="cases"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* 使用案例 */}
+              <CasesSection
+                selectedLevel={selectedCaseLevel}
+                onSelectLevel={setSelectedCaseLevel}
+                onSelectCase={setSelectedCase}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* 底部 */}

@@ -236,4 +236,135 @@
   .commands-grid {
     grid-template-columns: 1fr;
   }
+
+  .floating-nav-card {
+    margin: 0 12px 16px;
+    top: 12px;
+    border-radius: 16px;
+  }
+
+  .tab-nav-inner-card {
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    flex: 1;
+    min-width: calc(50% - 8px);
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  .search-filter-row-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-filter-row-card .search-box {
+    max-width: none;
+    min-width: auto;
+  }
+
+  .search-filter-row-card .filter-group {
+    justify-content: space-between;
+  }
+}
+
+/* 浮动卡片式导航 */
+.floating-nav-card {
+  position: sticky;
+  top: 16px;
+  z-index: 50;
+  max-width: 1200px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(15, 15, 30, 0.98));
+  backdrop-filter: blur(16px);
+  border-radius: 20px;
+  border: 1px solid var(--card-border);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  overflow: hidden;
+}
+
+.tab-nav-inner-card {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 10px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--primary)15, var(--accent1)15);
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 11px;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+}
+
+.tab-btn:hover::before {
+  opacity: 1;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, var(--primary)25, var(--accent1)25);
+  border-color: rgba(99, 102, 241, 0.3);
+  color: var(--text);
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.25);
+}
+
+.tab-btn.active::before {
+  opacity: 1;
+}
+
+.tab-label {
+  position: relative;
+  z-index: 1;
+  font-weight: 600;
+}
+
+.tab-desc {
+  display: none; /* 卡片模式下隐藏描述 */
+}
+
+/* 卡片内搜索筛选行 */
+.search-filter-row-card {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 16px 16px;
+  flex-wrap: wrap;
+}
+
+.search-filter-row-card .search-box {
+  flex: 1;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.search-filter-row-card .filter-group {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }

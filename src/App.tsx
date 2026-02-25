@@ -10,6 +10,7 @@ import {
   DEPRECATED_COMMANDS, STATS, COLORS, CLI_CONFIG
 } from './data/commands';
 import type { Command, CommandCategory, TimelineItem, CLIType } from './data/commands';
+import { Analytics } from '@vercel/analytics/react';
 import './App.css';
 
 // 图标映射
@@ -1029,6 +1030,7 @@ function App() {
           />
         )}
       </AnimatePresence>
+      <Analytics />
     </div>
   );
 }

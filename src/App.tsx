@@ -13,7 +13,7 @@ import {
 } from './data/commands';
 import type { Command, CommandCategory, TimelineItem, CLIType } from './data/commands';
 import { ALL_CASES, CASES_BY_LEVEL, LEVEL_CONFIG } from './data/cases';
-import type { Case, CaseStep } from './data/cases';
+import type { Case, CaseStep, CaseLevel } from './data/cases';
 import './App.css';
 
 // 图标映射
@@ -732,7 +732,7 @@ const CaseCard = ({ caseItem, onClick }: { caseItem: Case; onClick: () => void }
     // 首字母大写匹配 LEVEL_CONFIG 的 key
     return level.charAt(0).toUpperCase() + level.slice(1);
   };
-  const levelConfig = LEVEL_CONFIG[getLevelKey(caseItem.level)];
+  const levelConfig = LEVEL_CONFIG[getLevelKey(caseItem.level)] || LEVEL_CONFIG['Level 2'];
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -802,7 +802,7 @@ const CaseDetail = ({ caseItem, onClose }: { caseItem: Case; onClose: () => void
     }
     return level.charAt(0).toUpperCase() + level.slice(1);
   };
-  const levelConfig = LEVEL_CONFIG[getLevelKey(caseItem.level)];
+  const levelConfig = LEVEL_CONFIG[getLevelKey(caseItem.level)] || LEVEL_CONFIG['Level 2'];
 
   return (
     <motion.div

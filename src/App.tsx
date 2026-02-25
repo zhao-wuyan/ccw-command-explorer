@@ -251,6 +251,47 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
           )}
         </div>
 
+        {/* 详细说明 */}
+        {command.detail && (
+          <div
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.3)',
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 20,
+              borderLeft: `4px solid ${category.color}`,
+            }}
+          >
+            <h4 style={{ color: COLORS.text, marginBottom: 8, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <BookOpen size={16} style={{ color: category.color }} />
+              详细说明
+            </h4>
+            <p style={{ color: COLORS.textMuted, fontSize: 14, margin: 0, lineHeight: 1.7 }}>
+              {command.detail}
+            </p>
+          </div>
+        )}
+
+        {/* 使用场景 */}
+        {command.usage && (
+          <div
+            style={{
+              backgroundColor: category.color + '10',
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 20,
+              border: `1px solid ${category.color}30`,
+            }}
+          >
+            <h4 style={{ color: COLORS.text, marginBottom: 8, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+              💡 使用场景
+            </h4>
+            <p style={{ color: COLORS.text, fontSize: 14, margin: 0, lineHeight: 1.7 }}>
+              {command.usage}
+            </p>
+          </div>
+        )}
+
         {command.level && (
           <div
             style={{

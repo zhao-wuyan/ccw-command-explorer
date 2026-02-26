@@ -1214,13 +1214,14 @@ const VersionDetailModal = ({ version, onClose }: { version: TimelineItem; onClo
 };
 
 // Tab 类型定义
-type TabType = 'overview' | 'commands' | 'cases';
+type TabType = 'overview' | 'commands' | 'cases' | 'install';
 
 // Tab 配置
 const TABS: { key: TabType; label: string; icon: React.ReactNode; desc: string }[] = [
   { key: 'overview', label: '概览', icon: <Home size={18} />, desc: '成长地图、工作流、快速入门' },
   { key: 'commands', label: '命令', icon: <Terminal size={18} />, desc: '所有命令列表' },
   { key: 'cases', label: '案例', icon: <Play size={18} />, desc: '使用案例和场景' },
+  { key: 'install', label: '安装', icon: <Wrench size={18} />, desc: '安装和使用指南' },
 ];
 
 // 主应用
@@ -1482,6 +1483,281 @@ function App() {
                 onSelectLevel={setSelectedCaseLevel}
                 onSelectCase={setSelectedCase}
               />
+            </motion.div>
+          )}
+
+          {/* 安装 Tab */}
+          {activeTab === 'install' && (
+            <motion.div
+              key="install"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* 安装指南 */}
+              <div style={{ marginBottom: 40 }}>
+                <h2 style={{ fontSize: 28, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Wrench size={28} style={{ color: COLORS.secondary }} />
+                  安装和使用指南
+                </h2>
+
+                {/* 项目信息 */}
+                <div
+                  style={{
+                    background: COLORS.cardBg,
+                    borderRadius: 16,
+                    padding: 24,
+                    marginBottom: 24,
+                    border: `1px solid ${COLORS.cardBorder}`,
+                  }}
+                >
+                  <h3 style={{ fontSize: 18, color: COLORS.text, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <GitBranch size={20} style={{ color: COLORS.primary }} />
+                    项目仓库
+                  </h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <a
+                      href="https://github.com/catlog22/Claude-Code-Workflow"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        backgroundColor: COLORS.primary + '20',
+                        color: COLORS.primary,
+                        padding: '12px 20px',
+                        borderRadius: 12,
+                        textDecoration: 'none',
+                        fontWeight: 600,
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <GitBranch size={18} />
+                      catlog22/Claude-Code-Workflow
+                    </a>
+                    <span style={{ color: COLORS.textMuted, fontSize: 14 }}>
+                      Claude Code Workflow 工作流系统
+                    </span>
+                  </div>
+                </div>
+
+                {/* 安装步骤 */}
+                <div
+                  style={{
+                    background: COLORS.cardBg,
+                    borderRadius: 16,
+                    padding: 24,
+                    marginBottom: 24,
+                    border: `1px solid ${COLORS.cardBorder}`,
+                  }}
+                >
+                  <h3 style={{ fontSize: 18, color: COLORS.text, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Terminal size={20} style={{ color: COLORS.secondary }} />
+                    安装和更新
+                  </h3>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {/* npm 安装 */}
+                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <span style={{
+                          backgroundColor: COLORS.secondary,
+                          color: '#fff',
+                          width: 24,
+                          height: 24,
+                          borderRadius: 12,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                          fontWeight: 'bold',
+                        }}>1</span>
+                        <span style={{ color: COLORS.text, fontWeight: 600 }}>📦 npm 全局安装</span>
+                        <span style={{ background: COLORS.secondary + '30', color: COLORS.secondary, fontSize: 11, padding: '2px 8px', borderRadius: 4 }}>推荐</span>
+                      </div>
+                      <code style={{
+                        display: 'block',
+                        background: 'rgba(0,0,0,0.4)',
+                        padding: '12px 16px',
+                        borderRadius: 8,
+                        color: COLORS.secondary,
+                        fontSize: 13,
+                        fontFamily: 'monospace',
+                      }}>
+                        npm install -g claude-code-workflow
+                      </code>
+                    </div>
+
+                    {/* npm 更新 */}
+                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <span style={{
+                          backgroundColor: COLORS.accent1,
+                          color: '#fff',
+                          width: 24,
+                          height: 24,
+                          borderRadius: 12,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                          fontWeight: 'bold',
+                        }}>2</span>
+                        <span style={{ color: COLORS.text, fontWeight: 600 }}>🔄 更新到最新版本</span>
+                      </div>
+                      <code style={{
+                        display: 'block',
+                        background: 'rgba(0,0,0,0.4)',
+                        padding: '12px 16px',
+                        borderRadius: 8,
+                        color: COLORS.secondary,
+                        fontSize: 13,
+                        fontFamily: 'monospace',
+                      }}>
+                        npm update -g claude-code-workflow
+                      </code>
+                    </div>
+
+                    {/* 安装后目录结构 */}
+                    <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 12, padding: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <span style={{ color: COLORS.textMuted, fontSize: 14 }}>📁 安装目录结构</span>
+                      </div>
+                      <code style={{
+                        display: 'block',
+                        background: 'rgba(0,0,0,0.3)',
+                        padding: '12px 16px',
+                        borderRadius: 8,
+                        color: COLORS.textMuted,
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                        whiteSpace: 'pre',
+                      }}>
+{`~/.claude/
+├── agents/          # Agent 配置
+├── commands/        # 命令定义
+├── skills/          # 技能模块
+├── output-styles/   # 输出样式
+├── settings.local.json
+└── CLAUDE.md`}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 快速开始 */}
+                <div
+                  style={{
+                    background: `linear-gradient(135deg, ${COLORS.primary}10, ${COLORS.accent1}10)`,
+                    borderRadius: 16,
+                    padding: 24,
+                    marginBottom: 24,
+                    border: `1px solid ${COLORS.primary}30`,
+                  }}
+                >
+                  <h3 style={{ fontSize: 18, color: COLORS.text, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Sparkles size={20} style={{ color: COLORS.accent1 }} />
+                    快速开始
+                  </h3>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <span style={{ color: COLORS.primary, fontSize: 18, fontWeight: 'bold' }}>1.</span>
+                      <div>
+                        <p style={{ color: COLORS.text, marginBottom: 4 }}>安装工作流文件到系统（全局安装）</p>
+                        <code style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
+                          ccw install -m Global
+                        </code>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <span style={{ color: COLORS.primary, fontSize: 18, fontWeight: 'bold' }}>2.</span>
+                      <div>
+                        <p style={{ color: COLORS.text, marginBottom: 4 }}>在项目目录中启动 Claude Code 或 Codex</p>
+                        <code style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
+                          claude / codex
+                        </code>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <span style={{ color: COLORS.primary, fontSize: 18, fontWeight: 'bold' }}>3.</span>
+                      <div>
+                        <p style={{ color: COLORS.text, marginBottom: 4 }}>验证安装是否成功</p>
+                        <code style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
+                          /workflow:session:list
+                        </code>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <span style={{ color: COLORS.primary, fontSize: 18, fontWeight: 'bold' }}>4.</span>
+                      <div>
+                        <p style={{ color: COLORS.text, marginBottom: 4 }}>使用 /ccw 命令让 AI 帮你选择工作流</p>
+                        <code style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
+                          /ccw 帮我实现用户登录功能
+                        </code>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <span style={{ color: COLORS.primary, fontSize: 18, fontWeight: 'bold' }}>5.</span>
+                      <div>
+                        <p style={{ color: COLORS.text, marginBottom: 4 }}>或者使用具体的工作流命令</p>
+                        <code style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
+                          /workflow:lite-plan "任务描述"
+                        </code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 常用链接 */}
+                <div
+                  style={{
+                    background: COLORS.cardBg,
+                    borderRadius: 16,
+                    padding: 24,
+                    border: `1px solid ${COLORS.cardBorder}`,
+                  }}
+                >
+                  <h3 style={{ fontSize: 18, color: COLORS.text, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <BookOpen size={20} style={{ color: COLORS.accent2 }} />
+                    相关资源
+                  </h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                    {[
+                      { label: 'GitHub 仓库', url: 'https://github.com/catlog22/Claude-Code-Workflow', color: COLORS.primary },
+                      { label: '安装指南', url: 'https://github.com/catlog22/Claude-Code-Workflow/blob/master/INSTALL_CN.md', color: COLORS.secondary },
+                      { label: '快速入门', url: 'https://github.com/catlog22/Claude-Code-Workflow/blob/master/GETTING_STARTED_CN.md', color: COLORS.accent1 },
+                      { label: '更新日志', url: 'https://github.com/catlog22/Claude-Code-Workflow/blob/master/CHANGELOG.md', color: COLORS.accent2 },
+                    ].map((link, i) => (
+                      <a
+                        key={i}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          backgroundColor: link.color + '15',
+                          color: link.color,
+                          padding: '10px 16px',
+                          borderRadius: 10,
+                          textDecoration: 'none',
+                          fontSize: 14,
+                          fontWeight: 500,
+                          border: `1px solid ${link.color}30`,
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <ChevronRight size={16} />
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

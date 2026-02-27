@@ -2,7 +2,7 @@
 // CCW 命令使用案例
 // ============================================
 
-export type CaseLevel = 1 | 2 | 3 | 4 | 'skill' | 'issue' | 'team' | 'ui' | 'memory' | 'session';
+export type CaseLevel = 1 | 2 | 3 | 4 | 'skill' | 'issue' | 'team' | 'ui' | 'memory' | 'session' | 'multi-cli';
 
 export interface CaseStep {
   role: 'user' | 'system';
@@ -709,6 +709,131 @@ export const SESSION_CASES: Case[] = [
 ];
 
 // ============================================
+// Multi-CLI 多终端协作案例
+// ============================================
+export const MULTI_CLI_CASES: Case[] = [
+  {
+    id: 'MCLI-001',
+    title: 'Spec Generator + Codex 并行开发',
+    level: 'multi-cli',
+    category: '多终端协作',
+    scenario: '从需求文档生成规格，拆分 Issue 后在 Codex 中并行开发',
+    commands: [
+      { cmd: '/spec-generator', desc: '6阶段文档链生成' },
+      { cmd: '/issue:convert-to-plan', desc: '转换规划为执行计划' },
+      { cmd: '/issue:queue', desc: '形成执行队列' },
+    ],
+    steps: [
+      { role: 'user', content: '/spec-generator "开发一个电商购物车系统"', type: 'command' },
+      { role: 'system', content: '┌─ 规格生成器 (6阶段文档链) ─────────────────┐\n│                                              │\n│ 📋 阶段 1/6: 产品简介                        │\n│ 📋 阶段 2/6: 需求文档 PRD                    │\n│ 📋 阶段 3/6: 架构设计                        │\n│ 📋 阶段 4/6: 用户故事                        │\n│ 📋 阶段 5/6: 技术方案                        │\n│ 📋 阶段 6/6: 就绪检查                        │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '⏳ 正在生成文档...\n\n  ✓ 产品简介: docs/specs/cart/01-intro.md\n  ✓ 需求文档: docs/specs/cart/02-prd.md\n  ✓ 架构设计: docs/specs/cart/03-architecture.md\n  ✓ 用户故事: docs/specs/cart/04-user-stories.md\n  ✓ 技术方案: docs/specs/cart/05-tech-spec.md\n  ✓ 就绪检查: docs/specs/cart/06-ready-check.md', type: 'response' },
+      { role: 'system', content: '📁 生成的文档结构:\n\ndocs/specs/cart/\n├── 01-intro.md          # 产品简介\n├── 02-prd.md            # 需求文档 (PRD)\n├── 03-architecture.md   # 架构设计\n├── 04-user-stories.md   # 用户故事\n├── 05-tech-spec.md      # 技术方案\n└── 06-ready-check.md    # 就绪检查清单', type: 'result' },
+      { role: 'user', content: '/issue:convert-to-plan --from docs/specs/cart/05-tech-spec.md', type: 'command' },
+      { role: 'system', content: '┌─ 转换规划产物为执行计划 ─────────────────────┐\n│ 📁 来源: docs/specs/cart/05-tech-spec.md     │\n│ 🔍 解析任务列表...                           │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '📋 生成 Issue 列表:\n\n  Issue-1: 购物车数据模型\n    依赖: 无\n    预估: 0.5 天\n\n  Issue-2: 购物车 API 端点\n    依赖: Issue-1\n    预估: 1 天\n\n  Issue-3: 商品添加/移除逻辑\n    依赖: Issue-1, Issue-2\n    预估: 1 天\n\n  Issue-4: 数量修改与校验\n    依赖: Issue-3\n    预估: 0.5 天\n\n  Issue-5: 前端购物车组件\n    依赖: Issue-2\n    预估: 1.5 天\n\n  Issue-6: 结算流程集成\n    依赖: Issue-5\n    预估: 1 天', type: 'response' },
+      { role: 'user', content: '/issue:queue', type: 'command' },
+      { role: 'system', content: '┌─ 执行队列 ───────────────────────────────────┐\n│                                              │\n│ 📌 批次 1 (可并行):                         │\n│    └─ Issue-1: 购物车数据模型               │\n│                                              │\n│ 📌 批次 2 (可并行):                         │\n│    ├─ Issue-2: 购物车 API 端点              │\n│    └─ Issue-5: 前端购物车组件               │\n│                                              │\n│ 📌 批次 3 (可并行):                         │\n│    ├─ Issue-3: 商品添加/移除逻辑            │\n│    └─ Issue-6: 结算流程集成                 │\n│                                              │\n│ 📌 批次 4:                                  │\n│    └─ Issue-4: 数量修改与校验               │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '💡 现在可以在 Codex 中并行执行:\n\n  窗口 1: codex\n  > /codex-issue-plan-execute --issue=Issue-2\n\n  窗口 2: codex\n  > /codex-issue-plan-execute --issue=Issue-5\n\n  批次 2 的两个任务可以并行开发！', type: 'tip' },
+    ],
+    tips: ['Spec Generator 生成完整文档链', '文档可直接转换为 Issue 队列', '批次内任务可并行执行', '适合多人/多窗口协作'],
+  },
+  {
+    id: 'MCLI-002',
+    title: 'Req-Plan + Codex Issue Pipeline',
+    level: 'multi-cli',
+    category: '多终端协作',
+    scenario: '需求文档转规划，在 Codex 中形成开发流水线',
+    commands: [
+      { cmd: '/workflow:req-plan-with-file', desc: '需求规划' },
+      { cmd: '/issue:queue', desc: '形成执行队列' },
+      { cmd: '/codex-issue-plan-execute', desc: 'Codex 执行 Issue' },
+    ],
+    steps: [
+      { role: 'user', content: '/workflow:req-plan-with-file --file docs/requirements/payment-system.md', type: 'command' },
+      { role: 'system', content: '┌─ 需求规划 ──────────────────────────────────┐\n│ 📁 读取需求文档: docs/requirements/...      │\n│ 🔍 提取功能点...                            │\n│ 📋 生成开发任务...                          │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '📋 从需求文档提取任务:\n\n  需求 1: 支持多种支付方式\n    → Issue-1: 支付渠道抽象层\n    → Issue-2: 微信支付集成\n    → Issue-3: 支付宝集成\n\n  需求 2: 支付状态追踪\n    → Issue-4: 支付状态机实现\n    → Issue-5: 支付回调处理\n\n  需求 3: 对账系统\n    → Issue-6: 对账数据同步\n    → Issue-7: 对账报表生成', type: 'response' },
+      { role: 'user', content: '/issue:queue --auto-split', type: 'command' },
+      { role: 'system', content: '┌─ 智能拆分执行队列 ──────────────────────────┐\n│                                              │\n│ 🖥️ 可分配到不同终端/开发者:                 │\n│                                              │\n│ 📌 终端 A (后端):                           │\n│    ├─ Issue-1: 支付渠道抽象层               │\n│    ├─ Issue-4: 支付状态机                   │\n│    └─ Issue-6: 对账数据同步                 │\n│                                              │\n│ 📌 终端 B (后端):                           │\n│    ├─ Issue-2: 微信支付集成                 │\n│    └─ Issue-5: 支付回调处理                 │\n│                                              │\n│ 📌 终端 C (前端):                           │\n│    ├─ Issue-3: 支付宝集成                   │\n│    └─ Issue-7: 对账报表生成                 │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '🚀 启动 Codex 开发流水线...\n\n--- 终端 A ---\n$ codex\n> /codex-issue-plan-execute --issues=Issue-1,Issue-4,Issue-6\n\n--- 终端 B ---\n$ codex\n> /codex-issue-plan-execute --issues=Issue-2,Issue-5\n\n--- 终端 C ---\n$ codex\n> /codex-issue-plan-execute --issues=Issue-3,Issue-7', type: 'response' },
+      { role: 'system', content: '✅ 多终端协作完成！\n\n📊 执行统计:\n   - 终端 A: 3 个 Issue 完成\n   - 终端 B: 2 个 Issue 完成\n   - 终端 C: 2 个 Issue 完成\n   - 总耗时: 约 3 天 (并行执行)\n\n📁 所有改动已自动合并', type: 'result', highlight: true },
+    ],
+    tips: ['需求文档直接转任务队列', '智能拆分到不同终端', 'Codex 并行执行提升效率', '自动处理代码合并'],
+  },
+  {
+    id: 'MCLI-003',
+    title: '完整项目拆分开发流程',
+    level: 'multi-cli',
+    category: '多终端协作',
+    scenario: '将完整项目拆分为独立模块，多人并行开发',
+    commands: [
+      { cmd: '/spec-generator', desc: '生成项目规格' },
+      { cmd: '/issue:convert-to-plan', desc: '转换为 Issue' },
+      { cmd: '/issue:queue', desc: '队列管理' },
+      { cmd: '/codex-issue-plan-execute', desc: 'Codex 执行' },
+    ],
+    steps: [
+      { role: 'user', content: '/spec-generator "开发一个在线教育平台"\n\n功能模块:\n- 用户系统 (注册/登录/权限)\n- 课程管理 (课程/章节/视频)\n- 学习进度追踪\n- 作业与考试\n- 直播课堂\n- 支付系统', type: 'command' },
+      { role: 'system', content: '┌─ 规格生成器 ────────────────────────────────┐\n│ 🎯 大型项目，生成详细模块划分...             │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '📁 生成的项目规格:\n\ndocs/specs/edu-platform/\n├── 01-intro.md              # 平台简介\n├── 02-prd.md                # 产品需求文档\n├── 03-architecture.md       # 系统架构\n│   └── 模块划分:\n│       ├── user-module      # 用户模块\n│       ├── course-module    # 课程模块\n│       ├── progress-module  # 进度模块\n│       ├── exam-module      # 考试模块\n│       ├── live-module      # 直播模块\n│       └── payment-module   # 支付模块\n├── 04-user-stories.md       # 用户故事\n├── 05-tech-spec.md          # 技术方案\n└── 06-ready-check.md        # 就绪检查', type: 'response' },
+      { role: 'user', content: '/issue:convert-to-plan --by-module', type: 'command' },
+      { role: 'system', content: '📋 按模块拆分 Issue:\n\n┌─ 用户模块 (user-module) ────────────────────┐\n│  Issue-U1: 用户注册/登录                    │\n│  Issue-U2: 权限系统 RBAC                    │\n│  Issue-U3: 个人中心                         │\n└──────────────────────────────────────────────┘\n\n┌─ 课程模块 (course-module) ──────────────────┐\n│  Issue-C1: 课程管理后台                     │\n│  Issue-C2: 章节结构设计                     │\n│  Issue-C3: 视频上传/播放                    │\n└──────────────────────────────────────────────┘\n\n┌─ 进度模块 (progress-module) ────────────────┐\n│  Issue-P1: 学习进度记录                     │\n│  Issue-P2: 进度统计分析                     │\n└──────────────────────────────────────────────┘\n\n...(其他模块类似)', type: 'response' },
+      { role: 'user', content: '/issue:queue --assign-to-developers', type: 'command' },
+      { role: 'system', content: '┌─ 开发任务分配 ──────────────────────────────┐\n│                                              │\n│ 👤 开发者 A (后端专家):                      │\n│    └─ user-module (Issue-U1, U2, U3)        │\n│                                              │\n│ 👤 开发者 B (后端专家):                      │\n│    └─ course-module (Issue-C1, C2, C3)      │\n│                                              │\n│ 👤 开发者 C (全栈):                          │\n│    └─ progress-module (Issue-P1, P2)        │\n│                                              │\n│ 👤 开发者 D (前端专家):                      │\n│    └─ exam-module (Issue-E1, E2, E3)        │\n│                                              │\n│ 👤 开发者 E (实时系统):                      │\n│    └─ live-module (Issue-L1, L2)            │\n│                                              │\n│ 👤 开发者 F (支付专家):                      │\n│    └─ payment-module (Issue-PM1, PM2)       │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '🚀 各开发者启动 Codex:\n\n开发者 A 的终端:\n$ codex\n> /codex-issue-plan-execute --module=user-module\n\n开发者 B 的终端:\n$ codex\n> /codex-issue-plan-execute --module=course-module\n\n...(其他开发者类似)\n\n💡 每个模块在独立分支开发，完成后自动创建 PR', type: 'tip' },
+      { role: 'system', content: '📊 并行开发进度看板:\n\n┌────────────────────────────────────────────────┐\n│ 模块         │ 开发者 │ 状态    │ 进度       │\n│─────────────│───────│────────│───────────│\n│ user        │ A     │ 完成   │ 100% ✓    │\n│ course      │ B     │ 完成   │ 100% ✓    │\n│ progress    │ C     │ 完成   │ 100% ✓    │\n│ exam        │ D     │ 进行中  │ 80%       │\n│ live        │ E     │ 进行中  │ 60%       │\n│ payment     │ F     │ 进行中  │ 70%       │\n└────────────────────────────────────────────────┘\n\n⏱️ 预计总耗时: 5 天 (并行) vs 15 天 (串行)', type: 'response' },
+      { role: 'system', content: '✅ 所有模块开发完成！\n\n📁 自动生成的 PR:\n   - PR #101: feat(user): user module\n   - PR #102: feat(course): course module\n   - PR #103: feat(progress): progress module\n   - PR #104: feat(exam): exam module\n   - PR #105: feat(live): live module\n   - PR #106: feat(payment): payment module\n\n💡 建议运行 /workflow:review-module-cycle 进行模块审查', type: 'result', highlight: true },
+    ],
+    tips: ['大型项目自动拆分为模块', '按开发者专长分配任务', 'Codex 并行开发提效 3x', '自动创建模块级 PR'],
+  },
+  {
+    id: 'MCLI-004',
+    title: 'Plan 产物转 Issue 队列',
+    level: 'multi-cli',
+    category: '多终端协作',
+    scenario: '已有的规划文档转换为 Issue 队列，供 Codex 执行',
+    commands: [
+      { cmd: '/workflow:plan', desc: '5阶段规划' },
+      { cmd: '/issue:convert-to-plan', desc: '规划转 Issue' },
+      { cmd: '/codex-issue-plan-execute', desc: 'Codex 执行' },
+    ],
+    steps: [
+      { role: 'user', content: '/workflow:plan "实现文件上传系统，支持大文件分片上传"', type: 'command' },
+      { role: 'system', content: '(5阶段规划过程省略...)\n\n✅ 规划完成！\n\n📁 产出:\n   - .workflow/sessions/WFS-Upload/IMPL_PLAN.md\n   - .workflow/sessions/WFS-Upload/tasks/*.json', type: 'note' },
+      { role: 'user', content: '/issue:convert-to-plan --from-session=WFS-Upload', type: 'command' },
+      { role: 'system', content: '┌─ 从规划会话创建 Issue ──────────────────────┐\n│ 📁 来源: .workflow/sessions/WFS-Upload/      │\n│ 🔄 转换中...                                 │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '📋 Issue 列表:\n\n  Issue-1: 分片上传核心逻辑\n    文件: src/upload/chunker.ts, src/upload/uploader.ts\n    预估: 1 天\n\n  Issue-2: 断点续传支持\n    文件: src/upload/resume.ts, src/upload/storage.ts\n    依赖: Issue-1\n    预估: 0.5 天\n\n  Issue-3: 上传进度追踪\n    文件: src/upload/progress.ts\n    依赖: Issue-1\n    预估: 0.5 天\n\n  Issue-4: 前端上传组件\n    文件: src/components/FileUpload/\n    依赖: Issue-1, Issue-3\n    预估: 1 天\n\n  Issue-5: 服务端接收 API\n    文件: src/api/upload/route.ts\n    依赖: Issue-1\n    预估: 0.5 天', type: 'response' },
+      { role: 'user', content: '/issue:queue', type: 'command' },
+      { role: 'system', content: '┌─ 执行队列 (可并行) ────────────────────────┐\n│                                            │\n│ 📌 批次 1:                                 │\n│    └─ Issue-1: 分片上传核心逻辑            │\n│                                            │\n│ 📌 批次 2 (可并行):                        │\n│    ├─ Issue-2: 断点续传支持                │\n│    ├─ Issue-3: 上传进度追踪                │\n│    └─ Issue-5: 服务端接收 API              │\n│                                            │\n│ 📌 批次 3:                                 │\n│    └─ Issue-4: 前端上传组件                │\n└────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '💡 批次 2 可拆分到多个 Codex 终端并行执行:\n\n终端 1:\n$ codex\n> /codex-issue-plan-execute --issue=Issue-2\n\n终端 2:\n$ codex\n> /codex-issue-plan-execute --issue=Issue-3\n\n终端 3:\n$ codex\n> /codex-issue-plan-execute --issue=Issue-5', type: 'tip' },
+      { role: 'system', content: '✅ 文件上传系统完成！\n\n📊 执行统计:\n   - 总 Issue: 5 个\n   - 并行执行: 3 个 (批次 2)\n   - 总耗时: 约 2.5 天\n\n📁 核心文件:\n   - src/upload/chunker.ts (分片逻辑)\n   - src/upload/resume.ts (断点续传)\n   - src/upload/progress.ts (进度追踪)\n   - src/api/upload/route.ts (API)\n   - src/components/FileUpload/ (组件)', type: 'result', highlight: true },
+    ],
+    tips: ['Plan 产物直接转 Issue 队列', '批次内任务可并行执行', 'Codex 终端独立开发', '自动处理依赖关系'],
+  },
+  {
+    id: 'MCLI-005',
+    title: 'Claude Code 规划 + Codex 执行',
+    level: 'multi-cli',
+    category: '多终端协作',
+    scenario: '在 Claude Code 中规划，在 Codex 中执行，充分利用各 CLI 优势',
+    commands: [
+      { cmd: '/workflow:brainstorm:auto-parallel', desc: 'Claude Code 头脑风暴' },
+      { cmd: '/issue:from-brainstorm', desc: '创建 Issue' },
+      { cmd: '/codex-issue-plan-execute', desc: 'Codex 执行' },
+    ],
+    steps: [
+      { role: 'user', content: '[Claude Code 终端]\n/workflow:brainstorm:auto-parallel "设计一个实时协作编辑器"', type: 'command' },
+      { role: 'system', content: '┌─ Claude Code: 多角色头脑风暴 ───────────────┐\n│ 🎭 自动选择角色:                            │\n│   • 系统架构师 (技术架构)                   │\n│   • 产品经理 (用户需求)                     │\n│   • UX 专家 (用户体验)                      │\n│   • 安全专家 (数据安全)                     │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '📊 头脑风暴结果:\n\n架构设计:\n  - CRDT 算法实现冲突解决\n  - WebSocket 实时同步\n  - Redis Pub/Sub 消息分发\n  - MongoDB 存储文档历史\n\n功能模块:\n  1. 文档管理模块\n  2. 实时编辑模块\n  3. 冲突解决模块\n  4. 用户协作模块\n  5. 版本历史模块\n\n技术栈:\n  - 前端: React + Yjs\n  - 后端: Node.js + WebSocket\n  - 数据库: MongoDB + Redis', type: 'response' },
+      { role: 'user', content: '[Claude Code 终端]\n/issue:from-brainstorm --auto', type: 'command' },
+      { role: 'system', content: '📋 自动生成 Issue 列表:\n\n  Issue-1: CRDT 核心算法实现\n  Issue-2: WebSocket 服务端\n  Issue-3: Redis 消息分发\n  Issue-4: MongoDB 文档存储\n  Issue-5: 前端编辑器组件\n  Issue-6: 协作光标显示\n  Issue-7: 版本历史功能\n  Issue-8: 用户权限控制', type: 'response' },
+      { role: 'system', content: '💡 切换到 Codex 终端执行开发...\n\n--- Codex 终端 1 (后端核心) ---\n$ codex\n> /codex-issue-plan-execute --issues=Issue-1,Issue-2,Issue-3\n\n--- Codex 终端 2 (数据层) ---\n$ codex\n> /codex-issue-plan-execute --issues=Issue-4,Issue-7\n\n--- Codex 终端 3 (前端) ---\n$ codex\n> /codex-issue-plan-execute --issues=Issue-5,Issue-6,Issue-8', type: 'tip' },
+      { role: 'system', content: '📊 Codex 执行进度:\n\n终端 1: Issue-1 ✓ → Issue-2 ✓ → Issue-3 ✓\n终端 2: Issue-4 ✓ → Issue-7 ✓\n终端 3: Issue-5 ✓ → Issue-6 ✓ → Issue-8 ✓\n\n✅ 实时协作编辑器开发完成！\n\n📁 产出:\n   - 8 个 Issue 全部完成\n   - 15 个新文件\n   - 测试覆盖率: 88%\n   - 总耗时: 约 4 天 (3 终端并行)', type: 'result', highlight: true },
+    ],
+    tips: ['Claude Code 擅长规划与设计', 'Codex 擅长执行与编码', '充分利用各 CLI 优势', '多终端并行提升效率'],
+  },
+];
+
+// ============================================
 // 汇总导出
 // ============================================
 export const ALL_CASES: Case[] = [
@@ -722,6 +847,7 @@ export const ALL_CASES: Case[] = [
   ...MEMORY_CASES,
   ...SESSION_CASES,
   ...SKILL_CASES,
+  ...MULTI_CLI_CASES,
 ];
 
 // 按等级分组
@@ -736,6 +862,7 @@ export const CASES_BY_LEVEL: Record<string, Case[]> = {
   'Memory': MEMORY_CASES,
   'Session': SESSION_CASES,
   'Skill': SKILL_CASES,
+  'Multi-CLI': MULTI_CLI_CASES,
 };
 
 // 等级配置
@@ -750,4 +877,5 @@ export const LEVEL_CONFIG: Record<string, { name: string; emoji: string; color: 
   'Memory': { name: '记忆系统', emoji: '📚', color: '#8b5cf6', desc: '上下文与文档管理' },
   'Session': { name: '会话管理', emoji: '🔄', color: '#6366f1', desc: '工作流状态追踪' },
   'Skill': { name: '专项技能', emoji: '🛠️', color: '#84cc16', desc: '独立工具与技能' },
+  'Multi-CLI': { name: '多终端协作', emoji: '🖥️', color: '#f97316', desc: '需求到执行流水线' },
 };

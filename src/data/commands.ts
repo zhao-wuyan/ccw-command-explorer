@@ -878,93 +878,93 @@ export const COMMANDS: Command[] = [
 
   // ==================== Codex 技能 (Skills) ====================
   // 规划类
-  { cmd: '/codex:collaborative-plan-with-file', desc: '串行协作规划 - Plan Note架构，自动冲突检测', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
+  { cmd: '/collaborative-plan-with-file', desc: '串行协作规划 - Plan Note架构，自动冲突检测', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
     detail: '多人协作规划：先把大需求拆成多个技术领域，每人负责一个领域规划，最后自动检测各领域的冲突和依赖',
     usage: '涉及多个技术领域(前端/后端/数据库等)的复杂功能，需要不同专业的人分工规划'
   },
-  { cmd: '/codex:req-plan-with-file', desc: '需求规划工作流', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/req-plan-with-file', desc: '需求规划工作流', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
     detail: '从需求文档提取任务：读取PRD或设计文档，自动识别功能点，拆解成开发任务',
     usage: '有现成的需求文档/产品设计，想转成开发任务'
   },
-  { cmd: '/codex:workflow-req-plan', desc: '工作流需求规划', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/workflow-req-plan', desc: '工作流需求规划', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
     detail: '工作流级别的需求规划：不仅拆解任务，还生成任务间的依赖关系和执行顺序',
     usage: '复杂项目需要完整的工作流级别任务拆解'
   },
-  { cmd: '/codex:plan-converter', desc: '将规划产物转换为 .task/*.json 标准格式', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/plan-converter', desc: '将规划产物转换为 .task/*.json 标准格式', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
     detail: '格式转换器：把各种格式的规划文档(roadmap、plan-note、conclusions等)统一转成标准JSON格式，方便执行',
     usage: '有不同格式的规划文件，想统一执行'
   },
 
   // 分析/头脑风暴类
-  { cmd: '/codex:analyze-with-file', desc: '交互式协作分析 - 文档化讨论过程', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
+  { cmd: '/analyze-with-file', desc: '交互式协作分析 - 文档化讨论过程', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
     detail: '深度分析并记录过程：边分析边记录理解，支持多轮问答，AI会纠正你的误解。生成完整的分析文档',
     usage: '需要深入分析代码库、理解复杂架构、研究技术方案'
   },
-  { cmd: '/codex:brainstorm-with-file', desc: '交互式头脑风暴 - 并行多视角分析', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
+  { cmd: '/brainstorm-with-file', desc: '交互式头脑风暴 - 并行多视角分析', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
     detail: '3个AI同时思考：创意型(天马行空)、务实型(关注落地)、系统型(全局视角)，记录所有想法的演变过程',
     usage: '功能设计、架构方案需要多角度创意思考'
   },
 
   // 执行类
-  { cmd: '/codex:unified-execute-with-file', desc: '统一执行引擎 - 消费 .task/*.json 目录', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/unified-execute-with-file', desc: '统一执行引擎 - 消费 .task/*.json 目录', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
     detail: '任务执行器：读取任务JSON文件，按依赖顺序执行，支持并行执行无依赖的任务，实时显示进度',
     usage: '有准备好的任务文件需要执行'
   },
-  { cmd: '/codex:parallel-dev-cycle', desc: '多Agent并行开发循环 (RA→EP→CD→VAS)', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/parallel-dev-cycle', desc: '多Agent并行开发循环 (RA→EP→CD→VAS)', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
     detail: '4个AI同时工作：需求分析师(RA)理解需求→探索规划师(EP)设计方案→代码开发(CD)写代码→验证归档(VAS)测试。可并行推进',
     usage: '大型功能开发，想同时推进需求分析、设计、开发、测试'
   },
-  { cmd: '/codex:team-planex', desc: 'PlanEx团队 - 规划执行', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/team-planex', desc: 'PlanEx团队 - 规划执行', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
     detail: '2人流水线：规划师边规划边派任务，执行者边收任务边写代码。规划不等待执行完成，效率高',
     usage: '需求明确的开发任务，想要边规划边执行'
   },
 
   // Issue管理类
-  { cmd: '/codex:issue-discover', desc: 'Issue发现和创建 - 手动/多视角/prompt驱动', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
+  { cmd: '/issue-discover', desc: 'Issue发现和创建 - 手动/多视角/prompt驱动', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
     detail: '3种发现模式：①手动创建问题；②8维度自动扫描(bug/安全/性能/UX/测试/质量/维护性/最佳实践)；③根据你的描述迭代探索',
     usage: '想主动发现项目中的隐藏问题'
   },
-  { cmd: '/codex:issue-resolve', desc: 'Issue解决流水线 - 探索规划/转换/队列', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/issue-resolve', desc: 'Issue解决流水线 - 探索规划/转换/队列', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
     detail: '统一解决流水线：从各种来源(规划文档、头脑风暴、手动)创建解决方案，形成执行队列，批量处理',
     usage: '有多个Issue需要批量解决'
   },
-  { cmd: '/codex:issue-execute', desc: 'Issue执行 - 每个方案提交一次', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
+  { cmd: '/issue-execute', desc: 'Issue执行 - 每个方案提交一次', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
     detail: '串行执行：一个Issue解决完→git commit→下一个Issue。每个方案单独提交，方便追踪和回滚',
     usage: '执行已规划好的Issue解决方案'
   },
-  { cmd: '/codex:issue-devpipeline', desc: 'Issue开发流水线', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/issue-devpipeline', desc: 'Issue开发流水线', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
     detail: '一站式处理：发现问题→规划方案→写代码→测试→提交。从发现到解决完整流程',
     usage: '想一次性完整处理Issue的生命周期'
   },
 
   // 测试类
-  { cmd: '/codex:workflow-test-fix-cycle', desc: '端到端测试修复循环 - 直到通过率≥95%', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/workflow-test-fix-cycle', desc: '端到端测试修复循环 - 直到通过率≥95%', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
     detail: '自动测试循环：①生成4层测试(单元/集成/E2E/回归)；②执行测试；③失败自动修复；④循环直到95%通过',
     usage: '代码写完了需要补测试，希望测试失败能自动修复'
   },
 
   // 审查类
-  { cmd: '/codex:review-cycle', desc: '多维度代码审查 - 7维度并行分析', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/review-cycle', desc: '多维度代码审查 - 7维度并行分析', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
     detail: '7维度同时审查：代码对不对、好读吗、性能如何、安全吗、测试够不够、好维护吗、符合最佳实践吗。发现问题可自动修复',
     usage: '代码写完需要全面审查、PR合入前检查'
   },
 
   // 调试类
-  { cmd: '/codex:debug-with-file', desc: '假设驱动调试 - 文档化探索过程', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
+  { cmd: '/debug-with-file', desc: '假设驱动调试 - 文档化探索过程', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
     detail: '科学调试方法：①猜测可能原因(假设)；②验证假设；③记录发现；④AI纠正错误理解。系统化定位问题',
     usage: '遇到难定位的bug，需要系统化地分析和排查'
   },
 
   // 工具类
-  { cmd: '/codex:ccw-cli-tools', desc: 'CLI工具统一执行框架', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/ccw-cli-tools', desc: 'CLI工具统一执行框架', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
     detail: '统一调用外部AI：配置好Gemini/Qwen/Codex等工具，用一个模板调用不同AI，自动选择最合适的工具',
     usage: '想使用外部AI工具(Gemini/Qwen等)进行代码分析或生成'
   },
-  { cmd: '/codex:memory-compact', desc: '会话内存压缩为结构化文本', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v5.2',
+  { cmd: '/memory-compact', desc: '会话内存压缩为结构化文本', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v5.2',
     detail: '压缩会话内容：提取目标、计划、关键文件、重要决策，去掉冗余对话。方便下次恢复上下文',
     usage: '对话太长了想压缩保存，或者要切换话题但想保留关键信息'
   },
-  { cmd: '/codex:clean', desc: '智能代码清理 - 检测过时产物', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v5.2',
+  { cmd: '/clean', desc: '智能代码清理 - 检测过时产物', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v5.2',
     detail: '自动扫描清理：废弃的工作流会话、临时文件、死代码、过时的依赖。让项目保持整洁',
     usage: '项目做久了文件变多，想清理不需要的东西'
   },

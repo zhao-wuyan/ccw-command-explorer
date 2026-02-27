@@ -1,0 +1,90 @@
+[
+  {
+    "name": "lite-plan",
+    "command": "/workflow:lite-plan",
+    "description": "Lightweight interactive planning workflow with in-memory planning, code exploration, and execution execute to lite-execute after user confirmation",
+    "arguments": "[-y|--yes] [-e|--explore] \\\"task description\\\"|file.md",
+    "category": "workflow",
+    "subcategory": null,
+    "usage_scenario": "planning",
+    "difficulty": "Intermediate",
+    "source": "../../../commands/workflow/lite-plan.md"
+  },
+  {
+    "name": "lite-fix",
+    "command": "/workflow:lite-fix",
+    "description": "Lightweight bug diagnosis and fix workflow with intelligent severity assessment and optional hotfix mode for production incidents",
+    "arguments": "[-y|--yes] [--hotfix] \\\"bug description or issue reference\\",
+    "category": "workflow",
+    "subcategory": null,
+    "usage_scenario": "general",
+    "difficulty": "Intermediate",
+    "source": "../../../commands/workflow/lite-fix.md"
+  },
+  {
+    "name": "plan",
+    "command": "/workflow:plan",
+    "description": "5-phase planning workflow with action-planning-agent task generation, outputs IMPL_PLAN.md and task JSONs",
+    "arguments": "[-y|--yes] \\\"text description\\\"|file.md",
+    "category": "workflow",
+    "subcategory": null,
+    "usage_scenario": "planning",
+    "difficulty": "Intermediate",
+    "source": "../../../commands/workflow/plan.md"
+  },
+  {
+    "name": "execute",
+    "command": "/workflow:execute",
+    "description": "Coordinate agent execution for workflow tasks with automatic session discovery, parallel task processing, and status tracking",
+    "arguments": "[-y|--yes] [--resume-session=\\\"session-id\\\"]",
+    "category": "workflow",
+    "subcategory": null,
+    "usage_scenario": "implementation",
+    "difficulty": "Intermediate",
+    "source": "../../../commands/workflow/execute.md"
+  },
+  {
+    "name": "start",
+    "command": "/workflow:session:start",
+    "description": "Discover existing sessions or start new workflow session with intelligent session management and conflict detection",
+    "arguments": "[--type <workflow|review|tdd|test|docs>] [--auto|--new] [optional: task description for new session]",
+    "category": "workflow",
+    "subcategory": "session",
+    "usage_scenario": "general",
+    "difficulty": "Intermediate",
+    "source": "../../../commands/workflow/session/start.md"
+  },
+  {
+    "name": "review-session-cycle",
+    "command": "/workflow:review-session-cycle",
+    "description": "Session-based comprehensive multi-dimensional code review. Analyzes git changes from workflow session across 7 dimensions with hybrid parallel-iterative execution, aggregates findings, and performs focused deep-dives on critical issues until quality gates met.",
+    "arguments": "[session-id] [--dimensions=security,architecture,...] [--max-iterations=N]",
+    "category": "workflow",
+    "subcategory": null,
+    "usage_scenario": "session-management",
+    "difficulty": "Intermediate",
+    "source": "../../../commands/workflow/review-session-cycle.md"
+  },
+  {
+    "name": "artifacts",
+    "command": "/workflow:brainstorm:artifacts",
+    "description": "Interactive clarification generating confirmed guidance specification through role-based analysis and synthesis",
+    "arguments": "[-y|--yes] topic or challenge description [--count N]",
+    "category": "workflow",
+    "subcategory": "brainstorm",
+    "usage_scenario": "general",
+    "difficulty": "Intermediate",
+    "source": "../../../commands/workflow/brainstorm/artifacts.md"
+  },
+  {
+    "name": "plan-verify",
+    "command": "/workflow:plan-verify",
+    "description": "Perform READ-ONLY verification analysis between IMPL_PLAN.md, task JSONs, and brainstorming artifacts. Generates structured report with quality gate recommendation. Does NOT modify any files.",
+    "arguments": "[optional: --session session-id]",
+    "category": "workflow",
+    "subcategory": null,
+    "usage_scenario": "planning",
+    "difficulty": "Intermediate",
+    "source": "../../../commands/workflow/plan-verify.md"
+  }
+]

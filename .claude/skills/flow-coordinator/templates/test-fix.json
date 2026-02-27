@@ -1,0 +1,26 @@
+{
+  "name": "test-fix",
+  "description": "Fix failing tests - generate test tasks and execute iterative test-fix cycle",
+  "level": 2,
+  "steps": [
+    {
+      "cmd": "/workflow:test-fix-gen",
+      "args": "\"{{goal}}\"",
+      "unit": "test-validation",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Analyze failing tests, generate targeted test tasks with root cause and fix strategy"
+    },
+    {
+      "cmd": "/workflow:test-cycle-execute",
+      "unit": "test-validation",
+      "execution": {
+        "type": "slash-command",
+        "mode": "async"
+      },
+      "contextHint": "Execute iterative test-fix cycle with pass rate tracking until >= 95% pass rate achieved"
+    }
+  ]
+}

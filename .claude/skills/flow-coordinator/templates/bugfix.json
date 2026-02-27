@@ -1,0 +1,47 @@
+{
+  "name": "bugfix",
+  "description": "Standard bug fix workflow - lightweight diagnosis and execution with testing",
+  "level": 2,
+  "steps": [
+    {
+      "cmd": "/workflow:lite-fix",
+      "args": "\"{{goal}}\"",
+      "unit": "bug-fix",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Analyze bug report, trace execution flow, identify root cause with fix strategy"
+    },
+    {
+      "cmd": "/workflow:lite-execute",
+      "args": "--in-memory",
+      "unit": "bug-fix",
+      "execution": {
+        "type": "slash-command",
+        "mode": "async"
+      },
+      "contextHint": "Implement fix based on diagnosis. Execute against in-memory state from lite-fix analysis."
+    },
+    {
+      "cmd": "/workflow:test-fix-gen",
+      "unit": "test-validation",
+      "optional": true,
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Generate test tasks to verify bug fix and prevent regression"
+    },
+    {
+      "cmd": "/workflow:test-cycle-execute",
+      "unit": "test-validation",
+      "optional": true,
+      "execution": {
+        "type": "slash-command",
+        "mode": "async"
+      },
+      "contextHint": "Execute test-fix cycle until all tests pass"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "bugfix-hotfix",
+  "description": "Urgent production fix - immediate diagnosis and fix with minimal overhead",
+  "level": 1,
+  "steps": [
+    {
+      "cmd": "/workflow:lite-fix",
+      "args": "--hotfix \"{{goal}}\"",
+      "execution": {
+        "type": "slash-command",
+        "mode": "async"
+      },
+      "contextHint": "Urgent hotfix mode: quick diagnosis and immediate fix for critical production issue"
+    }
+  ]
+}

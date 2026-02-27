@@ -1,0 +1,71 @@
+{
+  "name": "coupled",
+  "description": "Full workflow for complex features - detailed planning with verification, execution, review, and testing",
+  "level": 3,
+  "steps": [
+    {
+      "cmd": "/workflow:plan",
+      "args": "\"{{goal}}\"",
+      "unit": "verified-planning-execution",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Create detailed implementation plan with architecture design, file structure, dependencies, and milestones"
+    },
+    {
+      "cmd": "/workflow:plan-verify",
+      "unit": "verified-planning-execution",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Verify IMPL_PLAN.md against requirements, check for missing details, conflicts, and quality gates"
+    },
+    {
+      "cmd": "/workflow:execute",
+      "unit": "verified-planning-execution",
+      "execution": {
+        "type": "slash-command",
+        "mode": "async"
+      },
+      "contextHint": "Execute implementation based on verified plan. Resume from planning session with all context preserved."
+    },
+    {
+      "cmd": "/workflow:review-session-cycle",
+      "unit": "code-review",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Perform multi-dimensional code review across correctness, security, performance, maintainability. Reference execution session for full code context."
+    },
+    {
+      "cmd": "/workflow:review-cycle-fix",
+      "unit": "code-review",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Fix issues identified in review findings with prioritization by severity levels"
+    },
+    {
+      "cmd": "/workflow:test-fix-gen",
+      "unit": "test-validation",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Generate comprehensive test tasks for the implementation with coverage analysis"
+    },
+    {
+      "cmd": "/workflow:test-cycle-execute",
+      "unit": "test-validation",
+      "execution": {
+        "type": "slash-command",
+        "mode": "async"
+      },
+      "contextHint": "Execute iterative test-fix cycle until pass rate >= 95%"
+    }
+  ]
+}

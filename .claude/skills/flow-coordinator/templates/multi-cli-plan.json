@@ -1,0 +1,47 @@
+{
+  "name": "multi-cli-plan",
+  "description": "Multi-perspective planning with cross-tool verification and execution",
+  "level": 3,
+  "steps": [
+    {
+      "cmd": "/workflow:multi-cli-plan",
+      "args": "\"{{goal}}\"",
+      "unit": "multi-cli-planning",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Multi-perspective analysis comparing different implementation approaches with trade-off analysis"
+    },
+    {
+      "cmd": "/workflow:lite-execute",
+      "args": "--in-memory",
+      "unit": "multi-cli-planning",
+      "execution": {
+        "type": "slash-command",
+        "mode": "async"
+      },
+      "contextHint": "Execute best approach selected from multi-perspective analysis"
+    },
+    {
+      "cmd": "/workflow:test-fix-gen",
+      "unit": "test-validation",
+      "optional": true,
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Generate test tasks for the implementation"
+    },
+    {
+      "cmd": "/workflow:test-cycle-execute",
+      "unit": "test-validation",
+      "optional": true,
+      "execution": {
+        "type": "slash-command",
+        "mode": "async"
+      },
+      "contextHint": "Execute test-fix cycle until pass rate >= 95%"
+    }
+  ]
+}

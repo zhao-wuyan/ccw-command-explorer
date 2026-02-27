@@ -1,0 +1,43 @@
+{
+  "name": "review",
+  "description": "Code review workflow - multi-dimensional review, fix issues, and test validation",
+  "level": 3,
+  "steps": [
+    {
+      "cmd": "/workflow:review-session-cycle",
+      "unit": "code-review",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Perform comprehensive multi-dimensional code review across correctness, security, performance, maintainability dimensions"
+    },
+    {
+      "cmd": "/workflow:review-cycle-fix",
+      "unit": "code-review",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Fix all review findings prioritized by severity level (critical → high → medium → low)"
+    },
+    {
+      "cmd": "/workflow:test-fix-gen",
+      "unit": "test-validation",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Generate test tasks for fixed code with coverage analysis"
+    },
+    {
+      "cmd": "/workflow:test-cycle-execute",
+      "unit": "test-validation",
+      "execution": {
+        "type": "slash-command",
+        "mode": "async"
+      },
+      "contextHint": "Execute iterative test-fix cycle until pass rate >= 95%"
+    }
+  ]
+}

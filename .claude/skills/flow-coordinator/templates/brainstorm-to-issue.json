@@ -1,0 +1,36 @@
+{
+  "name": "brainstorm-to-issue",
+  "description": "Bridge brainstorm session to issue workflow - convert exploration insights to executable issues",
+  "level": 4,
+  "steps": [
+    {
+      "cmd": "/workflow:issue:from-brainstorm",
+      "args": "--auto",
+      "unit": "brainstorm-to-issue",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Convert brainstorm session findings into issue plans and solutions"
+    },
+    {
+      "cmd": "/workflow:issue:queue",
+      "unit": "brainstorm-to-issue",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Build execution queue from converted brainstorm issues"
+    },
+    {
+      "cmd": "/workflow:issue:execute",
+      "args": "--queue auto",
+      "unit": "brainstorm-to-issue",
+      "execution": {
+        "type": "slash-command",
+        "mode": "async"
+      },
+      "contextHint": "Execute issues from queue with state tracking"
+    }
+  ]
+}

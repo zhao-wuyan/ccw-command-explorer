@@ -1,3 +1,13 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(git add README.md)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ndocs: update README with comprehensive project documentation\n\n- Add project introduction and feature overview\n- Document tech stack: React 19, TypeScript, Vite 7, Framer Motion\n- Include quick start guide with install/dev/build commands\n- Add project structure and core data structure definitions\n- Document main pages: overview, commands, cases, install\n- Add links to related resources \\(GitHub, guides, changelog\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)",
+      "Bash(git push origin master)",
+      "Bash(git add .claude/)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: add claude configuration files\n\n- Add CLAUDE.md, agents, commands, skills directories\n- Add version.json and settings.local.json updates\n- Add codex, gemini, qwen configuration directories\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  },
   "outputStyle": "ojousama-engineer"
 }

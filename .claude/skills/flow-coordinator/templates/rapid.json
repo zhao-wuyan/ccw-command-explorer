@@ -1,0 +1,47 @@
+{
+  "name": "rapid",
+  "description": "Quick implementation - lightweight plan and immediate execution for simple features",
+  "level": 2,
+  "steps": [
+    {
+      "cmd": "/workflow:lite-plan",
+      "args": "\"{{goal}}\"",
+      "unit": "quick-implementation",
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Analyze requirements and create a lightweight implementation plan with key decisions and file structure"
+    },
+    {
+      "cmd": "/workflow:lite-execute",
+      "args": "--in-memory",
+      "unit": "quick-implementation",
+      "execution": {
+        "type": "slash-command",
+        "mode": "async"
+      },
+      "contextHint": "Use the plan from previous step to implement code. Execute against in-memory state."
+    },
+    {
+      "cmd": "/workflow:test-fix-gen",
+      "unit": "test-validation",
+      "optional": true,
+      "execution": {
+        "type": "slash-command",
+        "mode": "mainprocess"
+      },
+      "contextHint": "Generate test tasks from the implementation session"
+    },
+    {
+      "cmd": "/workflow:test-cycle-execute",
+      "unit": "test-validation",
+      "optional": true,
+      "execution": {
+        "type": "slash-command",
+        "mode": "async"
+      },
+      "contextHint": "Execute test-fix cycle until all tests pass"
+    }
+  ]
+}

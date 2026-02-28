@@ -292,37 +292,6 @@ export const TIMELINE: TimelineItem[] = [
       usage: '重大架构更新！Team 系统重构、工作流引擎改革、Dashboard 升级、队列调度系统，335+ 提交，442+ 新功能！'
     }
   },
-  {
-    date: '2026-02',
-    version: 'v6.4',
-    title: '团队协作架构',
-    desc: '上一个版本',
-    color: COLORS.accent5,
-    commands: 95,
-    detail: {
-      version: 'v6.4',
-      highlights: [
-        'Team-Worker 代理架构',
-        '动态角色生成',
-        '团队生命周期多版本演进',
-        'CSV Wave 规划执行'
-      ],
-      newCommands: [
-        '/team-coordinate',
-        '/team-coordinate-v2',
-        '/team-lifecycle-v3',
-        '/team-lifecycle-v4',
-        '/team-lifecycle-v5',
-        '/team-executor',
-        '/team-executor-v2',
-        '/team-iterdev',
-        '/team-roadmap-dev',
-        '/workflow:wave-plan',
-        '/csv-wave-pipeline'
-      ],
-      usage: '团队协作架构大升级！新增 team-worker 代理架构，支持动态角色生成和多种生命周期版本选择！'
-    }
-  },
 ];
 
 // ============================================

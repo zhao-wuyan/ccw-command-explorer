@@ -367,53 +367,21 @@ export const COMMANDS: Command[] = [
   },
 
   // ==================== 工作流核心 ====================
-  { cmd: '/workflow:plan', desc: '5阶段规划工作流，生成 IMPL_PLAN.md', status: 'stable', category: 'workflow', cli: 'claude', level: 3, addedInVersion: 'v1.0',
-    detail: '详细规划流程：①创建会话；②收集项目上下文；③AI分析需求；④问你澄清问题；⑤生成任务文件(IMPL_PLAN.md)',
-    usage: '复杂功能、多模块开发，需要详细规划文档'
-  },
-  { cmd: '/workflow:lite-plan', desc: '轻量级交互规划，内存中快速规划', status: 'stable', category: 'workflow', cli: 'claude', level: 2, addedInVersion: 'v6.2',
-    detail: '快速规划：在内存中快速分析→拆解任务→排顺序。不生成文件，规划完直接执行。适合中小任务',
-    usage: '做功能或修bug，想快速规划然后马上开始'
-  },
-  { cmd: '/workflow:lite-execute', desc: '执行内存中的计划', status: 'stable', category: 'workflow', cli: 'claude', level: 2, addedInVersion: 'v6.2',
-    detail: '执行lite-plan生成的计划。配合lite-plan使用，一个规划一个执行',
-    usage: '刚用lite-plan规划完，现在要执行'
-  },
-  { cmd: '/workflow:lite-fix', desc: '智能 bug 诊断修复', status: 'new', category: 'workflow', cli: 'claude', level: 2, addedInVersion: 'v6.2',
-    detail: '自动修bug：①分析报错信息；②定位问题代码；③提出修复方案；④你确认后自动修复。支持生产环境热修复模式',
-    usage: '发现bug想快速定位原因并修复'
-  },
-  { cmd: '/workflow:execute', desc: '协调 Agent 执行任务', status: 'stable', category: 'workflow', cli: 'claude', level: 3, addedInVersion: 'v1.0',
-    detail: '执行任务列表：按依赖顺序执行，A完成才执行B，无依赖的可并行。实时显示进度',
-    usage: '有规划好的任务列表需要执行'
-  },
-  { cmd: '/workflow:replan', desc: '交互式重新规划', status: 'stable', category: 'workflow', cli: 'claude', level: 3, addedInVersion: 'v1.0',
-    detail: '调整计划：执行中发现需求变了或计划有问题，可以交互式调整任务，增删改都行',
-    usage: '执行到一半发现计划需要调整'
-  },
-  { cmd: '/workflow:resume', desc: '智能恢复工作流会话', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v5.0',
-    detail: '恢复中断的工作：自动检测之前未完成的会话，恢复上下文继续执行',
-    usage: '之前的工作被中断(关机、开会等)，想继续'
-  },
-  { cmd: '/workflow:review', desc: '后实现审查', status: 'stable', category: 'review', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '功能完成后审查：检查代码质量、是否符合规范、有没有明显问题',
-    usage: '功能开发完成，合入代码前想检查一下'
-  },
-  { cmd: '/workflow:status', desc: '生成任务状态视图', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '查看进度：显示当前工作流执行到哪了、哪些任务完成、哪些还在做、哪些等待中',
-    usage: '想了解当前工作流的执行进度'
-  },
   { cmd: '/workflow:init', desc: '初始化项目状态', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v5.0',
     detail: '首次使用准备：创建.workflow目录、初始化配置文件。在新项目里第一次用CCW要先执行这个',
     usage: '在新项目中第一次使用CCW'
   },
+  { cmd: '/workflow:init-specs', desc: '初始化规格目录', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '创建规格目录结构：初始化 .monkeycode/specs/ 目录，用于存放需求和设计文档',
+    usage: '需要开始编写需求规格文档'
+  },
+  { cmd: '/workflow:init-guidelines', desc: '初始化开发指南', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '创建开发指南：生成项目编码规范、最佳实践等指南文档',
+    usage: '新项目需要建立开发规范'
+  },
   { cmd: '/workflow:clean', desc: '清理代码和临时文件', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v5.2',
     detail: '智能清理：检测过时的会话目录、临时文件、死代码、无用的依赖。保持项目整洁',
     usage: '项目做了很久，想清理不需要的文件'
-  },
-  { cmd: '/workflow:plan-verify', desc: '计划一致性验证', status: 'stable', category: 'review', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '检查计划：验证任务计划是否完整、依赖关系是否正确、有没有遗漏或冲突',
-    usage: '执行前想确保计划没问题'
   },
 
   // With-File 系列
@@ -433,9 +401,9 @@ export const COMMANDS: Command[] = [
     detail: '创意发散并记录：多角度思考，记录想法的演变过程。完成后可选择：创建规划、创建Issue、或继续分析',
     usage: '需要创意思考、功能设计、架构方案讨论'
   },
-  { cmd: '/workflow:req-plan-with-file', desc: '需求规划', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v6.2',
-    detail: '文档转任务：读取需求文档(PRD、设计稿等)，提取功能点，生成开发任务',
-    usage: '有现成的需求文档想转成开发任务'
+  { cmd: '/workflow:roadmap-with-file', desc: '路线图规划', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '交互式路线图：与AI讨论需求，生成项目路线图和里程碑规划',
+    usage: '需要规划项目路线图'
   },
   { cmd: '/workflow:unified-execute-with-file', desc: '通用执行引擎', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v6.2',
     detail: '万能执行器：支持执行各种格式的规划文件(brainstorm、plan、issue等)，按依赖顺序执行',
@@ -470,6 +438,10 @@ export const COMMANDS: Command[] = [
   { cmd: '/workflow:session:solidify', desc: '固化会话经验为永久规则', status: 'stable', category: 'session', cli: 'claude', addedInVersion: 'v5.2',
     detail: '沉淀经验：把会话中学到的东西(发现的好方法、踩过的坑)变成项目规则，以后自动遵循',
     usage: '有值得保留的经验想固化下来'
+  },
+  { cmd: '/workflow:session:sync', desc: '同步会话状态', status: 'new', category: 'session', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '同步会话：将当前会话状态同步到文件系统，确保状态持久化',
+    usage: '需要保存当前会话状态'
   },
 
   // ==================== Issue 管理 ====================
@@ -506,147 +478,11 @@ export const COMMANDS: Command[] = [
     usage: '头脑风暴后想把想法变成具体任务'
   },
 
-  // ==================== 记忆系统 ====================
-  { cmd: '/memory:docs', desc: '规划文档工作流', status: 'stable', category: 'memory', cli: 'claude', addedInVersion: 'v5.2',
-    detail: '文档规划：分析项目哪些模块需要更新文档，规划更新策略',
-    usage: '需要更新项目文档但不确定范围'
-  },
-  { cmd: '/memory:docs-full-cli', desc: '全量文档生成 (CLI)', status: 'new', category: 'memory', cli: 'claude', addedInVersion: 'v6.2',
-    detail: '用外部AI全量更新：调用Gemini等外部AI，为所有模块生成CLAUDE.md文档。适合大项目',
-    usage: '项目结构变化大，想全面更新所有文档'
-  },
-  { cmd: '/memory:docs-related-cli', desc: '增量文档更新 (CLI)', status: 'new', category: 'memory', cli: 'claude', addedInVersion: 'v6.2',
-    detail: '用外部AI增量更新：只更新最近改动相关的模块文档，省时间',
-    usage: '只改了几个文件，只想更新相关文档'
-  },
-  { cmd: '/memory:update-full', desc: '全量 CLAUDE.md 更新', status: 'stable', category: 'memory', cli: 'claude', addedInVersion: 'v5.2',
-    detail: '内置AI全量更新：扫描整个项目，更新所有CLAUDE.md文件。不依赖外部工具',
-    usage: '项目结构变化大想更新文档，不想配置外部AI'
-  },
-  { cmd: '/memory:update-related', desc: '增量 CLAUDE.md 更新', status: 'stable', category: 'memory', cli: 'claude', addedInVersion: 'v5.2',
-    detail: '内置AI增量更新：根据git变动，只更新受影响模块的CLAUDE.md',
-    usage: '日常开发中的文档维护'
-  },
-  { cmd: '/memory:load', desc: '加载项目上下文', status: 'stable', category: 'memory', cli: 'claude', addedInVersion: 'v1.0',
-    detail: '快速了解项目：读取项目CLAUDE.md，快速加载项目结构、技术栈、约定等信息',
-    usage: '开始新会话想快速了解项目'
-  },
-  { cmd: '/memory:load-skill-memory', desc: '加载技能记忆包', status: 'stable', category: 'memory', cli: 'claude', addedInVersion: 'v5.2',
-    detail: '加载之前保存的技能包：读取SKILL.md文件，恢复之前学到的技能和经验',
-    usage: '想复用之前保存的技能经验'
-  },
-  { cmd: '/memory:skill-memory', desc: '生成 SKILL.md', status: 'stable', category: 'memory', cli: 'claude', addedInVersion: 'v5.2',
-    detail: '保存技能经验：把当前会话学到的技能、踩过的坑、发现的好方法保存成SKILL.md',
-    usage: '有可复用的经验想保存'
-  },
-  { cmd: '/memory:code-map-memory', desc: '代码分析生成 Mermaid 文档', status: 'stable', category: 'memory', cli: 'claude', addedInVersion: 'v5.2',
-    detail: '代码可视化：分析代码结构，生成Mermaid流程图、类图等，直观展示代码关系',
-    usage: '想可视化代码架构'
-  },
-  { cmd: '/memory:tech-research', desc: '技术栈研究和 SKILL 包生成', status: 'stable', category: 'memory', cli: 'claude', addedInVersion: 'v5.2',
-    detail: '学习新技术：研究新技术栈，总结要点，生成可复用的SKILL包。下次遇到同样技术直接用',
-    usage: '学习新技术想沉淀知识'
-  },
-  { cmd: '/memory:workflow-skill-memory', desc: '归档会话生成工作流技能包', status: 'stable', category: 'memory', cli: 'claude', addedInVersion: 'v5.2',
-    detail: '沉淀工作流经验：把完成的工作流会话归档，提取可复用的模式，生成技能包',
-    usage: '完成重要工作后想沉淀经验'
-  },
-  { cmd: '/enhance-prompt', desc: '上下文感知提示词增强', status: 'stable', category: 'memory', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '优化你的指令：根据当前项目上下文，帮你把模糊的需求描述变成清晰具体的指令',
-    usage: '想让AI更好理解你的意图'
-  },
-  { cmd: '/version', desc: '显示版本信息', status: 'stable', category: 'main', cli: 'claude', addedInVersion: 'v1.0',
-    detail: '查看版本：显示CCW当前版本、更新日志，检查是否有新版本可更新',
-    usage: '想查看当前版本或检查更新'
-  },
 
-  // ==================== 头脑风暴 ====================
-  { cmd: '/workflow:brainstorm:auto-parallel', desc: '并行头脑风暴，动态角色选择', status: 'new', category: 'brainstorm', cli: 'claude', addedInVersion: 'v6.3',
-    detail: '自动多角色思考：自动选择多个专业视角(产品/技术/设计等)并行分析，最后综合结论',
-    usage: '需要多角度创意思考但不确定需要哪些视角'
-  },
-  { cmd: '/workflow:brainstorm:artifacts', desc: '生成角色指导规范文档', status: 'stable', category: 'brainstorm', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '定义角色职责：为每个角色(产品经理、架构师等)生成职责说明、关注点、输出规范',
-    usage: '想定义团队中各角色的职责'
-  },
-  { cmd: '/workflow:brainstorm:synthesis', desc: '综合分析结果，智能问答', status: 'stable', category: 'brainstorm', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '整合多角色结论：把各角色的分析结果综合起来，支持问答式深入探讨',
-    usage: '多角色分析完后想整合结论'
-  },
-  { cmd: '/workflow:brainstorm:api-designer', desc: 'API 设计师角色分析', status: 'stable', category: 'brainstorm', cli: 'claude', addedInVersion: 'v6.0',
-    detail: 'API专家视角：从API设计角度分析，关注接口规范、数据结构、版本兼容等',
-    usage: '需要设计API接口时'
-  },
-  { cmd: '/workflow:brainstorm:data-architect', desc: '数据架构师角色分析', status: 'stable', category: 'brainstorm', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '数据专家视角：从数据角度分析，关注数据模型、存储方案、数据流转等',
-    usage: '需要设计数据结构时'
-  },
-  { cmd: '/workflow:brainstorm:product-manager', desc: '产品经理角色分析', status: 'stable', category: 'brainstorm', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '产品视角：从产品价值角度分析，关注用户需求、市场价值、功能优先级',
-    usage: '需要评估功能价值时'
-  },
-  { cmd: '/workflow:brainstorm:product-owner', desc: '产品负责人角色分析', status: 'stable', category: 'brainstorm', cli: 'claude', addedInVersion: 'v6.0',
-    detail: 'PO视角：从产品决策角度分析，关注优先级排序、资源分配、迭代规划',
-    usage: '需要确定功能优先级时'
-  },
-  { cmd: '/workflow:brainstorm:scrum-master', desc: 'Scrum Master 角色分析', status: 'stable', category: 'brainstorm', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '敏捷教练视角：从流程优化角度分析，关注开发效率、团队协作、迭代改进',
-    usage: '需要优化开发流程时'
-  },
-  { cmd: '/workflow:brainstorm:subject-matter-expert', desc: '领域专家角色分析', status: 'stable', category: 'brainstorm', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '业务专家视角：从业务领域角度分析，关注业务规则、行业特点、合规要求',
-    usage: '需要深入理解业务领域时'
-  },
-  { cmd: '/workflow:brainstorm:system-architect', desc: '系统架构师角色分析', status: 'stable', category: 'brainstorm', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '架构专家视角：从技术架构角度分析，关注系统设计、技术选型、扩展性',
-    usage: '需要设计系统架构时'
-  },
-  { cmd: '/workflow:brainstorm:ui-designer', desc: 'UI 设计师角色分析', status: 'stable', category: 'brainstorm', cli: 'claude', addedInVersion: 'v6.0',
-    detail: 'UI专家视角：从界面设计角度分析，关注视觉效果、交互体验、设计规范',
-    usage: '需要设计用户界面时'
-  },
-  { cmd: '/workflow:brainstorm:ux-expert', desc: 'UX 专家角色分析', status: 'stable', category: 'brainstorm', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '体验专家视角：从用户体验角度分析，关注用户流程、易用性、无障碍设计',
-    usage: '需要优化用户体验时'
-  },
 
-  // ==================== TDD ====================
-  { cmd: '/workflow:tdd-plan', desc: 'TDD 工作流规划', status: 'stable', category: 'tdd', cli: 'claude', level: 3, addedInVersion: 'v6.0',
-    detail: '测试驱动规划：生成Red-Green-Refactor任务链。①先写失败的测试；②写代码让测试通过；③优化代码',
-    usage: '想用专业TDD方式开发'
-  },
-  { cmd: '/workflow:tdd-verify', desc: '验证 TDD 合规性', status: 'stable', category: 'tdd', cli: 'claude', level: 3, addedInVersion: 'v6.0',
-    detail: '检查TDD是否规范：验证是否先写测试、测试覆盖率是否达标、重构是否破坏功能',
-    usage: '检查TDD开发过程是否规范'
-  },
 
-  // ==================== 测试 ====================
-  { cmd: '/workflow:test-gen', desc: '生成测试计划', status: 'stable', category: 'test', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '生成测试用例：分析代码逻辑，自动生成单元测试、边界条件测试、异常情况测试',
-    usage: '功能写完需要补测试'
-  },
-  { cmd: '/workflow:test-fix-gen', desc: '生成测试修复计划', status: 'stable', category: 'test', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '测试失败修复：分析失败原因，生成修复任务列表',
-    usage: '测试失败需要修复'
-  },
-  { cmd: '/workflow:test-cycle-execute', desc: '测试循环执行直到通过', status: 'new', category: 'test', cli: 'claude', addedInVersion: 'v6.3',
-    detail: '自动修复循环：①执行测试；②发现失败自动修复；③再测试。循环直到全部通过或达到最大次数',
-    usage: '想让测试自动跑通'
-  },
 
-  // ==================== 代码审查 ====================
-  { cmd: '/workflow:review-module-cycle', desc: '模块多维度审查', status: 'new', category: 'review', cli: 'claude', addedInVersion: 'v6.3',
-    detail: '指定模块审查：选择特定模块或文件，进行7维度代码审查，生成详细报告',
-    usage: '想审查特定的代码模块'
-  },
-  { cmd: '/workflow:review-session-cycle', desc: '会话代码审查', status: 'new', category: 'review', cli: 'claude', addedInVersion: 'v6.3',
-    detail: '审查本次改动：审查当前工作流会话中产生的所有代码变更',
-    usage: '开发完成后想审查本次改动'
-  },
-  { cmd: '/workflow:review-fix', desc: '审查问题自动修复', status: 'new', category: 'review', cli: 'claude', addedInVersion: 'v6.3',
-    detail: '自动修问题：根据审查报告自动修复发现的问题',
-    usage: '审查发现问题后想自动修复'
-  },
+
 
   // ==================== UI 设计 ====================
   { cmd: '/workflow:ui-design:explore-auto', desc: '探索式 UI 设计', status: 'new', category: 'ui-design', cli: 'claude', addedInVersion: 'v6.3',
@@ -657,14 +493,7 @@ export const COMMANDS: Command[] = [
     detail: '参考复刻：提供设计图或网站URL，自动分析设计风格，快速生成相同风格的UI代码',
     usage: '有设计稿或参考网站想复刻'
   },
-  { cmd: '/workflow:ui-design:capture', desc: '批量截图捕获', status: 'stable', category: 'ui-design', cli: 'claude', addedInVersion: 'v6.2',
-    detail: '批量截图：自动访问多个网页，批量截图保存，收集设计参考素材',
-    usage: '需要收集UI设计参考'
-  },
-  { cmd: '/workflow:ui-design:explore-layers', desc: '深度 UI 探索', status: 'stable', category: 'ui-design', cli: 'claude', addedInVersion: 'v6.2',
-    detail: '深度分析：分析UI的层次结构、组件关系、交互逻辑',
-    usage: '需要深入分析UI结构'
-  },
+
   { cmd: '/workflow:ui-design:style-extract', desc: '提取设计风格', status: 'new', category: 'ui-design', cli: 'claude', addedInVersion: 'v6.3',
     detail: '提取样式：从设计图或现有代码中提取颜色、字体、间距等设计规范',
     usage: '想分析设计风格，建立设计系统'
@@ -698,61 +527,16 @@ export const COMMANDS: Command[] = [
     usage: '想生成设计参考文档'
   },
 
-  // ==================== Task 命令 ====================
-  { cmd: '/task:create', desc: '创建实现任务', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v5.0',
-    detail: '手动创建单个任务：填写任务标题、描述、预计工作量。适合补充遗漏的任务',
-    usage: '想单独创建一个任务'
+  // ==================== 记忆系统 ====================
+  { cmd: '/memory:prepare', desc: '准备记忆系统', status: 'stable', category: 'memory', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '初始化记忆：准备记忆系统所需的目录结构和配置文件',
+    usage: '首次使用记忆系统前准备'
   },
-  { cmd: '/task:breakdown', desc: '任务分解', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v5.0',
-    detail: '拆分大任务：把一个大任务拆成多个小任务，便于分工和跟踪',
-    usage: '任务太大想拆分'
-  },
-  { cmd: '/task:execute', desc: '执行任务', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v5.0',
-    detail: '执行单个任务：选择一个任务执行，完成后自动标记状态',
-    usage: '想执行特定任务'
+  { cmd: '/memory:style-skill-memory', desc: '样式技能记忆', status: 'stable', category: 'memory', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '样式记忆：保存和加载 UI 样式相关的技能经验',
+    usage: '需要保存或复用样式设计经验'
   },
 
-  // ==================== 内部工具 ====================
-  { cmd: '/workflow:tools:concept-enhanced', desc: '增强智能分析，并行CLI执行', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '增强分析：同时调用多个外部AI(Gemini等)分析问题，综合结论',
-    usage: '需要深度分析代码'
-  },
-  { cmd: '/workflow:tools:conflict-resolution', desc: 'CLI驱动的冲突检测和解决', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '冲突解决：检测任务间的代码冲突，提供合并策略或协调方案',
-    usage: '存在代码冲突需要解决'
-  },
-  { cmd: '/workflow:tools:context-gather', desc: '智能收集项目上下文', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '收集上下文：智能分析与任务相关的代码文件、依赖关系、配置等',
-    usage: '需要快速了解相关代码'
-  },
-  { cmd: '/workflow:tools:task-generate', desc: '生成任务JSON和IMPL_PLAN.md', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '生成任务文件：根据规划结果生成可执行的任务JSON文件和实现计划文档',
-    usage: '需要生成可执行的任务文件'
-  },
-  { cmd: '/workflow:tools:task-generate-agent', desc: '使用action-planning-agent自动生成任务', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v6.2',
-    detail: '自动生成任务：用专门的Agent分析需求，自动生成任务文件',
-    usage: '需要自动化任务生成'
-  },
-  { cmd: '/workflow:tools:task-generate-tdd', desc: '生成TDD任务链 (Red-Green-Refactor)', status: 'stable', category: 'tdd', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '生成TDD任务：按测试驱动开发流程生成任务链：写测试→写代码→优化',
-    usage: '需要TDD开发'
-  },
-  { cmd: '/workflow:tools:tdd-coverage-analysis', desc: 'TDD覆盖率分析', status: 'stable', category: 'tdd', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '覆盖率分析：分析TDD测试覆盖率，找出未覆盖的代码路径',
-    usage: '需要检查测试覆盖率'
-  },
-  { cmd: '/workflow:tools:test-concept-enhanced', desc: '使用Gemini分析测试需求', status: 'stable', category: 'test', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '测试需求分析：用Gemini分析代码，确定需要测试的场景和边界条件',
-    usage: '需要深入分析测试需求'
-  },
-  { cmd: '/workflow:tools:test-context-gather', desc: '收集测试覆盖上下文', status: 'stable', category: 'test', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '测试上下文：收集与测试相关的代码、依赖、配置等信息',
-    usage: '准备编写测试'
-  },
-  { cmd: '/workflow:tools:test-task-generate', desc: '生成测试修复任务JSON', status: 'stable', category: 'test', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '修复任务生成：分析测试失败原因，生成修复任务列表',
-    usage: '测试失败需要修复'
-  },
 
   // ==================== Claude Code Skills (独立技能) ====================
   // 头脑风暴类
@@ -813,6 +597,10 @@ export const COMMANDS: Command[] = [
   { cmd: '/skill-tuning', desc: '技能诊断优化 - 检测和修复执行问题', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v5.2',
     detail: '诊断4类问题：①上下文爆炸(信息太多)；②长尾遗忘(记住前面的忘了后面的)；③数据流中断；④多Agent配合失败。自动给修复方案',
     usage: '自定义的技能执行出问题、想优化技能性能'
+  },
+  { cmd: '/command-generator', desc: '命令文件生成器 - 创建 .md 命令文件', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '生成命令文件：创建带有 YAML 前置配置的 .md 命令文件，支持项目和用户两种范围',
+    usage: '想创建新的 Claude Code 命令'
   },
 
   // 规格生成
@@ -900,10 +688,6 @@ export const COMMANDS: Command[] = [
     detail: '按依赖顺序执行任务：A任务完成后才执行B任务，支持并行执行无依赖的任务，实时显示进度',
     usage: '有规划好的任务列表需要执行时'
   },
-  { cmd: '/workflow-lite-plan', desc: '轻量规划技能 - 快速内存规划', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
-    detail: '快速规划：在内存中分析→拆解任务→排列顺序。不生成文件，适合中小任务，规划完立即执行',
-    usage: '任务不复杂，想快速规划然后马上开始做'
-  },
   { cmd: '/workflow-multi-cli-plan', desc: '多 CLI 规划 - 并行 CLI 执行', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
     detail: '同时用多个AI分析：Gemini、Codex、Claude同时分析同一问题，然后交叉验证，综合得出最佳方案',
     usage: '复杂问题需要多角度分析、单个AI结论不确定时'
@@ -924,17 +708,17 @@ export const COMMANDS: Command[] = [
     detail: '自动化测试循环：①自动生成测试用例；②执行测试；③发现失败自动修复；④再测试。直到全部通过',
     usage: '功能写完了需要补测试、测试失败想自动修复'
   },
-  { cmd: '/workflow:wave-plan', desc: 'CSV Wave 规划执行 - 分批探索和执行', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
+  { cmd: '/workflow-wave-plan', desc: 'CSV Wave 规划执行 - 分批探索和执行', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
     detail: 'CSV Wave流程：①分解需求生成 explore.csv；②波浪式探索代码；③综合发现生成 tasks.csv；④波浪式执行任务。支持上下文传播',
     usage: '需要批量探索和执行任务，保持上下文连贯'
   },
 
   // ==================== Codex 预检清单 (Prompts) ====================
-  { cmd: '/prompts:prep-plan', desc: 'workflow:plan 预检清单 - 环境验证、任务质量评估、执行配置', status: 'stable', category: 'prompt', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/prep-plan', desc: 'workflow:plan 预检清单 - 环境验证、任务质量评估、执行配置', status: 'stable', category: 'prompt', cli: 'codex', addedInVersion: 'v6.2',
     detail: '执行前检查5项：①项目环境OK吗；②目标清晰吗；③成功标准明确吗；④范围边界清楚吗；⑤有什么限制。避免执行到一半发现问题',
     usage: '重要任务执行前想确保万无一失'
   },
-  { cmd: '/prompts:prep-cycle', desc: 'parallel-dev-cycle 预检清单 - 0→1→100 迭代配置', status: 'stable', category: 'prompt', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/prep-cycle', desc: 'parallel-dev-cycle 预检清单 - 0→1→100 迭代配置', status: 'stable', category: 'prompt', cli: 'codex', addedInVersion: 'v6.2',
     detail: '配置两阶段迭代：0→1先做出能跑的原型；1→100打磨到生产质量(测试90%通过、代码覆盖80%)',
     usage: '大型功能想分阶段交付：先快速出原型，再逐步完善'
   },
@@ -945,17 +729,9 @@ export const COMMANDS: Command[] = [
     detail: '多人协作规划：先把大需求拆成多个技术领域，每人负责一个领域规划，最后自动检测各领域的冲突和依赖',
     usage: '涉及多个技术领域(前端/后端/数据库等)的复杂功能，需要不同专业的人分工规划'
   },
-  { cmd: '/req-plan-with-file', desc: '需求规划工作流', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
-    detail: '从需求文档提取任务：读取PRD或设计文档，自动识别功能点，拆解成开发任务',
-    usage: '有现成的需求文档/产品设计，想转成开发任务'
-  },
-  { cmd: '/workflow-req-plan', desc: '工作流需求规划', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
-    detail: '工作流级别的需求规划：不仅拆解任务，还生成任务间的依赖关系和执行顺序',
-    usage: '复杂项目需要完整的工作流级别任务拆解'
-  },
-  { cmd: '/plan-converter', desc: '将规划产物转换为 .task/*.json 标准格式', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
-    detail: '格式转换器：把各种格式的规划文档(roadmap、plan-note、conclusions等)统一转成标准JSON格式，方便执行',
-    usage: '有不同格式的规划文件，想统一执行'
+  { cmd: '/roadmap-with-file', desc: '路线图规划 - Codex 版', status: 'new', category: 'skill', cli: 'codex', addedInVersion: 'v6.4',
+    detail: '交互式路线图：与AI讨论需求，生成项目路线图和里程碑规划',
+    usage: '需要规划项目路线图'
   },
 
   // 分析/头脑风暴类
@@ -986,18 +762,6 @@ export const COMMANDS: Command[] = [
   { cmd: '/issue-discover', desc: 'Issue发现和创建 - 手动/多视角/prompt驱动', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
     detail: '3种发现模式：①手动创建问题；②8维度自动扫描(bug/安全/性能/UX/测试/质量/维护性/最佳实践)；③根据你的描述迭代探索',
     usage: '想主动发现项目中的隐藏问题'
-  },
-  { cmd: '/issue-resolve', desc: 'Issue解决流水线 - 探索规划/转换/队列', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
-    detail: '统一解决流水线：从各种来源(规划文档、头脑风暴、手动)创建解决方案，形成执行队列，批量处理',
-    usage: '有多个Issue需要批量解决'
-  },
-  { cmd: '/issue-execute', desc: 'Issue执行 - 每个方案提交一次', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
-    detail: '串行执行：一个Issue解决完→git commit→下一个Issue。每个方案单独提交，方便追踪和回滚',
-    usage: '执行已规划好的Issue解决方案'
-  },
-  { cmd: '/issue-devpipeline', desc: 'Issue开发流水线', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
-    detail: '一站式处理：发现问题→规划方案→写代码→测试→提交。从发现到解决完整流程',
-    usage: '想一次性完整处理Issue的生命周期'
   },
 
   // 测试类
@@ -1058,8 +822,54 @@ export const GRANDMA_COMMANDS = [
 // ============================================
 export const DEPRECATED_COMMANDS = [
   { old: '/task:replan', newCmd: '/workflow:replan', reason: '命令整合' },
+  { old: '/task:create', newCmd: null, reason: '命令已移除' },
+  { old: '/task:breakdown', newCmd: null, reason: '命令已移除' },
+  { old: '/task:execute', newCmd: null, reason: '命令已移除' },
+  { old: '/version', newCmd: null, reason: '命令已移除' },
+  { old: '/enhance-prompt', newCmd: null, reason: '命令已移除' },
+  { old: '/prompts:prep-plan', newCmd: '/prep-plan', reason: '命令重命名' },
+  { old: '/prompts:prep-cycle', newCmd: '/prep-cycle', reason: '命令重命名' },
   { old: '/prompts:prep-loop', newCmd: null, reason: '预检清单文件已移除' },
-  { old: '/team-lifecycle-v2', newCmd: '/team-lifecycle-v5', reason: '已升级到 v5 版本，使用 team-worker 代理架构' },
+  { old: '/workflow:plan', newCmd: '/workflow-plan', reason: '命令升级为 skill' },
+  { old: '/workflow:execute', newCmd: '/workflow-execute', reason: '命令升级为 skill' },
+  { old: '/workflow:replan', newCmd: null, reason: '命令已移除' },
+  { old: '/workflow:resume', newCmd: '/workflow:session:resume', reason: '命令整合到会话管理' },
+  { old: '/workflow:status', newCmd: null, reason: '命令已移除' },
+  { old: '/workflow:review', newCmd: '/review-code', reason: '命令升级为 skill' },
+  { old: '/workflow:plan-verify', newCmd: null, reason: '命令已移除' },
+  { old: '/workflow:lite-plan', newCmd: '/workflow-lite-plan', reason: '命令升级为 skill' },
+  { old: '/workflow:lite-execute', newCmd: null, reason: '命令已移除' },
+  { old: '/workflow:lite-fix', newCmd: null, reason: '命令已移除' },
+  { old: '/workflow:tdd-plan', newCmd: '/workflow-tdd', reason: '命令升级为 skill' },
+  { old: '/workflow:tdd-verify', newCmd: '/workflow-tdd', reason: '命令升级为 skill' },
+  { old: '/workflow:test-gen', newCmd: '/workflow-test-fix', reason: '命令整合' },
+  { old: '/workflow:test-fix-gen', newCmd: '/workflow-test-fix', reason: '命令整合' },
+  { old: '/workflow:test-cycle-execute', newCmd: '/workflow-test-fix', reason: '命令整合' },
+  { old: '/workflow:review-module-cycle', newCmd: '/review-cycle', reason: '命令升级为 skill' },
+  { old: '/workflow:review-session-cycle', newCmd: '/review-cycle', reason: '命令升级为 skill' },
+  { old: '/workflow:review-fix', newCmd: '/review-cycle', reason: '命令升级为 skill' },
+  { old: '/workflow:brainstorm:*', newCmd: '/brainstorm', reason: '头脑风暴命令升级为统一 skill' },
+  { old: '/workflow:tools:*', newCmd: null, reason: '内部工具命令已移除' },
+  { old: '/workflow:ui-design:capture', newCmd: null, reason: '命令已移除' },
+  { old: '/workflow:ui-design:explore-layers', newCmd: null, reason: '命令已移除' },
+  { old: '/memory:docs', newCmd: '/memory-manage', reason: '命令整合到统一记忆管理' },
+  { old: '/memory:docs-full-cli', newCmd: '/memory-manage', reason: '命令整合到统一记忆管理' },
+  { old: '/memory:docs-related-cli', newCmd: '/memory-manage', reason: '命令整合到统一记忆管理' },
+  { old: '/memory:update-full', newCmd: '/memory-manage', reason: '命令整合到统一记忆管理' },
+  { old: '/memory:update-related', newCmd: '/memory-manage', reason: '命令整合到统一记忆管理' },
+  { old: '/memory:load', newCmd: '/memory-capture', reason: '命令整合到统一记忆捕获' },
+  { old: '/memory:load-skill-memory', newCmd: '/memory-capture', reason: '命令整合到统一记忆捕获' },
+  { old: '/memory:skill-memory', newCmd: '/memory-capture', reason: '命令整合到统一记忆捕获' },
+  { old: '/memory:code-map-memory', newCmd: null, reason: '命令已移除' },
+  { old: '/memory:tech-research', newCmd: null, reason: '命令已移除' },
+  { old: '/memory:workflow-skill-memory', newCmd: '/memory-capture', reason: '命令整合到统一记忆捕获' },
+  { old: '/issue-resolve', newCmd: '/issue-manage', reason: '命令整合到统一 Issue 管理' },
+  { old: '/issue-execute', newCmd: '/issue:execute', reason: '命令迁移到 Claude Code' },
+  { old: '/issue-devpipeline', newCmd: '/team-issue', reason: '命令升级为团队 skill' },
+  { old: '/plan-converter', newCmd: '/workflow-execute', reason: '命令整合到工作流执行' },
+  { old: '/req-plan-with-file', newCmd: '/workflow:req-plan-with-file', reason: '命令迁移到 Claude Code' },
+  { old: '/workflow-req-plan', newCmd: '/workflow-plan', reason: '命令整合' },
+  { old: '/team-lifecycle-v2', newCmd: '/team-lifecycle-v5', reason: '已升级到 v5 版本' },
 ];
 
 // ============================================

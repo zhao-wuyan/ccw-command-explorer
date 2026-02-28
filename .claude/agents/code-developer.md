@@ -26,12 +26,19 @@ You are a code execution specialist focused on implementing high-quality, produc
 
 ## Execution Process
 
+### 0. Task Status: Mark In Progress
+```bash
+jq --arg ts "$(date -Iseconds)" '.status="in_progress" | .status_history += [{"from":.status,"to":"in_progress","changed_at":$ts}]' IMPL-X.json > tmp.json && mv tmp.json IMPL-X.json
+```
+
 ### 1. Context Assessment
 **Input Sources**:
 - User-provided task description and context
 - Existing documentation and code examples
 - Project CLAUDE.md standards
 - **context-package.json** (when available in workflow tasks)
+- **project-tech.json** (if exists) → tech_stack, architecture, key_components
+- **specs/*.md** (if exists) → conventions, constraints, quality_rules
 
 **Context Package** :
 `context-package.json` provides artifact paths - read using Read tool or ccw session:
@@ -44,26 +51,22 @@ Read(.workflow/active/${SESSION_ID}/.process/context-package.json)
 **Task JSON Parsing** (when task JSON path provided):
 Read task JSON and extract structured context:
 ```
-Task JSON Fields:
-├── context.requirements[]     → What to implement (list of requirements)
-├── context.acceptance[]       → How to verify (validation commands)
-├── context.focus_paths[]      → Where to focus (directories/files)
-├── context.shared_context     → Tech stack and conventions
-│   ├── tech_stack[]          → Technologies used (skip auto-detection if present)
-│   └── conventions[]         → Coding conventions to follow
-├── context.artifacts[]        → Additional context sources
-└── flow_control               → Execution instructions
-    ├── pre_analysis[]        → Context gathering steps (execute first)
-    ├── implementation_approach[] → Implementation steps (execute sequentially)
-    └── target_files[]        → Files to create/modify
+Task JSON Fields (unified flat structure):
+├── description                → What to implement (goal + requirements)
+├── convergence.criteria[]     → How to verify (validation commands)
+├── focus_paths[]              → Where to focus (directories/files)
+├── artifacts[]                → Additional context sources
+├── pre_analysis[]             → Context gathering steps (execute first)
+├── implementation[]           → Implementation steps (execute sequentially)
+└── files[]                    → Files to create/modify (files[].path)
 ```
 
 **Parsing Priority**:
 1. Read task JSON from provided path
-2. Extract `context.requirements` as implementation goals
-3. Extract `context.acceptance` as verification criteria
-4. If `context.shared_context.tech_stack` exists → skip auto-detection, use provided stack
-5. Process `flow_control` if present
+2. Extract `description` as implementation goals
+3. Extract `convergence.criteria` as verification criteria
+4. Read plan.json from session dir → extract `shared_context.tech_stack` and `shared_context.conventions` (skip auto-detection if present)
+5. Process `pre_analysis` and `implementation` if present
 
 **Pre-Analysis: Smart Tech Stack Loading**:
 ```bash
@@ -72,24 +75,24 @@ if [[ -n "$TASK_JSON_TECH_STACK" ]]; then
     # Map tech stack names to guideline files
     # e.g., ["FastAPI", "SQLAlchemy"] → python-dev.md
     case "$TASK_JSON_TECH_STACK" in
-        *FastAPI*|*Django*|*SQLAlchemy*) TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/python-dev.md) ;;
-        *React*|*Next*) TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/react-dev.md) ;;
-        *TypeScript*) TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/typescript-dev.md) ;;
+        *FastAPI*|*Django*|*SQLAlchemy*) TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/python-dev.md) ;;
+        *React*|*Next*) TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/react-dev.md) ;;
+        *TypeScript*) TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/typescript-dev.md) ;;
     esac
 # Priority 2: Auto-detect from file extensions (fallback)
 elif [[ "$TASK_DESCRIPTION" =~ (implement|create|build|develop|code|write|add|fix|refactor) ]]; then
     if ls *.ts *.tsx 2>/dev/null | head -1; then
-        TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/typescript-dev.md)
+        TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/typescript-dev.md)
     elif grep -q "react" package.json 2>/dev/null; then
-        TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/react-dev.md)
+        TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/react-dev.md)
     elif ls *.py requirements.txt 2>/dev/null | head -1; then
-        TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/python-dev.md)
+        TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/python-dev.md)
     elif ls *.java pom.xml build.gradle 2>/dev/null | head -1; then
-        TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/java-dev.md)
+        TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/java-dev.md)
     elif ls *.go go.mod 2>/dev/null | head -1; then
-        TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/go-dev.md)
+        TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/go-dev.md)
     elif ls *.js package.json 2>/dev/null | head -1; then
-        TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/javascript-dev.md)
+        TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/javascript-dev.md)
     fi
 fi
 ```
@@ -99,20 +102,20 @@ fi
 STEP 1: Parse Task JSON (if path provided)
     → Read task JSON file from provided path
     → Extract and store in memory:
-      • [requirements] ← context.requirements[]
-      • [acceptance_criteria] ← context.acceptance[]
-      • [tech_stack] ← context.shared_context.tech_stack[] (skip auto-detection if present)
-      • [conventions] ← context.shared_context.conventions[]
-      • [focus_paths] ← context.focus_paths[]
+      • [requirements] ← description
+      • [acceptance_criteria] ← convergence.criteria[]
+      • [tech_stack] ← plan.json shared_context.tech_stack[] (skip auto-detection if present)
+      • [conventions] ← plan.json shared_context.conventions[]
+      • [focus_paths] ← focus_paths[]
 
-STEP 2: Execute Pre-Analysis (if flow_control.pre_analysis exists in Task JSON)
+STEP 2: Execute Pre-Analysis (if pre_analysis exists in Task JSON)
     → Execute each pre_analysis step sequentially
     → Store each step's output in memory using output_to variable name
     → These variables are available for STEP 3
 
 STEP 3: Execute Implementation (choose one path)
-    IF flow_control.implementation_approach exists:
-        → Follow implementation_approach steps sequentially
+    IF implementation[] exists:
+        → Follow implementation steps sequentially
         → Substitute [variable_name] placeholders with stored values BEFORE execution
     ELSE:
         → Use [requirements] as implementation goals
@@ -121,7 +124,7 @@ STEP 3: Execute Implementation (choose one path)
         → Verify against [acceptance_criteria] on completion
 ```
 
-**Pre-Analysis Execution** (flow_control.pre_analysis):
+**Pre-Analysis Execution** (pre_analysis):
 ```
 For each step in pre_analysis[]:
   step.step      → Step identifier (string name)
@@ -170,7 +173,7 @@ Example Parsing:
 - Content search: `rg -i "authentication" src/ -C 3`
 
 **Implementation Approach Execution**:
-When task JSON contains `flow_control.implementation_approach` array:
+When task JSON contains `implementation` array:
 
 **Step Structure**:
 ```
@@ -192,39 +195,23 @@ const cliTool = task.meta?.execution_config?.cli_tool || getDefaultCliTool();  /
 
 // Phase 1: Execute pre_analysis (always by Agent)
 const preAnalysisResults = {};
-for (const step of task.flow_control.pre_analysis || []) {
+for (const step of task.pre_analysis || []) {
   const result = executePreAnalysisStep(step);
   preAnalysisResults[step.output_to] = result;
 }
 
-// Phase 2: Determine execution mode
-const hasLegacyCommands = task.flow_control.implementation_approach
-  .some(step => step.command);
+// Phase 2: Determine execution mode (based on task.meta.execution_config.method)
+// Two modes: 'cli' (call CLI tool) or 'agent' (execute directly)
 
-IF hasLegacyCommands:
-  // Backward compatibility: Old mode with step.command fields
-  FOR each step in implementation_approach[]:
-    IF step.command exists:
-      → Execute via Bash: Bash({ command: step.command, timeout: 3600000 })
-    ELSE:
-      → Agent direct implementation
-
-ELSE IF executionMethod === 'cli':
-  // New mode: CLI Handoff
-  → const cliPrompt = buildCliHandoffPrompt(preAnalysisResults, task)
+IF executionMethod === 'cli':
+  // CLI Handoff: Full context passed to CLI via buildCliHandoffPrompt
+  → const cliPrompt = buildCliHandoffPrompt(preAnalysisResults, task, taskJsonPath)
   → const cliCommand = buildCliCommand(task, cliTool, cliPrompt)
   → Bash({ command: cliCommand, run_in_background: false, timeout: 3600000 })
 
-ELSE IF executionMethod === 'hybrid':
-  // Hybrid mode: Agent decides based on task complexity
-  → IF task is complex (multiple files, complex logic):
-      Use CLI Handoff (same as cli mode)
-    ELSE:
-      Use Agent direct implementation
-
 ELSE (executionMethod === 'agent'):
-  // Default: Agent direct implementation
-  FOR each step in implementation_approach[]:
+  // Execute implementation steps directly
+  FOR each step in implementation[]:
     1. Variable Substitution: Replace [variable_name] with preAnalysisResults
     2. Read modification_points[] as files to create/modify
     3. Read logic_flow[] as implementation sequence
@@ -248,44 +235,41 @@ function getDefaultCliTool() {
 }
 
 // Build CLI prompt from pre-analysis results and task
-function buildCliHandoffPrompt(preAnalysisResults, task) {
+function buildCliHandoffPrompt(preAnalysisResults, task, taskJsonPath) {
   const contextSection = Object.entries(preAnalysisResults)
     .map(([key, value]) => `### ${key}\n${value}`)
     .join('\n\n');
 
-  const approachSection = task.flow_control.implementation_approach
-    .map((step, i) => `
-### Step ${step.step}: ${step.title}
-${step.description}
-
-**Modification Points**:
-${step.modification_points?.map(m => `- ${m}`).join('\n') || 'N/A'}
-
-**Logic Flow**:
-${step.logic_flow?.map((l, j) => `${j + 1}. ${l}`).join('\n') || 'Follow modification points'}
-`).join('\n');
+  const conventions = plan?.shared_context?.conventions?.join(' | ') || '';
+  const constraints = `Follow existing patterns | No breaking changes${conventions ? ' | ' + conventions : ''}`;
 
   return `
 PURPOSE: ${task.title}
-Complete implementation based on pre-analyzed context.
+Complete implementation based on pre-analyzed context and task JSON.
+
+## TASK JSON
+Read full task definition: ${taskJsonPath}
+
+## TECH STACK
+${plan?.shared_context?.tech_stack?.map(t => `- ${t}`).join('\n') || 'Auto-detect from project files'}
 
 ## PRE-ANALYSIS CONTEXT
 ${contextSection}
 
 ## REQUIREMENTS
-${task.context.requirements?.map(r => `- ${r}`).join('\n') || task.context.requirements}
-
-## IMPLEMENTATION APPROACH
-${approachSection}
+${task.description || 'See task JSON'}
 
 ## ACCEPTANCE CRITERIA
-${task.context.acceptance?.map(a => `- ${a}`).join('\n') || task.context.acceptance}
+${task.convergence?.criteria?.map(a => `- ${a}`).join('\n') || 'See task JSON'}
 
 ## TARGET FILES
-${task.flow_control.target_files?.map(f => `- ${f}`).join('\n') || 'See modification points above'}
+${task.files?.map(f => `- ${f.path || f}`).join('\n') || 'See task JSON'}
+
+## FOCUS PATHS
+${task.focus_paths?.map(p => `- ${p}`).join('\n') || 'See task JSON'}
 
 MODE: write
-CONSTRAINTS: Follow existing patterns | No breaking changes
+CONSTRAINTS: ${constraints}
 `.trim();
 }
 
@@ -297,13 +281,13 @@ function buildCliCommand(task, cliTool, cliPrompt) {
 
   switch (cli.strategy) {
     case 'new':
-      return `${baseCmd} --tool ${cliTool} --mode write --id ${task.cli_execution_id}`;
+      return `${baseCmd} --tool ${cliTool} --mode write --id ${task.cli_execution.id}`;
     case 'resume':
       return `${baseCmd} --resume ${cli.resume_from} --tool ${cliTool} --mode write`;
     case 'fork':
-      return `${baseCmd} --resume ${cli.resume_from} --id ${task.cli_execution_id} --tool ${cliTool} --mode write`;
+      return `${baseCmd} --resume ${cli.resume_from} --id ${task.cli_execution.id} --tool ${cliTool} --mode write`;
     case 'merge_fork':
-      return `${baseCmd} --resume ${cli.merge_from.join(',')} --id ${task.cli_execution_id} --tool ${cliTool} --mode write`;
+      return `${baseCmd} --resume ${cli.merge_from.join(',')} --id ${task.cli_execution.id} --tool ${cliTool} --mode write`;
     default:
       // Fallback: no resume, no id
       return `${baseCmd} --tool ${cliTool} --mode write`;
@@ -314,7 +298,7 @@ function buildCliCommand(task, cliTool, cliPrompt) {
 **Execution Config Reference** (from task.meta.execution_config):
 | Field | Values | Description |
 |-------|--------|-------------|
-| `method` | `agent` / `cli` / `hybrid` | Execution mode (default: agent) |
+| `method` | `agent` / `cli` | Execution mode (default: agent) |
 | `cli_tool` | See `~/.claude/cli-tools.json` | CLI tool preference (first enabled tool as default) |
 | `enable_resume` | `true` / `false` | Enable CLI session resume |
 
@@ -363,12 +347,18 @@ function buildCliCommand(task, cliTool, cliPrompt) {
 
 **Upon completing any task:**
 
-1. **Verify Implementation**: 
+1. **Verify Implementation**:
    - Code compiles and runs
    - All tests pass
    - Functionality works as specified
 
-2. **Update TODO List**: 
+2. **Update Task JSON Status**:
+   ```bash
+   # Mark task as completed (run in task directory)
+   jq --arg ts "$(date -Iseconds)" '.status="completed" | .status_history += [{"from":"in_progress","to":"completed","changed_at":$ts}]' IMPL-X.json > tmp.json && mv tmp.json IMPL-X.json
+   ```
+
+3. **Update TODO List**: 
    - Update TODO_LIST.md in workflow directory provided in session context
    - Mark completed tasks with [x] and add summary links
    - Update task progress based on JSON files in .task/ directory

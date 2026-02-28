@@ -53,7 +53,7 @@ async function designTemplate(input) {
         question: "What complexity level?",
         header: "Level",
         options: [
-          { label: "Level 1 (Rapid)", description: "1-2 steps, ultra-lightweight (lite-lite-lite)" },
+          { label: "Level 1 (Rapid)", description: "1-2 steps, ultra-lightweight hotfix" },
           { label: "Level 2 (Lightweight)", description: "2-4 steps, quick implementation" },
           { label: "Level 3 (Standard)", description: "4-6 steps, with verification and testing" },
           { label: "Level 4 (Full)", description: "6+ steps, brainstorm + full workflow" }
@@ -89,8 +89,8 @@ async function selectCommandCategory() {
         { label: "Execution", description: "lite-execute, execute, unified-execute-with-file" },
         { label: "Testing", description: "test-fix-gen, test-cycle-execute, test-gen, tdd-verify" },
         { label: "Review", description: "review-session-cycle, review-module-cycle, review-cycle-fix" },
-        { label: "Bug Fix", description: "lite-fix, debug-with-file" },
-        { label: "Brainstorm", description: "brainstorm-with-file, brainstorm:auto-parallel" },
+        { label: "Bug Fix", description: "lite-plan --bugfix, debug-with-file" },
+        { label: "Brainstorm", description: "brainstorm-with-file, brainstorm (unified skill)" },
         { label: "Analysis", description: "analyze-with-file" },
         { label: "Issue", description: "discover, plan, queue, execute, from-brainstorm, convert-to-plan" },
         { label: "Utility", description: "clean, init, replan, status" }
@@ -118,8 +118,7 @@ async function selectCommand(category) {
     'Execution': [
       { label: "/workflow:lite-execute", description: "Execute from in-memory plan" },
       { label: "/workflow:execute", description: "Execute from planning session" },
-      { label: "/workflow:unified-execute-with-file", description: "Universal execution engine" },
-      { label: "/workflow:lite-lite-lite", description: "Ultra-lightweight multi-tool execution" }
+      { label: "/workflow:unified-execute-with-file", description: "Universal execution engine" }
     ],
     'Testing': [
       { label: "/workflow:test-fix-gen", description: "Generate test tasks for specific issues" },
@@ -134,12 +133,12 @@ async function selectCommand(category) {
       { label: "/workflow:review", description: "Post-implementation review" }
     ],
     'Bug Fix': [
-      { label: "/workflow:lite-fix", description: "Lightweight bug diagnosis and fix" },
+      { label: "/workflow:lite-plan", description: "Lightweight bug diagnosis and fix (with --bugfix flag)" },
       { label: "/workflow:debug-with-file", description: "Hypothesis-driven debugging with documentation" }
     ],
     'Brainstorm': [
       { label: "/workflow:brainstorm-with-file", description: "Multi-perspective ideation with documentation" },
-      { label: "/workflow:brainstorm:auto-parallel", description: "Parallel multi-role brainstorming" }
+      { label: "/brainstorm", description: "Unified brainstorming skill (auto-parallel + role analysis)" }
     ],
     'Analysis': [
       { label: "/workflow:analyze-with-file", description: "Collaborative analysis with documentation" }
@@ -194,7 +193,7 @@ async function selectExecutionUnit() {
         // Review Units
         { label: "code-review", description: "【review-*-cycle → review-cycle-fix】" },
         // Bug Fix Units
-        { label: "bug-fix", description: "【lite-fix → lite-execute】" },
+        { label: "bug-fix", description: "【lite-plan --bugfix → lite-execute】" },
         // Issue Units
         { label: "issue-workflow", description: "【discover → plan → queue → execute】" },
         { label: "rapid-to-issue", description: "【lite-plan → convert-to-plan → queue → execute】" },
@@ -337,7 +336,7 @@ async function defineSteps(templateDesign) {
   "description": "Bug diagnosis and fix with testing",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow:lite-fix", "args": "\"{{goal}}\"", "unit": "bug-fix", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Diagnose and plan bug fix" },
+    { "cmd": "/workflow:lite-plan", "args": "--bugfix \"{{goal}}\"", "unit": "bug-fix", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Diagnose and plan bug fix" },
     { "cmd": "/workflow:lite-execute", "args": "--in-memory", "unit": "bug-fix", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Execute bug fix" },
     { "cmd": "/workflow:test-fix-gen", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate regression tests" },
     { "cmd": "/workflow:test-cycle-execute", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Verify fix with tests" }
@@ -352,7 +351,7 @@ async function defineSteps(templateDesign) {
   "description": "Urgent production bug fix (no tests)",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow:lite-fix", "args": "--hotfix \"{{goal}}\"", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Emergency hotfix mode" }
+    { "cmd": "/workflow:lite-plan", "args": "--hotfix \"{{goal}}\"", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Emergency hotfix mode" }
   ]
 }
 ```
@@ -486,7 +485,7 @@ async function defineSteps(templateDesign) {
   "description": "Complete workflow: brainstorm → plan → execute → test",
   "level": 4,
   "steps": [
-    { "cmd": "/workflow:brainstorm:auto-parallel", "args": "\"{{goal}}\"", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Parallel multi-perspective brainstorming" },
+    { "cmd": "/brainstorm", "args": "\"{{goal}}\"", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Unified brainstorming with multi-perspective exploration" },
     { "cmd": "/workflow:plan", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create detailed plan from brainstorm" },
     { "cmd": "/workflow:plan-verify", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Verify plan quality" },
     { "cmd": "/workflow:execute", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute implementation" },
@@ -512,16 +511,8 @@ async function defineSteps(templateDesign) {
 ```
 
 ### Ultra-Lightweight (Level 1)
-```json
-{
-  "name": "lite-lite-lite",
-  "description": "Ultra-lightweight multi-tool execution",
-  "level": 1,
-  "steps": [
-    { "cmd": "/workflow:lite-lite-lite", "args": "\"{{goal}}\"", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Direct execution with minimal overhead" }
-  ]
-}
-```
+
+> **Note**: `lite-lite-lite` has been removed. Use `bugfix-hotfix` for Level 1 urgent tasks, or `rapid` (Level 2) for simple features.
 
 ---
 
@@ -539,7 +530,7 @@ Each command has input/output ports for pipeline composition:
 | tdd-plan | requirement | tdd-tasks | tdd-planning-execution |
 | replan | session, feedback | replan | replanning-execution |
 | **Execution** |
-| lite-execute | plan, multi-cli-plan, lite-fix | code | (multiple) |
+| lite-execute | plan, multi-cli-plan | code | (multiple) |
 | execute | detailed-plan, verified-plan, replan, tdd-tasks | code | (multiple) |
 | **Testing** |
 | test-fix-gen | failing-tests, session | test-tasks | test-validation |
@@ -551,7 +542,7 @@ Each command has input/output ports for pipeline composition:
 | review-module-cycle | module-pattern | review-verified | code-review |
 | review-cycle-fix | review-findings | fixed-code | code-review |
 | **Bug Fix** |
-| lite-fix | bug-report | lite-fix | bug-fix |
+| lite-plan --bugfix | bug-report | plan | bug-fix |
 | debug-with-file | bug-report | understanding-document | debug-with-file |
 | **With-File** |
 | brainstorm-with-file | exploration-topic | brainstorm-document | brainstorm-with-file |
@@ -574,7 +565,7 @@ Each command has input/output ports for pipeline composition:
 |-----------|----------|---------|
 | **quick-implementation** | lite-plan → lite-execute | Lightweight plan and execution |
 | **multi-cli-planning** | multi-cli-plan → lite-execute | Multi-perspective planning and execution |
-| **bug-fix** | lite-fix → lite-execute | Bug diagnosis and fix |
+| **bug-fix** | lite-plan --bugfix → lite-execute | Bug diagnosis and fix |
 | **full-planning-execution** | plan → execute | Detailed planning and execution |
 | **verified-planning-execution** | plan → plan-verify → execute | Planning with verification |
 | **replanning-execution** | replan → execute | Update plan and execute |
@@ -664,7 +655,7 @@ async function generateTemplate(design, steps, outputPath) {
 → Purpose: Feature Development
 → Level: 3 (Standard)
 → Steps: Customize
-  → Step 1: /workflow:brainstorm:auto-parallel (standalone, mainprocess)
+  → Step 1: /brainstorm (standalone, mainprocess)
   → Step 2: /workflow:plan (verified-planning-execution, mainprocess)
   → Step 3: /workflow:plan-verify (verified-planning-execution, mainprocess)
   → Step 4: /workflow:execute (verified-planning-execution, async)

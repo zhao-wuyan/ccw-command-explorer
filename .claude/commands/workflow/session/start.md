@@ -25,11 +25,11 @@ The `--type` parameter classifies sessions for CCW dashboard organization:
 
 | Type | Description | Default For |
 |------|-------------|-------------|
-| `workflow` | Standard implementation (default) | `/workflow:plan` |
-| `review` | Code review sessions | `/workflow:review-module-cycle` |
-| `tdd` | TDD-based development | `/workflow:tdd-plan` |
-| `test` | Test generation/fix sessions | `/workflow:test-fix-gen` |
-| `docs` | Documentation sessions | `/memory:docs` |
+| `workflow` | Standard implementation (default) | `workflow-plan` skill |
+| `review` | Code review sessions | `review-cycle` skill |
+| `tdd` | TDD-based development | `workflow-tdd` skill |
+| `test` | Test generation/fix sessions | `workflow-test-fix` skill |
+| `docs` | Documentation sessions | `memory-manage` skill |
 
 **Validation**: If `--type` is provided with invalid value, return error:
 ```
@@ -44,23 +44,23 @@ ERROR: Invalid session type. Valid types: workflow, review, tdd, test, docs
 ```bash
 # Check if project state exists (both files required)
 bash(test -f .workflow/project-tech.json && echo "TECH_EXISTS" || echo "TECH_NOT_FOUND")
-bash(test -f .workflow/project-guidelines.json && echo "GUIDELINES_EXISTS" || echo "GUIDELINES_NOT_FOUND")
+bash(test -f .workflow/specs/*.md && echo "GUIDELINES_EXISTS" || echo "GUIDELINES_NOT_FOUND")
 ```
 
 **If either NOT_FOUND**, delegate to `/workflow:init`:
 ```javascript
 // Call workflow:init for intelligent project analysis
-SlashCommand({command: "/workflow:init"});
+Skill(skill="workflow:init");
 
 // Wait for init completion
-// project-tech.json and project-guidelines.json will be created
+// project-tech.json and specs/*.md will be created
 ```
 
 **Output**:
 - If BOTH_EXIST: `PROJECT_STATE: initialized`
 - If NOT_FOUND: Calls `/workflow:init` → creates:
   - `.workflow/project-tech.json` with full technical analysis
-  - `.workflow/project-guidelines.json` with empty scaffold
+  - `.workflow/specs/*.md` with empty scaffold
 
 **Note**: `/workflow:init` uses cli-explore-agent to build comprehensive project understanding (technology stack, architecture, key components). This step runs once per project. Subsequent executions skip initialization.
 

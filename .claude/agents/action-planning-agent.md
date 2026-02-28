@@ -22,7 +22,8 @@ color: yellow
 
 **Core Capabilities**:
 - Load and synthesize context from multiple sources (session metadata, context packages, brainstorming artifacts)
-- Generate task JSON files with 6-field schema and artifact integration
+- Generate task JSON files with unified flat schema (task-schema.json) and artifact integration
+- Generate plan.json (plan-overview-base-schema) as machine-readable plan overview
 - Create IMPL_PLAN.md and TODO_LIST.md with proper linking
 - Support both agent-mode and CLI-execute-mode workflows
 - Integrate MCP tools for enhanced context gathering
@@ -55,7 +56,23 @@ color: yellow
 **Step-by-step execution**:
 
 ```
-0. Load planning notes → Extract phase-level constraints (NEW)
+0. Load project context (MANDATORY - from init.md products)
+   a. Read .workflow/project-tech.json (if exists)
+      → tech_stack, architecture_type, key_components, build_system, test_framework
+      → Usage: Populate plan.json shared_context, set correct build/test commands,
+        align task tech choices with actual project stack
+      → If missing: Fall back to context-package.project_context fields
+
+   b. Read .workflow/specs/*.md (if exists)
+      → coding_conventions, naming_rules, forbidden_patterns, quality_gates, custom_constraints
+      → Usage: Apply as HARD CONSTRAINTS on all tasks — implementation steps,
+        acceptance criteria, and convergence.verification MUST respect these rules
+      → If empty/missing: No additional constraints (proceed normally)
+
+   NOTE: These files provide project-level context that supplements (not replaces)
+   session-specific context from planning-notes.md and context-package.json.
+
+1. Load planning notes → Extract phase-level constraints (NEW)
    Commands: Read('.workflow/active/{session-id}/planning-notes.md')
    Output: Consolidated constraints from all workflow phases
    Structure:
@@ -66,25 +83,33 @@ color: yellow
 
    USAGE: This is the PRIMARY source of constraints. All task generation MUST respect these constraints.
 
-1. Load session metadata → Extract user input
+2. Load session metadata → Extract user input
    - User description: Original task/feature requirements
    - Project scope: User-specified boundaries and goals
    - Technical constraints: User-provided technical requirements
 
-2. Load context package → Extract structured context
+3. Load context package → Extract structured context
    Commands: Read({{context_package_path}})
    Output: Complete context package object
 
-3. Check existing plan (if resuming)
+4. Check existing plan (if resuming)
    - If IMPL_PLAN.md exists: Read for continuity
    - If task JSONs exist: Load for context
 
 4. Load brainstorming artifacts (in priority order)
    a. guidance-specification.md (Highest Priority)
       → Overall design framework and architectural decisions
-   b. Role analyses (progressive loading: load incrementally by priority)
+   b. Feature specs (on-demand via feature-index.json)
+      → If .brainstorming/feature-specs/feature-index.json exists:
+        1. Load feature-index.json → get feature catalog (id, slug, priority, spec_path)
+        2. Load only feature-specs referenced by current task (1-2 per task)
+        3. Load cross-cutting specs only when task touches shared concerns
+      → Reason: On-demand loading reduces per-task context from 40K+ to 3-5K words
+      → Backward compatibility: If feature-index.json does NOT exist →
+        Fall back to role analyses (progressive loading by priority, see 4b-fallback)
+   b-fallback. Role analyses (legacy, only when feature-index.json absent)
       → Load role analysis files one at a time as needed
-      → Reason: Each analysis.md is long; progressive loading prevents token overflow
+      → Progressive loading prevents token overflow
    c. Synthesis output (if exists)
       → Integrated view with clarifications
    d. Conflict resolution (if conflict_risk ≥ medium)
@@ -106,7 +131,7 @@ mcp__exa__get_code_context_exa(
   tokensNum="dynamic"
 )
 
-// Integration in flow_control.pre_analysis
+// Integration in pre_analysis
 {
   "step": "local_codebase_exploration",
   "action": "Explore codebase structure",
@@ -140,8 +165,21 @@ mcp__exa__get_code_context_exa(
 - `brainstorm_artifacts.guidance_specification`: Overall design framework (if exists)
   - Check: `brainstorm_artifacts?.guidance_specification?.exists === true`
   - Content: Use `content` field if present, else load from `path`
-- `brainstorm_artifacts.role_analyses[]`: Role-specific analyses (if array not empty)
+- `brainstorm_artifacts.feature_index`: Feature catalog index (if feature-mode brainstorming)
+  - Check: `brainstorm_artifacts?.feature_index?.exists === true`
+  - Content: JSON with `{features[], cross_cutting_specs[]}` - load from `path`
+  - **When present**: Use feature-index as primary entry point for on-demand spec loading
+- `brainstorm_artifacts.feature_specs[]`: Individual feature specification files (from context-package)
+  - Each spec: `feature_specs[i]` has `path` and `content`
+  - **Load on-demand**: Only load specs referenced by current task's feature mapping
+  - **Note**: For structured metadata (`feature_id`, `slug`, `priority`), use `feature_index.features[]` instead
+- `brainstorm_artifacts.cross_cutting_specs[]`: Cross-cutting concern specifications (from context-package)
+  - Each spec: `cross_cutting_specs[i]` has `path` (full project-relative) and `content`
+  - **Load on-demand**: Only load when task touches shared/cross-cutting concerns
+  - **Path format note**: context-package uses full paths (`.workflow/.../role/file.md`), feature-index.json uses relative paths (`role/file.md`). Match using `endsWith()`.
+- `brainstorm_artifacts.role_analyses[]`: Role-specific analyses (legacy fallback, if array not empty)
   - Each role: `role_analyses[i].files[j]` has `path` and `content`
+  - **Only used when**: `feature_index` does not exist (backward compatibility)
 - `brainstorm_artifacts.synthesis_output`: Synthesis results (if exists)
   - Check: `brainstorm_artifacts?.synthesis_output?.exists === true`
   - Content: Use `content` field if present, else load from `path`
@@ -160,8 +198,37 @@ if (contextPackage.brainstorm_artifacts?.guidance_specification?.exists) {
   const content = spec.content || Read(spec.path);
 }
 
-if (contextPackage.brainstorm_artifacts?.role_analyses?.length > 0) {
-  // Progressive loading: load role analyses incrementally by priority
+// Feature-index driven loading (PREFERRED - on-demand)
+if (contextPackage.brainstorm_artifacts?.feature_index?.exists) {
+  // Step 1: Load feature-index.json for catalog
+  const featureIndex = JSON.parse(Read(contextPackage.brainstorm_artifacts.feature_index.path));
+
+  // Step 2: Load only task-relevant feature specs (1-2 per task)
+  const taskFeatureIds = task.artifacts
+    .filter(a => a.type === 'feature_spec')
+    .map(a => a.feature_id);
+  featureIndex.features
+    .filter(f => taskFeatureIds.includes(f.id))
+    .forEach(f => {
+      const specContent = Read(f.spec_path); // On-demand: only what this task needs
+    });
+
+  // Step 3: Load cross-cutting specs only when needed
+  // Note: feature-index.json uses relative paths ("role/file.md"),
+  //       context-package uses full paths (".workflow/.../role/file.md")
+  const crossCuttingFromPackage = contextPackage.brainstorm_artifacts.cross_cutting_specs || [];
+  featureIndex.cross_cutting_specs
+    .filter(cs => task.artifacts.some(a => a.type === 'cross_cutting_spec'))
+    .forEach(cs => {
+      // Match by path suffix since feature-index uses relative paths
+      const matched = crossCuttingFromPackage.find(pkg => pkg.path.endsWith(cs));
+      if (matched) {
+        const crossCuttingContent = matched.content || Read(matched.path);
+      }
+    });
+
+} else if (contextPackage.brainstorm_artifacts?.role_analyses?.length > 0) {
+  // FALLBACK: Legacy role analysis progressive loading (when feature-index absent)
   contextPackage.brainstorm_artifacts.role_analyses.forEach(role => {
     role.files.forEach(file => {
       const analysis = file.content || Read(file.path); // Load one at a time
@@ -180,32 +247,36 @@ if (contextPackage.brainstorm_artifacts?.role_analyses?.length > 0) {
    - Brainstorming artifacts (guidance, role analyses, synthesis)
    - Context package (project structure, dependencies, patterns)
 
-2. Generate task JSON files
-   - Apply 6-field schema (id, title, status, meta, context, flow_control)
-   - Integrate artifacts catalog into context.artifacts array
+2. Generate task JSON files (.task/IMPL-*.json)
+   - Apply unified flat schema (task-schema.json)
+   - Top-level fields: id, title, description, type, scope, depends_on, focus_paths, convergence, files, implementation, pre_analysis, artifacts, inherited, meta, cli_execution
    - Add quantified requirements and measurable acceptance criteria
 
-3. Create IMPL_PLAN.md
-   - Load template: Read(~/.claude/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)
+3. Generate plan.json (plan-overview-base-schema)
+   - Machine-readable plan overview with task_ids[], shared_context, _metadata
+   - Extract shared_context from context package (tech_stack, conventions)
+
+4. Create IMPL_PLAN.md
+   - Load template: Read(~/.ccw/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)
    - Follow template structure and validation checklist
    - Populate all 8 sections with synthesized context
    - Document CCW workflow phase progression
    - Update quality gate status
 
-4. Generate TODO_LIST.md
+5. Generate TODO_LIST.md
    - Flat structure ([ ] for pending, [x] for completed)
    - Link to task JSONs and summaries
 
-5. Update session state for execution readiness
+6. Update session state for execution readiness
 ```
 
 ---
 
 ## 2. Output Specifications
 
-### 2.1 Task JSON Schema (6-Field)
+### 2.1 Task JSON Schema (Unified)
 
-Generate individual `.task/IMPL-*.json` files with the following structure:
+Generate individual `.task/IMPL-*.json` files following `task-schema.json` (`.ccw/workflows/cli-templates/schemas/task-schema.json`).
 
 #### Top-Level Fields
 
@@ -213,14 +284,42 @@ Generate individual `.task/IMPL-*.json` files with the following structure:
 {
   "id": "IMPL-N",
   "title": "Descriptive task name",
+  "description": "Goal and requirements narrative",
   "status": "pending|active|completed|blocked",
+  "type": "feature|bugfix|refactor|test-gen|test-fix|docs",
+  "scope": "src/auth",
+  "action": "Implement|Fix|Refactor",
+  "depends_on": ["IMPL-N"],
+  "focus_paths": ["src/auth", "tests/auth"],
+
+  "convergence": {
+    "criteria": ["3 features implemented: verify by npm test -- auth (exit code 0)"],
+    "verification": "npm test -- auth && ls src/auth/*.ts | wc -l",
+    "definition_of_done": "Authentication module fully functional"
+  },
+
+  "files": [
+    { "path": "src/auth/auth.service.ts", "action": "create", "change": "New auth service" },
+    { "path": "src/users/users.service.ts", "action": "modify", "change": "Update validateUser()" }
+  ],
+  "implementation": ["Step 1: ...", "Step 2: ..."],
+  "pre_analysis": [],
+  "artifacts": [],
+  "inherited": { "from": "IMPL-N", "context": ["..."] },
+
   "context_package_path": ".workflow/active/WFS-{session}/.process/context-package.json",
-  "cli_execution_id": "WFS-{session}-IMPL-N",
   "cli_execution": {
+    "id": "WFS-{session}-IMPL-N",
     "strategy": "new|resume|fork|merge_fork",
     "resume_from": "parent-cli-id",
     "merge_from": ["id1", "id2"]
-  }
+  },
+  "meta": { "..." },
+
+  "reference": {},
+  "rationale": {},
+  "risks": [],
+  "test": {}
 }
 ```
 
@@ -231,13 +330,32 @@ Generate individual `.task/IMPL-*.json` files with the following structure:
     - Prefix: A, B, C... (assigned by module detection order)
     - Sequence: 1, 2, 3... (per-module increment)
 - `title`: Descriptive task name summarizing the work
+- `description`: Goal and requirements narrative (prose format)
 - `status`: Task state - `pending` (not started), `active` (in progress), `completed` (done), `blocked` (waiting on dependencies)
-- `context_package_path`: Path to smart context package containing project structure, dependencies, and brainstorming artifacts catalog
-- `cli_execution_id`: Unique CLI conversation ID (format: `{session_id}-{task_id}`)
-- `cli_execution`: CLI execution strategy based on task dependencies
+- `type`: Task category from `meta.type` (promoted to top-level)
+- `scope`: Target directory or module scope
+- `action`: Primary action verb (Implement, Fix, Refactor)
+- `depends_on`: Prerequisite task IDs
+- `focus_paths`: Target directories/files
+- `convergence`: Structured completion criteria
+  - `criteria`: Measurable acceptance conditions
+  - `verification`: Executable verification command
+  - `definition_of_done`: Business-language completion definition
+- `files`: Target files with structured metadata
+  - `path`: File path
+  - `action`: create/modify/delete
+  - `change`: Description of change
+- `implementation`: Implementation steps. Supports polymorphic items: strings or objects with `{step, description, tdd_phase, actions, test_fix_cycle}`
+- `pre_analysis`: Pre-execution analysis steps
+- `artifacts`: Referenced brainstorming outputs
+- `inherited`: Context inherited from parent task
+- `context_package_path`: Path to smart context package
+- `cli_execution`: CLI execution strategy
+  - `id`: Unique CLI conversation ID (format: `{session_id}-{task_id}`)
   - `strategy`: Execution pattern (`new`, `resume`, `fork`, `merge_fork`)
-  - `resume_from`: Parent task's cli_execution_id (for resume/fork)
-  - `merge_from`: Array of parent cli_execution_ids (for merge_fork)
+  - `resume_from`: Parent task's cli_execution.id (for resume/fork)
+  - `merge_from`: Array of parent cli_execution.ids (for merge_fork)
+
 
 **CLI Execution Strategy Rules** (MANDATORY - apply to all tasks):
 
@@ -251,9 +369,9 @@ Generate individual `.task/IMPL-*.json` files with the following structure:
 **Strategy Selection Algorithm**:
 ```javascript
 function computeCliStrategy(task, allTasks) {
-  const deps = task.context?.depends_on || []
+  const deps = task.depends_on || []
   const childCount = allTasks.filter(t =>
-    t.context?.depends_on?.includes(task.id)
+    t.depends_on?.includes(task.id)
   ).length
 
   if (deps.length === 0) {
@@ -261,17 +379,17 @@ function computeCliStrategy(task, allTasks) {
   } else if (deps.length === 1) {
     const parentTask = allTasks.find(t => t.id === deps[0])
     const parentChildCount = allTasks.filter(t =>
-      t.context?.depends_on?.includes(deps[0])
+      t.depends_on?.includes(deps[0])
     ).length
 
     if (parentChildCount === 1) {
-      return { strategy: "resume", resume_from: parentTask.cli_execution_id }
+      return { strategy: "resume", resume_from: parentTask.cli_execution.id }
     } else {
-      return { strategy: "fork", resume_from: parentTask.cli_execution_id }
+      return { strategy: "fork", resume_from: parentTask.cli_execution.id }
     }
   } else {
     const mergeFrom = deps.map(depId =>
-      allTasks.find(t => t.id === depId).cli_execution_id
+      allTasks.find(t => t.id === depId).cli_execution.id
     )
     return { strategy: "merge_fork", merge_from: mergeFrom }
   }
@@ -288,8 +406,8 @@ function computeCliStrategy(task, allTasks) {
     "execution_group": "parallel-abc123|null",
     "module": "frontend|backend|shared|null",
     "execution_config": {
-      "method": "agent|hybrid|cli",
-      "cli_tool": "codex|gemini|qwen|auto",
+      "method": "agent|cli",
+      "cli_tool": "codex|gemini|qwen|auto|null",
       "enable_resume": true,
       "previous_cli_id": "string|null"
     }
@@ -303,7 +421,7 @@ function computeCliStrategy(task, allTasks) {
 - `execution_group`: Parallelization group ID (tasks with same ID can run concurrently) or `null` for sequential tasks
 - `module`: Module identifier for multi-module projects (e.g., `frontend`, `backend`, `shared`) or `null` for single-module
 - `execution_config`: CLI execution settings (MUST align with userConfig from task-generate-agent)
-  - `method`: Execution method - `agent` (direct), `hybrid` (agent + CLI), `cli` (CLI only)
+  - `method`: Execution method - `agent` (direct) or `cli` (CLI only). Only two values in final task JSON.
   - `cli_tool`: Preferred CLI tool - `codex`, `gemini`, `qwen`, `auto`, or `null` (for agent-only)
   - `enable_resume`: Whether to use `--resume` for CLI continuity (default: true)
   - `previous_cli_id`: Previous task's CLI execution ID for resume (populated at runtime)
@@ -314,18 +432,20 @@ userConfig.executionMethod → meta.execution_config
 
 "agent" →
   meta.execution_config = { method: "agent", cli_tool: null, enable_resume: false }
-  Execution: Agent executes pre_analysis, then directly implements implementation_approach
+  Execution: Agent executes pre_analysis, then directly implements implementation steps
 
 "cli" →
   meta.execution_config = { method: "cli", cli_tool: userConfig.preferredCliTool, enable_resume: true }
-  Execution: Agent executes pre_analysis, then hands off context + implementation_approach to CLI
+  Execution: Agent executes pre_analysis, then hands off full context to CLI via buildCliHandoffPrompt()
 
 "hybrid" →
-  meta.execution_config = { method: "hybrid", cli_tool: userConfig.preferredCliTool, enable_resume: true }
-  Execution: Agent decides which tasks to handoff to CLI based on complexity
+  Per-task decision: set method to "agent" OR "cli" per task based on complexity
+  - Simple tasks (≤3 files, straightforward logic) → { method: "agent", cli_tool: null, enable_resume: false }
+  - Complex tasks (>3 files, complex logic, refactoring) → { method: "cli", cli_tool: userConfig.preferredCliTool, enable_resume: true }
+  Final task JSON always has method = "agent" or "cli", never "hybrid"
 ```
 
-**Note**: implementation_approach steps NO LONGER contain `command` fields. CLI execution is controlled by task-level `meta.execution_config` only.
+**IMPORTANT**: implementation steps do NOT contain `command` fields. Execution routing is controlled by task-level `meta.execution_config.method` only.
 
 **Test Task Extensions** (for type="test-gen" or type="test-fix"):
 
@@ -344,93 +464,74 @@ userConfig.executionMethod → meta.execution_config
 - `test_framework`: Existing test framework from project (required for test tasks)
 - `coverage_target`: Target code coverage percentage (optional)
 
-**Note**: CLI tool usage for test-fix tasks is now controlled via `flow_control.implementation_approach` steps with `command` fields, not via `meta.use_codex`.
+**Note**: CLI tool usage for test-fix tasks is now controlled via task-level `meta.execution_config.method`, not via `meta.use_codex`.
 
-#### Context Object
+#### Artifact Mapping
+
+All context fields (`description`, `depends_on`, `focus_paths`, `convergence`, `artifacts`, `inherited`) are now **top-level** in the task JSON. The `shared_context` (tech_stack, conventions) is stored in **plan.json** at the plan level, not per-task.
+
+**Quantification Rules** (apply to top-level fields):
+- `description`: **QUANTIFIED** requirements narrative (MUST include explicit counts and enumerated lists, e.g., "Implement 3 features: [auth, authz, session]")
+- `convergence.criteria`: **MEASURABLE** acceptance conditions (MUST include verification commands, e.g., "verify by ls ... | wc -l = N")
+- `focus_paths`: Target directories/files (concrete paths without wildcards)
+
+**Artifact Field** (`artifacts[]`):
 
 ```json
 {
-  "context": {
-    "requirements": [
-      "Implement 3 features: [authentication, authorization, session management]",
-      "Create 5 files: [auth.service.ts, auth.controller.ts, auth.middleware.ts, auth.types.ts, auth.test.ts]",
-      "Modify 2 existing functions: [validateUser() in users.service.ts lines 45-60, hashPassword() in utils.ts lines 120-135]"
-    ],
-    "focus_paths": ["src/auth", "tests/auth"],
-    "acceptance": [
-      "3 features implemented: verify by npm test -- auth (exit code 0)",
-      "5 files created: verify by ls src/auth/*.ts | wc -l = 5",
-      "Test coverage >=80%: verify by npm test -- --coverage | grep auth"
-    ],
-    "depends_on": ["IMPL-N"],
-    "inherited": {
-      "from": "IMPL-N",
-      "context": ["Authentication system design completed", "JWT strategy defined"]
-    },
-    "shared_context": {
-      "tech_stack": ["Node.js", "TypeScript", "Express"],
-      "auth_strategy": "JWT with refresh tokens",
-      "conventions": ["Follow existing auth patterns in src/auth/legacy/"]
-    },
-    "artifacts": [
-      {
-        "type": "synthesis_specification|topic_framework|individual_role_analysis",
-        "source": "brainstorm_clarification|brainstorm_framework|brainstorm_roles",
-        "path": "{from artifacts_inventory}",
-        "priority": "highest|high|medium|low",
-        "usage": "Architecture decisions and API specifications",
-        "contains": "role_specific_requirements_and_design"
-      }
-    ]
-  }
+  "artifacts": [
+    {
+      "type": "feature_spec|cross_cutting_spec|synthesis_specification|topic_framework|individual_role_analysis",
+      "source": "brainstorm_feature_specs|brainstorm_cross_cutting|brainstorm_clarification|brainstorm_framework|brainstorm_roles",
+      "path": "{from feature-index.json or artifacts_inventory}",
+      "feature_id": "F-NNN (feature_spec only)",
+      "priority": "highest|high|medium|low",
+      "usage": "Feature requirements and design specifications"
+    }
+  ]
 }
 ```
-
-**Field Descriptions**:
-- `requirements`: **QUANTIFIED** implementation requirements (MUST include explicit counts and enumerated lists, e.g., "5 files: [list]")
-- `focus_paths`: Target directories/files (concrete paths without wildcards)
-- `acceptance`: **MEASURABLE** acceptance criteria (MUST include verification commands, e.g., "verify by ls ... | wc -l = N")
-- `depends_on`: Prerequisite task IDs that must complete before this task starts
-- `inherited`: Context, patterns, and dependencies passed from parent task
-- `shared_context`: Tech stack, conventions, and architectural strategies for the task
-- `artifacts`: Referenced brainstorming outputs with detailed metadata
 
 **Artifact Mapping** (from context package):
-- Use `artifacts_inventory` from context package
-- **Priority levels**:
-  - **Highest**: synthesis_specification (integrated view with clarifications)
-  - **High**: topic_framework (guidance-specification.md)
-  - **Medium**: individual_role_analysis (system-architect, subject-matter-expert, etc.)
-  - **Low**: supporting documentation
+- **Feature-index mode** (when `feature_index` exists): Use feature-index.json as primary catalog
+- **Legacy mode** (fallback): Use `artifacts_inventory` from context package
 
-#### Flow Control Object
+- **Artifact Types & Priority**:
+  - **`feature_spec`** (Highest): Feature specification from feature-index.json
+    - `{type: "feature_spec", source: "brainstorm_feature_specs", path: "<spec_path>", feature_id: "<F-NNN>", priority: "highest", usage: "<task-specific usage>"}`
+    - Each task references 1-2 feature specs based on task scope
+  - **`cross_cutting_spec`** (High): Cross-cutting concern specification
+    - `{type: "cross_cutting_spec", source: "brainstorm_cross_cutting", path: "<spec_path>", priority: "high", usage: "<why this task needs it>"}`
+    - Load only when task touches shared concerns (auth, logging, error handling, etc.)
+  - **`synthesis_specification`** (High): Integrated view with clarifications
+  - **`topic_framework`** (High): guidance-specification.md
+  - **`individual_role_analysis`** (Medium): Legacy role analyses (system-architect, etc.)
+  - **Low**: Supporting documentation
+
+- **Task-Feature Mapping Rules** (feature-index mode):
+  1. Read feature-index.json `features[]` array
+  2. For each task, identify 1-2 primary features by matching task scope to feature `name`/`slug`
+  3. Add matching feature specs as `feature_spec` artifacts with `feature_id` field
+  4. Check `cross_cutting_refs` in matched features; add referenced cross-cutting specs as `cross_cutting_spec` artifacts
+  5. Result: Each task's `artifacts[]` contains only the specs it needs (not all specs)
+
+#### Pre-Analysis, Implementation & Files Fields
+
+These fields are **top-level** in the task JSON (not nested under any wrapper object).
 
 **IMPORTANT**: The `pre_analysis` examples below are **reference templates only**. Agent MUST dynamically select, adapt, and expand steps based on actual task requirements. Apply the principle of **"举一反三"** (draw inferences from examples) - use these patterns as inspiration to create task-specific analysis steps.
-
-```json
-{
-  "flow_control": {
-    "pre_analysis": [...],
-    "implementation_approach": [...],
-    "target_files": [...]
-  }
-}
-```
 
 **Test Task Extensions** (for type="test-gen" or type="test-fix"):
 
 ```json
 {
-  "flow_control": {
-    "pre_analysis": [...],
-    "implementation_approach": [...],
-    "target_files": [...],
-    "reusable_test_tools": [
+  "test": {
+    "reusable_tools": [
       "tests/helpers/testUtils.ts",
       "tests/fixtures/mockData.ts",
       "tests/setup/testSetup.ts"
     ],
-    "test_commands": {
+    "commands": {
       "run_tests": "npm test",
       "run_coverage": "npm test -- --coverage",
       "run_specific": "npm test -- {test_file}"
@@ -439,14 +540,14 @@ userConfig.executionMethod → meta.execution_config
 }
 ```
 
-**Test-Specific Fields**:
-- `reusable_test_tools`: List of existing test utility files to reuse (helpers, fixtures, mocks)
-- `test_commands`: Test execution commands from project config (package.json, pytest.ini)
+**Test-Specific Fields** (in `test` object):
+- `reusable_tools`: List of existing test utility files to reuse (helpers, fixtures, mocks)
+- `commands`: Test execution commands from project config (package.json, pytest.ini)
 
 ##### Pre-Analysis Patterns
 
 **Dynamic Step Selection Guidelines**:
-- **Context Loading**: Always include context package and role analysis loading
+- **Context Loading**: Always include context package and feature spec loading (or role analysis fallback)
 - **Architecture Analysis**: Add module structure analysis for complex projects
 - **Pattern Discovery**: Use CLI tools (gemini/qwen/bash) based on task complexity and available tools
 - **Tech-Specific Analysis**: Add language/framework-specific searches for specialized tasks
@@ -463,18 +564,50 @@ userConfig.executionMethod → meta.execution_config
     "on_error": "fail"
   },
   {
-    "step": "load_role_analysis_artifacts",
-    "action": "Load role analyses from context-package.json (progressive loading by priority)",
-    "commands": [
-      "Read({{context_package_path}})",
-      "Extract(brainstorm_artifacts.role_analyses[].files[].path)",
-      "Read(extracted paths progressively)"
-    ],
-    "output_to": "role_analysis_artifacts",
+    "step": "load_brainstorm_artifacts",
+    "action": "Load brainstorm artifacts referenced by this task's artifacts[]",
+    "commands": "<<PLAN-TIME EXPANSION: Replace with concrete Read() commands>>",
+    "output_to": "brainstorm_context",
     "on_error": "skip_optional"
   }
 ]
 ```
+
+**Plan-Time Expansion Rule for `load_brainstorm_artifacts`**:
+
+When generating each task JSON, agent MUST expand this template step into concrete `Read()` commands based on the task's `artifacts[]` array. Since the agent writes both `artifacts[]` and `pre_analysis[]` simultaneously, the artifact paths are known at plan time.
+
+**Expansion Algorithm**:
+```javascript
+function expandArtifactLoadStep(taskArtifacts) {
+  const commands = [];
+  // Expand each artifact reference into a concrete Read() command
+  for (const artifact of taskArtifacts) {
+    commands.push(`Read(${artifact.path})`);
+  }
+  // Fallback: if no artifacts, load role analyses from context-package
+  if (commands.length === 0) {
+    commands.push("Read(brainstorm_artifacts.role_analyses[0].files[0].path)");
+  }
+  return commands;
+}
+```
+
+**Example** - Task with 1 feature spec + 1 cross-cutting spec:
+```json
+{
+  "step": "load_brainstorm_artifacts",
+  "action": "Load feature spec F-001 and cross-cutting architecture spec",
+  "commands": [
+    "Read(.brainstorming/feature-specs/F-001-auth.md)",
+    "Read(.brainstorming/system-architect/analysis-cross-cutting.md)"
+  ],
+  "output_to": "brainstorm_context",
+  "on_error": "skip_optional"
+}
+```
+
+**Key**: `pre_analysis.commands[]` must only contain tool-call formats that code-developer can parse: `Read(path)`, `bash(cmd)`, `Search(pattern,path)`, `Glob(pattern)`, `mcp__xxx__yyy(args)`.
 
 **Optional Steps** (Select and adapt based on task needs):
 
@@ -526,7 +659,7 @@ The examples above demonstrate **patterns**, not fixed requirements. Agent MUST:
 
 1. **Always Include** (Required):
    - `load_context_package` - Essential for all tasks
-   - `load_role_analysis_artifacts` - Critical for accessing brainstorming insights
+   - `load_brainstorm_artifacts` - Load brainstorm artifacts referenced by task's `artifacts[]`; falls back to role analysis progressive loading when no feature_spec artifacts
 
 2. **Progressive Addition of Analysis Steps**:
    Include additional analysis steps as needed for comprehensive planning:
@@ -553,61 +686,47 @@ The examples above demonstrate **patterns**, not fixed requirements. Agent MUST:
 
 **Key Principle**: Examples show **structure patterns**, not specific implementations. Agent must create task-appropriate steps dynamically.
 
-##### Implementation Approach
+##### Implementation Field
 
-**Execution Modes**:
+**Execution Control**:
 
-The `implementation_approach` supports **two execution modes** based on the presence of the `command` field:
+The `implementation` field defines sequential implementation steps. Execution routing is controlled by **task-level `meta.execution_config.method`**, NOT by step-level `command` fields.
 
-1. **Default Mode (Agent Execution)** - `command` field **omitted**:
+**Two Execution Modes**:
+
+1. **Agent Mode** (`meta.execution_config.method = "agent"`):
    - Agent interprets `modification_points` and `logic_flow` autonomously
    - Direct agent execution with full context awareness
    - No external tool overhead
    - **Use for**: Standard implementation tasks where agent capability is sufficient
-   - **Required fields**: `step`, `title`, `description`, `modification_points`, `logic_flow`, `depends_on`, `output`
 
-2. **CLI Mode (Command Execution)** - `command` field **included**:
-   - Specified command executes the step directly
-   - Leverages specialized CLI tools (codex/gemini/qwen) for complex reasoning
-   - **Use for**: Large-scale features, complex refactoring, or when user explicitly requests CLI tool usage
-   - **Required fields**: Same as default mode **PLUS** `command`, `resume_from` (optional)
-   - **Command patterns** (with resume support):
-     - `ccw cli -p '[prompt]' --tool codex --mode write --cd [path]`
-     - `ccw cli -p '[prompt]' --resume ${previousCliId} --tool codex --mode write` (resume from previous)
-     - `ccw cli -p '[prompt]' --tool gemini --mode write --cd [path]` (write mode)
-   - **Resume mechanism**: When step depends on previous CLI execution, include `--resume` with previous execution ID
+2. **CLI Mode** (`meta.execution_config.method = "cli"`):
+   - Agent executes `pre_analysis`, then hands off full context to CLI via `buildCliHandoffPrompt()`
+   - CLI tool specified in `meta.execution_config.cli_tool` (codex/gemini/qwen)
+   - Leverages specialized CLI tools for complex reasoning
+   - **Use for**: Large-scale features, complex refactoring, or when userConfig.executionMethod = "cli"
 
-**Semantic CLI Tool Selection**:
+**Step Schema** (same for both modes):
+```json
+{
+  "step": 1,
+  "title": "Step title",
+  "description": "What to implement (may use [variable] placeholders from pre_analysis)",
+  "modification_points": ["Quantified changes: [list with counts]"],
+  "logic_flow": ["Implementation sequence"],
+  "depends_on": [0],
+  "output": "variable_name"
+}
+```
 
-Agent determines CLI tool usage per-step based on user semantics and task nature.
+**Required fields**: `step`, `title`, `description`, `modification_points`, `logic_flow`, `depends_on`, `output`
 
-**Source**: Scan `metadata.task_description` from context-package.json for CLI tool preferences.
+**IMPORTANT**: Do NOT add `command` field to implementation steps. Execution routing is determined by task-level `meta.execution_config.method` only.
 
-**User Semantic Triggers** (patterns to detect in task_description):
-- "use Codex/codex" → Add `command` field with Codex CLI
-- "use Gemini/gemini" → Add `command` field with Gemini CLI
-- "use Qwen/qwen" → Add `command` field with Qwen CLI
-- "CLI execution" / "automated" → Infer appropriate CLI tool
-
-**Task-Based Selection** (when no explicit user preference):
-- **Implementation/coding**: Codex preferred for autonomous development
-- **Analysis/exploration**: Gemini preferred for large context analysis
-- **Documentation**: Gemini/Qwen with write mode (`--mode write`)
-- **Testing**: Depends on complexity - simple=agent, complex=Codex
-
-**Default Behavior**: Agent always executes the workflow. CLI commands are embedded in `implementation_approach` steps:
-- Agent orchestrates task execution
-- When step has `command` field, agent executes it via CCW CLI
-- When step has no `command` field, agent implements directly
-- This maintains agent control while leveraging CLI tool power
-
-**Key Principle**: The `command` field is **optional**. Agent decides based on user semantics and task complexity.
-
-**Examples**:
+**Example**:
 
 ```json
 [
-  // === DEFAULT MODE: Agent Execution (no command field) ===
   {
     "step": 1,
     "title": "Load and analyze role analyses",
@@ -644,37 +763,62 @@ Agent determines CLI tool usage per-step based on user semantics and task nature
     ],
     "depends_on": [1],
     "output": "implementation"
-  },
-
+  }
 ]
 ```
 
-##### Target Files
+##### Files Field
+
+The `files[]` array specifies target files with structured metadata (see top-level `files` field in Task JSON Schema above).
+
+**Format**:
+- Each entry: `{ "path": "...", "action": "create|modify|delete", "change": "..." }`
+- New files: `action: "create"`
+- Existing files with modifications: `action: "modify"` with change description
+- Files to remove: `action: "delete"`
+
+### 2.2 plan.json Structure
+
+Generate at `.workflow/active/{session_id}/plan.json` following `plan-overview-base-schema.json`:
 
 ```json
 {
-  "target_files": [
-    "src/auth/auth.service.ts",
-    "src/auth/auth.controller.ts",
-    "src/auth/auth.middleware.ts",
-    "src/auth/auth.types.ts",
-    "tests/auth/auth.test.ts",
-    "src/users/users.service.ts:validateUser:45-60",
-    "src/utils/utils.ts:hashPassword:120-135"
-  ]
+  "summary": "Brief plan description",
+  "approach": "Implementation approach narrative",
+  "task_ids": ["IMPL-001", "IMPL-002"],
+  "task_count": 2,
+  "complexity": "Low|Medium|High",
+  "estimated_time": "Estimation string",
+  "recommended_execution": "Sequential|Parallel|Phased",
+  "shared_context": {
+    "tech_stack": ["TypeScript", "React", "Node.js"],
+    "conventions": ["ESLint", "Prettier", "Jest"]
+  },
+  "_metadata": {
+    "timestamp": "ISO-8601",
+    "source": "action-planning-agent",
+    "planning_mode": "agent-based",
+    "plan_type": "feature",
+    "schema_version": "2.0"
+  }
 }
 ```
 
-**Format**:
-- New files: `file_path`
-- Existing files with modifications: `file_path:function_name:line_range`
+**Data Sources**:
+- `task_ids`: Collected from generated `.task/IMPL-*.json` files
+- `shared_context.tech_stack`: From `contextPackage.project_context.tech_stack`
+- `shared_context.conventions`: From `contextPackage.project_context.coding_conventions`
+- `complexity`: From `analysis_results.complexity` or task count heuristic
+- `recommended_execution`: Based on task dependency graph analysis
 
-### 2.2 IMPL_PLAN.md Structure
+**Generation Timing**: After all `.task/IMPL-*.json` files are generated, aggregate into plan.json.
+
+### 2.3 IMPL_PLAN.md Structure
 
 **Template-Based Generation**:
 
 ```
-1. Load template: Read(~/.claude/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)
+1. Load template: Read(~/.ccw/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)
 2. Populate all sections following template structure
 3. Complete template validation checklist
 4. Generate at .workflow/active/{session_id}/IMPL_PLAN.md
@@ -717,7 +861,7 @@ When multiple modules are detected (frontend/backend, etc.), organize IMPL_PLAN.
 - Example: `depends_on: ["CROSS::B::api-endpoint"]`
 - Integration phase resolves to actual task IDs: `CROSS::B::api → IMPL-B1`
 
-### 2.3 TODO_LIST.md Structure
+### 2.4 TODO_LIST.md Structure
 
 Generate at `.workflow/active/{session_id}/TODO_LIST.md`:
 
@@ -760,7 +904,7 @@ Generate at `.workflow/active/{session_id}/TODO_LIST.md`:
 - Completed tasks → summaries: `[✅](./.summaries/IMPL-XXX-summary.md)`
 - Consistent ID schemes: `IMPL-N` (single) or `IMPL-{prefix}{seq}` (multi-module)
 
-### 2.4 Complexity & Structure Selection
+### 2.5 Complexity & Structure Selection
 
 **Task Division Strategy**: Minimize task count while avoiding single-task overload. Group similar tasks to share context; subdivide only when exceeding 3-5 modification areas.
 
@@ -861,18 +1005,19 @@ Use `analysis_results.complexity` or task count to determine structure:
 ### 3.4 Guidelines Checklist
 
 **ALWAYS:**
-- **Load planning-notes.md FIRST**: Read planning-notes.md before context-package.json. Use its Consolidated Constraints as primary constraint source for all task generation
+- **Load project context FIRST**: Read `.workflow/project-tech.json` and `.workflow/specs/*.md` before any session-specific files. Apply specs/*.md as hard constraints on all tasks
+- **Load planning-notes.md SECOND**: Read planning-notes.md before context-package.json. Use its Consolidated Constraints as primary constraint source for all task generation
 - **Record N+1 Context**: Update `## N+1 Context` section with key decisions and deferred items
 - **Search Tool Priority**: ACE (`mcp__ace-tool__search_context`) → CCW (`mcp__ccw-tools__smart_search`) / Built-in (`Grep`, `Glob`, `Read`)
 - Apply Quantification Requirements to all requirements, acceptance criteria, and modification points
-- Load IMPL_PLAN template: `Read(~/.claude/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)` before generating IMPL_PLAN.md
+- Load IMPL_PLAN template: `Read(~/.ccw/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)` before generating IMPL_PLAN.md
 - Use provided context package: Extract all information from structured context
 - Respect memory-first rule: Use provided content (already loaded from memory/file)
-- Follow 6-field schema: All task JSONs must have id, title, status, context_package_path, meta, context, flow_control
-- **Assign CLI execution IDs**: Every task MUST have `cli_execution_id` (format: `{session_id}-{task_id}`)
+- Follow unified flat schema: All task JSONs must have id, title, description, status, type, depends_on, convergence, files, implementation, meta, cli_execution
+- **Assign CLI execution IDs**: Every task MUST have `cli_execution.id` (format: `{session_id}-{task_id}`)
 - **Compute CLI execution strategy**: Based on `depends_on`, set `cli_execution.strategy` (new/resume/fork/merge_fork)
-- Map artifacts: Use artifacts_inventory to populate task.context.artifacts array
-- Add MCP integration: Include MCP tool steps in flow_control.pre_analysis when capabilities available
+- Map artifacts: Use artifacts_inventory to populate task.artifacts array
+- Add MCP integration: Include MCP tool steps in pre_analysis when capabilities available
 - Validate task count: Maximum 8 tasks (single module) or 6 tasks per module (multi-module), request re-scope if exceeded
 - Use session paths: Construct all paths using provided session_id
 - Link documents properly: Use correct linking format (📋 for JSON, ✅ for summaries)

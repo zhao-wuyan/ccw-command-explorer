@@ -320,7 +320,7 @@ You execute 6 distinct task types organized into 3 patterns. Each task includes 
 
 ### design-tokens.json
 
-**Template Reference**: `~/.claude/workflows/cli-templates/ui-design/systems/design-tokens.json`
+**Template Reference**: `~/.ccw/workflows/cli-templates/ui-design/systems/design-tokens.json`
 
 **Format**: W3C Design Tokens Community Group Specification
 
@@ -385,7 +385,7 @@ You execute 6 distinct task types organized into 3 patterns. Each task includes 
 
 ### layout-templates.json
 
-**Template Reference**: `~/.claude/workflows/cli-templates/ui-design/systems/layout-templates.json`
+**Template Reference**: `~/.ccw/workflows/cli-templates/ui-design/systems/layout-templates.json`
 
 **Optimization**: Unified structure combining DOM and styling into single hierarchy
 
@@ -426,7 +426,7 @@ You execute 6 distinct task types organized into 3 patterns. Each task includes 
 
 ### animation-tokens.json
 
-**Template Reference**: `~/.claude/workflows/cli-templates/ui-design/systems/animation-tokens.json`
+**Template Reference**: `~/.ccw/workflows/cli-templates/ui-design/systems/animation-tokens.json`
 
 **Structure Overview**:
 - **duration**: instant (0ms), fast (150ms), normal (300ms), slow (500ms), slower (1000ms)

@@ -165,12 +165,16 @@ if (file_exists(manifestPath)) {
 }
 
 // Synthesis helper functions (conceptual)
+// NOTE: relevant_files items are now structured objects:
+//   {path, relevance, rationale, role, discovery_source?, key_symbols?}
 function synthesizeCriticalFiles(allRelevantFiles) {
-  // 1. Group by path
+  // 1. Group by path (files are objects with .path property)
   // 2. Count mentions across angles
   // 3. Average relevance scores
-  // 4. Rank by: (mention_count * 0.6) + (avg_relevance * 0.4)
-  // 5. Return top 10-15 with mentioned_by_angles attribution
+  // 4. Merge rationales from different angles (join with "; ")
+  // 5. Collect unique roles and key_symbols across angles
+  // 6. Rank by: (mention_count * 0.6) + (avg_relevance * 0.4)
+  // 7. Return top 10-15 with: path, relevance, rationale, role, mentioned_by_angles, key_symbols
 }
 
 function synthesizeConflictIndicators(explorationData) {
@@ -495,7 +499,7 @@ Calculate risk level based on:
       }
     ],
     "aggregated_insights": {
-      "critical_files": [{"path": "src/auth/AuthService.ts", "relevance": 0.95, "mentioned_by_angles": ["architecture"]}],
+      "critical_files": [{"path": "src/auth/AuthService.ts", "relevance": 0.95, "rationale": "Contains login/register/verifyToken - core auth entry points", "role": "modify_target", "mentioned_by_angles": ["architecture"], "key_symbols": ["AuthService", "login", "verifyToken"]}],
       "conflict_indicators": [{"type": "pattern_mismatch", "description": "...", "source_angle": "architecture", "severity": "medium"}],
       "clarification_needs": [{"question": "...", "context": "...", "options": [], "source_angle": "architecture"}],
       "constraints": [{"constraint": "Must follow existing DI pattern", "source_angle": "architecture"}],

@@ -630,6 +630,8 @@ Why is config value None during update?
 
 ## Post-Completion Expansion
 
+**Auto-sync**: 执行 `/workflow:session:sync -y "{summary}"` 更新 specs/*.md + project-tech。
+
 完成后询问用户是否扩展为issue(test/enhance/refactor/doc)，选中项调用 `/issue:new "{summary} - {dimension}"`
 
 ---
@@ -641,32 +643,6 @@ Why is config value None during update?
 | Empty debug.log | Verify reproduction triggered the code path |
 | All hypotheses rejected | Use Gemini to generate new hypotheses based on disproven assumptions |
 | Fix doesn't work | Document failed fix attempt, iterate with refined understanding |
-| >5 iterations | Review consolidated understanding, escalate to `/workflow:lite-fix` with full context |
+| >5 iterations | Review consolidated understanding, escalate to `workflow-lite-plan` skill with full context |
 | Gemini unavailable | Fallback to manual hypothesis generation, document without Gemini insights |
 | Understanding too long | Consolidate aggressively, archive old iterations to separate file |
-
-## Comparison with /workflow:debug
-
-| Feature | /workflow:debug | /workflow:debug-with-file |
-|---------|-----------------|---------------------------|
-| NDJSON debug logging | ✅ | ✅ |
-| Hypothesis generation | Manual | Gemini-assisted |
-| Exploration documentation | ❌ | ✅ understanding.md |
-| Understanding evolution | ❌ | ✅ Timeline + corrections |
-| Error correction | ❌ | ✅ Strikethrough + reasoning |
-| Consolidated learning | ❌ | ✅ Current understanding section |
-| Hypothesis history | ❌ | ✅ hypotheses.json |
-| Gemini validation | ❌ | ✅ At key decision points |
-
-## Usage Recommendations
-
-Use `/workflow:debug-with-file` when:
-- Complex bugs requiring multiple investigation rounds
-- Learning from debugging process is valuable
-- Team needs to understand debugging rationale
-- Bug might recur, documentation helps prevention
-
-Use `/workflow:debug` when:
-- Simple, quick bugs
-- One-off issues
-- Documentation overhead not needed

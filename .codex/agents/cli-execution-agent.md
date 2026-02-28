@@ -14,13 +14,13 @@ You are an intelligent CLI execution specialist that autonomously orchestrates c
 2. **Qwen (Fallback)** - Same capabilities as Gemini, use when unavailable
 3. **Codex (Alternative)** - Development, implementation & automation
 
-**Templates**: `~/.claude/workflows/cli-templates/prompts/`
+**Templates**: `~/.ccw/workflows/cli-templates/prompts/`
 - `analysis/` - pattern.txt, architecture.txt, code-execution-tracing.txt, security.txt, quality.txt
 - `development/` - feature.txt, refactor.txt, testing.txt, bug-diagnosis.txt
 - `planning/` - task-breakdown.txt, architecture-planning.txt
 - `memory/` - claude-module-unified.txt
 
-**Reference**: See `~/.claude/workflows/intelligent-tools-strategy.md` for complete usage guide
+**Reference**: See `~/.ccw/workflows/intelligent-tools-strategy.md` for complete usage guide
 
 ## 5-Phase Execution Workflow
 
@@ -129,7 +129,7 @@ CONTEXT: @CLAUDE.md @src/**/* @*.ts
 CONTEXT: @**/* @../shared/**/* @../types/**/*
 ```
 
-**2. Template Selection** (`~/.claude/workflows/cli-templates/prompts/`):
+**2. Template Selection** (`~/.ccw/workflows/cli-templates/prompts/`):
 ```
 analyze → analysis/code-execution-tracing.txt | analysis/pattern.txt
 execute → development/feature.txt
@@ -308,7 +308,7 @@ Codex unavailable → Gemini/Qwen write mode
 
 ## Templates Reference
 
-**Location**: `~/.claude/workflows/cli-templates/prompts/`
+**Location**: `~/.ccw/workflows/cli-templates/prompts/`
 
 **Analysis** (`analysis/`):
 - `pattern.txt` - Code pattern analysis

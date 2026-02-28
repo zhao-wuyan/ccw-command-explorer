@@ -226,13 +226,13 @@ function decomposeTasks(issue, exploration) {
     scope: inferScope(group),              // Module path
     action: inferAction(group),            // Create | Update | Implement | ...
     description: group.description,
-    modification_points: mapModificationPoints(group),
+    files: mapFiles(group),                // [{path, target, change, action?, conflict_risk?}]
     implementation: generateSteps(group),  // Step-by-step guide
     test: {
       unit: generateUnitTests(group),
       commands: ['npm test']
     },
-    acceptance: {
+    convergence: {
       criteria: generateCriteria(group),   // Quantified checklist
       verification: generateVerification(group)
     },
@@ -242,7 +242,7 @@ function decomposeTasks(issue, exploration) {
       message_template: generateCommitMsg(group)
     },
     depends_on: inferDependencies(group, tasks),
-    priority: calculatePriority(group)     // 1-5 (1=highest)
+    priority: calculatePriorityEnum(group) // "critical"|"high"|"medium"|"low"
   }));
 
   // GitHub Reply Task: Add final task if issue has github_url
@@ -254,20 +254,20 @@ function decomposeTasks(issue, exploration) {
       scope: 'github',
       action: 'Notify',
       description: `Comment on GitHub issue to report completion status`,
-      modification_points: [],
+      files: [],
       implementation: [
         `Generate completion summary (tasks completed, files changed)`,
         `Post comment via: gh issue comment ${issue.github_number || extractNumber(issue.github_url)} --body "..."`,
         `Include: solution approach, key changes, verification results`
       ],
       test: { unit: [], commands: [] },
-      acceptance: {
+      convergence: {
         criteria: ['GitHub comment posted successfully', 'Comment includes completion summary'],
         verification: ['Check GitHub issue for new comment']
       },
       commit: null,  // No commit for notification task
       depends_on: lastTaskId ? [lastTaskId] : [],  // Depends on last implementation task
-      priority: 5    // Lowest priority (run last)
+      priority: "low"    // Lowest priority (run last)
     });
   }
 
@@ -344,7 +344,7 @@ Write({ file_path: filePath, content: newContent })
 .workflow/issues/solutions/{issue-id}.jsonl
 ```
 
-Each line is a solution JSON containing tasks. Schema: `cat .claude/workflows/cli-templates/schemas/solution-schema.json`
+Each line is a solution JSON containing tasks. Schema: `cat ~/.ccw/workflows/cli-templates/schemas/solution-schema.json`
 
 ### 2.2 Return Summary
 
@@ -370,10 +370,10 @@ Each line is a solution JSON containing tasks. Schema: `cat .claude/workflows/cl
 ### 3.2 Validation Checklist
 
 - [ ] ACE search performed for each issue
-- [ ] All modification_points verified against codebase
+- [ ] All files[] paths verified against codebase
 - [ ] Tasks have 2+ implementation steps
 - [ ] All 5 lifecycle phases present
-- [ ] Quantified acceptance criteria with verification
+- [ ] Quantified convergence criteria with verification
 - [ ] Dependencies form valid DAG
 - [ ] Commit follows conventional commits
 
@@ -384,12 +384,12 @@ Each line is a solution JSON containing tasks. Schema: `cat .claude/workflows/cl
 
 **ALWAYS**:
 1. **Search Tool Priority**: ACE (`mcp__ace-tool__search_context`) → CCW (`mcp__ccw-tools__smart_search`) / Built-in (`Grep`, `Glob`, `Read`)
-2. Read schema first: `cat .claude/workflows/cli-templates/schemas/solution-schema.json`
+2. Read schema first: `cat ~/.ccw/workflows/cli-templates/schemas/solution-schema.json`
 3. Use ACE semantic search as PRIMARY exploration tool
 4. Fetch issue details via `ccw issue status <id> --json`
 5. **Analyze failure history**: Check `issue.feedback` for type='failure', stage='execute'
 6. **For replanning**: Reference previous failures in `solution.approach`, add prevention steps
-7. Quantify acceptance.criteria with testable conditions
+7. Quantify convergence.criteria with testable conditions
 8. Validate DAG before output
 9. Evaluate each solution with `analysis` and `score`
 10. Write solutions to `.workflow/issues/solutions/{issue-id}.jsonl` (append mode)

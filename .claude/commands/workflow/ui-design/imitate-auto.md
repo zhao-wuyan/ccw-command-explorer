@@ -2,7 +2,7 @@
 name: imitate-auto
 description: UI design workflow with direct code/image input for design token extraction and prototype generation
 argument-hint: "[--input "<value>"] [--session <id>]"
-allowed-tools: SlashCommand(*), TodoWrite(*), Read(*), Write(*), Bash(*)
+allowed-tools: Skill(*), TodoWrite(*), Read(*), Write(*), Bash(*)
 ---
 
 # UI Design Imitate-Auto Workflow Command
@@ -26,7 +26,7 @@ allowed-tools: SlashCommand(*), TodoWrite(*), Read(*), Write(*), Bash(*)
 7. Phase 4: Design system integration → **Execute orchestrator task** → Reports completion
 
 **Phase Transition Mechanism**:
-- **Task Attachment**: SlashCommand execute **ATTACHES** tasks to current workflow
+- **Task Attachment**: Skill execute **ATTACHES** tasks to current workflow
 - **Task Execution**: Orchestrator **EXECUTES** these attached tasks itself
 - **Task Collapse**: After tasks complete, collapse them into phase summary
 - **Phase Transition**: Automatically execute next phase after collapsing
@@ -34,7 +34,7 @@ allowed-tools: SlashCommand(*), TodoWrite(*), Read(*), Write(*), Bash(*)
 
 **Auto-Continue Mechanism**: TodoWrite tracks phase status with dynamic task attachment/collapse. After executing all attached tasks, you MUST immediately collapse them, restore phase summary, and execute the next phase. No user intervention required. The workflow is NOT complete until reaching Phase 4.
 
-**Task Attachment Model**: SlashCommand execute is NOT delegation - it's task expansion. The orchestrator executes these attached tasks itself, not waiting for external completion.
+**Task Attachment Model**: Skill execute is NOT delegation - it's task expansion. The orchestrator executes these attached tasks itself, not waiting for external completion.
 
 ## Execution Process
 
@@ -86,7 +86,7 @@ Phase 4: Design System Integration
 2. **No Preliminary Validation**: Sub-commands handle their own validation
 3. **Parse & Pass**: Extract data from each output for next phase
 4. **Track Progress**: Update TodoWrite dynamically with task attachment/collapse pattern
-5. **⚠️ CRITICAL: Task Attachment Model** - SlashCommand execute **ATTACHES** tasks to current workflow. Orchestrator **EXECUTES** these attached tasks itself, not waiting for external completion. This is NOT delegation - it's task expansion.
+5. **⚠️ CRITICAL: Task Attachment Model** - Skill execute **ATTACHES** tasks to current workflow. Orchestrator **EXECUTES** these attached tasks itself, not waiting for external completion. This is NOT delegation - it's task expansion.
 6. **⚠️ CRITICAL: DO NOT STOP** - This is a continuous multi-phase workflow. After executing all attached tasks, you MUST immediately collapse them and execute the next phase. Workflow is NOT complete until Phase 4.
 
 ## Parameter Requirements
@@ -291,11 +291,11 @@ IF design_source == "hybrid":
               "--source \"{code_base_path}\""
 
     TRY:
-        # SlashCommand execute ATTACHES import-from-code's tasks to current workflow
+        # Skill execute ATTACHES import-from-code's tasks to current workflow
         # Orchestrator will EXECUTE these attached tasks itself:
         #   - Phase 0: Discover and categorize code files
         #   - Phase 1.1-1.3: Style/Animation/Layout Agent extraction
-        SlashCommand(command)
+        Skill(skill=command)
     CATCH error:
         WARN: "Code import failed: {error}"
         WARN: "Falling back to web-only mode"
@@ -409,9 +409,9 @@ ELSE:
 
     extract_command = " ".join(command_parts)
 
-    # SlashCommand execute ATTACHES style-extract's tasks to current workflow
+    # Skill execute ATTACHES style-extract's tasks to current workflow
     # Orchestrator will EXECUTE these attached tasks itself
-    SlashCommand(extract_command)
+    Skill(skill=extract_command)
 
     # After executing all attached tasks, collapse them into phase summary
     TodoWrite(mark_completed: "Extract style", mark_in_progress: "Extract animation")
@@ -442,9 +442,9 @@ ELSE:
 
     animation_extract_command = " ".join(command_parts)
 
-    # SlashCommand execute ATTACHES animation-extract's tasks to current workflow
+    # Skill execute ATTACHES animation-extract's tasks to current workflow
     # Orchestrator will EXECUTE these attached tasks itself
-    SlashCommand(animation_extract_command)
+    Skill(skill=animation_extract_command)
 
     # After executing all attached tasks, collapse them into phase summary
     TodoWrite(mark_completed: "Extract animation", mark_in_progress: "Extract layout")
@@ -477,9 +477,9 @@ ELSE:
 
     layout_extract_command = " ".join(command_parts)
 
-    # SlashCommand execute ATTACHES layout-extract's tasks to current workflow
+    # Skill execute ATTACHES layout-extract's tasks to current workflow
     # Orchestrator will EXECUTE these attached tasks itself
-    SlashCommand(layout_extract_command)
+    Skill(skill=layout_extract_command)
 
     # After executing all attached tasks, collapse them into phase summary
     TodoWrite(mark_completed: "Extract layout", mark_in_progress: "Assemble UI")
@@ -493,9 +493,9 @@ ELSE:
 REPORT: "🚀 Phase 3: UI Assembly"
 generate_command = f"/workflow:ui-design:generate --design-id \"{design_id}\""
 
-# SlashCommand execute ATTACHES generate's tasks to current workflow
+# Skill execute ATTACHES generate's tasks to current workflow
 # Orchestrator will EXECUTE these attached tasks itself
-SlashCommand(generate_command)
+Skill(skill=generate_command)
 
 # After executing all attached tasks, collapse them into phase summary
 TodoWrite(mark_completed: "Assemble UI", mark_in_progress: session_id ? "Integrate design system" : "Completion")
@@ -510,9 +510,9 @@ IF session_id:
     REPORT: "🚀 Phase 4: Design System Integration"
     update_command = f"/workflow:ui-design:update --session {session_id}"
 
-    # SlashCommand execute ATTACHES update's tasks to current workflow
+    # Skill execute ATTACHES update's tasks to current workflow
     # Orchestrator will EXECUTE these attached tasks itself
-    SlashCommand(update_command)
+    Skill(skill=update_command)
 
 # Update metadata
 metadata = Read("{base_path}/.run-metadata.json")
@@ -636,10 +636,10 @@ TodoWrite({todos: [
 
 // ⚠️ CRITICAL: Dynamic TodoWrite task attachment strategy:
 //
-// **Key Concept**: SlashCommand execute ATTACHES tasks to current workflow.
+// **Key Concept**: Skill execute ATTACHES tasks to current workflow.
 // Orchestrator EXECUTES these attached tasks itself, not waiting for external completion.
 //
-// Phase 2-4 SlashCommand Execute Pattern (when tasks are attached):
+// Phase 2-4 Skill Execute Pattern (when tasks are attached):
 // Example - Phase 2 with sub-tasks:
 // [
 //   {"content": "Phase 0: Initialize and Detect Design Source", "status": "completed", "activeForm": "Initializing"},
@@ -708,7 +708,7 @@ TodoWrite({todos: [
   3. `/workflow:ui-design:animation-extract` (Phase 2.3 - animation tokens)
   4. `/workflow:ui-design:layout-extract` (Phase 2.5 - structure templates)
   5. `/workflow:ui-design:generate` (Phase 3 - pure assembly)
-  6. `/workflow:ui-design:update` (Phase 4, if --session)
+  6. `/workflow:ui-design:generate` (Phase 4, if --session)
 
 ## Completion Output
 

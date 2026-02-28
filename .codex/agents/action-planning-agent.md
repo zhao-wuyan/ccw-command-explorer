@@ -55,6 +55,17 @@ color: yellow
 **Step-by-step execution**:
 
 ```
+0. Load planning notes → Extract phase-level constraints (NEW)
+   Commands: Read('.workflow/active/{session-id}/planning-notes.md')
+   Output: Consolidated constraints from all workflow phases
+   Structure:
+     - User Intent: Original GOAL, KEY_CONSTRAINTS
+     - Context Findings: Critical files, architecture notes, constraints
+     - Conflict Decisions: Resolved conflicts, modified artifacts
+     - Consolidated Constraints: Numbered list of ALL constraints (Phase 1-3)
+
+   USAGE: This is the PRIMARY source of constraints. All task generation MUST respect these constraints.
+
 1. Load session metadata → Extract user input
    - User description: Original task/feature requirements
    - Project scope: User-specified boundaries and goals
@@ -175,7 +186,7 @@ if (contextPackage.brainstorm_artifacts?.role_analyses?.length > 0) {
    - Add quantified requirements and measurable acceptance criteria
 
 3. Create IMPL_PLAN.md
-   - Load template: Read(~/.claude/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)
+   - Load template: Read(~/.ccw/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)
    - Follow template structure and validation checklist
    - Populate all 8 sections with synthesized context
    - Document CCW workflow phase progression
@@ -277,8 +288,8 @@ function computeCliStrategy(task, allTasks) {
     "execution_group": "parallel-abc123|null",
     "module": "frontend|backend|shared|null",
     "execution_config": {
-      "method": "agent|hybrid|cli",
-      "cli_tool": "codex|gemini|qwen|auto",
+      "method": "agent|cli",
+      "cli_tool": "codex|gemini|qwen|auto|null",
       "enable_resume": true,
       "previous_cli_id": "string|null"
     }
@@ -292,32 +303,31 @@ function computeCliStrategy(task, allTasks) {
 - `execution_group`: Parallelization group ID (tasks with same ID can run concurrently) or `null` for sequential tasks
 - `module`: Module identifier for multi-module projects (e.g., `frontend`, `backend`, `shared`) or `null` for single-module
 - `execution_config`: CLI execution settings (MUST align with userConfig from task-generate-agent)
-  - `method`: Execution method - `agent` (direct), `hybrid` (agent + CLI), `cli` (CLI only)
+  - `method`: Execution method - `agent` (direct) or `cli` (CLI only). Only two values in final task JSON.
   - `cli_tool`: Preferred CLI tool - `codex`, `gemini`, `qwen`, `auto`, or `null` (for agent-only)
   - `enable_resume`: Whether to use `--resume` for CLI continuity (default: true)
   - `previous_cli_id`: Previous task's CLI execution ID for resume (populated at runtime)
 
 **execution_config Alignment Rules** (MANDATORY):
 ```
-userConfig.executionMethod → meta.execution_config + implementation_approach
+userConfig.executionMethod → meta.execution_config
 
 "agent" →
   meta.execution_config = { method: "agent", cli_tool: null, enable_resume: false }
-  implementation_approach steps: NO command field (agent direct execution)
-
-"hybrid" →
-  meta.execution_config = { method: "hybrid", cli_tool: userConfig.preferredCliTool }
-  implementation_approach steps: command field ONLY on complex steps
+  Execution: Agent executes pre_analysis, then directly implements implementation_approach
 
 "cli" →
-  meta.execution_config = { method: "cli", cli_tool: userConfig.preferredCliTool }
-  implementation_approach steps: command field on ALL steps
+  meta.execution_config = { method: "cli", cli_tool: userConfig.preferredCliTool, enable_resume: true }
+  Execution: Agent executes pre_analysis, then hands off full context to CLI via buildCliHandoffPrompt()
+
+"hybrid" →
+  Per-task decision: set method to "agent" OR "cli" per task based on complexity
+  - Simple tasks (≤3 files, straightforward logic) → { method: "agent", cli_tool: null, enable_resume: false }
+  - Complex tasks (>3 files, complex logic, refactoring) → { method: "cli", cli_tool: userConfig.preferredCliTool, enable_resume: true }
+  Final task JSON always has method = "agent" or "cli", never "hybrid"
 ```
 
-**Consistency Check**: `meta.execution_config.method` MUST match presence of `command` fields:
-- `method: "agent"` → 0 steps have command field
-- `method: "hybrid"` → some steps have command field
-- `method: "cli"` → all steps have command field
+**IMPORTANT**: implementation_approach steps do NOT contain `command` fields. Execution routing is controlled by task-level `meta.execution_config.method` only.
 
 **Test Task Extensions** (for type="test-gen" or type="test-fix"):
 
@@ -336,7 +346,7 @@ userConfig.executionMethod → meta.execution_config + implementation_approach
 - `test_framework`: Existing test framework from project (required for test tasks)
 - `coverage_target`: Target code coverage percentage (optional)
 
-**Note**: CLI tool usage for test-fix tasks is now controlled via `flow_control.implementation_approach` steps with `command` fields, not via `meta.use_codex`.
+**Note**: CLI tool usage for test-fix tasks is now controlled via task-level `meta.execution_config.method`, not via `meta.use_codex`.
 
 #### Context Object
 
@@ -547,59 +557,45 @@ The examples above demonstrate **patterns**, not fixed requirements. Agent MUST:
 
 ##### Implementation Approach
 
-**Execution Modes**:
+**Execution Control**:
 
-The `implementation_approach` supports **two execution modes** based on the presence of the `command` field:
+The `implementation_approach` defines sequential implementation steps. Execution routing is controlled by **task-level `meta.execution_config.method`**, NOT by step-level `command` fields.
 
-1. **Default Mode (Agent Execution)** - `command` field **omitted**:
+**Two Execution Modes**:
+
+1. **Agent Mode** (`meta.execution_config.method = "agent"`):
    - Agent interprets `modification_points` and `logic_flow` autonomously
    - Direct agent execution with full context awareness
    - No external tool overhead
    - **Use for**: Standard implementation tasks where agent capability is sufficient
-   - **Required fields**: `step`, `title`, `description`, `modification_points`, `logic_flow`, `depends_on`, `output`
 
-2. **CLI Mode (Command Execution)** - `command` field **included**:
-   - Specified command executes the step directly
-   - Leverages specialized CLI tools (codex/gemini/qwen) for complex reasoning
-   - **Use for**: Large-scale features, complex refactoring, or when user explicitly requests CLI tool usage
-   - **Required fields**: Same as default mode **PLUS** `command`, `resume_from` (optional)
-   - **Command patterns** (with resume support):
-     - `ccw cli -p '[prompt]' --tool codex --mode write --cd [path]`
-     - `ccw cli -p '[prompt]' --resume ${previousCliId} --tool codex --mode write` (resume from previous)
-     - `ccw cli -p '[prompt]' --tool gemini --mode write --cd [path]` (write mode)
-   - **Resume mechanism**: When step depends on previous CLI execution, include `--resume` with previous execution ID
+2. **CLI Mode** (`meta.execution_config.method = "cli"`):
+   - Agent executes `pre_analysis`, then hands off full context to CLI via `buildCliHandoffPrompt()`
+   - CLI tool specified in `meta.execution_config.cli_tool` (codex/gemini/qwen)
+   - Leverages specialized CLI tools for complex reasoning
+   - **Use for**: Large-scale features, complex refactoring, or when userConfig.executionMethod = "cli"
 
-**Semantic CLI Tool Selection**:
+**Step Schema** (same for both modes):
+```json
+{
+  "step": 1,
+  "title": "Step title",
+  "description": "What to implement (may use [variable] placeholders from pre_analysis)",
+  "modification_points": ["Quantified changes: [list with counts]"],
+  "logic_flow": ["Implementation sequence"],
+  "depends_on": [0],
+  "output": "variable_name"
+}
+```
 
-Agent determines CLI tool usage per-step based on user semantics and task nature.
+**Required fields**: `step`, `title`, `description`, `modification_points`, `logic_flow`, `depends_on`, `output`
 
-**Source**: Scan `metadata.task_description` from context-package.json for CLI tool preferences.
+**IMPORTANT**: Do NOT add `command` field to implementation_approach steps. Execution routing is determined by task-level `meta.execution_config.method` only.
 
-**User Semantic Triggers** (patterns to detect in task_description):
-- "use Codex/codex" → Add `command` field with Codex CLI
-- "use Gemini/gemini" → Add `command` field with Gemini CLI
-- "use Qwen/qwen" → Add `command` field with Qwen CLI
-- "CLI execution" / "automated" → Infer appropriate CLI tool
-
-**Task-Based Selection** (when no explicit user preference):
-- **Implementation/coding**: Codex preferred for autonomous development
-- **Analysis/exploration**: Gemini preferred for large context analysis
-- **Documentation**: Gemini/Qwen with write mode (`--mode write`)
-- **Testing**: Depends on complexity - simple=agent, complex=Codex
-
-**Default Behavior**: Agent always executes the workflow. CLI commands are embedded in `implementation_approach` steps:
-- Agent orchestrates task execution
-- When step has `command` field, agent executes it via CCW CLI
-- When step has no `command` field, agent implements directly
-- This maintains agent control while leveraging CLI tool power
-
-**Key Principle**: The `command` field is **optional**. Agent decides based on user semantics and task complexity.
-
-**Examples**:
+**Example**:
 
 ```json
 [
-  // === DEFAULT MODE: Agent Execution (no command field) ===
   {
     "step": 1,
     "title": "Load and analyze role analyses",
@@ -636,33 +632,6 @@ Agent determines CLI tool usage per-step based on user semantics and task nature
     ],
     "depends_on": [1],
     "output": "implementation"
-  },
-
-  // === CLI MODE: Command Execution (optional command field) ===
-  {
-    "step": 3,
-    "title": "Execute implementation using CLI tool",
-    "description": "Use Codex/Gemini for complex autonomous execution",
-    "command": "ccw cli -p '[prompt]' --tool codex --mode write --cd [path]",
-    "modification_points": ["[Same as default mode]"],
-    "logic_flow": ["[Same as default mode]"],
-    "depends_on": [1, 2],
-    "output": "cli_implementation",
-    "cli_output_id": "step3_cli_id"  // Store execution ID for resume
-  },
-
-  // === CLI MODE with Resume: Continue from previous CLI execution ===
-  {
-    "step": 4,
-    "title": "Continue implementation with context",
-    "description": "Resume from previous step with accumulated context",
-    "command": "ccw cli -p '[continuation prompt]' --resume ${step3_cli_id} --tool codex --mode write",
-    "resume_from": "step3_cli_id",  // Reference previous step's CLI ID
-    "modification_points": ["[Continue from step 3]"],
-    "logic_flow": ["[Build on previous output]"],
-    "depends_on": [3],
-    "output": "continued_implementation",
-    "cli_output_id": "step4_cli_id"
   }
 ]
 ```
@@ -692,7 +661,7 @@ Agent determines CLI tool usage per-step based on user semantics and task nature
 **Template-Based Generation**:
 
 ```
-1. Load template: Read(~/.claude/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)
+1. Load template: Read(~/.ccw/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)
 2. Populate all sections following template structure
 3. Complete template validation checklist
 4. Generate at .workflow/active/{session_id}/IMPL_PLAN.md
@@ -785,13 +754,13 @@ Generate at `.workflow/active/{session_id}/TODO_LIST.md`:
 Use `analysis_results.complexity` or task count to determine structure:
 
 **Single Module Mode**:
-- **Simple Tasks** (≤5 tasks): Flat structure
-- **Medium Tasks** (6-12 tasks): Flat structure
-- **Complex Tasks** (>12 tasks): Re-scope required (maximum 12 tasks hard limit)
+- **Simple Tasks** (≤4 tasks): Flat structure
+- **Medium Tasks** (5-8 tasks): Flat structure
+- **Complex Tasks** (>8 tasks): Re-scope required (maximum 8 tasks hard limit)
 
 **Multi-Module Mode** (N+1 parallel planning):
-- **Per-module limit**: ≤9 tasks per module
-- **Total limit**: Sum of all module tasks ≤27 (3 modules × 9 tasks)
+- **Per-module limit**: ≤6 tasks per module
+- **Total limit**: No total limit (each module independently capped at 6 tasks)
 - **Task ID format**: `IMPL-{prefix}{seq}` (e.g., IMPL-A1, IMPL-B1)
 - **Structure**: Hierarchical by module in IMPL_PLAN.md and TODO_LIST.md
 
@@ -852,12 +821,38 @@ Use `analysis_results.complexity` or task count to determine structure:
 - Proper linking between documents
 - Consistent navigation and references
 
-### 3.3 Guidelines Checklist
+### 3.3 N+1 Context Recording
+
+**Purpose**: Record decisions and deferred items for N+1 planning continuity.
+
+**When**: After task generation, update `## N+1 Context` in planning-notes.md.
+
+**What to Record**:
+- **Decisions**: Architecture/technology choices with rationale (mark `Revisit?` if may change)
+- **Deferred**: Items explicitly moved to N+1 with reason
+
+**Example**:
+```markdown
+## N+1 Context
+### Decisions
+| Decision | Rationale | Revisit? |
+|----------|-----------|----------|
+| JWT over Session | Stateless scaling | No |
+| CROSS::B::api → IMPL-B1 | B1 defines base | Yes |
+
+### Deferred
+- [ ] Rate limiting - Requires Redis (N+1)
+- [ ] API versioning - Low priority
+```
+
+### 3.4 Guidelines Checklist
 
 **ALWAYS:**
+- **Load planning-notes.md FIRST**: Read planning-notes.md before context-package.json. Use its Consolidated Constraints as primary constraint source for all task generation
+- **Record N+1 Context**: Update `## N+1 Context` section with key decisions and deferred items
 - **Search Tool Priority**: ACE (`mcp__ace-tool__search_context`) → CCW (`mcp__ccw-tools__smart_search`) / Built-in (`Grep`, `Glob`, `Read`)
 - Apply Quantification Requirements to all requirements, acceptance criteria, and modification points
-- Load IMPL_PLAN template: `Read(~/.claude/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)` before generating IMPL_PLAN.md
+- Load IMPL_PLAN template: `Read(~/.ccw/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)` before generating IMPL_PLAN.md
 - Use provided context package: Extract all information from structured context
 - Respect memory-first rule: Use provided content (already loaded from memory/file)
 - Follow 6-field schema: All task JSONs must have id, title, status, context_package_path, meta, context, flow_control
@@ -865,7 +860,7 @@ Use `analysis_results.complexity` or task count to determine structure:
 - **Compute CLI execution strategy**: Based on `depends_on`, set `cli_execution.strategy` (new/resume/fork/merge_fork)
 - Map artifacts: Use artifacts_inventory to populate task.context.artifacts array
 - Add MCP integration: Include MCP tool steps in flow_control.pre_analysis when capabilities available
-- Validate task count: Maximum 12 tasks hard limit, request re-scope if exceeded
+- Validate task count: Maximum 8 tasks (single module) or 6 tasks per module (multi-module), request re-scope if exceeded
 - Use session paths: Construct all paths using provided session_id
 - Link documents properly: Use correct linking format (📋 for JSON, ✅ for summaries)
 - Run validation checklist: Verify all quantification requirements before finalizing task JSONs
@@ -879,7 +874,7 @@ Use `analysis_results.complexity` or task count to determine structure:
 - Load files directly (use provided context package instead)
 - Assume default locations (always use session_id in paths)
 - Create circular dependencies in task.depends_on
-- Exceed 12 tasks without re-scoping
+- Exceed 8 tasks (single module) or 6 tasks per module (multi-module) without re-scoping
 - Skip artifact integration when artifacts_inventory is provided
 - Ignore MCP capabilities when available
 - Use fixed pre-analysis steps without task-specific adaptation

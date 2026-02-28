@@ -271,7 +271,7 @@ bash(mkdir -p .claude/skills/style-${package_name})
 
 **⚠️ CRITICAL - Execute First**:
 ```bash
-bash(cat ~/.claude/workflows/cli-templates/memory/style-skill-memory/skill-md-template.md)
+bash(cat ~/.ccw/workflows/cli-templates/memory/style-skill-memory/skill-md-template.md)
 ```
 
 **Template Processing**:
@@ -355,7 +355,7 @@ Variables: `{package_name}`, `{component_count}`, `{universal_count}`, `{special
 
 1. **Check Before Generate**: Verify package exists before attempting SKILL generation
 2. **Respect Existing SKILL**: Don't overwrite unless --regenerate flag provided
-3. **Load Templates via cat**: Use `cat ~/.claude/workflows/cli-templates/memory/style-skill-memory/{template}` to load templates
+3. **Load Templates via cat**: Use `cat ~/.ccw/workflows/cli-templates/memory/style-skill-memory/{template}` to load templates
 4. **Variable Substitution**: Replace all `{variable}` placeholders with actual values
 5. **Technical Feature Detection**: Analyze tokens for modern features (oklch, calc, dark mode) and generate appropriate Prerequisites section
 6. **Dynamic Content Generation**: Generate sections based on DESIGN_ANALYSIS characteristics

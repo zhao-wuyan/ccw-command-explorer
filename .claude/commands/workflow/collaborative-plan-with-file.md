@@ -1,13 +1,13 @@
 ---
 name: workflow:collaborative-plan-with-file
-description: Unified collaborative planning with dynamic requirement splitting, parallel sub-agent exploration/understanding/planning, and automatic merge. Each agent maintains process files for full traceability.
-argument-hint: "[-y|--yes] <task description> [--max-agents=5] [--depth=normal|deep] [--merge-rule=consensus|priority]"
+description: Collaborative planning with Plan Note - Understanding agent creates shared plan-note.md template, parallel agents fill pre-allocated sections, conflict detection without merge. Outputs executable plan-note.md.
+argument-hint: "[-y|--yes] <task description> [--max-agents=5]"
 allowed-tools: TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Bash(*), Write(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)
 ---
 
 ## Auto Mode
 
-When `--yes` or `-y`: Auto-approve splits, use default merge rule, skip confirmations.
+When `--yes` or `-y`: Auto-approve splits, skip confirmations.
 
 # Collaborative Planning Command
 
@@ -19,72 +19,76 @@ When `--yes` or `-y`: Auto-approve splits, use default merge rule, skip confirma
 
 # With options
 /workflow:collaborative-plan-with-file "Refactor authentication module" --max-agents=4
-/workflow:collaborative-plan-with-file "Add payment gateway support" --depth=deep
-/workflow:collaborative-plan-with-file "Migrate to microservices" --merge-rule=priority
+/workflow:collaborative-plan-with-file "Add payment gateway support" -y
 ```
 
-**Context Source**: ACE semantic search + Per-agent CLI exploration
+**Context Source**: Understanding-Agent + Per-agent exploration
 **Output Directory**: `.workflow/.planning/{session-id}/`
 **Default Max Agents**: 5 (actual count based on requirement complexity)
-**CLI Tools**: cli-lite-planning-agent (internally calls ccw cli with gemini/codex/qwen)
-**Schema**: plan-json-schema.json (sub-plans & final plan share same base schema)
+**Core Innovation**: Plan Note - shared collaborative document, no merge needed
 
 ## Output Artifacts
 
-### Per Sub-Agent (Phase 2)
+### Phase 1: Understanding Agent
+
+| Artifact | Description |
+|----------|-------------|
+| `plan-note.md` | Shared collaborative document with pre-allocated sections |
+| `requirement-analysis.json` | Sub-domain assignments and TASK ID ranges |
+
+### Phase 2: Per Sub-Agent
 
 | Artifact | Description |
 |----------|-------------|
 | `planning-context.md` | Evidence paths + synthesized understanding |
-| `sub-plan.json` | Sub-plan following plan-json-schema.json |
+| `plan.json` | Plan overview with task_ids[] (NO embedded tasks[]) |
+| `.task/TASK-*.json` | Independent task files following task-schema.json |
+| Updates to `plan-note.md` | Agent fills pre-allocated sections |
 
-### Final Output (Phase 4)
+### Phase 3: Final Output
 
 | Artifact | Description |
 |----------|-------------|
-| `requirement-analysis.json` | Requirement breakdown and sub-agent assignments |
-| `conflicts.json` | Detected conflicts between sub-plans |
-| `plan.json` | Merged plan (plan-json-schema + merge_metadata) |
-| `plan.md` | Human-readable plan summary |
-
-**Agent**: `cli-lite-planning-agent` with `process_docs: true` for sub-agents
+| `plan-note.md` | ⭐ Executable plan with conflict markers |
+| `conflicts.json` | Detected conflicts with resolution options |
+| `plan.md` | Human-readable summary |
 
 ## Overview
 
-Unified collaborative planning workflow that:
+Unified collaborative planning workflow using **Plan Note** architecture:
 
-1. **Analyzes** complex requirements and splits into sub-requirements
-2. **Spawns** parallel sub-agents, each responsible for one sub-requirement
-3. **Each agent** maintains process files: planning-refs.md + sub-plan.json
-4. **Merges** all sub-plans into unified plan.json with conflict resolution
+1. **Understanding**: Agent analyzes requirements and creates plan-note.md template with pre-allocated sections
+2. **Parallel Planning**: Each agent generates plan.json + fills their pre-allocated section in plan-note.md
+3. **Conflict Detection**: Scan plan-note.md for conflicts (no merge needed)
+4. **Completion**: Generate plan.md summary, ready for execution
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         COLLABORATIVE PLANNING                           │
+│                    PLAN NOTE COLLABORATIVE PLANNING                      │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
-│  Phase 1: Requirement Analysis & Splitting                               │
-│     ├─ Analyze requirement complexity                                    │
-│     ├─ Identify 2-5 sub-requirements (focus areas)                       │
-│     └─ Write requirement-analysis.json                                   │
+│  Phase 1: Understanding & Template Creation                              │
+│     ├─ Understanding-Agent analyzes requirements                         │
+│     ├─ Identify 2-5 sub-domains (focus areas)                            │
+│     ├─ Create plan-note.md with pre-allocated sections                   │
+│     └─ Assign TASK ID ranges (no conflicts)                              │
 │                                                                          │
-│  Phase 2: Parallel Sub-Agent Execution                                   │
+│  Phase 2: Parallel Agent Execution (No Locks Needed)                     │
 │     ┌──────────────┬──────────────┬──────────────┐                       │
 │     │   Agent 1    │   Agent 2    │   Agent N    │                       │
-├──────────────┼──────────────┼──────────────┤                       │
-│     │ planning     │ planning     │ planning     │  → planning-context.md│
-│     │ + sub-plan   │ + sub-plan   │ + sub-plan   │  → sub-plan.json      │
+│     ├──────────────┼──────────────┼──────────────┤                       │
+│     │ Own Section  │ Own Section  │ Own Section  │  ← Pre-allocated      │
+│     │ plan.json    │ plan.json    │ plan.json    │  ← Detailed plans     │
 │     └──────────────┴──────────────┴──────────────┘                       │
 │                                                                          │
-│  Phase 3: Cross-Verification & Conflict Detection                        │
-│     ├─ Load all sub-plan.json files                                      │
-│     ├─ Detect conflicts (effort, approach, dependencies)                 │
-│     └─ Write conflicts.json                                              │
+│  Phase 3: Conflict Detection (Single Source)                             │
+│     ├─ Parse plan-note.md (all sections)                                 │
+│     ├─ Detect file/dependency/strategy conflicts                         │
+│     └─ Update plan-note.md conflict section                              │
 │                                                                          │
-│  Phase 4: Merge & Synthesis                                              │
-│     ├─ Resolve conflicts using merge-rule                                │
-│     ├─ Merge all sub-plans into unified plan                             │
-│     └─ Write plan.json + plan.md                                         │
+│  Phase 4: Completion (No Merge)                                          │
+│     ├─ Generate plan.md (human-readable)                                 │
+│     └─ Ready for execution                                               │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -93,143 +97,235 @@ Unified collaborative planning workflow that:
 
 ```
 .workflow/.planning/{CPLAN-slug-YYYY-MM-DD}/
-├── requirement-analysis.json     # Phase 1: Requirement breakdown
-├── agents/                       # Phase 2: Per-agent process files
+├── plan-note.md                  # Core: Requirements + Tasks + Conflicts
+├── requirement-analysis.json     # Phase 1: Sub-domain assignments
+├── agents/                       # Phase 2: Per-agent detailed plans
 │   ├── {focus-area-1}/
 │   │   ├── planning-context.md  # Evidence + understanding
-│   │   └── sub-plan.json        # Agent's plan for this focus area
+│   │   ├── plan.json            # Plan overview with task_ids[] (NO embedded tasks[])
+│   │   └── .task/               # Independent task files
+│   │       ├── TASK-{ID}.json   # Task file following task-schema.json
+│   │       └── ...
 │   ├── {focus-area-2}/
 │   │   └── ...
 │   └── {focus-area-N}/
 │       └── ...
-├── conflicts.json                # Phase 3: Detected conflicts
-├── plan.json                     # Phase 4: Unified merged plan
-└── plan.md                       # Phase 4: Human-readable plan
+├── conflicts.json                # Phase 3: Conflict details
+└── plan.md                       # Phase 4: Human-readable summary
 ```
 
 ## Implementation
 
 ### Session Initialization
 
+**Objective**: Create session context and directory structure for collaborative planning.
+
+**Required Actions**:
+1. Extract task description from `$ARGUMENTS`
+2. Generate session ID with format: `CPLAN-{slug}-{date}`
+   - slug: lowercase, alphanumeric, max 30 chars
+   - date: YYYY-MM-DD (UTC+8)
+3. Define session folder: `.workflow/.planning/{session-id}`
+4. Parse command options:
+   - `--max-agents=N` (default: 5)
+   - `-y` or `--yes` for auto-approval mode
+5. Create directory structure: `{session-folder}/agents/`
+
+**Session Variables**:
+- `sessionId`: Unique session identifier
+- `sessionFolder`: Base directory for all artifacts
+- `maxAgents`: Maximum number of parallel agents
+- `autoMode`: Boolean for auto-confirmation
+
+### Phase 1: Understanding & Template Creation
+
+**Objective**: Analyze requirements and create the plan-note.md template with pre-allocated sections for parallel agents.
+
+**Prerequisites**:
+- Session initialized with valid sessionId and sessionFolder
+- Task description available from $ARGUMENTS
+
+**Guideline**: In Understanding phase, prioritize identifying latest documentation (README, design docs, architecture guides). When ambiguities exist, ask user for clarification instead of assuming interpretations.
+
+**Workflow Steps**:
+
+1. **Initialize Progress Tracking**
+   - Create 4 todo items for workflow phases
+   - Set Phase 1 status to `in_progress`
+
+2. **Launch Understanding Agent**
+   - Agent type: `cli-lite-planning-agent`
+   - Execution mode: synchronous (run_in_background: false)
+
+3. **Agent Tasks**:
+   - **Identify Latest Documentation**: Search for and prioritize latest README, design docs, architecture guides
+   - **Understand Requirements**: Extract core objective, key points, constraints from task description and latest docs
+   - **Identify Ambiguities**: List any unclear points or multiple possible interpretations
+   - **Form Clarification Checklist**: Prepare questions for user if ambiguities found (use AskUserQuestion)
+   - **Split Sub-Domains**: Identify 2-{maxAgents} parallelizable focus areas
+   - **Create Plan Note**: Generate plan-note.md with pre-allocated sections
+
+**Output Files**:
+
+| File | Purpose |
+|------|---------|
+| `{sessionFolder}/plan-note.md` | Collaborative template with pre-allocated sections per agent |
+| `{sessionFolder}/requirement-analysis.json` | Sub-domain assignments and TASK ID ranges |
+
+**requirement-analysis.json Schema**:
+- `session_id`: Session identifier
+- `original_requirement`: Task description
+- `complexity`: Low | Medium | High
+- `sub_domains[]`: Array of focus areas with task_id_range and estimated_effort
+- `total_agents`: Number of agents to spawn
+
+**Success Criteria**:
+- Latest documentation identified and referenced (if available)
+- Ambiguities resolved via user clarification (if any found)
+- 2-{maxAgents} clear sub-domains identified
+- Each sub-domain can be planned independently
+- Plan Note template includes all pre-allocated sections
+- TASK ID ranges have no overlap (100 IDs per agent)
+- Requirements understanding is comprehensive
+
+**Completion**:
+- Log created artifacts
+- Update Phase 1 todo status to `completed`
+
+**Agent Call**:
 ```javascript
-const getUtc8ISOString = () => new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
+Task(
+  subagent_type="cli-lite-planning-agent",
+  run_in_background=false,
+  description="Understand requirements and create plan template",
+  prompt=`
+## Mission: Create Plan Note Template
 
-const taskDescription = "$ARGUMENTS"
-const taskSlug = taskDescription.toLowerCase()
-  .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
-  .substring(0, 30)
+### Key Guidelines
+1. **Prioritize Latest Documentation**: Search for and reference latest README, design docs, architecture guides when available
+2. **Handle Ambiguities**: When requirement ambiguities exist, ask user for clarification (use AskUserQuestion) instead of assuming interpretations
 
-const sessionId = `CPLAN-${taskSlug}-${getUtc8ISOString().substring(0, 10)}`
-const sessionFolder = `.workflow/.planning/${sessionId}`
+### Project Context (MANDATORY)
+Read and incorporate:
+- \`.workflow/project-tech.json\` (if exists): Technology stack, architecture
+- \`.workflow/specs/*.md\` (if exists): Constraints, conventions -- apply as HARD CONSTRAINTS on sub-domain splitting and plan structure
 
-// Parse options
-const maxAgents = parseInt($ARGUMENTS.match(/--max-agents=(\d+)/)?.[1] || '5')
-const depth = $ARGUMENTS.match(/--depth=(normal|deep)/)?.[1] || 'normal'
-const mergeRule = $ARGUMENTS.match(/--merge-rule=(consensus|priority)/)?.[1] || 'consensus'
-const autoMode = $ARGUMENTS.includes('--yes') || $ARGUMENTS.includes('-y')
+### Input Requirements
+${taskDescription}
 
-Bash(`mkdir -p ${sessionFolder}/agents`)
+### Tasks
+1. **Understand Requirements**: Extract core objective, key points, constraints (reference latest docs when available)
+2. **Identify Ambiguities**: List any unclear points or multiple possible interpretations
+3. **Form Clarification Checklist**: Prepare questions for user if ambiguities found
+4. **Split Sub-Domains**: Identify 2-${maxAgents} parallelizable focus areas
+5. **Create Plan Note**: Generate plan-note.md with pre-allocated sections
+
+### Output Files
+
+**File 1**: ${sessionFolder}/plan-note.md
+
+Structure Requirements:
+- YAML frontmatter: session_id, original_requirement, created_at, contributors, sub_domains, agent_sections, agent_task_id_ranges, status
+- Section: ## 需求理解 (Core objectives, key points, constraints, split strategy)
+- Section: ## 任务池 - {Focus Area 1} (Pre-allocated task section for agent 1, TASK-001 ~ TASK-100)
+- Section: ## 任务池 - {Focus Area 2} (Pre-allocated task section for agent 2, TASK-101 ~ TASK-200)
+- ... (One task pool section per sub-domain)
+- Section: ## 依赖关系 (Auto-generated after all agents complete)
+- Section: ## 冲突标记 (Populated in Phase 3)
+- Section: ## 上下文证据 - {Focus Area 1} (Evidence for agent 1)
+- Section: ## 上下文证据 - {Focus Area 2} (Evidence for agent 2)
+- ... (One evidence section per sub-domain)
+
+**File 2**: ${sessionFolder}/requirement-analysis.json
+- session_id, original_requirement, complexity, sub_domains[], total_agents
+
+### Success Criteria
+- [ ] 2-${maxAgents} clear sub-domains identified
+- [ ] Each sub-domain can be planned independently
+- [ ] Plan Note template includes all pre-allocated sections
+- [ ] TASK ID ranges have no overlap (100 IDs per agent)
+`
+)
 ```
 
-### Phase 1: Requirement Analysis & Splitting
+### Phase 2: Parallel Sub-Agent Execution
 
-Use CLI to analyze and split requirements:
+**Objective**: Launch parallel planning agents to fill their pre-allocated sections in plan-note.md.
 
+**Prerequisites**:
+- Phase 1 completed successfully
+- `{sessionFolder}/requirement-analysis.json` exists with sub-domain definitions
+- `{sessionFolder}/plan-note.md` template created
+
+**Workflow Steps**:
+
+1. **Load Sub-Domain Configuration**
+   - Read `{sessionFolder}/requirement-analysis.json`
+   - Extract sub-domains array with focus_area, description, task_id_range
+
+2. **Update Progress Tracking**
+   - Set Phase 2 status to `in_progress`
+   - Add sub-todo for each agent
+
+3. **User Confirmation** (unless autoMode)
+   - Display identified sub-domains with descriptions
+   - Options: "开始规划" / "调整拆分" / "取消"
+   - Skip if autoMode enabled
+
+4. **Create Agent Directories**
+   - For each sub-domain: `{sessionFolder}/agents/{focus-area}/`
+
+5. **Launch Parallel Agents**
+   - Agent type: `cli-lite-planning-agent`
+   - Execution mode: synchronous (run_in_background: false)
+   - Launch ALL agents in parallel (single message with multiple Task calls)
+
+**Per-Agent Context**:
+- Focus area name and description
+- Assigned TASK ID range (no overlap with other agents)
+- Session ID and folder path
+
+**Per-Agent Tasks**:
+
+| Task | Output | Description |
+|------|--------|-------------|
+| Generate plan.json + .task/*.json | `{sessionFolder}/agents/{focus-area}/plan.json` + `.task/` | Two-layer output: plan overview + independent task files |
+| Update plan-note.md | Sync to shared file | Fill pre-allocated task pool and evidence sections |
+
+**Task Summary Format** (for plan-note.md):
+- Task header: `### TASK-{ID}: {Title} [{focus-area}]`
+- Status, Complexity, Dependencies
+- Scope description
+- Modification points with file:line references
+- Conflict risk assessment
+
+**Evidence Format** (for plan-note.md):
+- Related files with relevance scores
+- Existing patterns identified
+- Constraints discovered
+
+**Agent Execution Rules**:
+- Each agent modifies ONLY its pre-allocated sections
+- Use assigned TASK ID range exclusively
+- No locking needed (exclusive sections)
+- Include conflict_risk assessment for each task
+
+**Completion**:
+- Wait for all agents to complete
+- Log generated artifacts for each agent
+- Update Phase 2 todo status to `completed`
+
+**User Confirmation** (unless autoMode):
 ```javascript
-TodoWrite({ todos: [
-  { content: "Phase 1: Requirement Analysis", status: "in_progress", activeForm: "Analyzing requirements" },
-  { content: "Phase 2: Parallel Agent Execution", status: "pending", activeForm: "Running agents" },
-  { content: "Phase 3: Conflict Detection", status: "pending", activeForm: "Detecting conflicts" },
-  { content: "Phase 4: Merge & Synthesis", status: "pending", activeForm: "Merging plans" }
-]})
-
-// Step 1.1: Use CLI to analyze requirement and propose splits
-Bash({
-  command: `ccw cli -p "
-PURPOSE: Analyze requirement and identify distinct sub-requirements/focus areas
-Success: 2-${maxAgents} clearly separated sub-requirements that can be planned independently
-
-TASK:
-• Understand the overall requirement: '${taskDescription}'
-• Identify major components, features, or concerns
-• Split into 2-${maxAgents} independent sub-requirements
-• Each sub-requirement should be:
-  - Self-contained (can be planned independently)
-  - Non-overlapping (minimal dependency on other sub-requirements)
-  - Roughly equal in complexity
-• For each sub-requirement, provide:
-  - focus_area: Short identifier (e.g., 'auth-backend', 'ui-components')
-  - description: What this sub-requirement covers
-  - key_concerns: Main challenges or considerations
-  - suggested_cli_tool: Which CLI tool is best suited (gemini/codex/qwen)
-
-MODE: analysis
-
-CONTEXT: @**/*
-
-EXPECTED: JSON output with structure:
-{
-  \"original_requirement\": \"...\",
-  \"complexity\": \"low|medium|high\",
-  \"sub_requirements\": [
-    {
-      \"index\": 1,
-      \"focus_area\": \"...\",
-      \"description\": \"...\",
-      \"key_concerns\": [\"...\"],
-      \"suggested_cli_tool\": \"gemini|codex|qwen\",
-      \"estimated_effort\": \"low|medium|high\"
-    }
-  ],
-  \"dependencies_between_subs\": [
-    { \"from\": 1, \"to\": 2, \"reason\": \"...\" }
-  ],
-  \"rationale\": \"Why this split was chosen\"
-}
-
-CONSTRAINTS: Maximum ${maxAgents} sub-requirements | Ensure clear boundaries
-" --tool gemini --mode analysis`,
-  run_in_background: true
-})
-
-// Wait for CLI completion and parse result
-// ... (hook callback will provide result)
-```
-
-**After CLI completes**:
-
-```javascript
-// Parse CLI output to extract sub-requirements
-const analysisResult = parseCLIOutput(cliOutput)
-const subRequirements = analysisResult.sub_requirements
-
-// Write requirement-analysis.json
-Write(`${sessionFolder}/requirement-analysis.json`, JSON.stringify({
-  session_id: sessionId,
-  original_requirement: taskDescription,
-  analysis_timestamp: getUtc8ISOString(),
-  complexity: analysisResult.complexity,
-  sub_requirements: subRequirements,
-  dependencies_between_subs: analysisResult.dependencies_between_subs,
-  rationale: analysisResult.rationale,
-  options: { maxAgents, depth, mergeRule }
-}, null, 2))
-
-// Create agent folders
-subRequirements.forEach(sub => {
-  Bash(`mkdir -p ${sessionFolder}/agents/${sub.focus_area}`)
-})
-
-// User confirmation (unless auto mode)
 if (!autoMode) {
   AskUserQuestion({
     questions: [{
-      question: `已识别 ${subRequirements.length} 个子需求:\n${subRequirements.map((s, i) => `${i+1}. ${s.focus_area}: ${s.description}`).join('\n')}\n\n确认开始并行规划?`,
+      question: `已识别 ${subDomains.length} 个子领域:\n${subDomains.map((s, i) => `${i+1}. ${s.focus_area}: ${s.description}`).join('\n')}\n\n确认开始并行规划?`,
       header: "Confirm Split",
       multiSelect: false,
       options: [
         { label: "开始规划", description: "启动并行sub-agent" },
-        { label: "调整拆分", description: "修改子需求划分" },
+        { label: "调整拆分", description: "修改子领域划分" },
         { label: "取消", description: "退出规划" }
       ]
     }]
@@ -237,524 +333,302 @@ if (!autoMode) {
 }
 ```
 
-### Phase 2: Parallel Sub-Agent Execution
-
-Launch one agent per sub-requirement, each maintaining its own process files:
-
+**Launch Parallel Agents** (single message, multiple Task calls):
 ```javascript
-TodoWrite({ todos: [
-  { content: "Phase 1: Requirement Analysis", status: "completed", activeForm: "Analyzing requirements" },
-  { content: "Phase 2: Parallel Agent Execution", status: "in_progress", activeForm: "Running agents" },
-  ...subRequirements.map((sub, i) => ({
-    content: `  → Agent ${i+1}: ${sub.focus_area}`,
-    status: "pending",
-    activeForm: `Planning ${sub.focus_area}`
-  })),
-  { content: "Phase 3: Conflict Detection", status: "pending", activeForm: "Detecting conflicts" },
-  { content: "Phase 4: Merge & Synthesis", status: "pending", activeForm: "Merging plans" }
-]})
+// Create agent directories
+subDomains.forEach(sub => {
+  Bash(`mkdir -p ${sessionFolder}/agents/${sub.focus_area}`)
+})
 
-// Launch all sub-agents in parallel
-const agentPromises = subRequirements.map((sub, index) => {
-  return Task({
-    subagent_type: "cli-lite-planning-agent",
-    run_in_background: false,
-    description: `Plan: ${sub.focus_area}`,
-    prompt: `
+// Launch all agents in parallel
+subDomains.map(sub =>
+  Task(
+    subagent_type="cli-lite-planning-agent",
+    run_in_background=false,
+    description=`Plan: ${sub.focus_area}`,
+    prompt=`
 ## Sub-Agent Context
-
-You are planning ONE sub-requirement. Generate process docs + sub-plan.
 
 **Focus Area**: ${sub.focus_area}
 **Description**: ${sub.description}
-**Key Concerns**: ${sub.key_concerns.join(', ')}
-**CLI Tool**: ${sub.suggested_cli_tool}
-**Depth**: ${depth}
+**TASK ID Range**: ${sub.task_id_range[0]}-${sub.task_id_range[1]}
+**Session**: ${sessionId}
 
-## Input Context
+### Project Context (MANDATORY)
+Read and incorporate:
+- \`.workflow/project-tech.json\` (if exists): Technology stack, architecture
+- \`.workflow/specs/*.md\` (if exists): Constraints, conventions -- apply as HARD CONSTRAINTS
 
-\`\`\`json
-{
-  "task_description": "${sub.description}",
-  "schema_path": "~/.claude/workflows/cli-templates/schemas/plan-json-schema.json",
-  "session": { "id": "${sessionId}", "folder": "${sessionFolder}" },
-  "process_docs": true,
-  "focus_area": "${sub.focus_area}",
-  "output_folder": "${sessionFolder}/agents/${sub.focus_area}",
-  "cli_config": { "tool": "${sub.suggested_cli_tool}" },
-  "parent_requirement": "${taskDescription}"
-}
-\`\`\`
+## Dual Output Tasks
 
-## Output Requirements
+### Task 1: Generate Two-Layer Plan Output
+Output: ${sessionFolder}/agents/${sub.focus_area}/plan.json
+Output: ${sessionFolder}/agents/${sub.focus_area}/.task/TASK-*.json
+Schema (plan): ~/.ccw/workflows/cli-templates/schemas/plan-overview-base-schema.json
+Schema (tasks): ~/.ccw/workflows/cli-templates/schemas/task-schema.json
 
-Write 2 files to \`${sessionFolder}/agents/${sub.focus_area}/\`:
-1. **planning-context.md** - Evidence paths + synthesized understanding
-2. **sub-plan.json** - Plan with \`_metadata.source_agent: "${sub.focus_area}"\`
+### Task 2: Sync Summary to plan-note.md
 
-See cli-lite-planning-agent documentation for file formats.
+**Locate Your Sections**:
+- Task Pool: "## 任务池 - ${toTitleCase(sub.focus_area)}"
+- Evidence: "## 上下文证据 - ${toTitleCase(sub.focus_area)}"
+
+**Task Summary Format**:
+- Task header: ### TASK-${sub.task_id_range[0]}: Task Title [${sub.focus_area}]
+- Fields: 状态, 复杂度, 依赖, 范围, 修改点, 冲突风险
+
+**Evidence Format**:
+- 相关文件, 现有模式, 约束
+
+## Execution Steps
+1. Create .task/ directory: mkdir -p ${sessionFolder}/agents/${sub.focus_area}/.task
+2. Generate individual task files in .task/TASK-*.json following task-schema.json
+3. Generate plan.json with task_ids[] referencing .task/ files (NO embedded tasks[])
+4. Extract summary from .task/*.json files
+5. Read ${sessionFolder}/plan-note.md
+6. Locate and replace your task pool section
+7. Locate and replace your evidence section
+8. Write back plan-note.md
+
+## Important
+- Only modify your pre-allocated sections
+- Use assigned TASK ID range: ${sub.task_id_range[0]}-${sub.task_id_range[1]}
 `
-  })
-})
-
-// Wait for all agents to complete
-const agentResults = await Promise.all(agentPromises)
+  )
+)
 ```
 
-### Phase 3: Cross-Verification & Conflict Detection
+### Phase 3: Conflict Detection
 
-Load all sub-plans and detect conflicts:
+**Objective**: Analyze plan-note.md for conflicts across all agent contributions without merging files.
 
-```javascript
-TodoWrite({ todos: [
-  { content: "Phase 1: Requirement Analysis", status: "completed", activeForm: "Analyzing requirements" },
-  { content: "Phase 2: Parallel Agent Execution", status: "completed", activeForm: "Running agents" },
-  { content: "Phase 3: Conflict Detection", status: "in_progress", activeForm: "Detecting conflicts" },
-  { content: "Phase 4: Merge & Synthesis", status: "pending", activeForm: "Merging plans" }
-]})
+**Prerequisites**:
+- Phase 2 completed successfully
+- All agents have updated plan-note.md with their sections
+- `{sessionFolder}/plan-note.md` contains all task and evidence sections
 
-// Load all sub-plans
-const subPlans = subRequirements.map(sub => {
-  const planPath = `${sessionFolder}/agents/${sub.focus_area}/sub-plan.json`
-  const content = Read(planPath)
-  return {
-    focus_area: sub.focus_area,
-    index: sub.index,
-    plan: JSON.parse(content)
-  }
-})
+**Workflow Steps**:
 
-// Detect conflicts
-const conflicts = {
-  detected_at: getUtc8ISOString(),
-  total_sub_plans: subPlans.length,
-  conflicts: []
-}
+1. **Update Progress Tracking**
+   - Set Phase 3 status to `in_progress`
 
-// 1. Effort conflicts (same task estimated differently)
-const effortConflicts = detectEffortConflicts(subPlans)
-conflicts.conflicts.push(...effortConflicts)
+2. **Parse Plan Note**
+   - Read `{sessionFolder}/plan-note.md`
+   - Extract YAML frontmatter (session metadata)
+   - Parse markdown sections by heading levels
+   - Identify all "任务池" sections
 
-// 2. File conflicts (multiple agents modifying same file)
-const fileConflicts = detectFileConflicts(subPlans)
-conflicts.conflicts.push(...fileConflicts)
+3. **Extract All Tasks**
+   - For each "任务池" section:
+     - Extract tasks matching pattern: `### TASK-{ID}: {Title} [{author}]`
+     - Parse task details: status, complexity, dependencies, modification points, conflict risk
+   - Consolidate into single task list
 
-// 3. Approach conflicts (different approaches to same problem)
-const approachConflicts = detectApproachConflicts(subPlans)
-conflicts.conflicts.push(...approachConflicts)
+4. **Detect Conflicts**
 
-// 4. Dependency conflicts (circular or missing dependencies)
-const dependencyConflicts = detectDependencyConflicts(subPlans)
-conflicts.conflicts.push(...dependencyConflicts)
+   **File Conflicts**:
+   - Group modification points by file:location
+   - Identify locations modified by multiple agents
+   - Record: severity=high, tasks involved, agents involved, suggested resolution
 
-// Write conflicts.json
-Write(`${sessionFolder}/conflicts.json`, JSON.stringify(conflicts, null, 2))
+   **Dependency Cycles**:
+   - Build dependency graph from task dependencies
+   - Detect cycles using depth-first search
+   - Record: severity=critical, cycle path, suggested resolution
 
-console.log(`
-## Conflict Detection Complete
+   **Strategy Conflicts**:
+   - Group tasks by files they modify
+   - Identify files with high/medium conflict risk from multiple agents
+   - Record: severity=medium, tasks involved, agents involved, suggested resolution
 
-**Total Sub-Plans**: ${subPlans.length}
-**Conflicts Found**: ${conflicts.conflicts.length}
+5. **Generate Conflict Artifacts**
 
-${conflicts.conflicts.length > 0 ? `
-### Conflicts:
-${conflicts.conflicts.map((c, i) => `
-${i+1}. **${c.type}** (${c.severity})
-   - Agents: ${c.agents_involved.join(' vs ')}
-   - Issue: ${c.description}
-   - Suggested Resolution: ${c.suggested_resolution}
-`).join('\n')}
-` : '✅ No conflicts detected - sub-plans are compatible'}
-`)
-```
+   **conflicts.json**:
+   - Write to `{sessionFolder}/conflicts.json`
+   - Include: detected_at, total_tasks, total_agents, conflicts array
+   - Each conflict: type, severity, tasks_involved, description, suggested_resolution
+
+   **Update plan-note.md**:
+   - Locate "## 冲突标记" section
+   - Generate markdown summary of conflicts
+   - Replace section content with conflict markdown
+
+6. **Completion**
+   - Log conflict detection summary
+   - Display conflict details if any found
+   - Update Phase 3 todo status to `completed`
+
+**Conflict Types**:
+
+| Type | Severity | Detection Logic |
+|------|----------|-----------------|
+| file_conflict | high | Same file:location modified by multiple agents |
+| dependency_cycle | critical | Circular dependencies in task graph |
+| strategy_conflict | medium | Multiple high-risk tasks in same file from different agents |
 
 **Conflict Detection Functions**:
 
-```javascript
-function detectFileConflicts(subPlans) {
-  const fileModifications = {}
-  const conflicts = []
-
-  subPlans.forEach(sp => {
-    sp.plan.tasks.forEach(task => {
-      task.modification_points?.forEach(mp => {
-        if (!fileModifications[mp.file]) {
-          fileModifications[mp.file] = []
-        }
-        fileModifications[mp.file].push({
-          focus_area: sp.focus_area,
-          task_id: task.id,
-          target: mp.target,
-          change: mp.change
-        })
-      })
-    })
-  })
-
-  Object.entries(fileModifications).forEach(([file, mods]) => {
-    if (mods.length > 1) {
-      const agents = [...new Set(mods.map(m => m.focus_area))]
-      if (agents.length > 1) {
-        conflicts.push({
-          type: "file_conflict",
-          severity: "high",
-          file: file,
-          agents_involved: agents,
-          modifications: mods,
-          description: `Multiple agents modifying ${file}`,
-          suggested_resolution: "Sequence modifications or consolidate"
-        })
-      }
-    }
-  })
-
-  return conflicts
-}
-
-function detectEffortConflicts(subPlans) {
-  // Compare effort estimates across similar tasks
-  // Return conflicts where estimates differ by >50%
-  return []
-}
-
-function detectApproachConflicts(subPlans) {
-  // Analyze approaches for contradictions
-  // Return conflicts where approaches are incompatible
-  return []
-}
-
-function detectDependencyConflicts(subPlans) {
-  // Check for circular dependencies
-  // Check for missing dependencies
-  return []
-}
-```
-
-### Phase 4: Merge & Synthesis
-
-Use cli-lite-planning-agent to merge all sub-plans:
-
-```javascript
-TodoWrite({ todos: [
-  { content: "Phase 1: Requirement Analysis", status: "completed", activeForm: "Analyzing requirements" },
-  { content: "Phase 2: Parallel Agent Execution", status: "completed", activeForm: "Running agents" },
-  { content: "Phase 3: Conflict Detection", status: "completed", activeForm: "Detecting conflicts" },
-  { content: "Phase 4: Merge & Synthesis", status: "in_progress", activeForm: "Merging plans" }
-]})
-
-// Collect all planning context documents for context
-const contextDocs = subRequirements.map(sub => {
-  const path = `${sessionFolder}/agents/${sub.focus_area}/planning-context.md`
-  return {
-    focus_area: sub.focus_area,
-    content: Read(path)
-  }
-})
-
-// Invoke planning agent to merge
-Task({
-  subagent_type: "cli-lite-planning-agent",
-  run_in_background: false,
-  description: "Merge sub-plans into unified plan",
-  prompt: `
-## Mission: Merge Multiple Sub-Plans
-
-Merge ${subPlans.length} sub-plans into a single unified plan.
-
-## Schema Reference
-
-Execute: cat ~/.claude/workflows/cli-templates/schemas/plan-json-schema.json
-
-The merged plan follows the SAME schema as lite-plan, with ONE additional field:
-- \`merge_metadata\`: Object containing merge-specific information
-
-## Project Context
-
-1. Read: .workflow/project-tech.json
-2. Read: .workflow/project-guidelines.json
-
-## Original Requirement
-
-${taskDescription}
-
-## Sub-Plans to Merge
-
-${subPlans.map(sp => `
-### Sub-Plan: ${sp.focus_area}
-\`\`\`json
-${JSON.stringify(sp.plan, null, 2)}
-\`\`\`
-`).join('\n')}
-
-## Planning Context Documents
-
-${contextDocs.map(cd => `
-### Context: ${cd.focus_area}
-${cd.content}
-`).join('\n')}
-
-## Detected Conflicts
-
-\`\`\`json
-${JSON.stringify(conflicts, null, 2)}
-\`\`\`
-
-## Merge Rules
-
-**Rule**: ${mergeRule}
-${mergeRule === 'consensus' ? `
-- Equal weight to all sub-plans
-- Conflicts resolved by finding middle ground
-- Combine overlapping tasks
-` : `
-- Priority based on sub-requirement index
-- Earlier agents' decisions take precedence
-- Later agents adapt to earlier decisions
-`}
-
-## Requirements
-
-1. **Task Consolidation**:
-   - Combine tasks that modify same files
-   - Preserve unique tasks from each sub-plan
-   - Ensure no task duplication
-   - Maintain clear task boundaries
-
-2. **Dependency Resolution**:
-   - Cross-reference dependencies between sub-plans
-   - Create global task ordering
-   - Handle inter-sub-plan dependencies
-
-3. **Conflict Resolution**:
-   - Apply ${mergeRule} rule to resolve conflicts
-   - Document resolution rationale
-   - Ensure no contradictions in final plan
-
-4. **Metadata Preservation**:
-   - Track which sub-plan each task originated from (source_agent field)
-   - Include merge_metadata with:
-     - merged_from: list of sub-plan focus areas
-     - conflicts_resolved: count
-     - merge_rule: ${mergeRule}
-
-## Output
-
-Write to ${sessionFolder}/plan.json following plan-json-schema.json.
-
-Add ONE extension field for merge tracking:
-
-\`\`\`json
-{
-  // ... all standard plan-json-schema fields ...
-
-  "merge_metadata": {
-    "source_session": "${sessionId}",
-    "merged_from": ["focus-area-1", "focus-area-2"],
-    "sub_plan_count": N,
-    "conflicts_detected": N,
-    "conflicts_resolved": N,
-    "merge_rule": "${mergeRule}",
-    "merged_at": "ISO-timestamp"
-  }
-}
-\`\`\`
-
-Each task should include \`source_agent\` field indicating which sub-plan it originated from.
-
-## Success Criteria
-
-- [ ] All sub-plan tasks included (or explicitly merged)
-- [ ] Conflicts resolved per ${mergeRule} rule
-- [ ] Dependencies form valid DAG (no cycles)
-- [ ] merge_metadata present
-- [ ] Schema compliance verified
-- [ ] plan.json written to ${sessionFolder}/plan.json
-`
-})
-
-// Generate human-readable plan.md
-const plan = JSON.parse(Read(`${sessionFolder}/plan.json`))
-const planMd = generatePlanMarkdown(plan, subRequirements, conflicts)
-Write(`${sessionFolder}/plan.md`, planMd)
-```
-
-**Markdown Generation**:
-
-```javascript
-function generatePlanMarkdown(plan, subRequirements, conflicts) {
-  return `# Collaborative Planning Session
-
-**Session ID**: ${plan._metadata?.session_id || sessionId}
-**Original Requirement**: ${taskDescription}
-**Created**: ${getUtc8ISOString()}
-
----
-
-## Sub-Requirements Analyzed
-
-${subRequirements.map((sub, i) => `
-### ${i+1}. ${sub.focus_area}
-${sub.description}
-- **Key Concerns**: ${sub.key_concerns.join(', ')}
-- **Estimated Effort**: ${sub.estimated_effort}
-`).join('\n')}
-
----
-
-## Conflict Resolution
-
-${conflicts.conflicts.length > 0 ? `
-**Conflicts Detected**: ${conflicts.conflicts.length}
-**Merge Rule**: ${mergeRule}
-
-${conflicts.conflicts.map((c, i) => `
-${i+1}. **${c.type}** - ${c.description}
-   - Resolution: ${c.suggested_resolution}
-`).join('\n')}
-` : '✅ No conflicts detected'}
-
----
-
-## Merged Plan
-
-### Summary
-${plan.summary}
-
-### Approach
-${plan.approach}
-
----
-
-## Tasks
-
-${plan.tasks.map((task, i) => `
-### ${task.id}: ${task.title}
-
-**Source**: ${task.source_agent || 'merged'}
-**Scope**: ${task.scope}
-**Action**: ${task.action}
-**Complexity**: ${task.effort?.complexity || 'medium'}
-
-${task.description}
-
-**Modification Points**:
-${task.modification_points?.map(mp => `- \`${mp.file}\` → ${mp.target}: ${mp.change}`).join('\n') || 'N/A'}
-
-**Implementation**:
-${task.implementation?.map((step, idx) => `${idx+1}. ${step}`).join('\n') || 'N/A'}
-
-**Acceptance Criteria**:
-${task.acceptance?.map(ac => `- ${ac}`).join('\n') || 'N/A'}
-
-**Dependencies**: ${task.depends_on?.join(', ') || 'None'}
-
----
-`).join('\n')}
-
-## Execution
-
-\`\`\`bash
-# Execute this plan
-/workflow:unified-execute-with-file -p ${sessionFolder}/plan.json
-
-# Or with auto-confirmation
-/workflow:unified-execute-with-file -y -p ${sessionFolder}/plan.json
-\`\`\`
-
----
-
-## Agent Process Files
-
-${subRequirements.map(sub => `
-### ${sub.focus_area}
-- Context: \`${sessionFolder}/agents/${sub.focus_area}/planning-context.md\`
-- Sub-Plan: \`${sessionFolder}/agents/${sub.focus_area}/sub-plan.json\`
-`).join('\n')}
-
----
-
-**Generated by**: /workflow:collaborative-plan-with-file
-**Merge Rule**: ${mergeRule}
-`
-}
-```
-
-### Completion
-
-```javascript
-TodoWrite({ todos: [
-  { content: "Phase 1: Requirement Analysis", status: "completed", activeForm: "Analyzing requirements" },
-  { content: "Phase 2: Parallel Agent Execution", status: "completed", activeForm: "Running agents" },
-  { content: "Phase 3: Conflict Detection", status: "completed", activeForm: "Detecting conflicts" },
-  { content: "Phase 4: Merge & Synthesis", status: "completed", activeForm: "Merging plans" }
-]})
-
-console.log(`
-✅ Collaborative Planning Complete
-
-**Session**: ${sessionId}
-**Sub-Agents**: ${subRequirements.length}
-**Conflicts Resolved**: ${conflicts.conflicts.length}
-
-## Output Files
-
-📁 ${sessionFolder}/
-├── requirement-analysis.json   # Requirement breakdown
-├── agents/                     # Per-agent process files
-${subRequirements.map(sub => `│   ├── ${sub.focus_area}/
-│   │   ├── planning-context.md
-│   │   └── sub-plan.json`).join('\n')}
-├── conflicts.json              # Detected conflicts
-├── plan.json                   # Unified plan (execution-ready)
-└── plan.md                     # Human-readable plan
-
-## Next Steps
-
-Execute the plan:
-\`\`\`bash
-/workflow:unified-execute-with-file -p ${sessionFolder}/plan.json
-\`\`\`
-
-Review a specific agent's work:
-\`\`\`bash
-cat ${sessionFolder}/agents/{focus-area}/planning-context.md
-\`\`\`
-`)
-```
+**parsePlanNote(markdown)**:
+- Input: Raw markdown content of plan-note.md
+- Process:
+  - Extract YAML frontmatter between `---` markers
+  - Parse frontmatter as YAML to get session metadata
+  - Scan for heading patterns `^(#{2,})\s+(.+)$`
+  - Build sections array with: level, heading, start position, content
+- Output: `{ frontmatter: object, sections: array }`
+
+**extractTasksFromSection(content, sectionHeading)**:
+- Input: Section content text, section heading for attribution
+- Process:
+  - Match task pattern: `### (TASK-\d+):\s+(.+?)\s+\[(.+?)\]`
+  - For each match: extract taskId, title, author
+  - Call parseTaskDetails for additional fields
+- Output: Array of task objects with id, title, author, source_section, ...details
+
+**parseTaskDetails(content)**:
+- Input: Task content block
+- Process:
+  - Extract fields via regex patterns:
+    - `**状态**:\s*(.+)` → status
+    - `**复杂度**:\s*(.+)` → complexity
+    - `**依赖**:\s*(.+)` → depends_on (extract TASK-\d+ references)
+    - `**冲突风险**:\s*(.+)` → conflict_risk
+  - Extract modification points: `-\s+\`([^`]+):\s*([^`]+)\`:\s*(.+)` → file, location, summary
+- Output: Details object with status, complexity, depends_on[], modification_points[], conflict_risk
+
+**detectFileConflicts(tasks)**:
+- Input: All tasks array
+- Process:
+  - Build fileMap: `{ "file:location": [{ task_id, task_title, source_agent, change }] }`
+  - For each location with multiple modifications from different agents:
+    - Create conflict with type='file_conflict', severity='high'
+    - Include: location, tasks_involved, agents_involved, modifications
+    - Suggested resolution: 'Coordinate modification order or merge changes'
+- Output: Array of file conflict objects
+
+**detectDependencyCycles(tasks)**:
+- Input: All tasks array
+- Process:
+  - Build dependency graph: `{ taskId: [dependsOn_taskIds] }`
+  - Use DFS with recursion stack to detect cycles
+  - For each cycle found:
+    - Create conflict with type='dependency_cycle', severity='critical'
+    - Include: cycle path as tasks_involved
+    - Suggested resolution: 'Remove or reorganize dependencies'
+- Output: Array of dependency cycle conflict objects
+
+**detectStrategyConflicts(tasks)**:
+- Input: All tasks array
+- Process:
+  - Group tasks by files they modify
+  - For each file with tasks from multiple agents:
+    - Filter for high/medium conflict_risk tasks
+    - If >1 high-risk tasks from different agents:
+      - Create conflict with type='strategy_conflict', severity='medium'
+      - Include: file, tasks_involved, agents_involved
+      - Suggested resolution: 'Review approaches and align on single strategy'
+- Output: Array of strategy conflict objects
+
+**generateConflictMarkdown(conflicts)**:
+- Input: Array of conflict objects
+- Process:
+  - If empty: return '✅ 无冲突检测到'
+  - For each conflict:
+    - Generate header: `### CONFLICT-{padded_index}: {description}`
+    - Add fields: 严重程度, 涉及任务, 涉及Agent
+    - Add 问题详情 based on conflict type
+    - Add 建议解决方案
+    - Add 决策状态: [ ] 待解决
+- Output: Markdown string for plan-note.md "## 冲突标记" section
+
+**replaceSectionContent(markdown, sectionHeading, newContent)**:
+- Input: Original markdown, target section heading, new content
+- Process:
+  - Find section heading position via regex
+  - Find next heading of same or higher level
+  - Replace content between heading and next section
+  - If section not found: append at end
+- Output: Updated markdown string
+
+### Phase 4: Completion
+
+**Objective**: Generate human-readable plan summary and finalize workflow.
+
+**Prerequisites**:
+- Phase 3 completed successfully
+- Conflicts detected and documented in plan-note.md
+- All artifacts generated
+
+**Workflow Steps**:
+
+1. **Update Progress Tracking**
+   - Set Phase 4 status to `in_progress`
+
+2. **Read Final State**
+   - Read `{sessionFolder}/plan-note.md`
+   - Extract frontmatter metadata
+   - Load conflicts from Phase 3
+
+3. **Generate plan.md**
+   - Create human-readable summary including:
+     - Session metadata
+     - Requirements understanding
+     - Sub-domain breakdown
+     - Task overview by focus area
+     - Conflict report
+     - Execution instructions
+
+4. **Write Summary File**
+   - Write to `{sessionFolder}/plan.md`
+
+5. **Display Completion Summary**
+   - Session statistics
+   - File structure
+   - Execution command
+   - Conflict status
+
+6. **Update Todo**
+   - Set Phase 4 status to `completed`
+
+**plan.md Structure**:
+
+| Section | Content |
+|---------|---------|
+| Header | Session ID, created time, original requirement |
+| Requirements | Copy from plan-note.md "## 需求理解" section |
+| Sub-Domain Split | List each focus area with description and task ID range |
+| Task Overview | Tasks grouped by focus area with complexity and dependencies |
+| Conflict Report | Summary of detected conflicts or "无冲突" |
+| Execution | Command to execute the plan |
+
+**Required Function** (semantic description):
+- **generateHumanReadablePlan**: Extract sections from plan-note.md and format as readable plan.md with session info, requirements, tasks, and conflicts
 
 ## Configuration
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--max-agents` | 5 | Maximum sub-agents to spawn |
-| `--depth` | normal | Exploration depth: normal or deep |
-| `--merge-rule` | consensus | Conflict resolution: consensus or priority |
 | `-y, --yes` | false | Auto-confirm all decisions |
 
 ## Error Handling
 
 | Error | Resolution |
 |-------|------------|
-| Requirement too simple | Use single-agent lite-plan instead |
-| Agent fails | Retry once, then continue with partial results |
-| Merge conflicts unresolvable | Ask user for manual resolution |
-| CLI timeout | Use fallback CLI tool |
-| File write fails | Retry with alternative path |
+| Understanding agent fails | Retry once, provide more context |
+| Planning agent fails | Skip failed agent, continue with others |
+| Section not found in plan-note | Agent creates section (defensive) |
+| Conflict detection fails | Continue with empty conflicts |
 
-## vs Other Planning Commands
-
-| Command | Use Case |
-|---------|----------|
-| **collaborative-plan-with-file** | Complex multi-aspect requirements needing parallel exploration |
-| lite-plan | Simple single-focus tasks |
-| multi-cli-plan | Iterative cross-verification with convergence |
 
 ## Best Practices
 
-1. **Be Specific**: Detailed requirements lead to better splits
-2. **Review Process Files**: Check planning-context.md for insights
-3. **Trust the Merge**: Conflict resolution follows defined rules
-4. **Iterate if Needed**: Re-run with different --merge-rule if results unsatisfactory
+1. **Clear Requirements**: Detailed requirements → better sub-domain splitting
+2. **Reference Latest Documentation**: Understanding agent should prioritize identifying and referencing latest docs (README, design docs, architecture guides)
+3. **Ask When Uncertain**: When ambiguities or multiple interpretations exist, ask user for clarification instead of assuming
+4. **Review Plan Note**: Check plan-note.md before execution
+5. **Resolve Conflicts**: Address high/critical conflicts before execution
+6. **Inspect Details**: Use agents/{focus-area}/plan.json for deep dive
 
 ---
 

@@ -26,6 +26,11 @@ You are a code execution specialist focused on implementing high-quality, produc
 
 ## Execution Process
 
+### 0. Task Status: Mark In Progress
+```bash
+jq --arg ts "$(date -Iseconds)" '.status="in_progress" | .status_history += [{"from":.status,"to":"in_progress","changed_at":$ts}]' IMPL-X.json > tmp.json && mv tmp.json IMPL-X.json
+```
+
 ### 1. Context Assessment
 **Input Sources**:
 - User-provided task description and context
@@ -72,24 +77,24 @@ if [[ -n "$TASK_JSON_TECH_STACK" ]]; then
     # Map tech stack names to guideline files
     # e.g., ["FastAPI", "SQLAlchemy"] → python-dev.md
     case "$TASK_JSON_TECH_STACK" in
-        *FastAPI*|*Django*|*SQLAlchemy*) TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/python-dev.md) ;;
-        *React*|*Next*) TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/react-dev.md) ;;
-        *TypeScript*) TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/typescript-dev.md) ;;
+        *FastAPI*|*Django*|*SQLAlchemy*) TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/python-dev.md) ;;
+        *React*|*Next*) TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/react-dev.md) ;;
+        *TypeScript*) TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/typescript-dev.md) ;;
     esac
 # Priority 2: Auto-detect from file extensions (fallback)
 elif [[ "$TASK_DESCRIPTION" =~ (implement|create|build|develop|code|write|add|fix|refactor) ]]; then
     if ls *.ts *.tsx 2>/dev/null | head -1; then
-        TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/typescript-dev.md)
+        TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/typescript-dev.md)
     elif grep -q "react" package.json 2>/dev/null; then
-        TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/react-dev.md)
+        TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/react-dev.md)
     elif ls *.py requirements.txt 2>/dev/null | head -1; then
-        TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/python-dev.md)
+        TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/python-dev.md)
     elif ls *.java pom.xml build.gradle 2>/dev/null | head -1; then
-        TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/java-dev.md)
+        TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/java-dev.md)
     elif ls *.go go.mod 2>/dev/null | head -1; then
-        TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/go-dev.md)
+        TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/go-dev.md)
     elif ls *.js package.json 2>/dev/null | head -1; then
-        TECH_GUIDELINES=$(cat ~/.claude/workflows/cli-templates/tech-stacks/javascript-dev.md)
+        TECH_GUIDELINES=$(cat ~/.ccw/workflows/cli-templates/tech-stacks/javascript-dev.md)
     fi
 fi
 ```
@@ -186,34 +191,131 @@ output               → Variable name to store this step's result
 
 **Execution Flow**:
 ```
-FOR each step in implementation_approach[] (ordered by step number):
-  1. Check depends_on: Wait for all listed step numbers to complete
-  2. Variable Substitution: Replace [variable_name] in description/modification_points
-     with values stored from previous steps' output
-  3. Execute step (choose one):
+// Read task-level execution config (Single Source of Truth)
+const executionMethod = task.meta?.execution_config?.method || 'agent';
+const cliTool = task.meta?.execution_config?.cli_tool || getDefaultCliTool();  // See ~/.claude/cli-tools.json
 
-     IF step.command exists:
-       → Execute the CLI command via Bash tool
-       → Capture output
+// Phase 1: Execute pre_analysis (always by Agent)
+const preAnalysisResults = {};
+for (const step of task.flow_control.pre_analysis || []) {
+  const result = executePreAnalysisStep(step);
+  preAnalysisResults[step.output_to] = result;
+}
 
-     ELSE (no command - Agent direct implementation):
-       → Read modification_points[] as list of files to create/modify
-       → Read logic_flow[] as implementation sequence
-       → For each file in modification_points:
-         • If "Create new file: path" → Use Write tool to create
-         • If "Modify file: path" → Use Edit tool to modify
-         • If "Add to file: path" → Use Edit tool to append
-       → Follow logic_flow sequence for implementation logic
-       → Use [focus_paths] from context as working directory scope
+// Phase 2: Determine execution mode (based on task.meta.execution_config.method)
+// Two modes: 'cli' (call CLI tool) or 'agent' (execute directly)
 
-  4. Store result in [step.output] variable for later steps
-  5. Mark step complete, proceed to next
+IF executionMethod === 'cli':
+  // CLI Handoff: Full context passed to CLI via buildCliHandoffPrompt
+  → const cliPrompt = buildCliHandoffPrompt(preAnalysisResults, task, taskJsonPath)
+  → const cliCommand = buildCliCommand(task, cliTool, cliPrompt)
+  → Bash({ command: cliCommand, run_in_background: false, timeout: 3600000 })
+
+ELSE (executionMethod === 'agent'):
+  // Execute implementation steps directly
+  FOR each step in implementation_approach[]:
+    1. Variable Substitution: Replace [variable_name] with preAnalysisResults
+    2. Read modification_points[] as files to create/modify
+    3. Read logic_flow[] as implementation sequence
+    4. For each file in modification_points:
+       • If "Create new file: path" → Use Write tool
+       • If "Modify file: path" → Use Edit tool
+       • If "Add to file: path" → Use Edit tool (append)
+    5. Follow logic_flow sequence
+    6. Use [focus_paths] from context as working directory scope
+    7. Store result in [step.output] variable
 ```
 
-**CLI Command Execution (CLI Execute Mode)**:
-When step contains `command` field with Codex CLI, execute via CCW CLI. For Codex resume:
-- First task (`depends_on: []`): `ccw cli -p "..." --tool codex --mode write --cd [path]`
-- Subsequent tasks (has `depends_on`): Use CCW CLI with resume context to maintain session
+**CLI Handoff Functions**:
+
+```javascript
+// Get default CLI tool from cli-tools.json
+function getDefaultCliTool() {
+  // Read ~/.claude/cli-tools.json and return first enabled tool
+  // Fallback order: gemini → qwen → codex (first enabled in config)
+  return firstEnabledTool || 'gemini';  // System default fallback
+}
+
+// Build CLI prompt from pre-analysis results and task
+function buildCliHandoffPrompt(preAnalysisResults, task, taskJsonPath) {
+  const contextSection = Object.entries(preAnalysisResults)
+    .map(([key, value]) => `### ${key}\n${value}`)
+    .join('\n\n');
+
+  const conventions = task.context.shared_context?.conventions?.join(' | ') || '';
+  const constraints = `Follow existing patterns | No breaking changes${conventions ? ' | ' + conventions : ''}`;
+
+  return `
+PURPOSE: ${task.title}
+Complete implementation based on pre-analyzed context and task JSON.
+
+## TASK JSON
+Read full task definition: ${taskJsonPath}
+
+## TECH STACK
+${task.context.shared_context?.tech_stack?.map(t => `- ${t}`).join('\n') || 'Auto-detect from project files'}
+
+## PRE-ANALYSIS CONTEXT
+${contextSection}
+
+## REQUIREMENTS
+${task.context.requirements?.map(r => `- ${r}`).join('\n') || task.context.requirements}
+
+## ACCEPTANCE CRITERIA
+${task.context.acceptance?.map(a => `- ${a}`).join('\n') || task.context.acceptance}
+
+## TARGET FILES
+${task.flow_control.target_files?.map(f => `- ${f}`).join('\n') || 'See task JSON modification_points'}
+
+## FOCUS PATHS
+${task.context.focus_paths?.map(p => `- ${p}`).join('\n') || 'See task JSON'}
+
+MODE: write
+CONSTRAINTS: ${constraints}
+`.trim();
+}
+
+// Build CLI command with resume strategy
+function buildCliCommand(task, cliTool, cliPrompt) {
+  const cli = task.cli_execution || {};
+  const escapedPrompt = cliPrompt.replace(/"/g, '\\"');
+  const baseCmd = `ccw cli -p "${escapedPrompt}"`;
+
+  switch (cli.strategy) {
+    case 'new':
+      return `${baseCmd} --tool ${cliTool} --mode write --id ${task.cli_execution_id}`;
+    case 'resume':
+      return `${baseCmd} --resume ${cli.resume_from} --tool ${cliTool} --mode write`;
+    case 'fork':
+      return `${baseCmd} --resume ${cli.resume_from} --id ${task.cli_execution_id} --tool ${cliTool} --mode write`;
+    case 'merge_fork':
+      return `${baseCmd} --resume ${cli.merge_from.join(',')} --id ${task.cli_execution_id} --tool ${cliTool} --mode write`;
+    default:
+      // Fallback: no resume, no id
+      return `${baseCmd} --tool ${cliTool} --mode write`;
+  }
+}
+```
+
+**Execution Config Reference** (from task.meta.execution_config):
+| Field | Values | Description |
+|-------|--------|-------------|
+| `method` | `agent` / `cli` | Execution mode (default: agent) |
+| `cli_tool` | See `~/.claude/cli-tools.json` | CLI tool preference (first enabled tool as default) |
+| `enable_resume` | `true` / `false` | Enable CLI session resume |
+
+**CLI Execution Reference** (from task.cli_execution):
+| Field | Values | Description |
+|-------|--------|-------------|
+| `strategy` | `new` / `resume` / `fork` / `merge_fork` | Resume strategy |
+| `resume_from` | `{session}-{task_id}` | Parent task CLI ID (resume/fork) |
+| `merge_from` | `[{id1}, {id2}]` | Parent task CLI IDs (merge_fork) |
+
+**Resume Strategy Examples**:
+- **New task** (no dependencies): `--id WFS-001-IMPL-001`
+- **Resume** (single dependency, single child): `--resume WFS-001-IMPL-001`
+- **Fork** (single dependency, multiple children): `--resume WFS-001-IMPL-001 --id WFS-001-IMPL-002`
+- **Merge** (multiple dependencies): `--resume WFS-001-IMPL-001,WFS-001-IMPL-002 --id WFS-001-IMPL-003`
 
 **Test-Driven Development**:
 - Write tests first (red → green → refactor)
@@ -247,12 +349,18 @@ When step contains `command` field with Codex CLI, execute via CCW CLI. For Code
 
 **Upon completing any task:**
 
-1. **Verify Implementation**: 
+1. **Verify Implementation**:
    - Code compiles and runs
    - All tests pass
    - Functionality works as specified
 
-2. **Update TODO List**: 
+2. **Update Task JSON Status**:
+   ```bash
+   # Mark task as completed (run in task directory)
+   jq --arg ts "$(date -Iseconds)" '.status="completed" | .status_history += [{"from":"in_progress","to":"completed","changed_at":$ts}]' IMPL-X.json > tmp.json && mv tmp.json IMPL-X.json
+   ```
+
+3. **Update TODO List**: 
    - Update TODO_LIST.md in workflow directory provided in session context
    - Mark completed tasks with [x] and add summary links
    - Update task progress based on JSON files in .task/ directory
@@ -389,7 +497,8 @@ Before completing any task, verify:
 - Use `run_in_background=false` for all Bash/CLI calls - agent cannot receive task hook callbacks
 - Set timeout ≥60 minutes for CLI commands (hooks don't propagate to subagents):
   ```javascript
-  Bash(command="ccw cli -p '...' --tool codex --mode write", timeout=3600000)  // 60 min
+  Bash(command="ccw cli -p '...' --tool <cli-tool> --mode write", timeout=3600000)  // 60 min
+  // <cli-tool>: First enabled tool from ~/.claude/cli-tools.json (e.g., gemini, qwen, codex)
   ```
 
 **ALWAYS:**

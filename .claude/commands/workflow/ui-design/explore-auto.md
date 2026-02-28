@@ -2,7 +2,7 @@
 name: explore-auto
 description: Interactive exploratory UI design workflow with style-centric batch generation, creates design variants from prompts/images with parallel execution and user selection
 argument-hint: "[--input "<value>"] [--targets "<list>"] [--target-type "page|component"] [--session <id>] [--style-variants <count>] [--layout-variants <count>]"
-allowed-tools: SlashCommand(*), TodoWrite(*), Read(*), Bash(*), Glob(*), Write(*), Task(conceptual-planning-agent)
+allowed-tools: Skill(*), TodoWrite(*), Read(*), Bash(*), Glob(*), Write(*), Task(conceptual-planning-agent)
 ---
 
 # UI Design Auto Workflow Command
@@ -28,7 +28,7 @@ allowed-tools: SlashCommand(*), TodoWrite(*), Read(*), Bash(*), Glob(*), Write(*
 
 **Phase Transition Mechanism**:
 - **Phase 5 (User Interaction)**: User confirms targets → IMMEDIATELY executes Phase 7
-- **Phase 7-10 (Autonomous)**: SlashCommand execute **ATTACHES** tasks to current workflow
+- **Phase 7-10 (Autonomous)**: Skill execute **ATTACHES** tasks to current workflow
 - **Task Execution**: Orchestrator **EXECUTES** these attached tasks itself
 - **Task Collapse**: After tasks complete, collapse them into phase summary
 - **Phase Transition**: Automatically execute next phase after collapsing
@@ -36,7 +36,7 @@ allowed-tools: SlashCommand(*), TodoWrite(*), Read(*), Bash(*), Glob(*), Write(*
 
 **Auto-Continue Mechanism**: TodoWrite tracks phase status with dynamic task attachment/collapse. After executing all attached tasks, you MUST immediately collapse them, restore phase summary, and execute the next phase. No user intervention required. The workflow is NOT complete until Phase 10 (UI assembly) finishes.
 
-**Task Attachment Model**: SlashCommand execute is NOT delegation - it's task expansion. The orchestrator executes these attached tasks itself, not waiting for external completion.
+**Task Attachment Model**: Skill execute is NOT delegation - it's task expansion. The orchestrator executes these attached tasks itself, not waiting for external completion.
 
 **Target Type Detection**: Automatically inferred from prompt/targets, or explicitly set via `--target-type`.
 
@@ -92,7 +92,7 @@ Phase 10: UI Assembly
 3. **Parse & Pass**: Extract data from each output for next phase
 4. **Default to All**: When selecting variants/prototypes, use ALL generated items
 5. **Track Progress**: Update TodoWrite dynamically with task attachment/collapse pattern
-6. **⚠️ CRITICAL: Task Attachment Model** - SlashCommand execute **ATTACHES** tasks to current workflow. Orchestrator **EXECUTES** these attached tasks itself, not waiting for external completion. This is NOT delegation - it's task expansion.
+6. **⚠️ CRITICAL: Task Attachment Model** - Skill execute **ATTACHES** tasks to current workflow. Orchestrator **EXECUTES** these attached tasks itself, not waiting for external completion. This is NOT delegation - it's task expansion.
 7. **⚠️ CRITICAL: DO NOT STOP** - This is a continuous multi-phase workflow. After executing all attached tasks, you MUST immediately collapse them and execute the next phase. Workflow is NOT complete until Phase 10 (UI assembly) finishes.
 
 ## Parameter Requirements
@@ -364,11 +364,11 @@ IF design_source IN ["code_only", "hybrid"]:
     command = "/workflow:ui-design:import-from-code --design-id \"{design_id}\" --source \"{code_base_path}\""
 
     TRY:
-        # SlashCommand execute ATTACHES import-from-code's tasks to current workflow
+        # Skill execute ATTACHES import-from-code's tasks to current workflow
         # Orchestrator will EXECUTE these attached tasks itself:
         #   - Phase 0: Discover and categorize code files
         #   - Phase 1.1-1.3: Style/Animation/Layout Agent extraction
-        SlashCommand(command)
+        Skill(skill=command)
     CATCH error:
         WARN: "⚠️ Code import failed: {error}"
         WARN: "Cleaning up incomplete import directories"
@@ -479,9 +479,9 @@ IF design_source == "visual_only" OR needs_visual_supplement:
               (prompt_text ? "--prompt \"{prompt_text}\" " : "") +
               "--variants {style_variants} --interactive"
 
-    # SlashCommand execute ATTACHES style-extract's tasks to current workflow
+    # Skill execute ATTACHES style-extract's tasks to current workflow
     # Orchestrator will EXECUTE these attached tasks itself
-    SlashCommand(command)
+    Skill(skill=command)
 
     # After executing all attached tasks, collapse them into phase summary
 ELSE:
@@ -522,9 +522,9 @@ IF should_extract_animation:
 
     command = " ".join(command_parts)
 
-    # SlashCommand execute ATTACHES animation-extract's tasks to current workflow
+    # Skill execute ATTACHES animation-extract's tasks to current workflow
     # Orchestrator will EXECUTE these attached tasks itself
-    SlashCommand(command)
+    Skill(skill=command)
 
     # After executing all attached tasks, collapse them into phase summary
 ELSE:
@@ -548,9 +548,9 @@ IF (design_source == "visual_only" OR needs_visual_supplement) OR (NOT layout_co
               (prompt_text ? "--prompt \"{prompt_text}\" " : "") +
               "--targets \"{targets_string}\" --variants {layout_variants} --device-type \"{device_type}\" --interactive"
 
-    # SlashCommand execute ATTACHES layout-extract's tasks to current workflow
+    # Skill execute ATTACHES layout-extract's tasks to current workflow
     # Orchestrator will EXECUTE these attached tasks itself
-    SlashCommand(command)
+    Skill(skill=command)
 
     # After executing all attached tasks, collapse them into phase summary
 ELSE:
@@ -571,9 +571,9 @@ REPORT: "   → Pure assembly: Combining layout templates + design tokens"
 REPORT: "   → Device: {device_type} (from layout templates)"
 REPORT: "   → Assembly tasks: {total} combinations"
 
-# SlashCommand execute ATTACHES generate's tasks to current workflow
+# Skill execute ATTACHES generate's tasks to current workflow
 # Orchestrator will EXECUTE these attached tasks itself
-SlashCommand(command)
+Skill(skill=command)
 
 # After executing all attached tasks, collapse them into phase summary
 # Workflow complete - generate command handles preview file generation (compare.html, PREVIEW.md)
@@ -596,10 +596,10 @@ TodoWrite({todos: [
 
 // ⚠️ CRITICAL: Dynamic TodoWrite task attachment strategy:
 //
-// **Key Concept**: SlashCommand execute ATTACHES tasks to current workflow.
+// **Key Concept**: Skill execute ATTACHES tasks to current workflow.
 // Orchestrator EXECUTES these attached tasks itself, not waiting for external completion.
 //
-// Phase 7-10 SlashCommand Execute Pattern (when tasks are attached):
+// Phase 7-10 Skill Execute Pattern (when tasks are attached):
 // Example - Phase 7 with sub-tasks:
 // [
 //   {"content": "Phase 7: Style Extraction", "status": "in_progress", "activeForm": "Executing style extraction"},

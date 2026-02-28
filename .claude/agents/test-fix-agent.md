@@ -51,10 +51,15 @@ You will execute tests across multiple layers, analyze failures with layer-speci
 
 ## Execution Process
 
-### Flow Control Execution
-When task JSON contains `flow_control` field, execute preparation and implementation steps systematically.
+### 0. Task Status: Mark In Progress
+```bash
+jq --arg ts "$(date -Iseconds)" '.status="in_progress" | .status_history += [{"from":.status,"to":"in_progress","changed_at":$ts}]' IMPL-X.json > tmp.json && mv tmp.json IMPL-X.json
+```
 
-**Pre-Analysis Steps** (`flow_control.pre_analysis`):
+### Task Execution Flow
+When task JSON contains `pre_analysis` and `implementation` fields, execute preparation and implementation steps systematically.
+
+**Pre-Analysis Steps** (`pre_analysis`):
 1. **Sequential Processing**: Execute steps in order, accumulating context
 2. **Variable Substitution**: Use `[variable_name]` to reference previous outputs
 3. **Error Handling**: Follow step-specific strategies (`skip_optional`, `fail`, `retry_once`)
@@ -67,7 +72,7 @@ When task JSON contains `flow_control` field, execute preparation and implementa
 "Glob(pattern)"         → Glob tool: Glob(pattern=pattern)
 ```
 
-**Implementation Approach** (`flow_control.implementation_approach`):
+**Implementation Approach** (`implementation`):
 When task JSON contains implementation_approach array:
 1. **Sequential Execution**: Process steps in order, respecting `depends_on` dependencies
 2. **Dependency Resolution**: Wait for all steps listed in `depends_on` before starting
@@ -78,15 +83,15 @@ When task JSON contains implementation_approach array:
    - `description`: Detailed description with variable references
    - `modification_points`: Test and code modification targets
    - `logic_flow`: Test-fix iteration sequence
-   - `command`: Optional CLI command (only when explicitly specified)
    - `depends_on`: Array of step numbers that must complete first
    - `output`: Variable name for this step's output
 5. **Execution Mode Selection**:
-   - IF `command` field exists → Execute CLI command via Bash tool
-   - ELSE (no command) → Agent direct execution:
-     - Parse `modification_points` as files to modify
-     - Follow `logic_flow` for test-fix iteration
-     - Use test_commands from flow_control for test execution
+   - Based on `meta.execution_config.method`:
+     - `"cli"` → Build CLI command via buildCliHandoffPrompt() and execute via Bash tool
+     - `"agent"` (default) → Agent direct execution:
+       - Parse `modification_points` as files to modify
+       - Follow `logic_flow` for test-fix iteration
+       - Use test_commands from convergence.criteria for test execution
 
 
 ### 1. Context Assessment & Test Discovery
@@ -97,7 +102,7 @@ When task JSON contains implementation_approach array:
   - L1 (Unit): `*.test.*`, `*.spec.*` in `__tests__/`, `tests/unit/`
   - L2 (Integration): `tests/integration/`, `*.integration.test.*`
   - L3 (E2E): `tests/e2e/`, `*.e2e.test.*`, `cypress/`, `playwright/`
-- **context-package.json** (CCW Workflow): Use Read tool to get context package from `.workflow/active/{session}/.process/context-package.json`
+- **context-package.json** : Use Read tool to get context package from `.workflow/active/{session}/.process/context-package.json`
 - Identify test commands from project configuration
 
 ```bash
@@ -157,7 +162,7 @@ run_test_layer "L1-unit" "$UNIT_CMD"
 
 ### 3. Failure Diagnosis & Fixing Loop
 
-**Execution Modes** (determined by `flow_control.implementation_approach`):
+**Execution Modes** (determined by `implementation`):
 
 **A. Agent Mode (Default, no `command` field in steps)**:
 ```
@@ -328,6 +333,13 @@ When generating test results for orchestrator (saved to `.process/test-results.j
 - Pass rate >= 95% + all failures are "low" criticality → ✅ PARTIAL SUCCESS (review and approve)
 - Pass rate >= 95% + any "high" or "medium" criticality failures → ⚠️ NEEDS FIX (continue iteration)
 - Pass rate < 95% → ❌ FAILED (continue iteration or abort)
+
+## Task Status Update
+
+**Upon task completion**, update task JSON status:
+```bash
+jq --arg ts "$(date -Iseconds)" '.status="completed" | .status_history += [{"from":"in_progress","to":"completed","changed_at":$ts}]' IMPL-X.json > tmp.json && mv tmp.json IMPL-X.json
+```
 
 ## Important Reminders
 

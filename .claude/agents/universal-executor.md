@@ -41,7 +41,7 @@ IF context sufficient for execution:
     → Proceed with task execution
 ELIF context insufficient OR task has flow control marker:
     → Check for [FLOW_CONTROL] marker:
-       - Execute flow_control.pre_analysis steps sequentially for context gathering
+       - Execute pre_analysis steps sequentially for context gathering
        - Use four flexible context acquisition methods:
          * Document references (cat commands)
          * Search commands (grep/rg/find)

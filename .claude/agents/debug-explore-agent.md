@@ -35,6 +35,9 @@ Phase 5: Fix & Verification
 
 ## Phase 1: Bug Analysis
 
+**Load Project Context** (from spec system):
+- Load exploration specs using: `ccw spec load --category exploration` for tech stack context and coding constraints
+
 **Session Setup**:
 ```javascript
 const bugSlug = bug_description.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30)

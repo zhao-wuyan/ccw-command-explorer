@@ -2,7 +2,7 @@
 name: workflow:ui-design:codify-style
 description: Orchestrator to extract styles from code and generate shareable reference package with preview (automatic file discovery)
 argument-hint: "<path> [--package-name <name>] [--output-dir <path>] [--overwrite]"
-allowed-tools: SlashCommand,Bash,Read,TodoWrite
+allowed-tools: Skill,Bash,Read,TodoWrite
 auto-continue: true
 ---
 
@@ -27,7 +27,7 @@ auto-continue: true
 
 **Phase Transition Mechanism**:
 - **Phase 0 (Validation)**: Validate parameters, prepare workspace → IMMEDIATELY triggers Phase 1
-- **Phase 1-2 (Task Attachment)**: `SlashCommand` invocation **ATTACHES** tasks to current workflow. Orchestrator **EXECUTES** these tasks itself.
+- **Phase 1-2 (Task Attachment)**: `Skill` invocation **ATTACHES** tasks to current workflow. Orchestrator **EXECUTES** these tasks itself.
 - **Task Execution**: Orchestrator runs attached tasks sequentially, updating TodoWrite as each completes
 - **Task Collapse**: After all attached tasks complete, collapse them into phase summary
 - **Phase Transition**: Automatically execute next phase after collapsing completed tasks
@@ -35,7 +35,7 @@ auto-continue: true
 
 **Auto-Continue Mechanism**: TodoWrite tracks phase status with dynamic task attachment/collapse. After executing all attached tasks, you MUST immediately collapse them, restore phase summary, and execute the next phase. No user intervention required. The workflow is NOT complete until reaching Phase 3.
 
-**Task Attachment Model**: SlashCommand invocation is NOT delegation - it's task expansion. The orchestrator executes these attached tasks itself, not waiting for external completion.
+**Task Attachment Model**: Skill invocation is NOT delegation - it's task expansion. The orchestrator executes these attached tasks itself, not waiting for external completion.
 
 ## Core Rules
 
@@ -45,7 +45,7 @@ auto-continue: true
 4. **Intelligent Validation**: Smart parameter validation with user-friendly error messages
 5. **Safety First**: Package overwrite protection, existence checks, fallback error handling
 6. **Track Progress**: Update TodoWrite dynamically with task attachment/collapse pattern
-7. **⚠️ CRITICAL: Task Attachment Model** - SlashCommand invocation **ATTACHES** tasks to current workflow. Orchestrator **EXECUTES** these attached tasks itself, not waiting for external completion. This is NOT delegation - it's task expansion.
+7. **⚠️ CRITICAL: Task Attachment Model** - Skill invocation **ATTACHES** tasks to current workflow. Orchestrator **EXECUTES** these attached tasks itself, not waiting for external completion. This is NOT delegation - it's task expansion.
 8. **⚠️ CRITICAL: DO NOT STOP** - This is a continuous multi-phase workflow. After executing all attached tasks, you MUST immediately collapse them and execute the next phase. Workflow is NOT complete until Phase 3.
 
 ---
@@ -199,7 +199,7 @@ STORE: temp_id, design_run_path
 
 <!-- TodoWrite: Update Phase 0 → completed, Phase 1 → in_progress, INSERT import-from-code tasks -->
 
-**TodoWrite Update (Phase 1 SlashCommand invoked - tasks attached)**:
+**TodoWrite Update (Phase 1 Skill invoked - tasks attached)**:
 ```json
 [
   {"content": "Phase 0: Validate parameters and prepare session", "status": "completed", "activeForm": "Validating parameters"},
@@ -212,7 +212,7 @@ STORE: temp_id, design_run_path
 ]
 ```
 
-**Note**: SlashCommand invocation **attaches** import-from-code's 4 tasks to current workflow. Orchestrator **executes** these tasks itself.
+**Note**: Skill invocation **attaches** import-from-code's 4 tasks to current workflow. Orchestrator **executes** these tasks itself.
 
 **Next Action**: Tasks attached → **Execute Phase 1.0-1.3** sequentially
 
@@ -236,13 +236,13 @@ command = "/workflow:ui-design:import-from-code" +
 
 ```bash
 TRY:
-    # SlashCommand invocation ATTACHES import-from-code's 4 tasks to current workflow
+    # Skill invocation ATTACHES import-from-code's 4 tasks to current workflow
     # Orchestrator will EXECUTE these attached tasks itself:
     #   1. Phase 1.0: Discover and categorize code files
     #   2. Phase 1.1: Style Agent extraction
     #   3. Phase 1.2: Animation Agent extraction
     #   4. Phase 1.3: Layout Agent extraction
-    SlashCommand(command)
+    Skill(skill=command)
 
     # After executing all attached tasks, verify extraction outputs
     tokens_path = "${design_run_path}/style-extraction/style-1/design-tokens.json"
@@ -281,7 +281,7 @@ CATCH error:
 
 <!-- TodoWrite: REMOVE Phase 1.0-1.3 tasks, INSERT reference-page-generator tasks -->
 
-**TodoWrite Update (Phase 2 SlashCommand invoked - tasks attached)**:
+**TodoWrite Update (Phase 2 Skill invoked - tasks attached)**:
 ```json
 [
   {"content": "Phase 0: Validate parameters and prepare session", "status": "completed", "activeForm": "Validating parameters"},
@@ -293,7 +293,7 @@ CATCH error:
 ]
 ```
 
-**Note**: Phase 1 tasks completed and collapsed. SlashCommand invocation **attaches** reference-page-generator's 3 tasks. Orchestrator **executes** these tasks itself.
+**Note**: Phase 1 tasks completed and collapsed. Skill invocation **attaches** reference-page-generator's 3 tasks. Orchestrator **executes** these tasks itself.
 
 **Next Action**: Tasks attached → **Execute Phase 2.0-2.2** sequentially
 
@@ -316,12 +316,12 @@ command = "/workflow:ui-design:reference-page-generator " +
 
 ```bash
 TRY:
-    # SlashCommand invocation ATTACHES reference-page-generator's 3 tasks to current workflow
+    # Skill invocation ATTACHES reference-page-generator's 3 tasks to current workflow
     # Orchestrator will EXECUTE these attached tasks itself:
     #   1. Phase 2.0: Setup and validation
     #   2. Phase 2.1: Prepare component data
     #   3. Phase 2.2: Generate preview pages
-    SlashCommand(command)
+    Skill(skill=command)
 
     # After executing all attached tasks, verify package outputs
     required_files = [
@@ -450,13 +450,13 @@ TodoWrite({todos: [
 
 // ⚠️ CRITICAL: Dynamic TodoWrite task attachment strategy:
 //
-// **Key Concept**: SlashCommand invocation ATTACHES tasks to current workflow.
+// **Key Concept**: Skill invocation ATTACHES tasks to current workflow.
 // Orchestrator EXECUTES these attached tasks itself, not waiting for external completion.
 //
 // 1. INITIAL STATE: 4 orchestrator-level tasks only
 //
-// 2. PHASE 1 SlashCommand INVOCATION:
-//    - SlashCommand(/workflow:ui-design:import-from-code) ATTACHES 4 tasks
+// 2. PHASE 1 Skill INVOCATION:
+//    - Skill(skill="workflow:ui-design:import-from-code") ATTACHES 4 tasks
 //    - TodoWrite expands to: Phase 0 (completed) + 4 import-from-code tasks + Phase 2 + Phase 3
 //    - Orchestrator EXECUTES these 4 tasks sequentially (Phase 1.0 → 1.1 → 1.2 → 1.3)
 //    - First attached task marked as in_progress
@@ -466,8 +466,8 @@ TodoWrite({todos: [
 //    - COLLAPSE completed tasks into Phase 1 summary
 //    - TodoWrite becomes: Phase 0-1 (completed) + Phase 2 + Phase 3
 //
-// 4. PHASE 2 SlashCommand INVOCATION:
-//    - SlashCommand(/workflow:ui-design:reference-page-generator) ATTACHES 3 tasks
+// 4. PHASE 2 Skill INVOCATION:
+//    - Skill(skill="workflow:ui-design:reference-page-generator") ATTACHES 3 tasks
 //    - TodoWrite expands to: Phase 0-1 (completed) + 3 reference-page-generator tasks + Phase 3
 //    - Orchestrator EXECUTES these 3 tasks sequentially (Phase 2.0 → 2.1 → 2.2)
 //
@@ -477,7 +477,7 @@ TodoWrite({todos: [
 //    - TodoWrite returns to: Phase 0-2 (completed) + Phase 3 (in_progress)
 //
 // 6. PHASE 3 EXECUTION:
-//    - Orchestrator's own task (no SlashCommand attachment)
+//    - Orchestrator's own task (no Skill attachment)
 //    - Mark Phase 3 as completed
 //    - Final state: All 4 orchestrator tasks completed
 
@@ -507,7 +507,7 @@ User triggers: /workflow:ui-design:codify-style ./src --package-name my-style-v1
   ↓
 [Phase 0 Complete] → TodoWrite: Phase 0 → completed
   ↓
-[Phase 1 Invoke] → SlashCommand(/workflow:ui-design:import-from-code) ATTACHES 4 tasks
+[Phase 1 Invoke] → Skill(skill="workflow:ui-design:import-from-code") ATTACHES 4 tasks
   ├─ Phase 0 (completed)
   ├─ Phase 1.0: Discover and categorize code files (in_progress)  ← ATTACHED
   ├─ Phase 1.1: Style Agent extraction (pending)                   ← ATTACHED
@@ -523,7 +523,7 @@ User triggers: /workflow:ui-design:codify-style ./src --package-name my-style-v1
   ↓
 [Phase 1 Complete] → TodoWrite: COLLAPSE Phase 1.0-1.3 into Phase 1 summary
   ↓
-[Phase 2 Invoke] → SlashCommand(/workflow:ui-design:reference-page-generator) ATTACHES 3 tasks
+[Phase 2 Invoke] → Skill(skill="workflow:ui-design:reference-page-generator") ATTACHES 3 tasks
   ├─ Phase 0 (completed)
   ├─ Phase 1: Style extraction from source code (completed)        ← COLLAPSED
   ├─ Phase 2.0: Setup and validation (in_progress)                 ← ATTACHED

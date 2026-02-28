@@ -50,6 +50,10 @@
 - Use `git add <specific-files>` instead of `git add .`
 - Verify staged files before commit to avoid cross-task conflicts
 
+**Multi-CLI Coexistence** (CRITICAL):
+- If your task conflicts with existing uncommitted changes, **STOP and report the conflict** instead of overwriting
+- Treat all pre-existing uncommitted changes as intentional work-in-progress by other tools
+
 
 ## System Optimization
 

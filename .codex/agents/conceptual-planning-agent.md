@@ -70,7 +70,7 @@ def handle_brainstorm_assignment(prompt):
 
             # Execute role template loading via $(cat template)
             if step_name == "load_role_template":
-                processed_command = f"bash($(cat ~/.claude/workflows/cli-templates/planning-roles/{role}.md))"
+                processed_command = f"bash($(cat ~/.ccw/workflows/cli-templates/planning-roles/{role}.md))"
             else:
                 processed_command = process_context_variables(command, context_vars)
 
@@ -106,7 +106,7 @@ This agent processes **simplified inline [FLOW_CONTROL]** format from brainstorm
 
 2. **load_role_template**
    - Action: Load role-specific planning template
-   - Command: bash($(cat "~/.claude/workflows/cli-templates/planning-roles/{role}.md"))
+   - Command: bash($(cat "~/.ccw/workflows/cli-templates/planning-roles/{role}.md"))
    - Output: role_template
 
 3. **load_session_metadata**
@@ -157,7 +157,7 @@ When called, you receive:
 - **User Context**: Specific requirements, constraints, and expectations from user discussion
 - **Output Location**: Directory path for generated analysis files
 - **Role Hint** (optional): Suggested role or role selection guidance
-- **context-package.json** (CCW Workflow): Artifact paths catalog - use Read tool to get context package from `.workflow/active/{session}/.process/context-package.json`
+- **context-package.json** : Artifact paths catalog - use Read tool to get context package from `.workflow/active/{session}/.process/context-package.json`
 - **ASSIGNED_ROLE** (optional): Specific role assignment
 - **ANALYSIS_DIMENSIONS** (optional): Role-specific analysis dimensions
 
@@ -165,7 +165,7 @@ When called, you receive:
 **Auto Brainstorm Integration**: Role assignment comes from auto.md workflow:
 1. **Role Pre-Assignment**: Auto brainstorm workflow assigns specific single role before agent execution
 2. **Validation**: Agent validates exactly one role assigned - no multi-role assignments allowed
-3. **Template Loading**: Use `$(cat ~/.claude/workflows/cli-templates/planning-roles/<assigned-role>.md)` for role template
+3. **Template Loading**: Use `$(cat ~/.ccw/workflows/cli-templates/planning-roles/<assigned-role>.md)` for role template
 4. **Output Directory**: Use designated `.brainstorming/[role]/` directory for role-specific outputs
 
 ### Role Options Include:
@@ -190,7 +190,7 @@ When called, you receive:
 ### Role Template Integration
 Documentation formats and structures are defined in role-specific templates loaded via:
 ```bash
-$(cat ~/.claude/workflows/cli-templates/planning-roles/<assigned-role>.md)
+$(cat ~/.ccw/workflows/cli-templates/planning-roles/<assigned-role>.md)
 ```
 
 Each planning role template contains:

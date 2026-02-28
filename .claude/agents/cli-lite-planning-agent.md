@@ -4,7 +4,7 @@ description: |
   Generic planning agent for lite-plan, collaborative-plan, and lite-fix workflows. Generates structured plan JSON based on provided schema reference.
 
   Core capabilities:
-  - Schema-driven output (plan-json-schema or fix-plan-json-schema)
+  - Schema-driven output (plan-overview-base-schema or plan-overview-fix-schema)
   - Task decomposition with dependency analysis
   - CLI execution ID assignment for fork/merge strategies
   - Multi-angle context integration (explorations or diagnoses)
@@ -14,7 +14,7 @@ color: cyan
 
 You are a generic planning agent that generates structured plan JSON for lite workflows. Output format is determined by the schema reference provided in the prompt. You execute CLI planning tools (Gemini/Qwen), parse results, and generate planObject conforming to the specified schema.
 
-**CRITICAL**: After generating plan.json, you MUST execute internal **Plan Quality Check** (Phase 5) using CLI analysis to validate and auto-fix plan quality before returning to orchestrator. Quality dimensions: completeness, granularity, dependencies, acceptance criteria, implementation steps, constraint compliance.
+**CRITICAL**: After generating plan.json and .task/*.json files, you MUST execute internal **Plan Quality Check** (Phase 5) using CLI analysis to validate and auto-fix plan quality before returning to orchestrator. Quality dimensions: completeness, granularity, dependencies, convergence criteria, implementation steps, constraint compliance.
 
 ## Output Artifacts
 
@@ -24,7 +24,8 @@ The agent produces different artifacts based on workflow context:
 
 | Artifact | Description |
 |----------|-------------|
-| `plan.json` | Structured plan following plan-json-schema.json |
+| `plan.json` | Plan overview following plan-overview-base-schema.json (with `task_ids[]` + `task_count`, NO `tasks[]`) |
+| `.task/TASK-*.json` | Independent task files following task-schema.json (one per task) |
 
 ### Extended Output (collaborative-plan sub-agents)
 
@@ -33,7 +34,7 @@ When invoked with `process_docs: true` in input context:
 | Artifact | Description |
 |----------|-------------|
 | `planning-context.md` | Evidence paths + synthesized understanding (insights, decisions, approach) |
-| `sub-plan.json` | Sub-plan following plan-json-schema.json with source_agent metadata |
+| `sub-plan.json` | Sub-plan following plan-overview-base-schema.json with source_agent metadata |
 
 **planning-context.md format**:
 ```markdown
@@ -53,11 +54,14 @@ When invoked with `process_docs: true` in input context:
 
 ## Input Context
 
+**Project Context** (loaded from spec system at startup):
+- Load specs using: `ccw spec load --category "exploration architecture"` → tech_stack, architecture, key_components, conventions, constraints, quality_rules
+
 ```javascript
 {
   // Required
   task_description: string,           // Task or bug description
-  schema_path: string,                // Schema reference path (plan-json-schema or fix-plan-json-schema)
+  schema_path: string,                // Schema reference path (plan-overview-base-schema or plan-overview-fix-schema)
   session: { id, folder, artifacts },
 
   // Context (one of these based on workflow)
@@ -105,8 +109,8 @@ When `process_docs: true`, generate planning-context.md before sub-plan.json:
 ## Schema-Driven Output
 
 **CRITICAL**: Read the schema reference first to determine output structure:
-- `plan-json-schema.json` → Implementation plan with `approach`, `complexity`
-- `fix-plan-json-schema.json` → Fix plan with `root_cause`, `severity`, `risk_level`
+- `plan-overview-base-schema.json` → Implementation plan with `approach`, `complexity`
+- `plan-overview-fix-schema.json` → Fix plan with `root_cause`, `severity`, `risk_level`
 
 ```javascript
 // Step 1: Always read schema first
@@ -120,7 +124,7 @@ const planObject = generatePlanFromSchema(schema, context)
 
 ```
 Phase 1: Schema & Context Loading
-├─ Read schema reference (plan-json-schema or fix-plan-json-schema)
+├─ Read schema reference (plan-overview-base-schema or plan-overview-fix-schema)
 ├─ Aggregate multi-angle context (explorations or diagnoses)
 └─ Determine output structure from schema
 
@@ -134,11 +138,11 @@ Phase 3: Parsing & Enhancement
 ├─ Validate and enhance task objects
 └─ Infer missing fields from context
 
-Phase 4: planObject Generation
-├─ Build planObject conforming to schema
+Phase 4: Two-Layer Output Generation
+├─ Build task objects conforming to task-schema.json
 ├─ Assign CLI execution IDs and strategies
-├─ Generate flow_control from depends_on
-└─ Write initial plan.json
+├─ Write .task/TASK-*.json files (one per task)
+└─ Write plan.json overview (with task_ids[], NO tasks[])
 
 Phase 5: Plan Quality Check (MANDATORY)
 ├─ Execute CLI quality check using Gemini (Qwen fallback)
@@ -148,7 +152,7 @@ Phase 5: Plan Quality Check (MANDATORY)
 │  ├─ Dependency correctness (no circular deps, proper ordering)
 │  ├─ Acceptance criteria quality (quantified, testable)
 │  ├─ Implementation steps sufficiency (2+ steps per task)
-│  └─ Constraint compliance (follows project-guidelines.json)
+│  └─ Constraint compliance (follows specs/*.md)
 ├─ Parse check results and categorize issues
 └─ Decision:
    ├─ No issues → Return plan to orchestrator
@@ -180,14 +184,14 @@ EXPECTED:
 ## Complexity: {Low|Medium|High}
 
 ## Task Breakdown
-### T1: [Title] (or FIX1 for fix-plan)
+### TASK-001: [Title] (or FIX-001 for fix-plan)
 **Scope**: [module/feature path]
 **Action**: [type]
 **Description**: [what]
-**Modification Points**: - [file]: [target] - [change]
+**Files**: - **[path]**: [action] / [target] → [change description]
 **Implementation**: 1. [step]
 **Reference**: - Pattern: [pattern] - Files: [files] - Examples: [guidance]
-**Acceptance**: - [quantified criterion]
+**Convergence Criteria**: - [quantified criterion]
 **Depends On**: []
 
 [MEDIUM/HIGH COMPLEXITY ONLY]
@@ -221,21 +225,18 @@ EXPECTED:
 ## Design Decisions (MEDIUM/HIGH)
 - Decision: [what] | Rationale: [why] | Tradeoff: [what was traded]
 
-## Flow Control
-**Execution Order**: - Phase parallel-1: [T1, T2] (independent)
-**Exit Conditions**: - Success: [condition] - Failure: [condition]
-
 ## Time Estimate
 **Total**: [time]
 
 CONSTRAINTS:
 - Follow schema structure from {schema_path}
+- Task IDs use format TASK-001, TASK-002, etc. (FIX-001 for fix-plan)
 - Complexity determines required fields:
   * Low: base fields only
   * Medium: + rationale + verification + design_decisions
   * High: + risks + code_skeleton + data_flow
-- Acceptance/verification must be quantified
-- Dependencies use task IDs
+- Convergence criteria must be quantified and testable
+- Dependencies use task IDs (TASK-001 format)
 - analysis=READ-ONLY
 " --tool {cli_tool} --mode analysis --cd {project_root}
 ```
@@ -255,11 +256,13 @@ function extractSection(cliOutput, header) {
 // Parse structured tasks from CLI output
 function extractStructuredTasks(cliOutput, complexity) {
   const tasks = []
-  // Split by task headers
-  const taskBlocks = cliOutput.split(/### (T\d+):/).slice(1)
+  // Split by task headers (supports both TASK-NNN and T\d+ formats)
+  const taskBlocks = cliOutput.split(/### (TASK-\d+|T\d+):/).slice(1)
 
   for (let i = 0; i < taskBlocks.length; i += 2) {
-    const taskId = taskBlocks[i].trim()
+    const rawId = taskBlocks[i].trim()
+    // Normalize task ID to TASK-NNN format
+    const taskId = /^T(\d+)$/.test(rawId) ? `TASK-${rawId.slice(1).padStart(3, '0')}` : rawId
     const taskText = taskBlocks[i + 1]
 
     // Extract base fields
@@ -269,14 +272,20 @@ function extractStructuredTasks(cliOutput, complexity) {
     const descMatch = /\*\*Description\*\*: (.+?)(?=\n)/.exec(taskText)
     const depsMatch = /\*\*Depends On\*\*: (.+?)(?=\n|$)/.exec(taskText)
 
-    // Parse modification points
-    const modPointsSection = /\*\*Modification Points\*\*:\n((?:- .+?\n)*)/.exec(taskText)
-    const modPoints = []
-    if (modPointsSection) {
-      const lines = modPointsSection[1].split('\n').filter(s => s.trim().startsWith('-'))
+    // Parse files (replaces modification_points)
+    const filesSection = /\*\*Files\*\*:\n((?:- .+?\n)*)/.exec(taskText)
+    const files = []
+    if (filesSection) {
+      const lines = filesSection[1].split('\n').filter(s => s.trim().startsWith('-'))
       lines.forEach(line => {
-        const m = /- \[(.+?)\]: \[(.+?)\] - (.+)/.exec(line)
-        if (m) modPoints.push({ file: m[1].trim(), target: m[2].trim(), change: m[3].trim() })
+        // Format: - **path**: action / target -> change description
+        const m = /- \*\*(.+?)\*\*: (.+?) \/ (.+?) (?:→|->|-->) (.+)/.exec(line)
+        if (m) files.push({ path: m[1].trim(), action: m[2].trim(), target: m[3].trim(), change: m[4].trim() })
+        else {
+          // Fallback: - [file]: [target] - [change] (legacy format)
+          const legacy = /- \[(.+?)\]: \[(.+?)\] - (.+)/.exec(line)
+          if (legacy) files.push({ path: legacy[1].trim(), action: "modify", target: legacy[2].trim(), change: legacy[3].trim() })
+        }
       })
     }
 
@@ -294,10 +303,10 @@ function extractStructuredTasks(cliOutput, complexity) {
       examples: (/- Examples: (.+)/m.exec(refSection[1]) || [])[1]?.trim() || "Follow pattern"
     } : {}
 
-    // Parse acceptance
-    const acceptSection = /\*\*Acceptance\*\*:\n((?:- .+?\n)+)/.exec(taskText)
-    const acceptance = acceptSection
-      ? acceptSection[1].split('\n').map(s => s.replace(/^- /, '').trim()).filter(Boolean)
+    // Parse convergence criteria (replaces acceptance)
+    const convergenceSection = /\*\*Convergence Criteria\*\*:\n((?:- .+?\n)+)/.exec(taskText)
+    const convergenceCriteria = convergenceSection
+      ? convergenceSection[1].split('\n').map(s => s.replace(/^- /, '').trim()).filter(Boolean)
       : []
 
     const task = {
@@ -306,17 +315,26 @@ function extractStructuredTasks(cliOutput, complexity) {
       scope: scopeMatch?.[1].trim() || "",
       action: actionMatch?.[1].trim() || "Implement",
       description: descMatch?.[1].trim() || "",
-      modification_points: modPoints,
+      files,
       implementation,
       reference,
-      acceptance,
-      depends_on: depsMatch?.[1] === '[]' ? [] : (depsMatch?.[1] || "").replace(/[\[\]]/g, '').split(',').map(s => s.trim()).filter(Boolean)
+      convergence: { criteria: convergenceCriteria },
+      depends_on: depsMatch?.[1] === '[]' ? [] : (depsMatch?.[1] || "").replace(/[\[\]]/g, '').split(',').map(s => s.trim()).filter(Boolean).map(id => /^T(\d+)$/.test(id) ? `TASK-${id.slice(1).padStart(3, '0')}` : id)
     }
 
     // Add complexity-specific fields
     if (complexity === "Medium" || complexity === "High") {
       task.rationale = extractRationale(taskText)
-      task.verification = extractVerification(taskText)
+      // Parse verification into test object
+      const verification = extractVerification(taskText)
+      if (verification) {
+        task.test = {
+          manual_checks: verification.manual_checks || [],
+          success_metrics: verification.success_metrics || [],
+          unit: verification.unit_tests || [],
+          integration: verification.integration_tests || []
+        }
+      }
     }
 
     if (complexity === "High") {
@@ -328,25 +346,6 @@ function extractStructuredTasks(cliOutput, complexity) {
   }
 
   return tasks
-}
-
-// Parse flow control section
-function extractFlowControl(cliOutput) {
-  const flowMatch = /## Flow Control\n\*\*Execution Order\*\*:\n((?:- .+?\n)+)/m.exec(cliOutput)
-  const exitMatch = /\*\*Exit Conditions\*\*:\n- Success: (.+?)\n- Failure: (.+)/m.exec(cliOutput)
-
-  const execution_order = []
-  if (flowMatch) {
-    flowMatch[1].trim().split('\n').forEach(line => {
-      const m = /- Phase (.+?): \[(.+?)\] \((.+?)\)/.exec(line)
-      if (m) execution_order.push({ phase: m[1], tasks: m[2].split(',').map(s => s.trim()), type: m[3].includes('independent') ? 'parallel' : 'sequential' })
-    })
-  }
-
-  return {
-    execution_order,
-    exit_conditions: { success: exitMatch?.[1] || "All acceptance criteria met", failure: exitMatch?.[2] || "Critical task fails" }
-  }
 }
 
 // Parse rationale section for a task
@@ -492,7 +491,6 @@ function parseCLIOutput(cliOutput) {
     approach: extractSection(cliOutput, "Approach") || extractSection(cliOutput, "High-Level Approach"),
     complexity,
     raw_tasks: extractStructuredTasks(cliOutput, complexity),
-    flow_control: extractFlowControl(cliOutput),
     time_estimate: extractSection(cliOutput, "Time Estimate"),
     // High complexity only
     data_flow: complexity === "High" ? extractDataFlow(cliOutput) : null,
@@ -505,6 +503,8 @@ function parseCLIOutput(cliOutput) {
 ### Context Enrichment
 
 ```javascript
+// NOTE: relevant_files items are structured objects:
+//   {path, relevance, rationale, role, discovery_source?, key_symbols?, key_code?, topic_relation?}
 function buildEnrichedContext(explorationsContext, explorationAngles) {
   const enriched = { relevant_files: [], patterns: [], dependencies: [], integration_points: [], constraints: [] }
 
@@ -519,7 +519,16 @@ function buildEnrichedContext(explorationsContext, explorationAngles) {
     }
   })
 
-  enriched.relevant_files = [...new Set(enriched.relevant_files)]
+  // Deduplicate by path, keep highest relevance entry for each path
+  const fileMap = new Map()
+  enriched.relevant_files.forEach(f => {
+    const path = typeof f === 'string' ? f : f.path
+    const existing = fileMap.get(path)
+    if (!existing || (f.relevance || 0) > (existing.relevance || 0)) {
+      fileMap.set(path, typeof f === 'string' ? { path: f, relevance: 0.5, rationale: 'discovered', role: 'context_only' } : f)
+    }
+  })
+  enriched.relevant_files = [...fileMap.values()]
   return enriched
 }
 ```
@@ -529,21 +538,23 @@ function buildEnrichedContext(explorationsContext, explorationAngles) {
 ```javascript
 function validateAndEnhanceTasks(rawTasks, enrichedContext) {
   return rawTasks.map((task, idx) => ({
-    id: task.id || `T${idx + 1}`,
+    id: task.id || `TASK-${String(idx + 1).padStart(3, '0')}`,
     title: task.title || "Unnamed task",
-    file: task.file || inferFile(task, enrichedContext),
+    scope: task.scope || task.file || inferFile(task, enrichedContext),
     action: task.action || inferAction(task.title),
     description: task.description || task.title,
-    modification_points: task.modification_points?.length > 0
-      ? task.modification_points
-      : [{ file: task.file, target: "main", change: task.description }],
+    files: task.files?.length > 0
+      ? task.files
+      : [{ path: task.scope || task.file || inferFile(task, enrichedContext), action: "modify", target: "main", change: task.description }],
     implementation: task.implementation?.length >= 2
       ? task.implementation
-      : [`Analyze ${task.file}`, `Implement ${task.title}`, `Add error handling`],
-    reference: task.reference || { pattern: "existing patterns", files: enrichedContext.relevant_files.slice(0, 2), examples: "Follow existing structure" },
-    acceptance: task.acceptance?.length >= 1
-      ? task.acceptance
-      : [`${task.title} completed`, `Follows conventions`],
+      : [`Analyze ${task.scope || task.file}`, `Implement ${task.title}`, `Add error handling`],
+    reference: task.reference || { pattern: "existing patterns", files: enrichedContext.relevant_files.slice(0, 2).map(f => typeof f === 'string' ? f : f.path), examples: "Follow existing structure" },
+    convergence: {
+      criteria: task.convergence?.criteria?.length >= 1
+        ? task.convergence.criteria
+        : [`${task.title} completed`, `Follows conventions`]
+    },
     depends_on: task.depends_on || []
   }))
 }
@@ -554,9 +565,12 @@ function inferAction(title) {
   return match ? match[1] : "Implement"
 }
 
+// NOTE: relevant_files items are structured objects with .path property
+//   New fields: key_code? (array of {symbol, location?, description}), topic_relation? (string)
 function inferFile(task, ctx) {
   const files = ctx?.relevant_files || []
-  return files.find(f => task.title.toLowerCase().includes(f.split('/').pop().split('.')[0].toLowerCase())) || "file-to-be-determined.ts"
+  const getPath = f => typeof f === 'string' ? f : f.path
+  return getPath(files.find(f => task.title.toLowerCase().includes(getPath(f).split('/').pop().split('.')[0].toLowerCase())) || {}) || "file-to-be-determined.ts"
 }
 ```
 
@@ -601,54 +615,49 @@ function assignCliExecutionIds(tasks, sessionId) {
 | depends_on | Parent Children | Strategy | CLI Command |
 |------------|-----------------|----------|-------------|
 | [] | - | `new` | `--id {cli_execution_id}` |
-| [T1] | 1 | `resume` | `--resume {resume_from}` |
-| [T1] | >1 | `fork` | `--resume {resume_from} --id {cli_execution_id}` |
-| [T1,T2] | - | `merge_fork` | `--resume {ids.join(',')} --id {cli_execution_id}` |
-
-### Flow Control Inference
-
-```javascript
-function inferFlowControl(tasks) {
-  const phases = [], scheduled = new Set()
-  let num = 1
-
-  while (scheduled.size < tasks.length) {
-    const ready = tasks.filter(t => !scheduled.has(t.id) && t.depends_on.every(d => scheduled.has(d)))
-    if (!ready.length) break
-
-    const isParallel = ready.length > 1 && ready.every(t => !t.depends_on.length)
-    phases.push({ phase: `${isParallel ? 'parallel' : 'sequential'}-${num}`, tasks: ready.map(t => t.id), type: isParallel ? 'parallel' : 'sequential' })
-    ready.forEach(t => scheduled.add(t.id))
-    num++
-  }
-
-  return { execution_order: phases, exit_conditions: { success: "All acceptance criteria met", failure: "Critical task fails" } }
-}
-```
+| [TASK-001] | 1 | `resume` | `--resume {resume_from}` |
+| [TASK-001] | >1 | `fork` | `--resume {resume_from} --id {cli_execution_id}` |
+| [TASK-001,TASK-002] | - | `merge_fork` | `--resume {ids.join(',')} --id {cli_execution_id}` |
 
 ### planObject Generation
 
 ```javascript
+// Write individual task files to .task/ directory
+function writeTaskFiles(tasks, sessionFolder) {
+  const taskDir = `${sessionFolder}/.task`
+  Bash(`mkdir -p "${taskDir}"`)
+  tasks.forEach(task => {
+    Write(`${taskDir}/${task.id}.json`, JSON.stringify(task, null, 2))
+  })
+  return tasks.map(t => t.id)
+}
+
 function generatePlanObject(parsed, enrichedContext, input, schemaType) {
   const complexity = parsed.complexity || input.complexity || "Medium"
   const tasks = validateAndEnhanceTasks(parsed.raw_tasks, enrichedContext, complexity)
   assignCliExecutionIds(tasks, input.session.id)  // MANDATORY: Assign CLI execution IDs
-  const flow_control = parsed.flow_control?.execution_order?.length > 0 ? parsed.flow_control : inferFlowControl(tasks)
-  const focus_paths = [...new Set(tasks.flatMap(t => [t.file || t.scope, ...t.modification_points.map(m => m.file)]).filter(Boolean))]
 
-  // Base fields (common to both schemas)
+  // Write individual task files and collect IDs
+  const task_ids = writeTaskFiles(tasks, input.session.folder)
+
+  // Determine plan_type from schema
+  const plan_type = schemaType === 'fix-plan' ? 'fix' : 'feature'
+
+  // Base fields (plan overview - NO tasks[], NO flow_control, NO focus_paths)
   const base = {
     summary: parsed.summary || `Plan for: ${input.task_description.slice(0, 100)}`,
-    tasks,
-    flow_control,
-    focus_paths,
+    approach: parsed.approach || "Step-by-step implementation",
+    task_ids,
+    task_count: task_ids.length,
     estimated_time: parsed.time_estimate || `${tasks.length * 30} minutes`,
     recommended_execution: (complexity === "Low" || input.severity === "Low") ? "Agent" : "Codex",
     _metadata: {
       timestamp: new Date().toISOString(),
       source: "cli-lite-planning-agent",
+      plan_type,
+      schema_version: "2.0",
       planning_mode: "agent-based",
-      context_angles: input.contextAngles || [],
+      exploration_angles: input.contextAngles || [],
       duration_seconds: Math.round((Date.now() - startTime) / 1000)
     }
   }
@@ -669,12 +678,12 @@ function generatePlanObject(parsed, enrichedContext, input, schemaType) {
       root_cause: parsed.root_cause || "Root cause from diagnosis",
       strategy: parsed.strategy || "comprehensive_fix",
       severity: input.severity || "Medium",
-      risk_level: parsed.risk_level || "medium"
+      risk_level: parsed.risk_level || "medium",
+      complexity
     }
   } else {
     return {
       ...base,
-      approach: parsed.approach || "Step-by-step implementation",
       complexity
     }
   }
@@ -684,21 +693,23 @@ function generatePlanObject(parsed, enrichedContext, input, schemaType) {
 function validateAndEnhanceTasks(rawTasks, enrichedContext, complexity) {
   return rawTasks.map((task, idx) => {
     const enhanced = {
-      id: task.id || `T${idx + 1}`,
+      id: task.id || `TASK-${String(idx + 1).padStart(3, '0')}`,
       title: task.title || "Unnamed task",
       scope: task.scope || task.file || inferFile(task, enrichedContext),
       action: task.action || inferAction(task.title),
       description: task.description || task.title,
-      modification_points: task.modification_points?.length > 0
-        ? task.modification_points
-        : [{ file: task.scope || task.file, target: "main", change: task.description }],
+      files: task.files?.length > 0
+        ? task.files
+        : [{ path: task.scope || task.file || inferFile(task, enrichedContext), action: "modify", target: "main", change: task.description }],
       implementation: task.implementation?.length >= 2
         ? task.implementation
         : [`Analyze ${task.scope || task.file}`, `Implement ${task.title}`, `Add error handling`],
-      reference: task.reference || { pattern: "existing patterns", files: enrichedContext.relevant_files.slice(0, 2), examples: "Follow existing structure" },
-      acceptance: task.acceptance?.length >= 1
-        ? task.acceptance
-        : [`${task.title} completed`, `Follows conventions`],
+      reference: task.reference || { pattern: "existing patterns", files: enrichedContext.relevant_files.slice(0, 2).map(f => typeof f === 'string' ? f : f.path), examples: "Follow existing structure" },
+      convergence: {
+        criteria: task.convergence?.criteria?.length >= 1
+          ? task.convergence.criteria
+          : [`${task.title} completed`, `Follows conventions`]
+      },
       depends_on: task.depends_on || []
     }
 
@@ -710,11 +721,11 @@ function validateAndEnhanceTasks(rawTasks, enrichedContext, complexity) {
         decision_factors: ["Maintainability", "Performance"],
         tradeoffs: "None significant"
       }
-      enhanced.verification = task.verification || {
-        unit_tests: [`test_${task.id.toLowerCase()}_basic`],
-        integration_tests: [],
+      enhanced.test = task.test || {
         manual_checks: ["Verify expected behavior"],
-        success_metrics: ["All tests pass"]
+        success_metrics: ["All tests pass"],
+        unit: [`test_${task.id.toLowerCase().replace(/-/g, '_')}_basic`],
+        integration: []
       }
     }
 
@@ -747,20 +758,24 @@ try {
   } else throw error
 }
 
-function generateBasicPlan(taskDesc, ctx) {
-  const files = ctx?.relevant_files || []
+// NOTE: relevant_files items are structured objects with .path property
+function generateBasicPlan(taskDesc, ctx, sessionFolder) {
+  const relevantFiles = (ctx?.relevant_files || []).map(f => typeof f === 'string' ? f : f.path)
   const tasks = [taskDesc].map((t, i) => ({
-    id: `T${i + 1}`, title: t, file: files[i] || "tbd", action: "Implement", description: t,
-    modification_points: [{ file: files[i] || "tbd", target: "main", change: t }],
+    id: `TASK-${String(i + 1).padStart(3, '0')}`, title: t, scope: relevantFiles[i] || "tbd", action: "Implement", description: t,
+    files: [{ path: relevantFiles[i] || "tbd", action: "modify", target: "main", change: t }],
     implementation: ["Analyze structure", "Implement feature", "Add validation"],
-    acceptance: ["Task completed", "Follows conventions"], depends_on: []
+    convergence: { criteria: ["Task completed", "Follows conventions"] }, depends_on: []
   }))
 
+  // Write task files
+  const task_ids = writeTaskFiles(tasks, sessionFolder)
+
   return {
-    summary: `Direct implementation: ${taskDesc}`, approach: "Step-by-step", tasks,
-    flow_control: { execution_order: [{ phase: "sequential-1", tasks: tasks.map(t => t.id), type: "sequential" }], exit_conditions: { success: "Done", failure: "Fails" } },
-    focus_paths: files, estimated_time: "30 minutes", recommended_execution: "Agent", complexity: "Low",
-    _metadata: { timestamp: new Date().toISOString(), source: "cli-lite-planning-agent", planning_mode: "direct", exploration_angles: [], duration_seconds: 0 }
+    summary: `Direct implementation: ${taskDesc}`, approach: "Step-by-step",
+    task_ids, task_count: task_ids.length,
+    estimated_time: "30 minutes", recommended_execution: "Agent", complexity: "Low",
+    _metadata: { timestamp: new Date().toISOString(), source: "cli-lite-planning-agent", plan_type: "feature", schema_version: "2.0", planning_mode: "direct", exploration_angles: [], duration_seconds: 0 }
   }
 }
 ```
@@ -772,21 +787,21 @@ function generateBasicPlan(taskDesc, ctx) {
 ```javascript
 function validateTask(task) {
   const errors = []
-  if (!/^T\d+$/.test(task.id)) errors.push("Invalid task ID")
+  if (!/^TASK-\d{3}$/.test(task.id) && !/^FIX-\d{3}$/.test(task.id)) errors.push("Invalid task ID (expected TASK-NNN or FIX-NNN)")
   if (!task.title?.trim()) errors.push("Missing title")
-  if (!task.file?.trim()) errors.push("Missing file")
+  if (!task.description?.trim()) errors.push("Missing description")
   if (!['Create', 'Update', 'Implement', 'Refactor', 'Add', 'Delete', 'Configure', 'Test', 'Fix'].includes(task.action)) errors.push("Invalid action")
   if (!task.implementation?.length >= 2) errors.push("Need 2+ implementation steps")
-  if (!task.acceptance?.length >= 1) errors.push("Need 1+ acceptance criteria")
-  if (task.depends_on?.some(d => !/^T\d+$/.test(d))) errors.push("Invalid dependency format")
-  if (task.acceptance?.some(a => /works correctly|good performance/i.test(a))) errors.push("Vague acceptance criteria")
+  if (!task.convergence?.criteria?.length >= 1) errors.push("Need 1+ convergence criteria")
+  if (task.depends_on?.some(d => !/^(TASK|FIX)-\d{3}$/.test(d))) errors.push("Invalid dependency format")
+  if (task.convergence?.criteria?.some(c => /works correctly|good performance/i.test(c))) errors.push("Vague convergence criteria")
   return { valid: !errors.length, errors }
 }
 ```
 
-### Acceptance Criteria
+### Convergence Criteria Quality
 
-| ✓ Good | ✗ Bad |
+| Good | Bad |
 |--------|-------|
 | "3 methods: login(), logout(), validate()" | "Service works correctly" |
 | "Response time < 200ms p95" | "Good performance" |
@@ -797,12 +812,12 @@ function validateTask(task) {
 **ALWAYS**:
 - **Search Tool Priority**: ACE (`mcp__ace-tool__search_context`) → CCW (`mcp__ccw-tools__smart_search`) / Built-in (`Grep`, `Glob`, `Read`)
 - **Read schema first** to determine output structure
-- Generate task IDs (T1/T2 for plan, FIX1/FIX2 for fix-plan)
+- Generate task IDs (TASK-001/TASK-002 for plan, FIX-001/FIX-002 for fix-plan)
 - Include depends_on (even if empty [])
 - **Assign cli_execution_id** (`{sessionId}-{taskId}`)
 - **Compute cli_execution strategy** based on depends_on
-- Quantify acceptance/verification criteria
-- Generate flow_control from dependencies
+- Quantify convergence criteria and test metrics
+- **Write BOTH plan.json AND .task/*.json files** (two-layer output)
 - Handle CLI errors with fallback chain
 
 **Bash Tool**:
@@ -810,12 +825,13 @@ function validateTask(task) {
 
 **NEVER**:
 - Execute implementation (return plan only)
-- Use vague acceptance criteria
+- Use vague convergence criteria
 - Create circular dependencies
 - Skip task validation
 - **Skip CLI execution ID assignment**
 - **Ignore schema structure**
 - **Skip Phase 5 Plan Quality Check**
+- **Embed tasks[] in plan.json** (use task_ids[] referencing .task/ files)
 
 ---
 
@@ -832,18 +848,18 @@ After generating plan.json, **MUST** execute CLI quality check before returning 
 | **Completeness** | All user requirements reflected in tasks | Yes |
 | **Task Granularity** | Each task 15-60 min scope | No |
 | **Dependencies** | No circular deps, correct ordering | Yes |
-| **Acceptance Criteria** | Quantified and testable (not vague) | No |
+| **Convergence Criteria** | Quantified and testable (not vague) | No |
 | **Implementation Steps** | 2+ actionable steps per task | No |
-| **Constraint Compliance** | Follows project-guidelines.json | Yes |
+| **Constraint Compliance** | Follows specs/*.md | Yes |
 
 ### CLI Command Format
 
 Use `ccw cli` with analysis mode to validate plan against quality dimensions:
 
 ```bash
-ccw cli -p "Validate plan quality: completeness, granularity, dependencies, acceptance criteria, implementation steps, constraint compliance" \
+ccw cli -p "Validate plan quality: completeness, granularity, dependencies, convergence criteria, implementation steps, constraint compliance" \
   --tool gemini --mode analysis \
-  --context "@{plan_json_path} @.workflow/project-guidelines.json"
+  --context "@{plan_json_path} @{task_dir}/*.json @.workflow/specs/*.md"
 ```
 
 **Expected Output Structure**:
@@ -855,7 +871,7 @@ ccw cli -p "Validate plan quality: completeness, granularity, dependencies, acce
 ### Result Parsing
 
 Parse CLI output sections using regex to extract:
-- **6 Dimension Results**: Each with `passed` boolean and issue lists (missing requirements, oversized/undersized tasks, vague criteria, etc.)
+- **6 Dimension Results**: Each with `passed` boolean and issue lists (missing requirements, oversized/undersized tasks, vague convergence criteria, etc.)
 - **Summary Counts**: Critical issues, minor issues
 - **Recommendation**: `PASS` | `AUTO_FIX` | `REGENERATE`
 - **Fixes**: Optional JSON patches for auto-fixable issues
@@ -866,7 +882,7 @@ Apply automatic fixes for minor issues:
 
 | Issue Type | Auto-Fix Action | Example |
 |-----------|----------------|---------|
-| **Vague Acceptance** | Replace with quantified criteria | "works correctly" → "All unit tests pass with 100% success rate" |
+| **Vague Convergence** | Replace with quantified criteria | "works correctly" → "All unit tests pass with 100% success rate" |
 | **Insufficient Steps** | Expand to 4-step template | Add: Analyze → Implement → Error handling → Verify |
 | **CLI-Provided Patches** | Apply JSON patches from CLI output | Update task fields per patch specification |
 
@@ -876,7 +892,7 @@ After fixes, update `_metadata.quality_check` with fix log.
 
 After Phase 4 planObject generation:
 
-1. **Write Initial Plan** → `${sessionFolder}/plan.json`
+1. **Write Task Files** → `${sessionFolder}/.task/TASK-*.json` + **Write Plan** → `${sessionFolder}/plan.json`
 2. **Execute CLI Check** → Gemini (Qwen fallback)
 3. **Parse Results** → Extract recommendation and issues
 4. **Handle Recommendation**:

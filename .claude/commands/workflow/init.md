@@ -1,20 +1,21 @@
 ---
 name: init
 description: Initialize project-level state with intelligent project analysis using cli-explore-agent
-argument-hint: "[--regenerate]"
+argument-hint: "[--regenerate] [--skip-specs]"
 examples:
   - /workflow:init
   - /workflow:init --regenerate
+  - /workflow:init --skip-specs
 ---
 
 # Workflow Init Command (/workflow:init)
 
 ## Overview
-Initialize `.workflow/project-tech.json` and `.workflow/project-guidelines.json` with comprehensive project understanding by delegating analysis to **cli-explore-agent**.
+Initialize `.workflow/project-tech.json` and `.workflow/specs/*.md` with comprehensive project understanding by delegating analysis to **cli-explore-agent**.
 
 **Dual File System**:
 - `project-tech.json`: Auto-generated technical analysis (stack, architecture, components)
-- `project-guidelines.json`: User-maintained rules and constraints (created as scaffold)
+- `specs/*.md`: User-maintained rules and constraints (created as scaffold)
 
 **Note**: This command may be called by other workflow commands. Upon completion, return immediately to continue the calling workflow without interrupting the task flow.
 
@@ -22,13 +23,15 @@ Initialize `.workflow/project-tech.json` and `.workflow/project-guidelines.json`
 ```bash
 /workflow:init                 # Initialize (skip if exists)
 /workflow:init --regenerate    # Force regeneration
+/workflow:init --skip-specs    # Initialize project-tech only, skip spec initialization
 ```
 
 ## Execution Process
 
 ```
 Input Parsing:
-   └─ Parse --regenerate flag → regenerate = true | false
+   ├─ Parse --regenerate flag → regenerate = true | false
+   └─ Parse --skip-specs flag → skipSpecs = true | false
 
 Decision:
    ├─ BOTH_EXIST + no --regenerate → Exit: "Already initialized"
@@ -42,36 +45,44 @@ Analysis Flow:
    │   ├─ Semantic analysis (Gemini CLI)
    │   ├─ Synthesis and merge
    │   └─ Write .workflow/project-tech.json
-   ├─ Create guidelines scaffold (if not exists)
-   │   └─ Write .workflow/project-guidelines.json (empty structure)
+   ├─ Spec Initialization (if not --skip-specs)
+   │   ├─ Check if specs/*.md exist
+   │   ├─ If NOT_FOUND → Run ccw spec init
+   │   ├─ Run ccw spec rebuild
+   │   └─ Ask about guidelines configuration
+   │       ├─ If guidelines empty → Ask user: "Configure now?" or "Skip"
+   │       │   ├─ Configure now → Skill(skill="workflow:init-guidelines")
+   │       │   └─ Skip → Show next steps
+   │       └─ If guidelines populated → Show next steps only
    └─ Display summary
 
 Output:
    ├─ .workflow/project-tech.json (+ .backup if regenerate)
-   └─ .workflow/project-guidelines.json (scaffold if new)
+   └─ .workflow/specs/*.md (scaffold or configured, unless --skip-specs)
 ```
 
 ## Implementation
 
 ### Step 1: Parse Input and Check Existing State
 
-**Parse --regenerate flag**:
+**Parse flags**:
 ```javascript
 const regenerate = $ARGUMENTS.includes('--regenerate')
+const skipSpecs = $ARGUMENTS.includes('--skip-specs')
 ```
 
 **Check existing state**:
 
 ```bash
 bash(test -f .workflow/project-tech.json && echo "TECH_EXISTS" || echo "TECH_NOT_FOUND")
-bash(test -f .workflow/project-guidelines.json && echo "GUIDELINES_EXISTS" || echo "GUIDELINES_NOT_FOUND")
+bash(test -f .workflow/specs/coding-conventions.md && echo "SPECS_EXISTS" || echo "SPECS_NOT_FOUND")
 ```
 
 **If BOTH_EXIST and no --regenerate**: Exit early
 ```
 Project already initialized:
 - Tech analysis: .workflow/project-tech.json
-- Guidelines: .workflow/project-guidelines.json
+- Guidelines: .workflow/specs/*.md
 
 Use /workflow:init --regenerate to rebuild tech analysis
 Use /workflow:session:solidify to add guidelines
@@ -104,7 +115,7 @@ Task(
 Analyze project for workflow initialization and generate .workflow/project-tech.json.
 
 ## MANDATORY FIRST STEPS
-1. Execute: cat ~/.claude/workflows/cli-templates/schemas/project-tech-schema.json (get schema reference)
+1. Execute: cat ~/.ccw/workflows/cli-templates/schemas/project-tech-schema.json (get schema reference)
 2. Execute: ccw tool exec get_modules_by_depth '{}' (get project structure)
 
 ## Task
@@ -154,33 +165,20 @@ Project root: ${projectRoot}
 )
 ```
 
-### Step 3.5: Create Guidelines Scaffold (if not exists)
+### Step 3.5: Initialize Spec System (if not --skip-specs)
 
 ```javascript
-// Only create if not exists (never overwrite user guidelines)
-if (!file_exists('.workflow/project-guidelines.json')) {
-  const guidelinesScaffold = {
-    conventions: {
-      coding_style: [],
-      naming_patterns: [],
-      file_structure: [],
-      documentation: []
-    },
-    constraints: {
-      architecture: [],
-      tech_stack: [],
-      performance: [],
-      security: []
-    },
-    quality_rules: [],
-    learnings: [],
-    _metadata: {
-      created_at: new Date().toISOString(),
-      version: "1.0.0"
-    }
-  };
-
-  Write('.workflow/project-guidelines.json', JSON.stringify(guidelinesScaffold, null, 2));
+// Skip spec initialization if --skip-specs flag is provided
+if (!skipSpecs) {
+  // Initialize spec system if not already initialized
+  const specsCheck = Bash('test -f .workflow/specs/coding-conventions.md && echo EXISTS || echo NOT_FOUND')
+  if (specsCheck.includes('NOT_FOUND')) {
+    console.log('Initializing spec system...')
+    Bash('ccw spec init')
+    Bash('ccw spec rebuild')
+  }
+} else {
+  console.log('Skipping spec initialization (--skip-specs)')
 }
 ```
 
@@ -188,10 +186,10 @@ if (!file_exists('.workflow/project-guidelines.json')) {
 
 ```javascript
 const projectTech = JSON.parse(Read('.workflow/project-tech.json'));
-const guidelinesExists = file_exists('.workflow/project-guidelines.json');
+const specsInitialized = !skipSpecs && file_exists('.workflow/specs/coding-conventions.md');
 
 console.log(`
-✓ Project initialized successfully
+Project initialized successfully
 
 ## Project Overview
 Name: ${projectTech.project_name}
@@ -208,13 +206,74 @@ Components: ${projectTech.overview.key_components.length} core modules
 ---
 Files created:
 - Tech analysis: .workflow/project-tech.json
-- Guidelines: .workflow/project-guidelines.json ${guidelinesExists ? '(scaffold)' : ''}
+${!skipSpecs ? `- Specs: .workflow/specs/ ${specsInitialized ? '(initialized)' : ''}` : '- Specs: (skipped via --skip-specs)'}
 ${regenerate ? '- Backup: .workflow/project-tech.json.backup' : ''}
+`);
+```
 
+### Step 5: Ask About Guidelines Configuration (if not --skip-specs)
+
+After displaying the summary, ask the user if they want to configure project guidelines interactively. Skip this step if `--skip-specs` was provided.
+
+```javascript
+// Skip guidelines configuration if --skip-specs was provided
+if (skipSpecs) {
+  console.log(`
 Next steps:
-- Use /workflow:session:solidify to add project guidelines
+- Use /workflow:init-specs to create individual specs
+- Use /workflow:init-guidelines to configure specs interactively
 - Use /workflow:plan to start planning
 `);
+  return;
+}
+
+// Check if specs have user content beyond seed documents
+const specsList = Bash('ccw spec list --json');
+const specsCount = JSON.parse(specsList).total || 0;
+
+// Only ask if specs are just seeds
+if (specsCount <= 5) {
+  const userChoice = AskUserQuestion({
+    questions: [{
+      question: "Would you like to configure project specs now? The wizard will ask targeted questions based on your tech stack.",
+      header: "Specs",
+      multiSelect: false,
+      options: [
+        {
+          label: "Configure now (Recommended)",
+          description: "Interactive wizard to set up coding conventions, constraints, and quality rules"
+        },
+        {
+          label: "Skip for now",
+          description: "You can run /workflow:init-guidelines later or use ccw spec load to import specs"
+        }
+      ]
+    }]
+  });
+
+  if (userChoice.answers["Specs"] === "Configure now (Recommended)") {
+    console.log("\nStarting specs configuration wizard...\n");
+    Skill(skill="workflow:init-guidelines");
+  } else {
+    console.log(`
+Next steps:
+- Use /workflow:init-specs to create individual specs
+- Use /workflow:init-guidelines to configure specs interactively
+- Use ccw spec load to import specs from external sources
+- Use /workflow:plan to start planning
+`);
+  }
+} else {
+  console.log(`
+Specs already configured (${specsCount} spec files).
+
+Next steps:
+- Use /workflow:init-specs to create additional specs
+- Use /workflow:init-guidelines --reset to reconfigure
+- Use /workflow:session:solidify to add individual rules
+- Use /workflow:plan to start planning
+`);
+}
 ```
 
 ## Error Handling
@@ -222,3 +281,11 @@ Next steps:
 **Agent Failure**: Fall back to basic initialization with placeholder overview
 **Missing Tools**: Agent uses Qwen fallback or bash-only
 **Empty Project**: Create minimal JSON with all gaps identified
+
+## Related Commands
+
+- `/workflow:init-specs` - Interactive wizard to create individual specs with scope selection
+- `/workflow:init-guidelines` - Interactive wizard to configure project guidelines (called after init)
+- `/workflow:session:solidify` - Add individual rules/constraints one at a time
+- `workflow-plan` skill - Start planning with initialized project context
+- `/workflow:status --project` - View project state and guidelines

@@ -500,5 +500,5 @@ ERROR: Script permission denied
 - `/workflow:ui-design:layout-extract` → `layout-{target}-{variant}.json` files
 
 **Input**: `layout-*.json` files + `design-tokens.json`
-**Output**: S×L×T prototypes for `/workflow:ui-design:update`
+**Output**: S×L×T prototypes for `/workflow:ui-design:generate`
 **Called by**: `/workflow:ui-design:explore-auto`, `/workflow:ui-design:imitate-auto`

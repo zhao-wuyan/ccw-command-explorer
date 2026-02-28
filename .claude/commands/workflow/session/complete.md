@@ -82,7 +82,7 @@ Read the key files above, then build this structure:
 }
 ```
 
-**Lessons Generation**: Use gemini with `~/.claude/workflows/cli-templates/prompts/archive/analysis-simple.txt`
+**Lessons Generation**: Use gemini with `~/.ccw/workflows/cli-templates/prompts/archive/analysis-simple.txt`
 
 ### Phase 3: Atomic Commit (4 commands)
 
@@ -109,79 +109,16 @@ rm -f .workflow/archives/$SESSION_ID/.archiving
   Manifest: Updated with N total sessions
 ```
 
-### Phase 4: Update project-tech.json (Optional)
+### Phase 4: Auto-Sync Project State
 
-**Skip if**: `.workflow/project-tech.json` doesn't exist
+Execute `/workflow:session:sync -y "{description}"` to update both `specs/*.md` and `project-tech.json` from session context.
 
-```bash
-# Check
-test -f .workflow/project-tech.json || echo "SKIP"
-```
-
-**If exists**, add feature entry:
-
-```json
-{
-  "id": "<slugified title>",
-  "title": "<from IMPL_PLAN.md>",
-  "status": "completed",
-  "tags": ["<from Phase 2>"],
-  "timeline": { "implemented_at": "<date>" },
-  "traceability": { "session_id": "<SESSION_ID>", "archive_path": "<path>" }
-}
-```
-
-**Output**:
-```
-✓ Feature added to project registry
-```
-
-### Phase 5: Ask About Solidify (Always)
-
-After successful archival, prompt user to capture learnings:
-
-```javascript
-// Parse --yes flag
-const autoYes = $ARGUMENTS.includes('--yes') || $ARGUMENTS.includes('-y')
-
-if (autoYes) {
-  // Auto mode: Skip solidify
-  console.log(`[--yes] Auto-selecting: Skip solidify`)
-  console.log(`Session archived successfully.`)
-  // Done - no solidify
-} else {
-  // Interactive mode: Ask user
-  AskUserQuestion({
-    questions: [{
-      question: "Would you like to solidify learnings from this session into project guidelines?",
-      header: "Solidify",
-      options: [
-        { label: "Yes, solidify now", description: "Extract learnings and update project-guidelines.json" },
-        { label: "Skip", description: "Archive complete, no learnings to capture" }
-      ],
-      multiSelect: false
-    }]
-  })
-
-  // **If "Yes, solidify now"**: Execute `/workflow:session:solidify` with the archived session ID.
-}
-```
+Description 取自 Phase 2 的 `workflow-session.json` description 字段。
 
 ## Auto Mode Defaults
 
 When `--yes` or `-y` flag is used:
-- **Solidify Learnings**: Auto-selected "Skip" (archive only, no solidify)
-
-**Flag Parsing**:
-```javascript
-const autoYes = $ARGUMENTS.includes('--yes') || $ARGUMENTS.includes('-y')
-```
-
-**Output**:
-```
-Session archived successfully.
-→ Run /workflow:session:solidify to capture learnings (recommended)
-```
+- **Sync**: Auto-executed with `-y` (no confirmation)
 
 ## Error Recovery
 
@@ -198,6 +135,5 @@ Session archived successfully.
 Phase 1: find session → create .archiving marker
 Phase 2: read key files → build manifest entry (no writes)
 Phase 3: mkdir → mv → update manifest.json → rm marker
-Phase 4: update project-tech.json features array (optional)
-Phase 5: ask user → solidify learnings (optional)
+Phase 4: /workflow:session:sync -y → update specs/*.md + project-tech
 ```

@@ -7,9 +7,56 @@ allowed-tools: TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob
 
 ## Auto Mode
 
-When `--yes` or `-y`: Auto-confirm decisions, use balanced exploration across all perspectives.
+When `--yes` or `-y`: Auto-confirm decisions, use recommended roles, balanced exploration mode.
 
-# Workflow Brainstorm-With-File Command (/workflow:brainstorm-with-file)
+# Workflow Brainstorm Command
+
+## Quick Start
+
+```bash
+# Basic usage
+/workflow:brainstorm-with-file "如何重新设计用户通知系统"
+
+# With options
+/workflow:brainstorm-with-file --continue "通知系统"              # Continue existing
+/workflow:brainstorm-with-file -y -m creative "创新的AI辅助功能"   # Creative auto mode
+/workflow:brainstorm-with-file -m structured "优化缓存策略"       # Goal-oriented mode
+```
+
+**Context Source**: cli-explore-agent + Multi-CLI perspectives (Gemini/Codex/Claude or Professional Roles)
+**Output Directory**: `.workflow/.brainstorm/{session-id}/`
+**Core Innovation**: Diverge-Converge cycles with documented thought evolution
+
+## Output Artifacts
+
+### Phase 1: Seed Understanding
+
+| Artifact | Description |
+|----------|-------------|
+| `brainstorm.md` | Complete thought evolution timeline (initialized) |
+| Session variables | Dimensions, roles, exploration vectors |
+
+### Phase 2: Divergent Exploration
+
+| Artifact | Description |
+|----------|-------------|
+| `exploration-codebase.json` | Codebase context from cli-explore-agent |
+| `perspectives.json` | Multi-CLI perspective findings (creative/pragmatic/systematic) |
+| Updated `brainstorm.md` | Round 2 multi-perspective exploration |
+
+### Phase 3: Interactive Refinement
+
+| Artifact | Description |
+|----------|-------------|
+| `ideas/{idea-slug}.md` | Deep-dive analysis for selected ideas |
+| Updated `brainstorm.md` | Round 3-6 refinement cycles |
+
+### Phase 4: Convergence & Crystallization
+
+| Artifact | Description |
+|----------|-------------|
+| `synthesis.json` | Final synthesis with top ideas, recommendations |
+| Final `brainstorm.md` | ⭐ Complete thought evolution with conclusions |
 
 ## Overview
 
@@ -17,208 +64,133 @@ Interactive brainstorming workflow with **multi-CLI collaboration** and **docume
 
 **Core workflow**: Seed Idea → Expand → Multi-CLI Discuss → Synthesize → Refine → Crystallize
 
-**Key features**:
-- **brainstorm.md**: Complete thought evolution timeline
-- **Multi-CLI collaboration**: Gemini (creative), Codex (pragmatic), Claude (systematic) perspectives
-- **Idea expansion**: Progressive questioning and exploration
-- **Diverge-Converge cycles**: Generate options then focus on best paths
-- **Synthesis**: Merge multiple perspectives into coherent solutions
-
-## Usage
-
-```bash
-/workflow:brainstorm-with-file [FLAGS] <IDEA_OR_TOPIC>
-
-# Flags
--y, --yes              Skip confirmations, use recommended settings
--c, --continue         Continue existing session (auto-detected if exists)
--m, --mode <mode>      Brainstorm mode: creative (divergent) | structured (goal-oriented)
-
-# Arguments
-<idea-or-topic>        Initial idea, problem, or topic to brainstorm (required)
-
-# Examples
-/workflow:brainstorm-with-file "如何重新设计用户通知系统"
-/workflow:brainstorm-with-file --continue "通知系统"              # Continue existing
-/workflow:brainstorm-with-file -y -m creative "创新的AI辅助功能"   # Creative auto mode
-/workflow:brainstorm-with-file -m structured "优化缓存策略"       # Goal-oriented mode
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    INTERACTIVE BRAINSTORMING WORKFLOW                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  Phase 1: Seed Understanding                                             │
+│     ├─ Parse initial idea/topic                                          │
+│     ├─ Identify dimensions (technical, UX, business, etc.)               │
+│     ├─ Select roles (professional or simple perspectives)                │
+│     ├─ Initial scoping questions                                         │
+│     ├─ Expand into exploration vectors                                   │
+│     └─ Initialize brainstorm.md                                          │
+│                                                                          │
+│  Phase 2: Divergent Exploration                                          │
+│     ├─ cli-explore-agent: Codebase context (FIRST)                       │
+│     ├─ Multi-CLI Perspectives (AFTER exploration)                        │
+│     │   ├─ Creative (Gemini): Innovation, cross-domain                   │
+│     │   ├─ Pragmatic (Codex): Implementation, feasibility                │
+│     │   └─ Systematic (Claude): Architecture, structure                  │
+│     └─ Aggregate diverse viewpoints                                      │
+│                                                                          │
+│  Phase 3: Interactive Refinement (Multi-Round)                           │
+│     ├─ Present multi-perspective findings                                │
+│     ├─ User selects promising directions                                 │
+│     ├─ Actions: Deep dive | Generate more | Challenge | Merge            │
+│     ├─ Update brainstorm.md with evolution                               │
+│     └─ Repeat diverge-converge cycles (max 6 rounds)                     │
+│                                                                          │
+│  Phase 4: Convergence & Crystallization                                  │
+│     ├─ Synthesize best ideas                                             │
+│     ├─ Resolve conflicts between perspectives                            │
+│     ├─ Generate actionable conclusions                                   │
+│     ├─ Offer next steps (plan/issue/analyze/export)                      │
+│     └─ Final brainstorm.md update                                        │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Execution Process
+## Output Structure
 
 ```
-Session Detection:
-   ├─ Check if brainstorm session exists for topic
-   ├─ EXISTS + brainstorm.md exists → Continue mode
-   └─ NOT_FOUND → New session mode
-
-Phase 1: Seed Understanding
-   ├─ Parse initial idea/topic
-   ├─ Identify brainstorm dimensions (technical, UX, business, etc.)
-   ├─ Initial scoping questions (AskUserQuestion)
-   ├─ Expand seed into exploration vectors
-   └─ Document in brainstorm.md
-
-Phase 2: Divergent Exploration (Multi-CLI Parallel)
-   ├─ Gemini CLI: Creative/innovative perspectives
-   ├─ Codex CLI: Pragmatic/implementation perspectives
-   ├─ Claude CLI: Systematic/architectural perspectives
-   └─ Aggregate diverse viewpoints
-
-Phase 3: Interactive Refinement (Multi-Round)
-   ├─ Present multi-perspective findings
-   ├─ User selects promising directions
-   ├─ Deep dive on selected paths
-   ├─ Challenge assumptions (devil's advocate)
-   ├─ Update brainstorm.md with evolution
-   └─ Repeat diverge-converge cycles
-
-Phase 4: Convergence & Crystallization
-   ├─ Synthesize best ideas
-   ├─ Resolve conflicts between perspectives
-   ├─ Formulate actionable conclusions
-   ├─ Generate next steps or implementation plan
-   └─ Final brainstorm.md update
-
-Output:
-   ├─ .workflow/.brainstorm/{slug}-{date}/brainstorm.md (thought evolution)
-   ├─ .workflow/.brainstorm/{slug}-{date}/perspectives.json (CLI findings)
-   ├─ .workflow/.brainstorm/{slug}-{date}/synthesis.json (final ideas)
-   └─ .workflow/.brainstorm/{slug}-{date}/ideas/ (individual idea deep-dives)
+.workflow/.brainstorm/BS-{slug}-{date}/
+├── brainstorm.md                  # ⭐ Complete thought evolution timeline
+├── exploration-codebase.json      # Phase 2: Codebase context
+├── perspectives.json              # Phase 2: Multi-CLI findings
+├── synthesis.json                 # Phase 4: Final synthesis
+└── ideas/                         # Phase 3: Individual idea deep-dives
+    ├── idea-1.md
+    ├── idea-2.md
+    └── merged-idea-1.md
 ```
 
 ## Implementation
 
-### Session Setup & Mode Detection
+### Session Initialization
 
-```javascript
-const getUtc8ISOString = () => new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
+**Objective**: Create session context and directory structure for brainstorming.
 
-const topicSlug = idea_or_topic.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').substring(0, 40)
-const dateStr = getUtc8ISOString().substring(0, 10)
+**Required Actions**:
+1. Extract idea/topic from `$ARGUMENTS`
+2. Generate session ID: `BS-{slug}-{date}`
+   - slug: lowercase, alphanumeric + Chinese, max 40 chars
+   - date: YYYY-MM-DD (UTC+8)
+3. Define session folder: `.workflow/.brainstorm/{session-id}`
+4. Parse command options:
+   - `-c` or `--continue` for session continuation
+   - `-m` or `--mode` for brainstorm mode (creative/structured/balanced)
+   - `-y` or `--yes` for auto-approval mode
+5. Auto-detect mode: If session folder + brainstorm.md exist → continue mode
+6. Create directory structure: `{session-folder}/ideas/`
 
-const sessionId = `BS-${topicSlug}-${dateStr}`
-const sessionFolder = `.workflow/.brainstorm/${sessionId}`
-const brainstormPath = `${sessionFolder}/brainstorm.md`
-const perspectivesPath = `${sessionFolder}/perspectives.json`
-const synthesisPath = `${sessionFolder}/synthesis.json`
-const ideasFolder = `${sessionFolder}/ideas`
-
-// Auto-detect mode
-const sessionExists = fs.existsSync(sessionFolder)
-const hasBrainstorm = sessionExists && fs.existsSync(brainstormPath)
-const forcesContinue = $ARGUMENTS.includes('--continue') || $ARGUMENTS.includes('-c')
-
-const mode = (hasBrainstorm || forcesContinue) ? 'continue' : 'new'
-
-// Brainstorm mode
-const brainstormMode = $ARGUMENTS.includes('--mode') 
-  ? $ARGUMENTS.match(/--mode\s+(creative|structured)/)?.[1] || 'balanced'
-  : 'balanced'
-
-if (!sessionExists) {
-  bash(`mkdir -p ${sessionFolder}/ideas`)
-}
-```
-
----
+**Session Variables**:
+- `sessionId`: Unique session identifier
+- `sessionFolder`: Base directory for all artifacts
+- `brainstormMode`: creative | structured | balanced
+- `autoMode`: Boolean for auto-confirmation
+- `mode`: new | continue
 
 ### Phase 1: Seed Understanding
 
-**Step 1.1: Parse Seed & Identify Dimensions**
+**Objective**: Analyze topic, select roles, gather user input, expand into exploration vectors.
 
+**Prerequisites**:
+- Session initialized with valid sessionId and sessionFolder
+- Topic/idea available from $ARGUMENTS
+
+**Workflow Steps**:
+
+1. **Parse Seed & Identify Dimensions**
+   - Match topic keywords against BRAINSTORM_DIMENSIONS
+   - Identify relevant dimensions: technical, ux, business, innovation, feasibility, scalability, security
+   - Default dimensions based on brainstormMode if no match
+
+2. **Role Selection**
+   - **Recommend roles** based on topic keywords (see Role Keywords mapping)
+   - **Options**:
+     - **Professional roles**: system-architect, product-manager, ui-designer, ux-expert, data-architect, test-strategist, subject-matter-expert, product-owner, scrum-master
+     - **Simple perspectives**: creative/pragmatic/systematic (fallback)
+   - **Auto mode**: Select top 3 recommended professional roles
+   - **Manual mode**: AskUserQuestion with recommended roles + "Use simple perspectives" option
+
+3. **Initial Scoping Questions** (if new session + not auto mode)
+   - **Direction**: Multi-select from directions generated by detected dimensions (see Brainstorm Dimensions)
+   - **Depth**: Single-select from quick/balanced/deep (15-20min / 30-60min / 1-2hr)
+   - **Constraints**: Multi-select from existing architecture, time, resources, or no constraints
+
+4. **Expand Seed into Exploration Vectors**
+   - Launch Gemini CLI with analysis mode
+   - Generate 5-7 exploration vectors:
+     - Core question: Fundamental problem/opportunity
+     - User perspective: Who benefits and how
+     - Technical angle: What enables this
+     - Alternative approaches: Other solutions
+     - Challenges: Potential blockers
+     - Innovation angle: 10x better approach
+     - Integration: Fit with existing systems
+   - Parse result into structured vectors
+
+**CLI Call Example**:
 ```javascript
-// Brainstorm dimensions for multi-perspective analysis
-const BRAINSTORM_DIMENSIONS = {
-  technical: ['技术', 'technical', 'implementation', 'code', '实现', 'architecture'],
-  ux: ['用户', 'user', 'experience', 'UX', 'UI', '体验', 'interaction'],
-  business: ['业务', 'business', 'value', 'ROI', '价值', 'market'],
-  innovation: ['创新', 'innovation', 'novel', 'creative', '新颖'],
-  feasibility: ['可行', 'feasible', 'practical', 'realistic', '实际'],
-  scalability: ['扩展', 'scale', 'growth', 'performance', '性能'],
-  security: ['安全', 'security', 'risk', 'protection', '风险']
-}
-
-function identifyDimensions(topic) {
-  const text = topic.toLowerCase()
-  const matched = []
-  
-  for (const [dimension, keywords] of Object.entries(BRAINSTORM_DIMENSIONS)) {
-    if (keywords.some(k => text.includes(k))) {
-      matched.push(dimension)
-    }
-  }
-  
-  // Default dimensions based on mode
-  if (matched.length === 0) {
-    return brainstormMode === 'creative' 
-      ? ['innovation', 'ux', 'technical']
-      : ['technical', 'feasibility', 'business']
-  }
-  
-  return matched
-}
-
-const dimensions = identifyDimensions(idea_or_topic)
-```
-
-**Step 1.2: Initial Scoping Questions**
-
-```javascript
-const autoYes = $ARGUMENTS.includes('--yes') || $ARGUMENTS.includes('-y')
-
-if (mode === 'new' && !autoYes) {
-  // Expand the seed with targeted questions
-  AskUserQuestion({
-    questions: [
-      {
-        question: `头脑风暴主题: "${idea_or_topic}"\n\n您希望探索哪些方向?`,
-        header: "方向",
-        multiSelect: true,
-        options: [
-          { label: "技术方案", description: "探索技术实现可能性" },
-          { label: "用户体验", description: "从用户角度出发" },
-          { label: "创新突破", description: "寻找非常规解决方案" },
-          { label: "可行性评估", description: "评估实际落地可能" }
-        ]
-      },
-      {
-        question: "头脑风暴深度?",
-        header: "深度",
-        multiSelect: false,
-        options: [
-          { label: "快速发散", description: "广度优先，快速生成多个想法 (15-20分钟)" },
-          { label: "平衡探索", description: "深度和广度平衡 (30-60分钟)" },
-          { label: "深度挖掘", description: "深入探索少数核心想法 (1-2小时)" }
-        ]
-      },
-      {
-        question: "是否有任何约束或必须考虑的因素?",
-        header: "约束",
-        multiSelect: true,
-        options: [
-          { label: "现有架构", description: "需要与现有系统兼容" },
-          { label: "时间限制", description: "有实施时间约束" },
-          { label: "资源限制", description: "开发资源有限" },
-          { label: "无约束", description: "完全开放探索" }
-        ]
-      }
-    ]
-  })
-}
-```
-
-**Step 1.3: Expand Seed into Exploration Vectors**
-
-```javascript
-// Generate exploration vectors from seed idea
-const expansionPrompt = `
-Given the initial idea: "${idea_or_topic}"
+Bash({
+  command: `ccw cli -p "
+Given the initial idea: '${idea_or_topic}'
 User focus areas: ${userFocusAreas.join(', ')}
 Constraints: ${constraints.join(', ')}
 
 Generate 5-7 exploration vectors (questions/directions) to expand this idea:
-
 1. Core question: What is the fundamental problem/opportunity?
 2. User perspective: Who benefits and how?
 3. Technical angle: What enables this technically?
@@ -228,390 +200,277 @@ Generate 5-7 exploration vectors (questions/directions) to expand this idea:
 7. Integration: How does this fit with existing systems/processes?
 
 Output as structured exploration vectors for multi-perspective analysis.
-`
-
-// Use quick Gemini call to expand seed
-const expansionResult = await Bash({
-  command: `ccw cli -p "${expansionPrompt}" --tool gemini --mode analysis --model gemini-2.5-flash`,
+" --tool gemini --mode analysis --model gemini-2.5-flash`,
   run_in_background: false
 })
-
-const explorationVectors = parseExpansionResult(expansionResult)
 ```
 
-**Step 1.4: Create brainstorm.md**
+5. **Initialize brainstorm.md**
+   - Create brainstorm.md with session metadata
+   - Add initial context: user focus, depth, constraints
+   - Add seed expansion: original idea + exploration vectors
+   - Create empty sections for thought evolution timeline
 
-```markdown
-# Brainstorm Session
+**Success Criteria**:
+- Session folder created with brainstorm.md initialized
+- 1-3 roles selected (professional or simple perspectives)
+- 5-7 exploration vectors generated
+- User preferences captured (direction, depth, constraints)
 
-**Session ID**: ${sessionId}
-**Topic**: ${idea_or_topic}
-**Started**: ${getUtc8ISOString()}
-**Mode**: ${brainstormMode}
-**Dimensions**: ${dimensions.join(', ')}
+### Phase 2: Divergent Exploration
 
----
+**Objective**: Gather codebase context, then execute multi-perspective analysis in parallel.
 
-## Initial Context
+**Prerequisites**:
+- Phase 1 completed successfully
+- Roles selected and stored
+- brainstorm.md initialized
 
-**User Focus**: ${userFocusAreas.join(', ')}
-**Depth**: ${analysisDepth}
-**Constraints**: ${constraints.join(', ')}
+**Workflow Steps**:
 
----
+1. **Primary Codebase Exploration via cli-explore-agent** (⚠️ FIRST)
+   - Agent type: `cli-explore-agent`
+   - Execution mode: synchronous (run_in_background: false)
+   - **Tasks**:
+     - Run: `ccw tool exec get_modules_by_depth '{}'`
+     - Search code related to topic keywords
+     - Read: `.workflow/project-tech.json` if exists
+   - **Output**: `{sessionFolder}/exploration-codebase.json`
+     - relevant_files: [{path, relevance, rationale}]
+     - existing_patterns: []
+     - architecture_constraints: []
+     - integration_points: []
+     - inspiration_sources: []
+   - **Purpose**: Enrich CLI prompts with codebase context
 
-## Seed Expansion
-
-### Original Idea
-> ${idea_or_topic}
-
-### Exploration Vectors
-
-${explorationVectors.map((v, i) => `
-#### Vector ${i+1}: ${v.title}
-**Question**: ${v.question}
-**Angle**: ${v.angle}
-**Potential**: ${v.potential}
-`).join('\n')}
-
----
-
-## Thought Evolution Timeline
-
-### Round 1 - Seed Understanding (${timestamp})
-
-#### Initial Parsing
-- **Core concept**: ${coreConcept}
-- **Problem space**: ${problemSpace}
-- **Opportunity**: ${opportunity}
-
-#### Key Questions to Explore
-${keyQuestions.map((q, i) => `${i+1}. ${q}`).join('\n')}
-
----
-
-## Current Ideas
-
-*To be populated after exploration phases*
-
----
-
-## Idea Graveyard
-
-*Discarded ideas with reasons - kept for reference*
-```
-
----
-
-### Phase 2: Divergent Exploration (Multi-CLI Parallel)
-
-**Step 2.1: Launch Multi-CLI Perspectives**
-
+**Agent Call Example**:
 ```javascript
-const cliPromises = []
+Task({
+  subagent_type: "cli-explore-agent",
+  run_in_background: false,
+  description: `Explore codebase for brainstorm: ${topicSlug}`,
+  prompt: `
+## Brainstorm Context
+Topic: ${idea_or_topic}
+Dimensions: ${dimensions.join(', ')}
+Mode: ${brainstormMode}
+Session: ${sessionFolder}
 
-// 1. Gemini: Creative/Innovative Perspective
-cliPromises.push(
-  Bash({
-    command: `ccw cli -p "
-PURPOSE: Creative brainstorming for '${idea_or_topic}' - generate innovative, unconventional ideas
+## MANDATORY FIRST STEPS
+1. Run: ccw tool exec get_modules_by_depth '{}'
+2. Search for code related to topic keywords
+3. Read: .workflow/project-tech.json (if exists)
+
+## Exploration Focus
+- Identify existing implementations related to the topic
+- Find patterns that could inspire solutions
+- Map current architecture constraints
+- Locate integration points
+
+## Output
+Write findings to: ${sessionFolder}/exploration-codebase.json
+
+Schema:
+{
+  "relevant_files": [{"path": "...", "relevance": "high|medium|low", "rationale": "..."}],
+  "existing_patterns": [],
+  "architecture_constraints": [],
+  "integration_points": [],
+  "inspiration_sources": [],
+  "_metadata": { "exploration_type": "brainstorm-codebase", "timestamp": "..." }
+}
+`
+})
+
+2. **Multi-CLI Perspective Analysis** (⚠️ AFTER exploration)
+   - Launch 3 CLI calls in parallel (Gemini/Codex/Claude)
+   - **Perspectives**:
+     - **Creative (Gemini)**: Innovation, cross-domain inspiration, challenge assumptions
+     - **Pragmatic (Codex)**: Implementation reality, feasibility, technical blockers
+     - **Systematic (Claude)**: Architecture, decomposition, scalability
+   - **Shared context**: Include exploration-codebase.json findings in prompts
+   - **Execution**: Bash with run_in_background: true, wait for all results
+   - **Output**: perspectives.json with creative/pragmatic/systematic sections
+
+**Multi-CLI Call Example** (parallel execution):
+```javascript
+// Build shared context from exploration results
+const explorationContext = `
+PRIOR EXPLORATION CONTEXT (from cli-explore-agent):
+- Key files: ${explorationResults.relevant_files.slice(0,5).map(f => f.path).join(', ')}
+- Existing patterns: ${explorationResults.existing_patterns.slice(0,3).join(', ')}
+- Architecture constraints: ${explorationResults.architecture_constraints.slice(0,3).join(', ')}
+- Integration points: ${explorationResults.integration_points.slice(0,3).join(', ')}`
+
+// Launch 3 CLI calls in parallel (single message, multiple Bash calls)
+Bash({
+  command: `ccw cli -p "
+PURPOSE: Creative brainstorming for '${idea_or_topic}' - generate innovative ideas
 Success: 5+ unique creative solutions that push boundaries
 
+${explorationContext}
+
 TASK:
+• Build on existing patterns - how can they be extended creatively?
 • Think beyond obvious solutions - what would be surprising/delightful?
-• Explore cross-domain inspiration (what can we learn from other industries?)
+• Explore cross-domain inspiration
 • Challenge assumptions - what if the opposite were true?
 • Generate 'moonshot' ideas alongside practical ones
-• Consider future trends and emerging technologies
 
 MODE: analysis
-
 CONTEXT: @**/* | Topic: ${idea_or_topic}
-Exploration vectors: ${explorationVectors.map(v => v.title).join(', ')}
-
-EXPECTED:
-- 5+ creative ideas with brief descriptions
-- Each idea rated: novelty (1-5), potential impact (1-5)
-- Key assumptions challenged
-- Cross-domain inspirations
-- One 'crazy' idea that might just work
-
+EXPECTED: 5+ creative ideas with novelty/impact ratings, challenged assumptions, cross-domain inspirations
 CONSTRAINTS: ${brainstormMode === 'structured' ? 'Keep ideas technically feasible' : 'No constraints - think freely'}
 " --tool gemini --mode analysis`,
-    run_in_background: true
-  })
-)
+  run_in_background: true
+})
 
-// 2. Codex: Pragmatic/Implementation Perspective
-cliPromises.push(
-  Bash({
-    command: `ccw cli -p "
-PURPOSE: Pragmatic analysis for '${idea_or_topic}' - focus on implementation reality
+Bash({
+  command: `ccw cli -p "
+PURPOSE: Pragmatic brainstorming for '${idea_or_topic}' - focus on implementation reality
 Success: Actionable approaches with clear implementation paths
 
+${explorationContext}
+
 TASK:
+• Build on explored codebase - how to integrate with existing patterns?
 • Evaluate technical feasibility of core concept
 • Identify existing patterns/libraries that could help
-• Consider integration with current codebase
 • Estimate implementation complexity
 • Highlight potential technical blockers
 • Suggest incremental implementation approach
 
 MODE: analysis
-
 CONTEXT: @**/* | Topic: ${idea_or_topic}
-Exploration vectors: ${explorationVectors.map(v => v.title).join(', ')}
-
-EXPECTED:
-- 3-5 practical implementation approaches
-- Each rated: effort (1-5), risk (1-5), reuse potential (1-5)
-- Technical dependencies identified
-- Quick wins vs long-term solutions
-- Recommended starting point
-
+EXPECTED: 3-5 practical approaches with effort/risk ratings, dependencies, quick wins vs long-term
 CONSTRAINTS: Focus on what can actually be built with current tech stack
 " --tool codex --mode analysis`,
-    run_in_background: true
-  })
-)
+  run_in_background: true
+})
 
-// 3. Claude: Systematic/Architectural Perspective
-cliPromises.push(
-  Bash({
-    command: `ccw cli -p "
-PURPOSE: Systematic analysis for '${idea_or_topic}' - architectural and structural thinking
+Bash({
+  command: `ccw cli -p "
+PURPOSE: Systematic brainstorming for '${idea_or_topic}' - architectural thinking
 Success: Well-structured solution framework with clear tradeoffs
 
+${explorationContext}
+
 TASK:
+• Build on explored architecture - how to extend systematically?
 • Decompose the problem into sub-problems
 • Identify architectural patterns that apply
 • Map dependencies and interactions
 • Consider scalability implications
-• Evaluate long-term maintainability
 • Propose systematic solution structure
 
 MODE: analysis
-
 CONTEXT: @**/* | Topic: ${idea_or_topic}
-Exploration vectors: ${explorationVectors.map(v => v.title).join(', ')}
-
-EXPECTED:
-- Problem decomposition diagram (text)
-- 2-3 architectural approaches with tradeoffs
-- Dependency mapping
-- Scalability assessment
-- Recommended architecture pattern
-- Risk matrix
-
+EXPECTED: Problem decomposition, 2-3 architectural approaches with tradeoffs, scalability assessment
 CONSTRAINTS: Consider existing system architecture
 " --tool claude --mode analysis`,
-    run_in_background: true
-  })
-)
+  run_in_background: true
+})
 
-// Wait for all CLI analyses
-await Promise.all(cliPromises)
+// ⚠️ STOP POINT: Wait for hook callback to receive all results before continuing
 ```
 
-**Step 2.2: Aggregate Multi-Perspective Findings**
+3. **Aggregate Multi-Perspective Findings**
+   - Consolidate creative/pragmatic/systematic results
+   - Extract synthesis:
+     - Convergent themes (all agree)
+     - Conflicting views (need resolution)
+     - Unique contributions (perspective-specific insights)
+   - Write to perspectives.json
 
+4. **Update brainstorm.md**
+   - Append Round 2 section with multi-perspective exploration
+   - Include creative/pragmatic/systematic findings
+   - Add perspective synthesis
+
+**CLI Prompt Template**:
+- **PURPOSE**: Role brainstorming for topic - focus description
+- **TASK**: Bullet list of specific actions
+- **MODE**: analysis
+- **CONTEXT**: @**/* | Topic + Exploration vectors + Codebase findings
+- **EXPECTED**: Output format requirements
+- **CONSTRAINTS**: Role-specific constraints
+
+**Success Criteria**:
+- exploration-codebase.json created with codebase context
+- perspectives.json created with 3 perspective analyses
+- brainstorm.md updated with Round 2 findings
+- All CLI calls completed successfully
+
+### Phase 3: Interactive Refinement
+
+**Objective**: Iteratively refine ideas through user-guided exploration cycles.
+
+**Prerequisites**:
+- Phase 2 completed successfully
+- perspectives.json contains initial ideas
+- brainstorm.md has Round 2 findings
+
+**Guideline**: For complex tasks (code analysis, implementation, POC creation), delegate to agents via Task tool (cli-explore-agent, code-developer, universal-executor) or CLI calls (ccw cli). Avoid direct analysis/execution in main process.
+
+**Workflow Steps**:
+
+1. **Present Current State**
+   - Extract top ideas from perspectives.json
+   - Display with: title, source, brief description, novelty/feasibility ratings
+   - List open questions
+
+2. **Gather User Direction** (AskUserQuestion)
+   - **Question 1**: Which ideas to explore (multi-select from top ideas)
+   - **Question 2**: Next step (single-select):
+     - **深入探索**: Deep dive on selected ideas
+     - **继续发散**: Generate more ideas
+     - **挑战验证**: Devil's advocate challenge
+     - **合并综合**: Merge multiple ideas
+     - **准备收敛**: Begin convergence (exit loop)
+
+3. **Execute User-Selected Action**
+
+   **Deep Dive** (per selected idea):
+   - Launch Gemini CLI with analysis mode
+   - Tasks: Elaborate concept, implementation requirements, challenges, POC approach, metrics, dependencies
+   - Output: `{sessionFolder}/ideas/{idea-slug}.md`
+
+   **Generate More Ideas**:
+   - Launch CLI with new angles from unexplored vectors
+   - Add results to perspectives.json
+
+   **Devil's Advocate Challenge**:
+   - Launch Codex CLI with analysis mode
+   - Tasks: Identify objections, challenge assumptions, failure scenarios, alternatives, survivability rating
+   - Return challenge results for idea strengthening
+
+   **Merge Ideas**:
+   - Launch Gemini CLI with analysis mode
+   - Tasks: Identify complementary elements, resolve contradictions, create unified concept
+   - Add merged idea to perspectives.json
+
+4. **Update brainstorm.md**
+   - Append Round N section with findings
+   - Document user direction and action results
+
+5. **Repeat or Converge**
+   - Continue loop (max 6 rounds) or exit to Phase 4
+
+**Refinement Actions**:
+
+| Action | Tool | Output | Description |
+|--------|------|--------|-------------|
+| Deep Dive | Gemini CLI | ideas/{slug}.md | Comprehensive idea analysis |
+| Generate More | Selected CLI | Updated perspectives.json | Additional idea generation |
+| Challenge | Codex CLI | Challenge results | Critical weaknesses exposed |
+| Merge | Gemini CLI | Merged idea | Synthesized concept |
+
+**CLI Call Examples for Refinement Actions**:
+
+**1. Deep Dive on Selected Idea**:
 ```javascript
-const perspectives = {
-  session_id: sessionId,
-  timestamp: getUtc8ISOString(),
-  topic: idea_or_topic,
-  
-  creative: {
-    source: 'gemini',
-    ideas: [...],
-    insights: [...],
-    challenges: [...]
-  },
-  
-  pragmatic: {
-    source: 'codex',
-    approaches: [...],
-    blockers: [...],
-    recommendations: [...]
-  },
-  
-  systematic: {
-    source: 'claude',
-    decomposition: [...],
-    patterns: [...],
-    tradeoffs: [...]
-  },
-  
-  synthesis: {
-    convergent_themes: [],
-    conflicting_views: [],
-    unique_contributions: []
-  }
-}
-
-Write(perspectivesPath, JSON.stringify(perspectives, null, 2))
-```
-
-**Step 2.3: Update brainstorm.md with Perspectives**
-
-```markdown
-### Round 2 - Multi-Perspective Exploration (${timestamp})
-
-#### Creative Perspective (Gemini)
-
-**Top Creative Ideas**:
-${creativeIdeas.map((idea, i) => `
-${i+1}. **${idea.title}** ⭐ Novelty: ${idea.novelty}/5 | Impact: ${idea.impact}/5
-   ${idea.description}
-`).join('\n')}
-
-**Challenged Assumptions**:
-${challengedAssumptions.map(a => `- ~~${a.assumption}~~ → Consider: ${a.alternative}`).join('\n')}
-
-**Cross-Domain Inspirations**:
-${inspirations.map(i => `- ${i}`).join('\n')}
-
----
-
-#### Pragmatic Perspective (Codex)
-
-**Implementation Approaches**:
-${pragmaticApproaches.map((a, i) => `
-${i+1}. **${a.title}** | Effort: ${a.effort}/5 | Risk: ${a.risk}/5
-   ${a.description}
-   - Quick win: ${a.quickWin}
-   - Dependencies: ${a.dependencies.join(', ')}
-`).join('\n')}
-
-**Technical Blockers**:
-${blockers.map(b => `- ⚠️ ${b}`).join('\n')}
-
----
-
-#### Systematic Perspective (Claude)
-
-**Problem Decomposition**:
-${decomposition}
-
-**Architectural Options**:
-${architecturalOptions.map((opt, i) => `
-${i+1}. **${opt.pattern}**
-   - Pros: ${opt.pros.join(', ')}
-   - Cons: ${opt.cons.join(', ')}
-   - Best for: ${opt.bestFor}
-`).join('\n')}
-
----
-
-#### Perspective Synthesis
-
-**Convergent Themes** (all perspectives agree):
-${convergentThemes.map(t => `- ✅ ${t}`).join('\n')}
-
-**Conflicting Views** (need resolution):
-${conflictingViews.map(v => `
-- 🔄 ${v.topic}
-  - Creative: ${v.creative}
-  - Pragmatic: ${v.pragmatic}
-  - Systematic: ${v.systematic}
-`).join('\n')}
-
-**Unique Contributions**:
-${uniqueContributions.map(c => `- 💡 [${c.source}] ${c.insight}`).join('\n')}
-```
-
----
-
-### Phase 3: Interactive Refinement (Multi-Round)
-
-**Step 3.1: Present & Select Directions**
-
-```javascript
-const MAX_ROUNDS = 6
-let roundNumber = 3  // After initial exploration
-let brainstormComplete = false
-
-while (!brainstormComplete && roundNumber <= MAX_ROUNDS) {
-  
-  // Present current state
-  console.log(`
-## Brainstorm Round ${roundNumber}
-
-### Top Ideas So Far
-
-${topIdeas.map((idea, i) => `
-${i+1}. **${idea.title}** (${idea.source})
-   ${idea.brief}
-   - Novelty: ${'⭐'.repeat(idea.novelty)} | Feasibility: ${'✅'.repeat(idea.feasibility)}
-`).join('\n')}
-
-### Open Questions
-${openQuestions.map((q, i) => `${i+1}. ${q}`).join('\n')}
-`)
-
-  // Gather user direction
-  const userDirection = AskUserQuestion({
-    questions: [
-      {
-        question: "哪些想法值得深入探索?",
-        header: "选择",
-        multiSelect: true,
-        options: topIdeas.slice(0, 4).map(idea => ({
-          label: idea.title,
-          description: idea.brief
-        }))
-      },
-      {
-        question: "下一步?",
-        header: "方向",
-        multiSelect: false,
-        options: [
-          { label: "深入探索", description: "深入分析选中的想法" },
-          { label: "继续发散", description: "生成更多新想法" },
-          { label: "挑战验证", description: "Devil's advocate - 挑战当前想法" },
-          { label: "合并综合", description: "尝试合并多个想法" },
-          { label: "准备收敛", description: "开始整理最终结论" }
-        ]
-      }
-    ]
-  })
-
-  // Process based on direction
-  switch (userDirection.direction) {
-    case "深入探索":
-      await deepDiveIdeas(userDirection.selectedIdeas)
-      break
-    case "继续发散":
-      await generateMoreIdeas()
-      break
-    case "挑战验证":
-      await devilsAdvocate(topIdeas)
-      break
-    case "合并综合":
-      await mergeIdeas(userDirection.selectedIdeas)
-      break
-    case "准备收敛":
-      brainstormComplete = true
-      break
-  }
-
-  // Update brainstorm.md
-  updateBrainstormDocument(roundNumber, userDirection, findings)
-  roundNumber++
-}
-```
-
-**Step 3.2: Deep Dive on Selected Ideas**
-
-```javascript
-async function deepDiveIdeas(selectedIdeas) {
-  for (const idea of selectedIdeas) {
-    // Create dedicated idea file
-    const ideaPath = `${ideasFolder}/${idea.slug}.md`
-    
-    // Deep dive with targeted CLI call
-    await Bash({
-      command: `ccw cli -p "
+Bash({
+  command: `ccw cli -p "
 PURPOSE: Deep dive analysis on idea '${idea.title}'
 Success: Comprehensive understanding with actionable next steps
 
@@ -625,7 +484,7 @@ TASK:
 
 MODE: analysis
 
-CONTEXT: @**/* 
+CONTEXT: @**/*
 Original idea: ${idea.description}
 Source perspective: ${idea.source}
 User interest reason: ${idea.userReason || 'Selected for exploration'}
@@ -640,21 +499,14 @@ EXPECTED:
 
 CONSTRAINTS: Focus on actionability
 " --tool gemini --mode analysis`,
-      run_in_background: false
-    })
-    
-    // Save deep dive to dedicated file
-    Write(ideaPath, deepDiveContent)
-  }
-}
+  run_in_background: false
+})
 ```
 
-**Step 3.3: Devil's Advocate Challenge**
-
+**2. Devil's Advocate Challenge**:
 ```javascript
-async function devilsAdvocate(ideas) {
-  const challengeResult = await Bash({
-    command: `ccw cli -p "
+Bash({
+  command: `ccw cli -p "
 PURPOSE: Devil's advocate - rigorously challenge these brainstorm ideas
 Success: Uncover hidden weaknesses and strengthen viable ideas
 
@@ -680,21 +532,14 @@ EXPECTED:
 
 CONSTRAINTS: Be genuinely critical, not just contrarian
 " --tool codex --mode analysis`,
-    run_in_background: false
-  })
-  
-  return challengeResult
-}
+  run_in_background: false
+})
 ```
 
-**Step 3.4: Merge & Synthesize Ideas**
-
+**3. Merge Multiple Ideas**:
 ```javascript
-async function mergeIdeas(ideaIds) {
-  const selectedIdeas = ideas.filter(i => ideaIds.includes(i.id))
-  
-  const mergeResult = await Bash({
-    command: `ccw cli -p "
+Bash({
+  command: `ccw cli -p "
 PURPOSE: Synthesize multiple ideas into unified concept
 Success: Coherent merged idea that captures best elements
 
@@ -724,430 +569,211 @@ EXPECTED:
 
 CONSTRAINTS: Don't force incompatible ideas together
 " --tool gemini --mode analysis`,
-    run_in_background: false
-  })
-  
-  // Add merged idea to list
-  const mergedIdea = parseMergeResult(mergeResult)
-  ideas.push(mergedIdea)
-  
-  return mergedIdea
-}
+  run_in_background: false
+})
 ```
 
-**Step 3.5: Document Each Round**
-
-Append to brainstorm.md:
-```markdown
-### Round ${n} - ${roundType} (${timestamp})
-
-#### User Direction
-- **Selected ideas**: ${selectedIdeas.join(', ')}
-- **Action**: ${action}
-- **Reasoning**: ${userReasoning || 'Not specified'}
-
-${roundType === 'deep-dive' ? `
-#### Deep Dive: ${ideaTitle}
-
-**Elaborated Concept**:
-${elaboratedConcept}
-
-**Implementation Requirements**:
-${requirements.map(r => `- ${r}`).join('\n')}
-
-**Challenges & Mitigations**:
-${challenges.map(c => `- ⚠️ ${c.challenge} → ✅ ${c.mitigation}`).join('\n')}
-
-**MVP Definition**:
-${mvpDefinition}
-
-**Recommendation**: ${recommendation}
-` : ''}
-
-${roundType === 'challenge' ? `
-#### Devil's Advocate Results
-
-**Challenges Raised**:
-${challenges.map(c => `
-- 🔴 **${c.idea}**: ${c.objection}
-  - Counter: ${c.counter || 'No strong counter-argument'}
-  - Survivability: ${c.survivability}/5
-`).join('\n')}
-
-**Ideas That Survived**:
-${survivedIdeas.map(i => `- ✅ ${i}`).join('\n')}
-
-**Eliminated/Parked**:
-${eliminatedIdeas.map(i => `- ❌ ${i.title}: ${i.reason}`).join('\n')}
-` : ''}
-
-${roundType === 'merge' ? `
-#### Merged Idea: ${mergedIdea.title}
-
-**Source Ideas Combined**:
-${sourceIdeas.map(i => `- ${i}`).join('\n')}
-
-**Unified Concept**:
-${mergedIdea.description}
-
-**Key Elements Preserved**:
-${preservedElements.map(e => `- ✅ ${e}`).join('\n')}
-
-**Tradeoffs Accepted**:
-${tradeoffs.map(t => `- ⚖️ ${t}`).join('\n')}
-` : ''}
-
-#### Updated Idea Ranking
-
-${updatedRanking.map((idea, i) => `
-${i+1}. **${idea.title}** ${idea.status}
-   - Score: ${idea.score}/10
-   - Source: ${idea.source}
-`).join('\n')}
-```
-
----
+**Success Criteria**:
+- User-selected ideas processed
+- brainstorm.md updated with all refinement rounds
+- ideas/ folder contains deep-dive documents for selected ideas
+- Exit condition reached (user selects "准备收敛" or max rounds)
 
 ### Phase 4: Convergence & Crystallization
 
-**Step 4.1: Final Synthesis**
-
-```javascript
-const synthesis = {
-  session_id: sessionId,
-  topic: idea_or_topic,
-  completed: getUtc8ISOString(),
-  total_rounds: roundNumber,
-  
-  // Top ideas with full details
-  top_ideas: ideas.filter(i => i.status === 'active').sort((a,b) => b.score - a.score).slice(0, 5).map(idea => ({
-    title: idea.title,
-    description: idea.description,
-    source_perspective: idea.source,
-    score: idea.score,
-    novelty: idea.novelty,
-    feasibility: idea.feasibility,
-    key_strengths: idea.strengths,
-    main_challenges: idea.challenges,
-    next_steps: idea.nextSteps
-  })),
-  
-  // Parked ideas for future reference
-  parked_ideas: ideas.filter(i => i.status === 'parked').map(idea => ({
-    title: idea.title,
-    reason_parked: idea.parkReason,
-    potential_future_trigger: idea.futureTrigger
-  })),
-  
-  // Key insights from the process
-  key_insights: keyInsights,
-  
-  // Recommendations
-  recommendations: {
-    primary: primaryRecommendation,
-    alternatives: alternativeApproaches,
-    not_recommended: notRecommended
-  },
-  
-  // Follow-up suggestions
-  follow_up: [
-    { type: 'implementation', summary: '...' },
-    { type: 'research', summary: '...' },
-    { type: 'validation', summary: '...' }
-  ]
-}
-
-Write(synthesisPath, JSON.stringify(synthesis, null, 2))
-```
-
-**Step 4.2: Final brainstorm.md Update**
-
-```markdown
----
-
-## Synthesis & Conclusions (${timestamp})
-
-### Executive Summary
-
-${executiveSummary}
-
-### Top Ideas (Final Ranking)
-
-${topIdeas.map((idea, i) => `
-#### ${i+1}. ${idea.title} ⭐ Score: ${idea.score}/10
-
-**Description**: ${idea.description}
-
-**Why This Idea**:
-${idea.strengths.map(s => `- ✅ ${s}`).join('\n')}
-
-**Main Challenges**:
-${idea.challenges.map(c => `- ⚠️ ${c}`).join('\n')}
-
-**Recommended Next Steps**:
-${idea.nextSteps.map((s, j) => `${j+1}. ${s}`).join('\n')}
-
----
-`).join('\n')}
-
-### Primary Recommendation
-
-> ${primaryRecommendation}
-
-**Rationale**: ${primaryRationale}
-
-**Quick Start Path**:
-1. ${step1}
-2. ${step2}
-3. ${step3}
-
-### Alternative Approaches
-
-${alternatives.map((alt, i) => `
-${i+1}. **${alt.title}**
-   - When to consider: ${alt.whenToConsider}
-   - Tradeoff: ${alt.tradeoff}
-`).join('\n')}
-
-### Ideas Parked for Future
-
-${parkedIdeas.map(idea => `
-- **${idea.title}** (Parked: ${idea.reason})
-  - Revisit when: ${idea.futureTrigger}
-`).join('\n')}
-
----
-
-## Key Insights
-
-### Process Discoveries
-
-${processDiscoveries.map(d => `- 💡 ${d}`).join('\n')}
-
-### Assumptions Challenged
-
-${challengedAssumptions.map(a => `- ~~${a.original}~~ → ${a.updated}`).join('\n')}
-
-### Unexpected Connections
-
-${unexpectedConnections.map(c => `- 🔗 ${c}`).join('\n')}
-
----
-
-## Current Understanding (Final)
-
-### Problem Reframed
-
-${reframedProblem}
-
-### Solution Space Mapped
-
-${solutionSpaceMap}
-
-### Decision Framework
-
-When to choose each approach:
-${decisionFramework}
-
----
-
-## Session Statistics
-
-- **Total Rounds**: ${totalRounds}
-- **Ideas Generated**: ${totalIdeas}
-- **Ideas Survived**: ${survivedIdeas}
-- **Perspectives Used**: Gemini (creative), Codex (pragmatic), Claude (systematic)
-- **Duration**: ${duration}
-- **Artifacts**: brainstorm.md, perspectives.json, synthesis.json, ${ideaFiles.length} idea deep-dives
-```
-
-**Step 4.3: Post-Completion Options**
-
-```javascript
-AskUserQuestion({
-  questions: [{
-    question: "头脑风暴完成。是否需要后续操作?",
-    header: "后续",
-    multiSelect: true,
-    options: [
-      { label: "创建实施计划", description: "将最佳想法转为实施计划" },
-      { label: "创建Issue", description: "将想法转为可追踪的Issue" },
-      { label: "深入分析", description: "对某个想法进行深度技术分析" },
-      { label: "导出分享", description: "生成可分享的报告" },
-      { label: "完成", description: "不需要后续操作" }
-    ]
-  }]
-})
-
-// Handle selections
-if (selection.includes("创建实施计划")) {
-  const topIdea = synthesis.top_ideas[0]
-  SlashCommand("/workflow:plan", `实施: ${topIdea.title} - ${topIdea.description}`)
-}
-if (selection.includes("创建Issue")) {
-  for (const idea of synthesis.top_ideas.slice(0, 3)) {
-    SlashCommand("/issue:new", `${idea.title}: ${idea.next_steps[0]}`)
-  }
-}
-if (selection.includes("深入分析")) {
-  SlashCommand("/workflow:analyze-with-file", synthesis.top_ideas[0].title)
-}
-if (selection.includes("导出分享")) {
-  exportBrainstormReport(sessionFolder)
-}
-```
-
----
-
-## Session Folder Structure
-
-```
-.workflow/.brainstorm/BS-{slug}-{date}/
-├── brainstorm.md        # Complete thought evolution
-├── perspectives.json    # Multi-CLI perspective findings
-├── synthesis.json       # Final synthesis
-└── ideas/               # Individual idea deep-dives
-    ├── idea-1.md
-    ├── idea-2.md
-    └── merged-idea-1.md
-```
-
-## Brainstorm Document Template
-
-```markdown
-# Brainstorm Session
-
-**Session ID**: BS-xxx-2025-01-27
-**Topic**: [idea or topic]
-**Started**: 2025-01-27T10:00:00+08:00
-**Mode**: creative | structured | balanced
-**Dimensions**: [technical, ux, innovation, ...]
-
----
-
-## Initial Context
-
-**User Focus**: [selected focus areas]
-**Depth**: [quick|balanced|deep]
-**Constraints**: [if any]
-
----
-
-## Seed Expansion
-
-### Original Idea
-> [the initial idea]
-
-### Exploration Vectors
-[generated questions and directions]
-
----
-
-## Thought Evolution Timeline
-
-### Round 1 - Seed Understanding
-...
-
-### Round 2 - Multi-Perspective Exploration
-
-#### Creative Perspective (Gemini)
-...
-
-#### Pragmatic Perspective (Codex)
-...
-
-#### Systematic Perspective (Claude)
-...
-
-#### Perspective Synthesis
-...
-
-### Round 3 - Deep Dive
-...
-
-### Round 4 - Challenge
-...
-
----
-
-## Synthesis & Conclusions
-
-### Executive Summary
-...
-
-### Top Ideas (Final Ranking)
-...
-
-### Primary Recommendation
-...
-
----
-
-## Key Insights
-...
-
----
-
-## Current Understanding (Final)
-...
-
----
-
-## Session Statistics
-...
-```
-
-## Multi-CLI Collaboration Strategy
-
-### Perspective Roles
-
-| CLI | Role | Focus | Best For |
-|-----|------|-------|----------|
-| Gemini | Creative | Innovation, cross-domain | Generating novel ideas |
-| Codex | Pragmatic | Implementation, feasibility | Reality-checking ideas |
-| Claude | Systematic | Architecture, structure | Organizing solutions |
+**Objective**: Synthesize final ideas, generate conclusions, offer next steps.
+
+**Prerequisites**:
+- Phase 3 completed successfully
+- Multiple rounds of refinement documented
+- User ready to converge
+
+**Workflow Steps**:
+
+1. **Generate Final Synthesis**
+   - Consolidate all ideas from perspectives.json and refinement rounds
+   - **Top ideas**: Filter active ideas, sort by score, take top 5
+     - Include: title, description, source_perspective, score, novelty, feasibility, strengths, challenges, next_steps
+   - **Parked ideas**: Ideas marked as parked with reason and future trigger
+   - **Key insights**: Process discoveries, challenged assumptions, unexpected connections
+   - **Recommendations**: Primary recommendation, alternatives, not recommended
+   - **Follow-up**: Implementation/research/validation summaries
+   - Write to synthesis.json
+
+2. **Final brainstorm.md Update**
+   - Append synthesis & conclusions section
+   - **Executive summary**: High-level overview
+   - **Top ideas**: Ranked with descriptions, strengths, challenges, next steps
+   - **Primary recommendation**: Best path forward with rationale
+   - **Alternative approaches**: Other viable options with tradeoffs
+   - **Parked ideas**: Future considerations
+   - **Key insights**: Learnings from the process
+   - **Session statistics**: Rounds, ideas generated/survived, duration
+
+3. **Post-Completion Options** (AskUserQuestion)
+   - **创建实施计划**: Launch workflow-plan with top idea
+   - **创建Issue**: Launch issue-discover for top 3 ideas
+   - **深入分析**: Launch workflow:analyze-with-file for top idea
+   - **导出分享**: Generate shareable report
+   - **完成**: No further action
+
+**synthesis.json Schema**:
+- `session_id`: Session identifier
+- `topic`: Original idea/topic
+- `completed`: Completion timestamp
+- `total_rounds`: Number of refinement rounds
+- `top_ideas[]`: Top 5 ranked ideas
+- `parked_ideas[]`: Ideas parked for future
+- `key_insights[]`: Process learnings
+- `recommendations`: Primary/alternatives/not_recommended
+- `follow_up[]`: Next step summaries
+
+**Success Criteria**:
+- synthesis.json created with final synthesis
+- brainstorm.md finalized with conclusions
+- User offered next step options
+- Session complete
+
+## Configuration
+
+### Brainstorm Dimensions
+
+Dimensions matched against topic keywords to identify focus areas:
+
+| Dimension | Keywords |
+|-----------|----------|
+| technical | 技术, technical, implementation, code, 实现, architecture |
+| ux | 用户, user, experience, UX, UI, 体验, interaction |
+| business | 业务, business, value, ROI, 价值, market |
+| innovation | 创新, innovation, novel, creative, 新颖 |
+| feasibility | 可行, feasible, practical, realistic, 实际 |
+| scalability | 扩展, scale, growth, performance, 性能 |
+| security | 安全, security, risk, protection, 风险 |
+
+### Role Selection
+
+**Professional Roles** (recommended based on topic keywords):
+
+| Role | CLI Tool | Focus Area | Keywords |
+|------|----------|------------|----------|
+| system-architect | Claude | Architecture, patterns | 架构, architecture, system, 系统, design pattern |
+| product-manager | Gemini | Business value, roadmap | 产品, product, feature, 功能, roadmap |
+| ui-designer | Gemini | Visual design, interaction | UI, 界面, interface, visual, 视觉 |
+| ux-expert | Codex | User research, usability | UX, 体验, experience, user, 用户 |
+| data-architect | Claude | Data modeling, storage | 数据, data, database, 存储, storage |
+| test-strategist | Codex | Quality, testing | 测试, test, quality, 质量, QA |
+| subject-matter-expert | Gemini | Domain knowledge | 领域, domain, industry, 行业, expert |
+| product-owner | Codex | Priority, scope | 优先, priority, scope, 范围, backlog |
+| scrum-master | Gemini | Process, collaboration | 敏捷, agile, scrum, sprint, 迭代 |
+
+**Simple Perspectives** (fallback):
+
+| Perspective | CLI Tool | Focus | Best For |
+|-------------|----------|-------|----------|
+| creative | Gemini | Innovation, cross-domain | Generating novel ideas |
+| pragmatic | Codex | Implementation, feasibility | Reality-checking ideas |
+| systematic | Claude | Architecture, structure | Organizing solutions |
+
+**Selection Strategy**:
+1. **Auto mode** (`-y`): Choose top 3 recommended professional roles
+2. **Manual mode**: Present recommended roles + "Use simple perspectives" option
+3. **Continue mode**: Use roles from previous session
 
 ### Collaboration Patterns
 
-1. **Parallel Divergence**: All CLIs explore simultaneously from different angles
-2. **Sequential Deep-Dive**: One CLI expands, others critique/refine
-3. **Debate Mode**: CLIs argue for/against specific approaches
-4. **Synthesis Mode**: Combine insights from all perspectives
+| Pattern | Usage | Description |
+|---------|-------|-------------|
+| Parallel Divergence | New topic | All roles explore simultaneously from different angles |
+| Sequential Deep-Dive | Promising idea | One role expands, others critique/refine |
+| Debate Mode | Controversial approach | Roles argue for/against approaches |
+| Synthesis Mode | Ready to decide | Combine insights into actionable conclusion |
 
-### When to Use Each Pattern
+### Context Overflow Protection
 
-- **New topic**: Parallel Divergence → get diverse initial ideas
-- **Promising idea**: Sequential Deep-Dive → thorough exploration
-- **Controversial approach**: Debate Mode → uncover hidden issues
-- **Ready to decide**: Synthesis Mode → create actionable conclusion
+**Per-Role Limits**:
+- Main analysis output: < 3000 words
+- Sub-document (if any): < 2000 words each
+- Maximum sub-documents: 5 per role
+
+**Synthesis Protection**:
+- If total analysis > 100KB, synthesis reads only main analysis files (not sub-documents)
+- Large ideas automatically split into separate idea documents in ideas/ folder
+
+**Recovery Steps**:
+1. Check CLI logs for context overflow errors
+2. Reduce scope: fewer roles or simpler topic
+3. Use `--mode structured` for more focused output
+4. Split complex topics into multiple sessions
+
+**Prevention**:
+- Start with 3 roles (default), increase if needed
+- Use structured topic format: "GOAL: ... SCOPE: ... CONTEXT: ..."
+- Review output sizes before final synthesis
 
 ## Error Handling
 
-| Situation | Action |
-|-----------|--------|
-| CLI timeout | Retry with shorter prompt, or continue without that perspective |
-| No good ideas | Reframe the problem, adjust constraints, try different angles |
-| User disengaged | Summarize progress, offer break point with resume option |
-| Perspectives conflict | Present as tradeoff, let user decide direction |
+| Error | Resolution |
+|-------|------------|
+| cli-explore-agent fails | Continue with empty exploration context |
+| CLI timeout | Retry with shorter prompt, or skip perspective |
+| No good ideas | Reframe problem, adjust constraints, try new angles |
+| User disengaged | Summarize progress, offer break point with resume |
+| Perspectives conflict | Present as tradeoff, let user decide |
 | Max rounds reached | Force synthesis, highlight unresolved questions |
 | All ideas fail challenge | Return to divergent phase with new constraints |
 
-## Usage Recommendations
+## Best Practices
 
-Use `/workflow:brainstorm-with-file` when:
+1. **Clear Topic Definition**: Detailed topics → better role selection and exploration
+2. **Agent-First for Complex Tasks**: For code analysis, POC implementation, or technical validation during refinement, delegate to agents via Task tool (cli-explore-agent, code-developer, universal-executor) or CLI calls (ccw cli). Avoid direct analysis/execution in main process
+3. **Review brainstorm.md**: Check thought evolution before final decisions
+4. **Embrace Conflicts**: Perspective conflicts often reveal important tradeoffs
+5. **Document Evolution**: brainstorm.md captures full thinking process for team review
+6. **Use Continue Mode**: Resume sessions to build on previous exploration
+
+## Templates
+
+### Brainstorm Document Structure
+
+**brainstorm.md** contains:
+- **Header**: Session metadata (ID, topic, started, mode, dimensions)
+- **Initial Context**: User focus, depth, constraints
+- **Seed Expansion**: Original idea + exploration vectors
+- **Thought Evolution Timeline**: Round-by-round findings
+  - Round 1: Seed Understanding
+  - Round 2: Multi-Perspective Exploration (creative/pragmatic/systematic)
+  - Round 3-N: Interactive Refinement (deep-dive/challenge/merge)
+- **Synthesis & Conclusions**: Executive summary, top ideas, recommendations
+- **Session Statistics**: Rounds, ideas, duration, artifacts
+
+See full markdown template in original file (lines 955-1161).
+
+## Usage Recommendations (Requires User Confirmation)
+
+**Use `Skill(skill="brainstorm", args="\"topic or question\"")` when:**
 - Starting a new feature/product without clear direction
 - Facing a complex problem with multiple possible solutions
 - Need to explore alternatives before committing
 - Want documented thinking process for team review
 - Combining multiple stakeholder perspectives
 
-Use `/workflow:analyze-with-file` when:
+**Use `Skill(skill="workflow:analyze-with-file", args="\"topic\"")` when:**
 - Investigating existing code/system
 - Need factual analysis over ideation
 - Debugging or troubleshooting
 - Understanding current state
 
-Use `/workflow:plan` when:
+**Use `Skill(skill="workflow-plan", args="\"task description\"")` when:**
+- Complex planning requiring multiple perspectives
+- Large scope needing parallel sub-domain analysis
+- Want shared collaborative planning document
+- Need structured task breakdown with agent coordination
+
+**Use `Skill(skill="workflow-lite-plan", args="\"task description\"")` when:**
 - Direction is already clear
 - Ready to move from ideas to execution
-- Need implementation breakdown
+- Need simple implementation breakdown
+
+---
+
+**Now execute brainstorm-with-file for**: $ARGUMENTS

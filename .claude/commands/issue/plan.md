@@ -2,7 +2,7 @@
 name: plan
 description: Batch plan issue resolution using issue-plan-agent (explore + plan closed-loop)
 argument-hint: "[-y|--yes] --all-pending <issue-id>[,<issue-id>,...] [--batch-size 3]"
-allowed-tools: TodoWrite(*), Task(*), SlashCommand(*), AskUserQuestion(*), Bash(*), Read(*), Write(*)
+allowed-tools: TodoWrite(*), Task(*), Skill(*), AskUserQuestion(*), Bash(*), Read(*), Write(*)
 ---
 
 ## Auto Mode
@@ -160,7 +160,7 @@ ${issueList}
 
 ### Project Context (MANDATORY)
 1. Read: .workflow/project-tech.json (technology stack, architecture)
-2. Read: .workflow/project-guidelines.json (constraints and conventions)
+2. Read: .workflow/specs/*.md (constraints and conventions)
 
 ### Workflow
 1. Fetch issue details: ccw issue status <id> --json
@@ -191,7 +191,7 @@ ${issueList}
 - Solution ID format: SOL-{issue-id}-{uid} (uid: 4 random alphanumeric chars, e.g., a7x9)
 - Single solution per issue → auto-bind via ccw issue bind
 - Multiple solutions → register only, return pending_selection
-- Tasks must have quantified acceptance.criteria
+- Tasks must have quantified convergence.criteria
 
 ### Return Summary
 {"bound":[{"issue_id":"...","solution_id":"...","task_count":N}],"pending_selection":[{"issue_id":"...","solutions":[{"id":"...","description":"...","task_count":N}]}]}
@@ -323,8 +323,8 @@ Before completing, verify:
 - [ ] All input issues have solutions in `solutions/{issue-id}.jsonl`
 - [ ] Single solution issues are auto-bound (`bound_solution_id` set)
 - [ ] Multi-solution issues returned in `pending_selection` for user choice
-- [ ] Each solution has executable tasks with `modification_points`
-- [ ] Task acceptance criteria are quantified (not vague)
+- [ ] Each solution has executable tasks with `files`
+- [ ] Task convergence criteria are quantified (not vague)
 - [ ] Conflicts detected and reported (if multiple issues touch same files)
 - [ ] Issue status updated to `planned` after binding
 

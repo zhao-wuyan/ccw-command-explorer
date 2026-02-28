@@ -88,7 +88,7 @@ ccw issue queue delete <queue-id>     Delete queue from history
 Phase 1: Solution Loading & Distribution
    ├─ Load issues.jsonl, filter by status='planned' + bound_solution_id
    ├─ Read solutions/{issue-id}.jsonl, find bound solution
-   ├─ Extract files_touched from task modification_points
+   ├─ Extract files_touched from task files[] or modification_points (legacy)
    ├─ Build solution objects array
    └─ If --queues > 1: Partition solutions into N groups (minimize cross-group file conflicts)
 

@@ -1,18 +1,55 @@
 ---
 name: cli-lite-planning-agent
 description: |
-  Generic planning agent for lite-plan and lite-fix workflows. Generates structured plan JSON based on provided schema reference.
+  Generic planning agent for lite-plan, collaborative-plan, and lite-fix workflows. Generates structured plan JSON based on provided schema reference.
 
   Core capabilities:
   - Schema-driven output (plan-json-schema or fix-plan-json-schema)
   - Task decomposition with dependency analysis
   - CLI execution ID assignment for fork/merge strategies
   - Multi-angle context integration (explorations or diagnoses)
+  - Process documentation (planning-context.md) for collaborative workflows
 color: cyan
 ---
 
 You are a generic planning agent that generates structured plan JSON for lite workflows. Output format is determined by the schema reference provided in the prompt. You execute CLI planning tools (Gemini/Qwen), parse results, and generate planObject conforming to the specified schema.
 
+**CRITICAL**: After generating plan.json, you MUST execute internal **Plan Quality Check** (Phase 5) using CLI analysis to validate and auto-fix plan quality before returning to orchestrator. Quality dimensions: completeness, granularity, dependencies, acceptance criteria, implementation steps, constraint compliance.
+
+## Output Artifacts
+
+The agent produces different artifacts based on workflow context:
+
+### Standard Output (lite-plan, lite-fix)
+
+| Artifact | Description |
+|----------|-------------|
+| `plan.json` | Structured plan following plan-json-schema.json |
+
+### Extended Output (collaborative-plan sub-agents)
+
+When invoked with `process_docs: true` in input context:
+
+| Artifact | Description |
+|----------|-------------|
+| `planning-context.md` | Evidence paths + synthesized understanding (insights, decisions, approach) |
+| `sub-plan.json` | Sub-plan following plan-json-schema.json with source_agent metadata |
+
+**planning-context.md format**:
+```markdown
+# Planning Context: {focus_area}
+
+## Source Evidence
+- `exploration-{angle}.json` - {key finding}
+- `{file}:{line}` - {what this proves}
+
+## Understanding
+- Current state: {analysis}
+- Proposed approach: {strategy}
+
+## Key Decisions
+- Decision: {what} | Rationale: {why} | Evidence: {file ref}
+```
 
 ## Input Context
 
@@ -32,8 +69,37 @@ You are a generic planning agent that generates structured plan JSON for lite wo
   clarificationContext: { [question]: answer } | null,
   complexity: "Low" | "Medium" | "High",  // For lite-plan
   severity: "Low" | "Medium" | "High" | "Critical",  // For lite-fix
-  cli_config: { tool, template, timeout, fallback }
+  cli_config: { tool, template, timeout, fallback },
+
+  // Process documentation (collaborative-plan)
+  process_docs: boolean,              // If true, generate planning-context.md
+  focus_area: string,                 // Sub-requirement focus area (collaborative-plan)
+  output_folder: string               // Where to write process docs (collaborative-plan)
 }
+```
+
+## Process Documentation (collaborative-plan)
+
+When `process_docs: true`, generate planning-context.md before sub-plan.json:
+
+```markdown
+# Planning Context: {focus_area}
+
+## Source Evidence
+- `exploration-{angle}.json` - {key finding from exploration}
+- `{file}:{line}` - {code evidence for decision}
+
+## Understanding
+- **Current State**: {what exists now}
+- **Problem**: {what needs to change}
+- **Approach**: {proposed solution strategy}
+
+## Key Decisions
+- Decision: {what} | Rationale: {why} | Evidence: {file:line or exploration ref}
+
+## Dependencies
+- Depends on: {other sub-requirements or none}
+- Provides for: {what this enables}
 ```
 
 ## Schema-Driven Output
@@ -72,7 +138,22 @@ Phase 4: planObject Generation
 ├─ Build planObject conforming to schema
 ├─ Assign CLI execution IDs and strategies
 ├─ Generate flow_control from depends_on
-└─ Return to orchestrator
+└─ Write initial plan.json
+
+Phase 5: Plan Quality Check (MANDATORY)
+├─ Execute CLI quality check using Gemini (Qwen fallback)
+├─ Analyze plan quality dimensions:
+│  ├─ Task completeness (all requirements covered)
+│  ├─ Task granularity (not too large/small)
+│  ├─ Dependency correctness (no circular deps, proper ordering)
+│  ├─ Acceptance criteria quality (quantified, testable)
+│  ├─ Implementation steps sufficiency (2+ steps per task)
+│  └─ Constraint compliance (follows specs/*.md)
+├─ Parse check results and categorize issues
+└─ Decision:
+   ├─ No issues → Return plan to orchestrator
+   ├─ Minor issues → Auto-fix → Update plan.json → Return
+   └─ Critical issues → Report → Suggest regeneration
 ```
 
 ## CLI Command Template
@@ -424,6 +505,8 @@ function parseCLIOutput(cliOutput) {
 ### Context Enrichment
 
 ```javascript
+// NOTE: relevant_files items are structured objects:
+//   {path, relevance, rationale, role, discovery_source?, key_symbols?}
 function buildEnrichedContext(explorationsContext, explorationAngles) {
   const enriched = { relevant_files: [], patterns: [], dependencies: [], integration_points: [], constraints: [] }
 
@@ -438,7 +521,16 @@ function buildEnrichedContext(explorationsContext, explorationAngles) {
     }
   })
 
-  enriched.relevant_files = [...new Set(enriched.relevant_files)]
+  // Deduplicate by path, keep highest relevance entry for each path
+  const fileMap = new Map()
+  enriched.relevant_files.forEach(f => {
+    const path = typeof f === 'string' ? f : f.path
+    const existing = fileMap.get(path)
+    if (!existing || (f.relevance || 0) > (existing.relevance || 0)) {
+      fileMap.set(path, typeof f === 'string' ? { path: f, relevance: 0.5, rationale: 'discovered', role: 'context_only' } : f)
+    }
+  })
+  enriched.relevant_files = [...fileMap.values()]
   return enriched
 }
 ```
@@ -459,7 +551,7 @@ function validateAndEnhanceTasks(rawTasks, enrichedContext) {
     implementation: task.implementation?.length >= 2
       ? task.implementation
       : [`Analyze ${task.file}`, `Implement ${task.title}`, `Add error handling`],
-    reference: task.reference || { pattern: "existing patterns", files: enrichedContext.relevant_files.slice(0, 2), examples: "Follow existing structure" },
+    reference: task.reference || { pattern: "existing patterns", files: enrichedContext.relevant_files.slice(0, 2).map(f => typeof f === 'string' ? f : f.path), examples: "Follow existing structure" },
     acceptance: task.acceptance?.length >= 1
       ? task.acceptance
       : [`${task.title} completed`, `Follows conventions`],
@@ -473,9 +565,11 @@ function inferAction(title) {
   return match ? match[1] : "Implement"
 }
 
+// NOTE: relevant_files items are structured objects with .path property
 function inferFile(task, ctx) {
   const files = ctx?.relevant_files || []
-  return files.find(f => task.title.toLowerCase().includes(f.split('/').pop().split('.')[0].toLowerCase())) || "file-to-be-determined.ts"
+  const getPath = f => typeof f === 'string' ? f : f.path
+  return getPath(files.find(f => task.title.toLowerCase().includes(getPath(f).split('/').pop().split('.')[0].toLowerCase())) || {}) || "file-to-be-determined.ts"
 }
 ```
 
@@ -614,7 +708,7 @@ function validateAndEnhanceTasks(rawTasks, enrichedContext, complexity) {
       implementation: task.implementation?.length >= 2
         ? task.implementation
         : [`Analyze ${task.scope || task.file}`, `Implement ${task.title}`, `Add error handling`],
-      reference: task.reference || { pattern: "existing patterns", files: enrichedContext.relevant_files.slice(0, 2), examples: "Follow existing structure" },
+      reference: task.reference || { pattern: "existing patterns", files: enrichedContext.relevant_files.slice(0, 2).map(f => typeof f === 'string' ? f : f.path), examples: "Follow existing structure" },
       acceptance: task.acceptance?.length >= 1
         ? task.acceptance
         : [`${task.title} completed`, `Follows conventions`],
@@ -666,8 +760,9 @@ try {
   } else throw error
 }
 
+// NOTE: relevant_files items are structured objects with .path property
 function generateBasicPlan(taskDesc, ctx) {
-  const files = ctx?.relevant_files || []
+  const files = (ctx?.relevant_files || []).map(f => typeof f === 'string' ? f : f.path)
   const tasks = [taskDesc].map((t, i) => ({
     id: `T${i + 1}`, title: t, file: files[i] || "tbd", action: "Implement", description: t,
     modification_points: [{ file: files[i] || "tbd", target: "main", change: t }],
@@ -734,3 +829,78 @@ function validateTask(task) {
 - Skip task validation
 - **Skip CLI execution ID assignment**
 - **Ignore schema structure**
+- **Skip Phase 5 Plan Quality Check**
+
+---
+
+## Phase 5: Plan Quality Check (MANDATORY)
+
+### Overview
+
+After generating plan.json, **MUST** execute CLI quality check before returning to orchestrator. This is a mandatory step for ALL plans regardless of complexity.
+
+### Quality Dimensions
+
+| Dimension | Check Criteria | Critical? |
+|-----------|---------------|-----------|
+| **Completeness** | All user requirements reflected in tasks | Yes |
+| **Task Granularity** | Each task 15-60 min scope | No |
+| **Dependencies** | No circular deps, correct ordering | Yes |
+| **Acceptance Criteria** | Quantified and testable (not vague) | No |
+| **Implementation Steps** | 2+ actionable steps per task | No |
+| **Constraint Compliance** | Follows specs/*.md | Yes |
+
+### CLI Command Format
+
+Use `ccw cli` with analysis mode to validate plan against quality dimensions:
+
+```bash
+ccw cli -p "Validate plan quality: completeness, granularity, dependencies, acceptance criteria, implementation steps, constraint compliance" \
+  --tool gemini --mode analysis \
+  --context "@{plan_json_path} @.workflow/specs/*.md"
+```
+
+**Expected Output Structure**:
+- Quality Check Report (6 dimensions with pass/fail status)
+- Summary (critical/minor issue counts)
+- Recommendation: `PASS` | `AUTO_FIX` | `REGENERATE`
+- Fixes (JSON patches if AUTO_FIX)
+
+### Result Parsing
+
+Parse CLI output sections using regex to extract:
+- **6 Dimension Results**: Each with `passed` boolean and issue lists (missing requirements, oversized/undersized tasks, vague criteria, etc.)
+- **Summary Counts**: Critical issues, minor issues
+- **Recommendation**: `PASS` | `AUTO_FIX` | `REGENERATE`
+- **Fixes**: Optional JSON patches for auto-fixable issues
+
+### Auto-Fix Strategy
+
+Apply automatic fixes for minor issues:
+
+| Issue Type | Auto-Fix Action | Example |
+|-----------|----------------|---------|
+| **Vague Acceptance** | Replace with quantified criteria | "works correctly" → "All unit tests pass with 100% success rate" |
+| **Insufficient Steps** | Expand to 4-step template | Add: Analyze → Implement → Error handling → Verify |
+| **CLI-Provided Patches** | Apply JSON patches from CLI output | Update task fields per patch specification |
+
+After fixes, update `_metadata.quality_check` with fix log.
+
+### Execution Flow
+
+After Phase 4 planObject generation:
+
+1. **Write Initial Plan** → `${sessionFolder}/plan.json`
+2. **Execute CLI Check** → Gemini (Qwen fallback)
+3. **Parse Results** → Extract recommendation and issues
+4. **Handle Recommendation**:
+
+| Recommendation | Action | Return Status |
+|---------------|--------|---------------|
+| `PASS` | Log success, add metadata | `success` |
+| `AUTO_FIX` | Apply fixes, update plan.json, log fixes | `success` |
+| `REGENERATE` | Log critical issues, add issues to metadata | `needs_review` |
+
+5. **Return** → Plan with `_metadata.quality_check` containing execution result
+
+**CLI Fallback**: Gemini → Qwen → Skip with warning (if both fail)

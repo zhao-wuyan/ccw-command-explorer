@@ -177,7 +177,7 @@ prompt:
     MODE: analysis
     CONTEXT: {{code_context}}
     EXPECTED: JSON formatted analysis report with modules, dependencies, patterns, quality_score
-    RULES: $(cat ~/.claude/workflows/cli-templates/protocols/analysis-protocol.md)
+    RULES: $(cat ~/.ccw/workflows/cli-templates/protocols/analysis-protocol.md)
   variables:
     - code_context
 input:
@@ -207,7 +207,7 @@ prompt:
     MODE: write
     CONTEXT: {{analysis_report}}
     EXPECTED: Complete Markdown documentation with table of contents, chapters, diagrams
-    RULES: $(cat ~/.claude/workflows/cli-templates/protocols/write-protocol.md)
+    RULES: $(cat ~/.ccw/workflows/cli-templates/protocols/write-protocol.md)
   variables:
     - analysis_report
 input:
@@ -237,7 +237,7 @@ prompt:
     MODE: analysis
     CONTEXT: {{source_code}}
     EXPECTED: List of refactoring suggestions with location, issue, suggestion, impact fields
-    RULES: $(cat ~/.claude/workflows/cli-templates/protocols/analysis-protocol.md)
+    RULES: $(cat ~/.ccw/workflows/cli-templates/protocols/analysis-protocol.md)
   variables:
     - source_code
 input:

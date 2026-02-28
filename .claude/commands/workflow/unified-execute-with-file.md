@@ -1,889 +1,864 @@
 ---
 name: unified-execute-with-file
 description: Universal execution engine for consuming any planning/brainstorm/analysis output with minimal progress tracking, multi-agent coordination, and incremental execution
-argument-hint: "[-y|--yes] [-p|--plan <path>] [-m|--mode sequential|parallel] [\"execution context or task name\"]"
+argument-hint: "[-y|--yes] [<path>[,<path2>] | -p|--plan <path>[,<path2>]] [--auto-commit] [--commit-prefix \"prefix\"] [\"execution context or task name\"]"
 allowed-tools: TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)
 ---
 
 ## Auto Mode
 
-When `--yes` or `-y`: Auto-confirm execution decisions, use default parallel strategy where possible.
+When `--yes` or `-y`: Auto-confirm execution decisions, follow plan's DAG dependencies.
 
-# Workflow Unified-Execute-With-File Command (/workflow:unified-execute-with-file)
+# Unified Execute-With-File Command
+
+## Quick Start
+
+```bash
+# Basic usage (auto-detect plan, ask for execution method)
+/workflow:unified-execute-with-file
+
+# Execute with specific plan (no -p needed for default paths)
+/workflow:unified-execute-with-file .workflow/plans/auth-plan.md
+
+# Execute multiple plans sequentially (comma-separated)
+/workflow:unified-execute-with-file plan1.json,plan2.json,plan3.json
+
+# With explicit -p flag (still supported)
+/workflow:unified-execute-with-file -p .workflow/.planning/CPLAN-xxx
+
+# With auto-commit (conventional commits)
+/workflow:unified-execute-with-file --auto-commit plan.json
+
+# Auto mode (skip prompts, use Agent for simple tasks, CLI for complex)
+/workflow:unified-execute-with-file -y plan.json
+```
+
+**Execution Methods**:
+- **Agent**: Task tool with code-developer (recommended for standard tasks)
+- **CLI-Codex**: `ccw cli --tool codex` (complex tasks, git-aware)
+- **CLI-Gemini**: `ccw cli --tool gemini` (analysis-heavy tasks)
+- **Auto**: Select based on task complexity (default in `-y` mode)
+
+**Context Source**: Plan files (IMPL_PLAN.md, plan.json, synthesis.json, etc.)
+**Output Directory**: `.workflow/.execution/{session-id}/`
+**Execution Strategy**:
+- Multiple plans: Sequential execution (plan1 → plan2 → plan3)
+- Within each plan: DAG-based dependency resolution with parallel execution where possible
+**Core Innovation**: Unified event log + structured notes + auto-commit
+
+## Output Artifacts
+
+### During Execution
+
+| Artifact | Description |
+|----------|-------------|
+| `execution.md` | Plan overview, task table, execution timeline |
+| `execution-events.md` | ⭐ Unified log (all task executions) - SINGLE SOURCE OF TRUTH |
+
 
 ## Overview
 
-Universal execution engine that consumes **any** planning/brainstorm/analysis output and executes it with minimal progress tracking. Coordinates multiple agents (subagents or CLI tools), handles dependencies, and maintains execution timeline in a single minimal document.
+Universal execution engine consuming **any** planning output and executing it with multi-agent coordination, dependency management, and progress tracking.
 
-**Core workflow**: Load Plan → Parse Tasks → Coordinate Agents → Execute → Track Progress → Verify
-
-**Key features**:
-- **Plan Format Agnostic**: Consumes IMPL_PLAN.md, brainstorm.md, analysis conclusions, debug resolutions
-- **execution.md**: Single source of truth for progress, execution timeline, and results
-- **Multi-Agent Orchestration**: Parallel execution where possible, sequential where needed
-- **Incremental Execution**: Resume from failure point, no re-execution of completed tasks
-- **Dependency Management**: Automatic topological sort and wait strategy
-- **Real-Time Progress**: TodoWrite integration for live task status
-
-## Usage
-
-```bash
-/workflow:unified-execute-with-file [FLAGS] [EXECUTION_CONTEXT]
-
-# Flags
--y, --yes              Auto-confirm execution decisions, use defaults
--p, --plan <path>      Explicitly specify plan file (auto-detected if omitted)
--m, --mode <mode>      Execution strategy: sequential (strict order) | parallel (smart dependencies)
-
-# Arguments
-[execution-context]    Optional: Task category, module name, or execution focus (for filtering/priority)
-
-# Examples
-/workflow:unified-execute-with-file                                    # Auto-detect and execute latest plan
-/workflow:unified-execute-with-file -p .workflow/plans/auth-plan.md   # Execute specific plan
-/workflow:unified-execute-with-file -y "auth module"                  # Auto-execute with context focus
-/workflow:unified-execute-with-file -m sequential "payment feature"   # Sequential execution
-```
-
-## Execution Process
+**Core workflow**: Load Plan → Parse Tasks → Execute → Track → Verify
 
 ```
-Plan Detection:
-   ├─ Check for IMPL_PLAN.md or task JSON files in .workflow/
-   ├─ Or use explicit --plan path
-   ├─ Or auto-detect from git branch/issue context
-   └─ Load plan metadata and task definitions
-
-Session Initialization:
-   ├─ Create .workflow/.execution/{sessionId}/
-   ├─ Initialize execution.md with plan summary
-   ├─ Parse all tasks, identify dependencies
-   ├─ Determine execution strategy (parallel/sequential)
-   └─ Initialize progress tracking
-
-Pre-Execution Validation:
-   ├─ Check task feasibility (required files exist, tools available)
-   ├─ Validate dependency graph (detect cycles)
-   ├─ Ask user to confirm execution (unless --yes)
-   └─ Display execution plan and timeline estimate
-
-Task Execution Loop (Parallel/Sequential):
-   ├─ Select next executable tasks (dependencies satisfied)
-   ├─ Launch agents in parallel (if strategy=parallel)
-   ├─ Monitor execution, wait for completion
-   ├─ Capture outputs, log results
-   ├─ Update execution.md with progress
-   ├─ Mark tasks complete/failed
-   └─ Repeat until all done or max failures reached
-
-Error Handling:
-   ├─ Task failure → Ask user: retry|skip|abort
-   ├─ Dependency failure → Auto-skip dependent tasks
-   ├─ Output conflict → Ask for resolution
-   └─ Timeout → Mark as timeout, continue or escalate
-
-Completion:
-   ├─ Mark session complete
-   ├─ Summarize execution results in execution.md
-   ├─ Generate completion report (statistics, failures, recommendations)
-   └─ Offer follow-up: review|debug|enhance
-
-Output:
-   ├─ .workflow/.execution/{sessionId}/execution.md (plan and overall status)
-   ├─ .workflow/.execution/{sessionId}/execution-events.md (SINGLE SOURCE OF TRUTH - all task executions)
-   └─ Generated files in project directories (src/*, tests/*, docs/*, etc.)
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    UNIFIED EXECUTION WORKFLOW                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  Phase 1: Plan Detection & Sequential Execution                         │
+│     ├─ Auto-detect or explicit --plan path                              │
+│     ├─ Support multiple plans (comma-separated)                         │
+│     ├─ Execute plans sequentially: plan1 → plan2 → plan3                │
+│     ├─ Each plan: independent session with own execution-events.md      │
+│     └─ Global session ID for multi-plan execution tracking              │
+│                                                                          │
+│  Phase 2: Session Initialization                                        │
+│     ├─ Create .workflow/.execution/{sessionId}/                         │
+│     ├─ Generate execution.md (plan overview + task table)               │
+│     ├─ Initialize execution-events.md (unified log)                     │
+│     ├─ Validate dependency graph (detect cycles)                        │
+│     └─ Calculate execution waves (topological sort + conflict check)    │
+│                                                                          │
+│  Phase 3: Pre-Execution Validation (Agent-Assisted)                     │
+│     ├─ Launch validation agent to check feasibility                     │
+│     ├─ Verify file existence, agent availability, file conflicts        │
+│     ├─ Generate validation report with recommendations                  │
+│     └─ Ask user: execution method (Agent/CLI-Codex/CLI-Gemini/Auto)     │
+│                                                                          │
+│  Phase 4: Wave Execution (DAG-based Dependencies)                       │
+│     ┌──────────────┬──────────────┬──────────────┐                      │
+│     │   Wave 1     │   Wave 2     │   Wave N     │                      │
+│     ├──────────────┼──────────────┼──────────────┤                      │
+│     │ Task 1-A ──┐ │ Task 2-A     │ Task N-A     │  ← Dependencies OK   │
+│     │ Task 1-B   │ │ Task 2-B     │ Task N-B     │  ← No file conflicts │
+│     │ Task 1-C ──┘ │              │              │  ← Max 3 parallel    │
+│     └──────────────┴──────────────┴──────────────┘                      │
+│                                                                          │
+│  Phase 5: Per-Task Execution (Agent OR CLI)                             │
+│     ├─ Extract relevant notes from previous tasks                       │
+│     ├─ Inject notes into execution context                              │
+│     ├─ Route to Agent (Task tool) OR CLI (ccw cli command)              │
+│     ├─ Generate structured notes for next task                          │
+│     ├─ Auto-commit if enabled (conventional commit format)              │
+│     └─ Append event to unified log                                      │
+│                                                                          │
+│  Phase 6: Progress Tracking & Recovery                                  │
+│     ├─ execution-events.md: Single source of truth                      │
+│     ├─ Each task: read previous events → execute → write event          │
+│     ├─ Status indicators: ✅ (completed), ❌ (failed), ⏳ (progress)     │
+│     └─ Resume support: --continue flag                                  │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
+
+## Output Structure
+
+```
+.workflow/.execution/{EXEC-slug-YYYY-MM-DD}/
+├── execution.md              # Plan overview + task table + timeline
+└── execution-events.md       # ⭐ Unified log (all task executions + review checkpoints) - SINGLE SOURCE OF TRUTH
+
+```
+
+**Key Concept**: execution-events.md serves as both human-readable log AND machine-parseable state store. All execution data (tasks, reviews, checkpoints) in one unified source.
 
 ## Implementation
 
-### Session Setup & Plan Detection
+### Session Initialization
 
-```javascript
-const getUtc8ISOString = () => new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
+**Objective**: Parse plan paths, create session directory, build unified task graph.
 
-// Plan detection strategy
-let planPath = $ARGUMENTS.match(/--plan\s+(\S+)/)?.[1]
+**Prerequisites**: None (entry point)
 
-if (!planPath) {
-  // Auto-detect: check recent workflow artifacts
-  const candidates = [
-    '.workflow/.plan/IMPL_PLAN.md',
-    '.workflow/plans/IMPL_PLAN.md',
-    '.workflow/IMPL_PLAN.md',
-  ]
+**Workflow Steps**:
 
-  // Find most recent plan
-  planPath = findMostRecentPlan(candidates)
+1. **Parse Command Flags**
+   - Extract plan paths from `--plan` or `-p` argument (or positional)
+   - Detect `--auto-commit` and `--commit-prefix` for git integration
+   - Detect `-y` or `--yes` for auto-confirmation mode
 
-  if (!planPath) {
-    // Check for task JSONs
-    const taskJsons = glob('.workflow/**/*.json').filter(f => f.includes('IMPL-') || f.includes('task'))
-    if (taskJsons.length > 0) {
-      planPath = taskJsons[0] // Primary task
-    }
-  }
-}
+2. **Resolve Plan Paths**
 
-if (!planPath) {
-  AskUserQuestion({
-    questions: [{
-      question: "未找到执行规划。请选择方式:",
-      header: "Plan Source",
-      multiSelect: false,
-      options: [
-        { label: "浏览文件", description: "从 .workflow 目录选择" },
-        { label: "使用最近规划", description: "从git提交消息推断" },
-        { label: "手动输入路径", description: "直接指定规划文件路径" }
-      ]
-    }]
-  })
-}
+   | Input Format | Resolution Strategy |
+   |--------------|---------------------|
+   | Comma-separated | Execute sequentially: `plan1.json → plan2.json → plan3.json` |
+   | Single path | Direct use |
+   | No path | Auto-detect from `.workflow/` (IMPL_PLAN.md or task JSONs) |
 
-// Parse plan and extract tasks
-const planContent = Read(planPath)
-const plan = parsePlan(planContent, planPath) // Format-agnostic parser
+3. **Parse Current Plan**
+   - Parse plan via format-agnostic `parsePlan()`
+   - Build task graph from plan's DAG dependencies
+   - Validate (detect cycles), topological sort
+   - Return: `{ tasks, executionOrder, planSource, metadata }`
 
-const executionId = `EXEC-${plan.slug}-${getUtc8ISOString().substring(0, 10)}-${randomId(4)}`
-const executionFolder = `.workflow/.execution/${executionId}`
-const executionPath = `${executionFolder}/execution.md`
-const eventLogPath = `${executionFolder}/execution-events.md`
+4. **Create Session Directory**
+   - Generate session ID: `EXEC-{slug}-{date}-{random}`
+   - Create `.workflow/.execution/{sessionId}/`
+   - Initialize `execution.md` with plan source
+   - Initialize `execution-events.md` (empty, will be appended)
 
-bash(`mkdir -p ${executionFolder}`)
-```
+**Success Criteria**:
+- [ ] All plans parsed successfully
+- [ ] No circular dependencies in task graph
+- [ ] Session directory created with execution.md template
+- [ ] Execution order calculated (topological sort)
+
+**Completion**: Log session ID and ready for validation phase
 
 ---
 
-## Plan Format Parsers
+### Pre-Execution Validation (Agent-Assisted)
 
-Support multiple plan sources (all JSON plans follow plan-json-schema.json):
+**Objective**: Use validation agent to check execution feasibility and launch review agent for quality oversight.
 
-```javascript
-function parsePlan(content, filePath) {
-  const ext = filePath.split('.').pop()
+**Prerequisites**: Session initialized, unified graph built
 
-  if (filePath.includes('IMPL_PLAN')) {
-    return parseImplPlan(content) // From /workflow:plan (markdown)
-  } else if (filePath.includes('brainstorm')) {
-    return parseBrainstormPlan(content) // From /workflow:brainstorm-with-file
-  } else if (filePath.includes('synthesis')) {
-    return parseSynthesisPlan(content) // From /workflow:brainstorm-with-file synthesis.json
-  } else if (filePath.includes('conclusions')) {
-    return parseConclusionsPlan(content) // From /workflow:analyze-with-file conclusions.json
-  } else if (filePath.endsWith('.json') && content.includes('"tasks"')) {
-    return parsePlanJson(content) // Standard plan-json-schema (lite-plan, collaborative-plan, sub-plans)
-  }
+**Workflow Steps**:
 
-  throw new Error(`Unsupported plan format: ${filePath}`)
+1. **Launch Parallel Agents**
+
+   **A. Validation Agent**
+
+   ```javascript
+   Task(
+     subagent_type="cli-explore-agent",
+     run_in_background=false,
+     description="Validate execution plan feasibility",
+     prompt=`
+## Validation Mission
+
+Analyze the following execution plan and generate a validation report.
+
+### Plan Summary
+- Total Tasks: ${unifiedGraph.tasks.length}
+- Plan Sources: ${unifiedGraph.planSources.map(p => p.path).join(', ')}
+- Execution Mode: ${executionMode}
+
+### Tasks to Validate
+${unifiedGraph.tasks.slice(0, 10).map(t => `- ${t.id}: ${t.title} (files: ${t.files_to_modify?.join(', ')})`).join('\n')}
+
+### Validation Checks
+1. **File Existence**: Verify files_to_modify exist or will be created
+2. **Dependency Resolution**: Check all depends_on targets exist
+3. **File Conflicts**: Identify same-file modifications in parallel waves
+4. **Complexity Assessment**: Estimate task complexity (Low/Medium/High)
+5. **Risk Analysis**: Identify potential issues or blockers
+
+### Output Format
+Generate validation-report.json in ${sessionFolder}:
+{
+  "status": "pass" | "warn" | "fail",
+  "file_checks": { "missing": [], "will_create": [] },
+  "dependency_issues": [],
+  "file_conflicts": [{ "file": "", "tasks": [], "wave": 0 }],
+  "complexity_assessment": { "low": 0, "medium": 0, "high": 0 },
+  "risks": [{ "severity": "critical|high|medium|low", "description": "" }],
+  "recommendations": [],
+  "review_checkpoints": [{ "after_tasks": [], "focus_areas": [] }]
 }
-
-// Standard plan-json-schema parser
-// Handles: lite-plan, collaborative-plan, sub-plans (all follow same schema)
-function parsePlanJson(content) {
-  const plan = JSON.parse(content)
-
-  return {
-    type: plan.merge_metadata ? 'collaborative-plan' : 'lite-plan',
-    title: plan.summary?.split('.')[0] || 'Untitled Plan',
-    slug: plan._metadata?.session_id || generateSlug(plan.summary),
-    summary: plan.summary,
-    approach: plan.approach,
-    tasks: plan.tasks.map(task => ({
-      id: task.id,
-      type: inferTaskTypeFromAction(task.action),
-      title: task.title,
-      description: task.description,
-      dependencies: task.depends_on || [],
-      agent_type: selectAgentFromTask(task),
-      prompt: buildPromptFromTask(task),
-      files_to_modify: task.modification_points?.map(mp => mp.file) || [],
-      expected_output: task.acceptance || [],
-      priority: task.effort?.complexity === 'high' ? 'high' : 'normal',
-      estimated_duration: task.effort?.estimated_hours ? `${task.effort.estimated_hours}h` : null,
-      verification: task.verification,
-      risks: task.risks,
-      source_agent: task.source_agent // From collaborative-plan sub-agents
-    })),
-    flow_control: plan.flow_control,
-    data_flow: plan.data_flow,
-    design_decisions: plan.design_decisions,
-    estimatedDuration: plan.estimated_time,
-    recommended_execution: plan.recommended_execution,
-    complexity: plan.complexity,
-    merge_metadata: plan.merge_metadata, // Present if from collaborative-plan
-    _metadata: plan._metadata
-  }
-}
-
-// IMPL_PLAN.md parser
-function parseImplPlan(content) {
-  // Extract:
-  // - Overview/summary
-  // - Phase sections
-  // - Task list with dependencies
-  // - Critical files
-  // - Execution order
-
-  return {
-    type: 'impl-plan',
-    title: extractSection(content, 'Overview'),
-    phases: extractPhases(content),
-    tasks: extractTasks(content),
-    criticalFiles: extractCriticalFiles(content),
-    estimatedDuration: extractEstimate(content)
-  }
-}
-
-// Brainstorm synthesis.json parser
-function parseSynthesisPlan(content) {
-  const synthesis = JSON.parse(content)
-
-  return {
-    type: 'brainstorm-synthesis',
-    title: synthesis.topic,
-    ideas: synthesis.top_ideas,
-    tasks: synthesis.top_ideas.map(idea => ({
-      id: `IDEA-${slugify(idea.title)}`,
-      type: 'investigation',
-      title: idea.title,
-      description: idea.description,
-      dependencies: [],
-      agent_type: 'cli-execution-agent',
-      prompt: `Implement: ${idea.title}\n${idea.description}`,
-      expected_output: idea.next_steps
-    })),
-    recommendations: synthesis.recommendations
-  }
-}
-
-// Helper: Infer task type from action field
-function inferTaskTypeFromAction(action) {
-  const actionMap = {
-    'Create': 'code',
-    'Update': 'code',
-    'Implement': 'code',
-    'Refactor': 'code',
-    'Add': 'code',
-    'Delete': 'code',
-    'Configure': 'config',
-    'Test': 'test',
-    'Fix': 'debug'
-  }
-  return actionMap[action] || 'code'
-}
-
-// Helper: Select agent based on task properties
-function selectAgentFromTask(task) {
-  if (task.verification?.unit_tests?.length > 0) {
-    return 'tdd-developer'
-  } else if (task.action === 'Test') {
-    return 'test-fix-agent'
-  } else if (task.action === 'Fix') {
-    return 'debug-explore-agent'
-  } else {
-    return 'code-developer'
-  }
-}
-
-// Helper: Build prompt from task details
-function buildPromptFromTask(task) {
-  let prompt = `## Task: ${task.title}\n\n${task.description}\n\n`
-
-  if (task.modification_points?.length > 0) {
-    prompt += `### Modification Points\n`
-    task.modification_points.forEach(mp => {
-      prompt += `- **${mp.file}**: ${mp.target} → ${mp.change}\n`
-    })
-    prompt += '\n'
-  }
-
-  if (task.implementation?.length > 0) {
-    prompt += `### Implementation Steps\n`
-    task.implementation.forEach((step, i) => {
-      prompt += `${i + 1}. ${step}\n`
-    })
-    prompt += '\n'
-  }
-
-  if (task.acceptance?.length > 0) {
-    prompt += `### Acceptance Criteria\n`
-    task.acceptance.forEach(ac => {
-      prompt += `- ${ac}\n`
-    })
-  }
-
-  return prompt
-}
-```
-
----
-
-### Phase 1: Plan Loading & Validation
-
-**Step 1.1: Parse Plan and Extract Tasks**
-
-```javascript
-const tasks = plan.tasks || parseTasksFromContent(plan)
-
-// Normalize task structure
-const normalizedTasks = tasks.map(task => ({
-  id: task.id || `TASK-${generateId()}`,
-  title: task.title || task.content,
-  description: task.description || task.activeForm,
-  type: task.type || inferTaskType(task), // 'code', 'test', 'doc', 'analysis', 'integration'
-  agent_type: task.agent_type || selectBestAgent(task),
-  dependencies: task.dependencies || [],
-
-  // Execution parameters
-  prompt: task.prompt || task.description,
-  files_to_modify: task.files_to_modify || [],
-  expected_output: task.expected_output || [],
-
-  // Metadata
-  priority: task.priority || 'normal',
-  parallel_safe: task.parallel_safe !== false,
-  estimated_duration: task.estimated_duration || null,
-
-  // Status tracking
-  status: 'pending',
-  attempts: 0,
-  max_retries: 2
-}))
-
-// Validate and detect issues
-const validation = {
-  cycles: detectDependencyCycles(normalizedTasks),
-  missing_dependencies: findMissingDependencies(normalizedTasks),
-  file_conflicts: detectOutputConflicts(normalizedTasks),
-  warnings: []
-}
-
-if (validation.cycles.length > 0) {
-  throw new Error(`Circular dependencies detected: ${validation.cycles.join(', ')}`)
-}
-```
-
-**Step 1.2: Create execution.md**
-
-```markdown
-# Execution Progress
-
-**Execution ID**: ${executionId}
-**Plan Source**: ${planPath}
-**Started**: ${getUtc8ISOString()}
-**Mode**: ${executionMode}
-
-**Plan Summary**:
-- Title: ${plan.title}
-- Total Tasks: ${tasks.length}
-- Phases: ${plan.phases?.length || 'N/A'}
-
----
-
-## Execution Plan
-
-### Task Overview
-
-| Task ID | Title | Type | Agent | Dependencies | Status |
-|---------|-------|------|-------|--------------|--------|
-${normalizedTasks.map(t => `| ${t.id} | ${t.title} | ${t.type} | ${t.agent_type} | ${t.dependencies.join(',')} | ${t.status} |`).join('\n')}
-
-### Dependency Graph
-
-\`\`\`
-${generateDependencyGraph(normalizedTasks)}
-\`\`\`
-
-### Execution Strategy
-
-- **Mode**: ${executionMode}
-- **Parallelization**: ${calculateParallel(normalizedTasks)}
-- **Estimated Duration**: ${estimateTotalDuration(normalizedTasks)}
-
----
-
-## Execution Timeline
-
-*Updates as execution progresses*
-
----
-
-## Current Status
-
-${executionStatus()}
-```
-
-**Step 1.3: Pre-Execution Confirmation**
-
-```javascript
-const autoYes = $ARGUMENTS.includes('--yes') || $ARGUMENTS.includes('-y')
-
-if (!autoYes) {
-  AskUserQuestion({
-    questions: [{
-      question: `准备执行 ${normalizedTasks.length} 个任务，模式: ${executionMode}\n\n关键任务:\n${normalizedTasks.slice(0, 3).map(t => `• ${t.id}: ${t.title}`).join('\n')}\n\n继续?`,
-      header: "Confirmation",
-      multiSelect: false,
-      options: [
-        { label: "开始执行", description: "按计划执行" },
-        { label: "调整参数", description: "修改执行参数" },
-        { label: "查看详情", description: "查看完整任务列表" },
-        { label: "取消", description: "退出不执行" }
-      ]
-    }]
-  })
-}
-```
-
----
-
-## Phase 2: Execution Orchestration
-
-**Step 2.1: Determine Execution Order**
-
-```javascript
-// Topological sort
-const executionOrder = topologicalSort(normalizedTasks)
-
-// For parallel mode, group tasks into waves
-let executionWaves = []
-if (executionMode === 'parallel') {
-  executionWaves = groupIntoWaves(executionOrder, parallelLimit = 3)
-} else {
-  executionWaves = executionOrder.map(task => [task])
-}
-
-// Log execution plan to execution.md
-// execution-events.md will track actual progress as tasks execute
-```
-
-**Step 2.2: Execute Task Waves**
-
-```javascript
-let completedCount = 0
-let failedCount = 0
-const results = {}
-
-for (let waveIndex = 0; waveIndex < executionWaves.length; waveIndex++) {
-  const wave = executionWaves[waveIndex]
-
-  console.log(`\n=== Wave ${waveIndex + 1}/${executionWaves.length} ===`)
-  console.log(`Tasks: ${wave.map(t => t.id).join(', ')}`)
-
-  // Launch tasks in parallel
-  const taskPromises = wave.map(task => executeTask(task, executionFolder))
-
-  // Wait for wave completion
-  const waveResults = await Promise.allSettled(taskPromises)
-
-  // Process results
-  for (let i = 0; i < waveResults.length; i++) {
-    const result = waveResults[i]
-    const task = wave[i]
-
-    if (result.status === 'fulfilled') {
-      results[task.id] = result.value
-      if (result.value.success) {
-        completedCount++
-        task.status = 'completed'
-        console.log(`✅ ${task.id}: Completed`)
-      } else if (result.value.retry) {
-        console.log(`⚠️ ${task.id}: Will retry`)
-        task.status = 'pending'
-      } else {
-        console.log(`❌ ${task.id}: Failed`)
-      }
-    } else {
-      console.log(`❌ ${task.id}: Execution error`)
-    }
-
-    // Progress is tracked in execution-events.md (appended by executeTask)
-  }
-
-  // Update execution.md summary
-  appendExecutionTimeline(executionPath, waveIndex + 1, wave, waveResults)
-}
-```
-
-**Step 2.3: Execute Individual Task with Unified Event Logging**
-
-```javascript
-async function executeTask(task, executionFolder) {
-  const eventLogPath = `${executionFolder}/execution-events.md`
-  const startTime = Date.now()
-
-  try {
-    // Read previous execution events for context
-    let previousEvents = ''
-    if (fs.existsSync(eventLogPath)) {
-      previousEvents = Read(eventLogPath)
-    }
-
-    // Select agent based on task type
-    const agent = selectAgent(task.agent_type)
-
-    // Build execution context including previous agent outputs
-    const executionContext = `
-## Previous Agent Executions (for reference)
-
-${previousEvents}
-
----
-
-## Current Task: ${task.id}
-
-**Title**: ${task.title}
-**Agent**: ${agent}
-**Time**: ${getUtc8ISOString()}
-
-### Description
-${task.description}
-
-### Context
-- Modified Files: ${task.files_to_modify.join(', ')}
-- Expected Output: ${task.expected_output.join(', ')}
-- Previous Artifacts: [list any artifacts from previous tasks]
-
-### Requirements
-${task.requirements || 'Follow the plan'}
-
-### Constraints
-${task.constraints || 'No breaking changes'}
 `
+   )
+   ```
 
-    // Execute based on agent type
-    let result
+   **B. Review Agent (Parallel)**
 
-    if (agent === 'code-developer' || agent === 'tdd-developer') {
-      // Code implementation
-      result = await Task({
-        subagent_type: agent,
-        description: `Execute: ${task.title}`,
-        prompt: executionContext,
-        run_in_background: false
-      })
-    } else if (agent === 'cli-execution-agent' || agent === 'universal-executor') {
-      // CLI-based execution
-      result = await Bash({
-        command: `ccw cli -p "${escapeQuotes(executionContext)}" --tool gemini --mode analysis`,
-        run_in_background: false
-      })
-    } else if (agent === 'test-fix-agent') {
-      // Test execution and fixing
-      result = await Task({
-        subagent_type: 'test-fix-agent',
-        description: `Execute Tests: ${task.title}`,
-        prompt: executionContext,
-        run_in_background: false
-      })
-    } else {
-      // Generic task execution
-      result = await Task({
-        subagent_type: 'universal-executor',
-        description: task.title,
-        prompt: executionContext,
-        run_in_background: false
-      })
-    }
+   ```javascript
+   Task(
+     subagent_type="universal-executor",
+     run_in_background=false,
+     description="Initialize review oversight system",
+     prompt=`
+## Review Agent Initialization
 
-    // Capture artifacts (code, tests, docs generated by this task)
-    const artifacts = captureArtifacts(task, executionFolder)
+Set up incremental review system for execution quality oversight.
 
-    // Append to unified execution events log
-    const eventEntry = `
-## Task ${task.id} - COMPLETED ✅
+### Review Strategy
+- **Checkpoint Interval**: Every 2-4 tasks
+- **Focus Areas**: Code quality, plan compliance, integration risks
+- **Update Principle**: Minimal changes only
 
-**Timestamp**: ${getUtc8ISOString()}
-**Duration**: ${calculateDuration(startTime)}ms
-**Agent**: ${agent}
+### Output to execution-events.md
+Append review configuration section (once, at initialization):
 
-### Execution Summary
+---
+## REVIEW CONFIG - INITIALIZED ⚙️
 
-${generateSummary(result)}
+**Timestamp**: ${timestamp}
+**Strategy**: Incremental review every 2-4 tasks
+**Focus Areas**: code_quality, plan_compliance, integration_risks
 
-### Key Outputs
-
-${formatOutputs(result)}
-
-### Generated Artifacts
-
-${artifacts.map(a => `- **${a.type}**: \`${a.path}\` (${a.size})`).join('\n')}
-
-### Notes for Next Agent
-
-${generateNotesForNextAgent(result, task)}
+### Checkpoint Configuration
+- **Interval**: Min 2 tasks, Max 4 tasks (adaptive)
+- **Review Agent**: universal-executor
+- **Plan Note Fields**: implementation_notes, quality_concerns, integration_risks, next_task_dependencies
 
 ---
 `
+   )
+   ```
 
-    appendToEventLog(eventLogPath, eventEntry)
+2. **Process Validation Result**
+   - Read `{sessionFolder}/validation-report.json`
+   - Display summary: status, conflicts count, risks count
+   - If `status === "fail"`: Show blockers, ask to abort/continue
+   - If `status === "warn"`: Show warnings, ask to proceed/fix
 
-    return {
-      success: true,
-      task_id: task.id,
-      output: result,
-      artifacts: artifacts,
-      duration: calculateDuration(startTime)
-    }
-  } catch (error) {
-    // Append failure event to unified log
-    const failureEntry = `
-## Task ${task.id} - FAILED ❌
+3. **Select Execution Method** (unless `--yes` flag)
 
-**Timestamp**: ${getUtc8ISOString()}
-**Duration**: ${calculateDuration(startTime)}ms
-**Agent**: ${agent}
-**Error**: ${error.message}
+   | Method | Description | When to Use |
+   |--------|-------------|-------------|
+   | Agent | `Task(subagent_type="code-developer")` | Standard implementation |
+   | CLI-Codex | `ccw cli --tool codex --mode write` | Complex tasks, git-aware |
+   | CLI-Gemini | `ccw cli --tool gemini --mode write` | Analysis-heavy tasks |
+   | Auto | Auto-select by complexity | Default for `--yes` mode |
 
-### Error Details
+   **User Interaction** (unless `--yes`):
+   ```javascript
+   if (autoYes) {
+     executionMethod = "Auto"
+     console.log(`[--yes] Auto-selecting execution method: Auto`)
+   } else {
+     const selection = AskUserQuestion({
+       questions: [{
+         question: `选择执行方式 (${unifiedGraph.tasks.length} tasks, complexity: ${avgComplexity}):`,
+         header: "Execution",
+         multiSelect: false,
+         options: [
+           { label: "Agent (Recommended)", description: "@code-developer - 标准实现" },
+           { label: "CLI-Codex", description: "ccw cli --tool codex - 复杂任务" },
+           { label: "CLI-Gemini", description: "ccw cli --tool gemini - 分析型任务" },
+           { label: "Auto", description: "按复杂度自动选择" }
+         ]
+       }]
+     })
+     executionMethod = selection.execution
+   }
+   ```
 
-\`\`\`
-${error.stack}
-\`\`\`
+4. **Confirm Execution** (unless `--yes` flag)
 
-### Recovery Notes for Next Attempt
+   Options:
+   - "开始执行" → Proceed with selected method
+   - "更换方式" → Re-select execution method
+   - "查看详情" → View full validation report
+   - "取消" → Exit without execution
 
-${generateRecoveryNotes(error, task)}
+**Success Criteria**:
+- [ ] Validation agent completed successfully
+- [ ] No critical blockers (or user chose to continue)
+- [ ] Execution method selected
+- [ ] User confirmed (or auto-mode enabled)
+
+**Variables Set**:
+- `validationReport`: Parsed validation-report.json
+- `executionMethod`: "Agent" | "CLI-Codex" | "CLI-Gemini" | "Auto"
+
+---
+
+### Wave Execution
+
+**Objective**: Execute tasks in waves with review checkpoints, respecting dependencies and file conflicts.
+
+**Prerequisites**: Validation completed, user confirmed, review config initialized in execution-events.md
+
+**Workflow Steps**:
+
+1. **Calculate Execution Waves**
+
+   **Constraints**:
+   - Tasks with dependencies must wait for completion
+   - Same file modifications → Sequential (no parallel)
+   - Max 3 parallel tasks per wave (resource limit)
+   - Review checkpoints every 2-4 tasks (adaptive)
+
+   **Algorithm**:
+   - Find available tasks (dependencies satisfied, not completed)
+   - Check file conflicts (task.files_to_modify)
+   - Group non-conflicting tasks (up to 3 per wave)
+   - Mark completed, repeat
+
+2. **Execute Each Wave**
+   - Launch tasks in parallel via `executeTask()`
+   - Wait for wave completion via `Promise.allSettled()`
+   - Process results (mark completed/failed)
+   - Update execution.md timeline
+   - Append events to execution-events.md
+
+3. **Review Checkpoint Trigger** (Every 2-4 Tasks) - **Non-Blocking Parallel Execution**
+
+   **Conditions**:
+   - Completed tasks count ≥ checkpoint.min_tasks (default: 2)
+   - No pending tasks in current wave
+   - Previous checkpoint passed or first checkpoint
+
+   **Workflow** (Parallel with Next Wave):
+   ```javascript
+   if (completedTasksCount % checkpointInterval === 0) {
+     // Launch review agent in background (non-blocking)
+     Task(
+       subagent_type="universal-executor",
+       run_in_background=true,  // ⭐ Parallel execution - does NOT block next wave
+       description="Review checkpoint CHK-{id}",
+       prompt=`
+## Review Checkpoint: CHK-{id}
+
+### Completed Tasks Since Last Checkpoint
+${recentCompletedTasks.map(t => `- ${t.id}: ${t.title}`).join('\n')}
+
+### Consume Plan Notes
+${extractPlanNotes(recentCompletedTasks)}
+
+### Review Focus Areas
+1. **Code Quality**: Check implementations against standards
+2. **Plan Compliance**: Verify tasks match expected outcomes
+3. **Integration Risks**: Identify potential conflicts
+4. **Next Dependencies**: Validate dependency chain for upcoming tasks
+
+### Update Review Content (Minimal Changes Only)
+- Read: execution-events.md (for plan notes and task history)
+- Append to: execution-events.md (review checkpoint section)
+- Principle: Only note critical issues, no full rewrite
+
+### Output Format (Append to execution-events.md)
+
+---
+## REVIEW CHECKPOINT CHK-{id} - ${status} ${statusEmoji}
+
+**Timestamp**: ${timestamp}
+**Reviewed Tasks**: ${reviewedTaskIds.join(', ')}
+**Duration**: ${durationMs}ms
+
+### Findings
+
+${findings.critical.length > 0 ? \`
+#### 🔴 Critical
+${findings.critical.map(f => \`- ${f}\`).join('\\n')}
+\` : ''}
+
+${findings.high.length > 0 ? \`
+#### 🟠 High
+${findings.high.map(f => \`- ${f}\`).join('\\n')}
+\` : ''}
+
+${findings.medium.length > 0 ? \`
+#### 🟡 Medium
+${findings.medium.map(f => \`- ${f}\`).join('\\n')}
+\` : ''}
+
+${findings.low.length > 0 ? \`
+#### 🟢 Low
+${findings.low.map(f => \`- ${f}\`).join('\\n')}
+\` : ''}
+
+### Plan Note Updates (Extended)
+
+**Implementation Notes**: ${implementationNotes}
+**Quality Concerns**: ${qualityConcerns.join('; ')}
+**Integration Risks**: ${integrationRisks.join('; ')}
+**Next Task Dependencies**: ${nextTaskDependencies.join('; ')}
+
+### Recommendations
+${recommendations.map(r => \`- ${r}\`).join('\\n')}
 
 ---
 `
+     )
 
-    appendToEventLog(eventLogPath, failureEntry)
+     // Immediately proceed to next wave (parallel execution)
+     console.log(`[Review] CHK-{id} launched in background, continuing with next wave...`)
+   }
+   ```
 
-    // Handle failure: retry, skip, or abort
-    task.attempts++
-    if (task.attempts < task.max_retries && autoYes) {
-      console.log(`⚠️ ${task.id}: Failed, retrying (${task.attempts}/${task.max_retries})`)
-      return { success: false, task_id: task.id, error: error.message, retry: true, duration: calculateDuration(startTime) }
-    } else if (task.attempts >= task.max_retries && !autoYes) {
-      const decision = AskUserQuestion({
-        questions: [{
-          question: `任务失败: ${task.id}\n错误: ${error.message}`,
-          header: "Decision",
-          multiSelect: false,
-          options: [
-            { label: "重试", description: "重新执行该任务" },
-            { label: "跳过", description: "跳过此任务，继续下一个" },
-            { label: "终止", description: "停止整个执行" }
-          ]
-        }]
-      })
-      if (decision === 'retry') {
-        task.attempts = 0
-        return { success: false, task_id: task.id, error: error.message, retry: true, duration: calculateDuration(startTime) }
-      } else if (decision === 'skip') {
-        task.status = 'skipped'
-        skipDependentTasks(task.id, normalizedTasks)
-      } else {
-        throw new Error('Execution aborted by user')
-      }
-    } else {
-      task.status = 'failed'
-      skipDependentTasks(task.id, normalizedTasks)
-    }
+   **Key Design**:
+   - Review agent runs in background (`run_in_background=true`)
+   - Next wave tasks start immediately (no waiting)
+   - Review findings appended to execution-events.md (single source of truth)
+   - Critical findings visible in unified log for next tasks to consume
 
-    return {
-      success: false,
-      task_id: task.id,
-      error: error.message,
-      duration: calculateDuration(startTime)
-    }
-  }
-}
+4. **Handle Failures**
 
-// Helper function to append to unified event log
-function appendToEventLog(logPath, eventEntry) {
-  if (fs.existsSync(logPath)) {
-    const currentContent = Read(logPath)
-    Write(logPath, currentContent + eventEntry)
-  } else {
-    Write(logPath, eventEntry)
-  }
-}
-```
+   | Failure Type | Action |
+   |--------------|--------|
+   | Task timeout | Ask: retry/skip/abort |
+   | Dependency failed | Auto-skip dependent tasks |
+   | Max retries reached | Ask: retry/skip/abort (unless auto-mode) |
+   | Review checkpoint fail | Ask: fix issues/continue/abort |
+
+**Success Criteria**:
+- [ ] All waves executed
+- [ ] Review checkpoints completed (every 2-4 tasks)
+- [ ] Results captured in execution-events.md
+- [ ] Failed tasks handled appropriately
+- [ ] Review findings documented in checkpoint files
 
 ---
 
-## Phase 3: Progress Tracking & Event Logging
+### Task Execution
 
-The `execution-events.md` file is the **single source of truth** for all agent executions:
-- Each agent **reads** previous execution events for context
-- **Executes** its task (with full knowledge of what was done before)
-- **Writes** its execution event (success or failure) in markdown format
-- Next agent **reads** all previous events, creating a "knowledge chain"
+**Objective**: Execute individual task with context awareness, structured notes, and optional auto-commit.
 
-**Event log format** (appended entry):
-```markdown
-## Task {id} - {STATUS} {emoji}
+**Prerequisites**: Task selected from available wave
 
-**Timestamp**: {time}
-**Duration**: {ms}
-**Agent**: {type}
+**Workflow Steps**:
 
-### Execution Summary
-{What was done}
+1. **Extract Relevant Notes**
+   - Read all notes from execution-events.md
+   - Filter by file overlap (notes.related_files ∩ task.files_to_modify)
+   - Always include Critical severity notes
+   - Sort by severity (Critical → High → Medium → Low)
 
-### Generated Artifacts
-- `src/types/auth.ts` (2.3KB)
+2. **Build Execution Context**
 
-### Notes for Next Agent
-- Key decisions made
-- Potential issues
-- Ready for: TASK-003
-```
+   **Load Project Context** (from init.md products):
+   ```javascript
+   // Read project-tech.json (if exists)
+   const projectTech = file_exists('.workflow/project-tech.json')
+     ? JSON.parse(Read('.workflow/project-tech.json')) : null
+   // Read specs/*.md (if exists)
+   const projectGuidelines = file_exists('.workflow/specs/*.md')
+     ? JSON.parse(Read('.workflow/specs/*.md')) : null
+   ```
+
+   ```javascript
+   const executionContext = `
+   ⚠️ Execution Notes from Previous Tasks
+   ${relevantNotes}  // Categorized notes with severity
+
+   📋 Project Context (from init.md)
+   - Tech Stack: ${projectTech?.technology_analysis?.technology_stack || 'N/A'}
+   - Architecture: ${projectTech?.technology_analysis?.architecture?.style || 'N/A'}
+   - Constraints: ${projectGuidelines?.constraints || 'None defined'}
+
+   Current Task: ${task.id}
+   - Original ID: ${task.original_id}
+   - Source Plan: ${task.source_plan}
+   - Modified Files: ${task.files_to_modify}
+
+   Previous Agent Executions (for reference)
+   ${previousEvents}  // All previous task results
+   `
+   ```
+
+3. **Route to Executor** (based on `executionMethod`)
+
+   **Option A: Agent Execution**
+
+   When: `executionMethod === "Agent"` or `Auto + Low Complexity`
+
+   Execute task via Task tool with code-developer agent:
+
+   ```javascript
+   Task({
+     subagent_type: "code-developer",  // or other agent types
+     run_in_background: false,
+     description: task.title,
+     prompt: buildAgentPrompt(executionContext, task)
+   })
+
+   // buildAgentPrompt generates:
+   // - Execution context with notes
+   // - Task details (title, description)
+   // - Files to modify
+   // - Dependencies
+   // - Expected output
+   ```
+
+   Agent Type Selection:
+
+   | Agent Type | Use Case |
+   |------------|----------|
+   | code-developer | Code implementation |
+   | tdd-developer | Code with tests |
+   | test-fix-agent | Test execution and fixing |
+   | cli-execution-agent | CLI-based tasks |
+   | debug-explore-agent | Bug diagnosis |
+   | universal-executor | Generic tasks |
+
+   ---
+
+   **Option B: CLI Execution**
+
+   When: `executionMethod === "CLI-Codex"/"CLI-Gemini"` or `Auto + Medium/High Complexity`
+
+   Execute task via CLI in background mode:
+
+   ```javascript
+   // Build CLI prompt from execution context
+   const cliPrompt = buildCliPrompt(task, executionContext)
+   // Generates: PURPOSE, TASK, MODE, CONTEXT, EXPECTED, CONSTRAINTS
+
+   // Select tool based on execution method
+   const tool = executionMethod === "CLI-Gemini" ? "gemini" : "codex"
+
+   // Generate fixed execution ID for resume capability
+   const fixedId = `${sessionId}-${task.id}`
+
+   // Execute in background
+   Bash({
+     command: `ccw cli -p "${cliPrompt}" --tool ${tool} --mode write --id ${fixedId}`,
+     run_in_background: true,
+     description: `Execute task ${task.id} via CLI`
+   })
+
+   // STOP HERE - CLI executes in background, task hook will notify on completion
+   ```
+
+   Resume on Failure:
+
+   ```javascript
+   if (cliResult.status === 'failed' || cliResult.status === 'timeout') {
+     console.log(`Task ${task.id} incomplete. Resume with fixed ID: ${fixedId}`)
+     // Resume command: ccw cli -p "Continue" --resume ${fixedId} --id ${fixedId}-retry
+   }
+   ```
+
+4. **Generate Structured Notes**
+
+   **Pattern Detection** (auto-generate notes):
+   - `localStorage|sessionStorage` → WARNING (High): XSS防护提醒
+   - `package.json` modified → DEPENDENCY (Medium): npm install提醒
+   - `api.*change|breaking` → API_CHANGE (Critical): 兼容性检查
+
+5. **Auto-Commit** (if `--auto-commit` enabled)
+   - Get changed files via `git status --porcelain`
+   - Filter to task.files_to_modify
+   - Stage files: `git add`
+   - Generate conventional commit message: `type(scope): subject`
+   - Commit: `git commit -m`
+
+6. **Append to Event Log**
+
+   **Event Format**:
+   ```markdown
+   ## Task ${task.id} - COMPLETED ✅
+
+   **Timestamp**: ${time}
+   **Duration**: ${ms}
+   **Agent**: ${agent}
+
+   ### Execution Summary
+   ${summary}
+
+   ### Generated Artifacts
+   - `src/auth.ts` (2.3KB)
+
+   ### Git Commit (if --auto-commit)
+   **Files Committed**: ${files.length}
+   **Commit Message**: feat(auth): implement user login
+
+   ### 注意事项 (Execution Notes)
+   **Category**: WARNING
+   **Severity**: High
+   **Related Files**: src/auth.ts
+   **Message**: 使用了localStorage，注意XSS防护
+
+   ---
+   ```
+
+**Success Criteria**:
+- [ ] Task executed successfully
+- [ ] Notes generated for next agent
+- [ ] Event appended to execution-events.md
+- [ ] Auto-commit completed (if enabled)
 
 ---
 
-## Phase 4: Completion & Summary
+### Completion
 
-After all tasks complete or max failures reached:
+**Objective**: Summarize execution results and offer follow-up actions.
 
-1. **Collect results**: Count completed/failed/skipped tasks
-2. **Update execution.md**: Add "Execution Completed" section with statistics
-3. **execution-events.md**: Already contains all detailed execution records
+**Prerequisites**: All waves completed
 
-```javascript
-const statistics = {
-  total_tasks: normalizedTasks.length,
-  completed: normalizedTasks.filter(t => t.status === 'completed').length,
-  failed: normalizedTasks.filter(t => t.status === 'failed').length,
-  skipped: normalizedTasks.filter(t => t.status === 'skipped').length,
-  success_rate: (completedCount / normalizedTasks.length * 100).toFixed(1)
-}
+**Workflow Steps**:
 
-// Update execution.md with final status
-appendExecutionSummary(executionPath, statistics)
-```
+1. **Collect Statistics**
+   - Total tasks: `normalizedTasks.length`
+   - Completed: `tasks.filter(t => t.status === 'completed').length`
+   - Failed: `tasks.filter(t => t.status === 'failed').length`
+   - Skipped: `tasks.filter(t => t.status === 'skipped').length`
+   - Success rate: `(completed / total * 100).toFixed(1)`
 
-**Post-Completion Options** (unless --yes):
+2. **Update execution.md**
+   - Append "Execution Completed" section
+   - Include statistics table
+   - Link to execution-events.md for details
 
-```javascript
-AskUserQuestion({
-  questions: [{
-    question: "执行完成。是否需要后续操作?",
-    header: "Next Steps",
-    multiSelect: true,
-    options: [
-      { label: "查看详情", description: "查看完整执行日志" },
-      { label: "调试失败项", description: "对失败任务进行调试" },
-      { label: "优化执行", description: "分析执行改进建议" },
-      { label: "完成", description: "不需要后续操作" }
-    ]
-  }]
-})
-```
+3. **Display Summary**
+   - Show session ID and folder
+   - Display statistics
+   - List failed tasks (if any)
 
----
+4. **Offer Follow-Up Actions** (unless `--yes`)
 
-## Session Folder Structure
+   Options:
+   - "查看详情" → View full execution log
+   - "调试失败项" → Debug failed tasks
+   - "优化执行" → Analyze execution improvements
+   - "完成" → No further action
 
-```
-.workflow/.execution/{sessionId}/
-├── execution.md              # Execution plan and overall status
-└── execution-events.md       # 📋 Unified execution log (all agents) - SINGLE SOURCE OF TRUTH
-                               # This is both human-readable AND machine-parseable
-
-# Generated files go directly to project directories (not into execution folder)
-# E.g. TASK-001 generates: src/types/auth.ts (not artifacts/src/types/auth.ts)
-# execution-events.md records the actual project paths
-```
-
-**Key Concept**:
-- **execution-events.md** is the **single source of truth** for execution state
-- Human-readable: Clear markdown format with task summaries
-- Machine-parseable: Status indicators (✅/❌/⏳) and structured sections
-- Progress tracking: Read task count by parsing status indicators
-- No redundancy: One unified log for all purposes
+**Success Criteria**:
+- [ ] Statistics collected and displayed
+- [ ] execution.md updated with final status
+- [ ] User informed of completion
 
 ---
 
-## Agent Selection Strategy
+## Helper Functions
 
-```javascript
-function selectBestAgent(task) {
-  if (task.type === 'code' || task.type === 'implementation') {
-    return task.includes_tests ? 'tdd-developer' : 'code-developer'
-  } else if (task.type === 'test' || task.type === 'test-fix') {
-    return 'test-fix-agent'
-  } else if (task.type === 'doc' || task.type === 'documentation') {
-    return 'doc-generator'
-  } else if (task.type === 'analysis' || task.type === 'investigation') {
-    return 'cli-execution-agent'
-  } else if (task.type === 'debug') {
-    return 'debug-explore-agent'
-  } else {
-    return 'universal-executor'
-  }
-}
-```
+### Sequential Multi-Plan Execution
 
-## Parallelization Rules
+**executeSequentialPlans(planPaths)**:
+- Execute plans in order: `plan1 → plan2 → plan3`
+- Each plan gets independent session
+- All sessions grouped under global session ID
 
-```javascript
-function calculateParallel(tasks) {
-  // Group tasks into execution waves
-  // Constraints:
-  // - Tasks with same file modifications must be sequential
-  // - Tasks with dependencies must wait
-  // - Max 3 parallel tasks per wave (resource constraint)
+**Per-Plan Execution**:
+- Parse plan → Build DAG → Validate → Execute tasks
+- Follow plan's internal DAG dependencies
+- Create execution-events.md for each plan
+- Track progress in parent session
 
-  const waves = []
-  const completed = new Set()
+**Global Session Tracking**:
+- Parent session ID: `EXEC-multi-{date}`
+- Child sessions: `EXEC-{slug}-{plan-index}-{date}`
+- Aggregate statistics across all plans
 
-  while (completed.size < tasks.length) {
-    const available = tasks.filter(t =>
-      !completed.has(t.id) &&
-      t.dependencies.every(d => completed.has(d))
-    )
+---
 
-    if (available.length === 0) break
+### Structured Notes
 
-    // Check for file conflicts
-    const noConflict = []
-    const modifiedFiles = new Set()
+**Note Categories**: `WARNING`, `DECISION`, `API_CHANGE`, `FILE_CONFLICT`, `DEPENDENCY`, `PATTERN`
 
-    for (const task of available) {
-      const conflicts = task.files_to_modify.some(f => modifiedFiles.has(f))
-      if (!conflicts && noConflict.length < 3) {
-        noConflict.push(task)
-        task.files_to_modify.forEach(f => modifiedFiles.add(f))
-      } else if (!conflicts && noConflict.length < 3) {
-        waves.push([task])
-        completed.add(task.id)
-      }
-    }
+**Note Severity**: `Critical`, `High`, `Medium`, `Low`
 
-    if (noConflict.length > 0) {
-      waves.push(noConflict)
-      noConflict.forEach(t => completed.add(t.id))
-    }
-  }
+**extractNotesFromEvents(eventLogPath)**:
+- Parse structured note blocks from execution-events.md
+- Pattern: `**Category**: ... **Severity**: ... **Related Files**: ... **Message**: ...`
+- Return: Array of note objects
 
-  return waves
-}
-```
+**filterRelevantNotes(notes, task)**:
+- Include: File overlap with task.files_to_modify
+- Always include: Critical severity notes
+- Sort: By severity (Critical first)
+
+**generateNotesForNextAgent(result, task)**:
+- Pattern detection for common issues
+- Auto-generate structured notes
+- Return: Markdown-formatted notes
+
+---
+
+### Git Auto-Commit
+
+**inferCommitType(task)**:
+- Check action/title for keywords: fix, refactor, test, doc
+- Default: `feat`
+
+**extractScope(task)**:
+- Check files_to_modify for patterns: frontend/, backend/, components/, api/, auth/
+- Return: scope or null
+
+**generateCommitMessage(task)**:
+- Format: `type(scope): subject`
+- Footer: `Task-ID: ${task.id}\nPlan: ${plan}`
+
+**autoCommitTaskChanges(task)**:
+- Get changed files, filter to task.files_to_modify
+- Stage, commit with conventional message
+- Return: `{ files, message }` or null
+
+---
+
+### Plan Format Parsers
+
+**parsePlan(content, filePath)**:
+- Route to appropriate parser based on filename pattern
+- Support: IMPL_PLAN.md, plan.json, synthesis.json, conclusions.json
+
+**parsePlanJson(content)**:
+- Handle plan-json-schema (lite-plan, collaborative-plan, sub-plans)
+- Map fields: `modification_points → files_to_modify`, `acceptance → expected_output`
+- Infer: agent_type, task.type
+- Build: prompt from task details
+
+---
+
+### Validation & Execution Method
+
+**validateExecutionPlan(unifiedGraph, sessionFolder)**:
+- Launch validation agent (cli-explore-agent)
+- Check file existence, dependencies, file conflicts
+- Generate validation-report.json with status/risks/recommendations
+- Return: `{ status: "pass"|"warn"|"fail", report: {...} }`
+
+**selectExecutionMethod(validationReport, autoYes)**:
+- If `autoYes === true`: Return "Auto"
+- Otherwise: AskUserQuestion with options (Agent/CLI-Codex/CLI-Gemini/Auto)
+- Return: Selected execution method
+
+**resolveExecutor(task, executionMethod, complexity)**:
+- If `executionMethod === "Agent"`: Return "agent"
+- If `executionMethod === "CLI-Codex"`: Return "cli-codex"
+- If `executionMethod === "CLI-Gemini"`: Return "cli-gemini"
+- If `executionMethod === "Auto"`:
+  - Low complexity → "agent"
+  - Medium/High complexity → "cli-codex"
+- Return: Executor type
+
+---
+
+### Agent Selection
+
+**selectBestAgent(task)**:
+
+| Task Type | Agent |
+|-----------|-------|
+| code (with tests) | tdd-developer |
+| code | code-developer |
+| test | test-fix-agent |
+| doc | doc-generator |
+| analysis | cli-execution-agent |
+| debug | debug-explore-agent |
+| default | universal-executor |
+
+---
+
+### Parallelization
+
+**calculateParallel(tasks)**:
+
+Group into waves with constraints:
+- Same file modifications → Sequential
+- Dependencies → Wait for completion
+- Max 3 parallel tasks per wave
+
+Algorithm: Find available → Check conflicts → Group → Repeat
+
+---
 
 ## Error Handling & Recovery
 
 | Situation | Action |
 |-----------|--------|
-| Task timeout | Mark as timeout, ask user: retry/skip/abort |
+| Task timeout | Mark timeout, ask: retry/skip/abort |
 | Missing dependency | Auto-skip dependent tasks, log warning |
-| File conflict | Detect before execution, ask for resolution |
-| Output mismatch | Validate against expected_output, flag for review |
+| File conflict | Detect before execution, ask resolution |
+| Output mismatch | Validate vs expected_output, flag review |
 | Agent unavailable | Fallback to universal-executor |
-| Execution interrupted | Support resume with `/workflow:unified-execute-with-file --continue` |
+| Execution interrupted | Resume with `--continue` flag |
 
+**Retry Logic**:
+- Auto-retry up to `max_retries` (default: 2) in auto-yes mode
+- Interactive mode: Ask user after max retries
+
+**Dependency Handling**:
+- Failed task → Auto-skip all dependent tasks
+- Log warning with skipped task IDs
+
+---
 
 ## Session Resume
 
 ```bash
-/workflow:unified-execute-with-file --continue     # Resume last execution
-/workflow:unified-execute-with-file --continue EXEC-xxx-2025-01-27-abcd  # Resume specific
+/workflow:unified-execute-with-file --continue                      # Resume last
+/workflow:unified-execute-with-file --continue EXEC-xxx-2025-01-27  # Resume specific
 ```
 
-When resuming:
+**Resume Process**:
 1. Load execution.md and execution-events.md
-2. Parse execution-events.md to identify completed/failed/skipped tasks
+2. Parse events to identify completed/failed/skipped tasks (via status indicators)
 3. Recalculate remaining dependencies
 4. Resume from first incomplete task
-5. Append to execution-events.md with "Resumed from [sessionId]" note
+5. Append "Resumed from [sessionId]" note to events
+
+---
+
+## Configuration
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-p, --plan <path>` | Auto-detect | Plan file(s), comma-separated for sequential execution |
+| `--auto-commit` | false | Commit after each successful task |
+| `--commit-prefix` | null | Custom commit message prefix |
+| `-y, --yes` | false | Auto-confirm all decisions |
+
+---
+
+## Best Practices
+
+1. **Clear Plan Structure**: Well-structured plans → better execution
+2. **Review Validation Report**: Check validation-report.json for risks before proceeding
+3. **Choose Right Execution Method**:
+   - **Agent**: Standard tasks, straightforward implementation
+   - **CLI-Codex**: Complex tasks, requires git-aware context
+   - **CLI-Gemini**: Analysis-heavy or exploratory tasks
+   - **Auto**: Let system decide based on complexity
+4. **Use Auto-Commit**: Enable `--auto-commit` for automatic progress tracking
+5. **Resolve Conflicts Early**: Address file conflicts before execution
+6. **Monitor Events Log**: Check execution-events.md for detailed progress
+7. **Resume on Failure**: Use `--continue` to resume interrupted executions (Agent) or fixed ID (CLI)
+8. **Sequential Multi-Plan**: Use comma-separated paths for executing multiple plans in order
+
+

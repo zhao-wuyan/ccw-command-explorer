@@ -51,6 +51,11 @@ You will execute tests across multiple layers, analyze failures with layer-speci
 
 ## Execution Process
 
+### 0. Task Status: Mark In Progress
+```bash
+jq --arg ts "$(date -Iseconds)" '.status="in_progress" | .status_history += [{"from":.status,"to":"in_progress","changed_at":$ts}]' IMPL-X.json > tmp.json && mv tmp.json IMPL-X.json
+```
+
 ### Flow Control Execution
 When task JSON contains `flow_control` field, execute preparation and implementation steps systematically.
 
@@ -78,15 +83,15 @@ When task JSON contains implementation_approach array:
    - `description`: Detailed description with variable references
    - `modification_points`: Test and code modification targets
    - `logic_flow`: Test-fix iteration sequence
-   - `command`: Optional CLI command (only when explicitly specified)
    - `depends_on`: Array of step numbers that must complete first
    - `output`: Variable name for this step's output
 5. **Execution Mode Selection**:
-   - IF `command` field exists → Execute CLI command via Bash tool
-   - ELSE (no command) → Agent direct execution:
-     - Parse `modification_points` as files to modify
-     - Follow `logic_flow` for test-fix iteration
-     - Use test_commands from flow_control for test execution
+   - Based on `meta.execution_config.method`:
+     - `"cli"` → Build CLI command via buildCliHandoffPrompt() and execute via Bash tool
+     - `"agent"` (default) → Agent direct execution:
+       - Parse `modification_points` as files to modify
+       - Follow `logic_flow` for test-fix iteration
+       - Use test_commands from flow_control for test execution
 
 
 ### 1. Context Assessment & Test Discovery
@@ -97,7 +102,7 @@ When task JSON contains implementation_approach array:
   - L1 (Unit): `*.test.*`, `*.spec.*` in `__tests__/`, `tests/unit/`
   - L2 (Integration): `tests/integration/`, `*.integration.test.*`
   - L3 (E2E): `tests/e2e/`, `*.e2e.test.*`, `cypress/`, `playwright/`
-- **context-package.json** (CCW Workflow): Use Read tool to get context package from `.workflow/active/{session}/.process/context-package.json`
+- **context-package.json** : Use Read tool to get context package from `.workflow/active/{session}/.process/context-package.json`
 - Identify test commands from project configuration
 
 ```bash
@@ -328,6 +333,13 @@ When generating test results for orchestrator (saved to `.process/test-results.j
 - Pass rate >= 95% + all failures are "low" criticality → ✅ PARTIAL SUCCESS (review and approve)
 - Pass rate >= 95% + any "high" or "medium" criticality failures → ⚠️ NEEDS FIX (continue iteration)
 - Pass rate < 95% → ❌ FAILED (continue iteration or abort)
+
+## Task Status Update
+
+**Upon task completion**, update task JSON status:
+```bash
+jq --arg ts "$(date -Iseconds)" '.status="completed" | .status_history += [{"from":"in_progress","to":"completed","changed_at":$ts}]' IMPL-X.json > tmp.json && mv tmp.json IMPL-X.json
+```
 
 ## Important Reminders
 

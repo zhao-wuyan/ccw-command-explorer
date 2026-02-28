@@ -337,35 +337,63 @@ Execute each task in order (T1 → T2 → T3 → ...):
 For each task:
 - Follow task.implementation steps
 - Run task.test commands
-- Verify task.acceptance criteria
+- Verify task.convergence criteria
 - Do NOT commit after each task
 
 ### Step 3: Commit Solution (Once)
-After ALL tasks pass, commit once with formatted summary.
+After ALL tasks pass, commit once with clean conventional format.
 
 Command:
   git add -A
-  git commit -m "<type>(<scope>): <description>
+  git commit -m "<type>(<scope>): <brief description>"
 
-  Solution: ${SOLUTION_ID}
-  Tasks completed: <list task IDs>
+Examples:
+  git commit -m "feat(auth): add token refresh mechanism"
+  git commit -m "fix(payment): resolve timeout in checkout flow"
+  git commit -m "refactor(api): simplify error handling"
 
-  Changes:
-  - <file1>: <what changed>
-  - <file2>: <what changed>
-
-  Verified: all tests passed"
-
-Replace <type> with: feat|fix|refactor|docs|test
+Replace <type> with: feat|fix|refactor|docs|test|chore
 Replace <scope> with: affected module name
-Replace <description> with: brief summary from solution
+Replace <description> with: brief summary (NO solution/issue IDs)
 
 ### Step 4: Report Completion
 On success, run:
-  ccw issue done ${SOLUTION_ID} --result '{"summary": "<brief>", "files_modified": ["<file1>", "<file2>"], "commit": {"hash": "<hash>", "type": "<type>"}, "tasks_completed": <N>}'
+  ccw issue done ${SOLUTION_ID} --result '{
+    "solution_id": "<solution-id>",
+    "issue_id": "<issue-id>",
+    "commit": {
+      "hash": "<commit-hash>",
+      "type": "<commit-type>",
+      "scope": "<commit-scope>",
+      "message": "<commit-message>"
+    },
+    "analysis": {
+      "risk": "<low|medium|high>",
+      "impact": "<low|medium|high>",
+      "complexity": "<low|medium|high>"
+    },
+    "tasks_completed": [
+      {"id": "T1", "title": "...", "action": "...", "scope": "..."},
+      {"id": "T2", "title": "...", "action": "...", "scope": "..."}
+    ],
+    "files_modified": ["<file1>", "<file2>"],
+    "tests_passed": true,
+    "verification": {
+      "all_tests_passed": true,
+      "convergence_criteria_met": true,
+      "regression_checked": true
+    },
+    "summary": "<brief description of accomplishment>"
+  }'
 
 On failure, run:
-  ccw issue done ${SOLUTION_ID} --fail --reason '{"task_id": "<TX>", "error_type": "<test_failure|build_error|other>", "message": "<error details>"}'
+  ccw issue done ${SOLUTION_ID} --fail --reason '{
+    "task_id": "<TX>",
+    "error_type": "<test_failure|build_error|other>",
+    "message": "<error details>",
+    "files_attempted": ["<file1>", "<file2>"],
+    "commit": null
+  }'
 
 ### Important Notes
 - Do NOT cleanup worktree - it is shared by all solutions in the queue

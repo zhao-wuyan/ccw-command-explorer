@@ -42,8 +42,8 @@ TodoWrite([
 # 3. Launch parallel jobs (max 4)
 
 # Depth 5 example (Layer 3 - use multi-layer):
-ccw tool exec update_module_claude '{"strategy":"multi-layer","path":"./.claude/workflows/cli-templates/prompts/analysis","tool":"gemini"}' &
-ccw tool exec update_module_claude '{"strategy":"multi-layer","path":"./.claude/workflows/cli-templates/prompts/development","tool":"gemini"}' &
+ccw tool exec update_module_claude '{"strategy":"multi-layer","path":"./~/.ccw/workflows/cli-templates/prompts/analysis","tool":"gemini"}' &
+ccw tool exec update_module_claude '{"strategy":"multi-layer","path":"./~/.ccw/workflows/cli-templates/prompts/development","tool":"gemini"}' &
 
 # Depth 1 example (Layer 2 - use single-layer):
 ccw tool exec update_module_claude '{"strategy":"single-layer","path":"./src/auth","tool":"gemini"}' &

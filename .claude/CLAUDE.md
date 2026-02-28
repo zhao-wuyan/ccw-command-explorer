@@ -1,10 +1,10 @@
 # Claude Instructions
 
-- **Coding Philosophy**: @~/.claude/workflows/coding-philosophy.md
+- **Coding Philosophy**: @~/.ccw/workflows/coding-philosophy.md
 
 ## CLI Endpoints
 
-- **CLI Tools Usage**: @~/.claude/workflows/cli-tools-usage.md
+- **CLI Tools Usage**: @~/.ccw/workflows/cli-tools-usage.md
 - **CLI Endpoints Config**: @~/.claude/cli-tools.json
 
 **Strictly follow the cli-tools.json configuration**
@@ -12,8 +12,8 @@
 Available CLI endpoints are dynamically defined by the config file
 ## Tool Execution
 
-- **Context Requirements**: @~/.claude/workflows/context-tools.md
-- **File Modification**: @~/.claude/workflows/file-modification.md
+- **Context Requirements**: @~/.ccw/workflows/context-tools.md
+- **File Modification**: @~/.ccw/workflows/file-modification.md
 
 ### Agent Calls
 - **Always use `run_in_background: false`** for Task tool agent calls: `Task({ subagent_type: "xxx", prompt: "...", run_in_background: false })` to ensure synchronous execution and immediate result visibility

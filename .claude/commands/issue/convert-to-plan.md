@@ -55,7 +55,7 @@ Converts various planning artifact formats into issue workflow solutions with in
 | Get issue | `ccw issue status <id> --json` | Read issues.jsonl directly |
 | Create issue | `ccw issue init <id> --title "..."` | Write to issues.jsonl |
 | Bind solution | `ccw issue bind <id> <sol-id>` | Edit issues.jsonl |
-| List solutions | `ccw issue solutions --issue <id> --brief` | Read solutions/*.jsonl |
+| List solutions | `ccw issue solution <id> --brief` | Read solutions/*.jsonl |
 
 ## Solution Schema Reference
 
@@ -81,10 +81,10 @@ interface Task {
   scope: string;                 // Required: module path or feature area
   action: Action;                // Required: Create|Update|Implement|...
   description?: string;
-  modification_points?: Array<{file, target, change}>;
+  files?: Array<{path, target, change}>;
   implementation: string[];      // Required: step-by-step guide
   test?: { unit?, integration?, commands?, coverage_target? };
-  acceptance: { criteria: string[], verification: string[] };  // Required
+  convergence: { criteria: string[], verification: string[] };  // Required
   commit?: { type, scope, message_template, breaking? };
   depends_on?: string[];
   priority?: number;             // 1-5 (default: 3)
@@ -202,14 +202,14 @@ function extractFromLitePlan(folderPath) {
       scope: t.scope || '',
       action: t.action || 'Implement',
       description: t.description || t.title,
-      modification_points: t.modification_points || [],
+      files: (t.modification_points || []).map(mp => ({ path: mp.file, target: mp.target, change: mp.change })),
       implementation: Array.isArray(t.implementation) ? t.implementation : [t.implementation || ''],
       test: t.verification ? {
         unit: t.verification.unit_tests,
         integration: t.verification.integration_tests,
         commands: t.verification.manual_checks
       } : {},
-      acceptance: {
+      convergence: {
         criteria: Array.isArray(t.acceptance) ? t.acceptance : [t.acceptance || ''],
         verification: t.verification?.manual_checks || []
       },
@@ -258,10 +258,10 @@ function extractFromWorkflowSession(sessionPath) {
       scope: task.scope || inferScopeFromTask(task),
       action: capitalizeAction(task.type) || 'Implement',
       description: task.description,
-      modification_points: task.implementation?.modification_points || [],
+      files: (task.implementation?.modification_points || []).map(mp => ({ path: mp.file, target: mp.target, change: mp.change })),
       implementation: task.implementation?.steps || [],
       test: task.implementation?.test || {},
-      acceptance: {
+      convergence: {
         criteria: task.acceptance_criteria || [],
         verification: task.verification_steps || []
       },
@@ -286,10 +286,10 @@ function extractFromWorkflowSession(sessionPath) {
 }
 
 function inferScopeFromTask(task) {
-  if (task.implementation?.modification_points?.length) {
-    const files = task.implementation.modification_points.map(m => m.file);
+  if (task.files?.length) {
+    const paths = task.files.map(f => f.path);
     // Find common directory prefix
-    const dirs = files.map(f => f.split('/').slice(0, -1).join('/'));
+    const dirs = paths.map(p => p.split('/').slice(0, -1).join('/'));
     return [...new Set(dirs)][0] || '';
   }
   return '';
@@ -354,10 +354,10 @@ ${fileContent}`;
       scope: t.scope || '',
       action: validateAction(t.action) || 'Implement',
       description: t.description || t.title,
-      modification_points: t.modification_points || [],
+      files: (t.modification_points || []).map(mp => ({ path: mp.file, target: mp.target, change: mp.change })),
       implementation: Array.isArray(t.implementation) ? t.implementation : [t.implementation || ''],
       test: t.test || {},
-      acceptance: {
+      convergence: {
         criteria: Array.isArray(t.acceptance) ? t.acceptance : [t.acceptance || ''],
         verification: t.verification || []
       },
@@ -406,10 +406,10 @@ function extractFromJsonFile(filePath) {
       scope: t.scope || '',
       action: t.action || 'Implement',
       description: t.description || t.title,
-      modification_points: t.modification_points || [],
+      files: (t.modification_points || []).map(mp => ({ path: mp.file, target: mp.target, change: mp.change })),
       implementation: Array.isArray(t.implementation) ? t.implementation : [t.implementation || ''],
       test: t.test || t.verification || {},
-      acceptance: normalizeAcceptance(t.acceptance),
+      convergence: normalizeConvergence(t.acceptance, t.convergence),
       depends_on: t.depends_on || [],
       priority: t.priority || 3
     }));
@@ -431,11 +431,13 @@ function extractFromJsonFile(filePath) {
   throw new Error('E002: JSON file does not contain valid plan structure (missing tasks array)');
 }
 
-function normalizeAcceptance(acceptance) {
-  if (!acceptance) return { criteria: [], verification: [] };
-  if (typeof acceptance === 'object' && acceptance.criteria) return acceptance;
-  if (Array.isArray(acceptance)) return { criteria: acceptance, verification: [] };
-  return { criteria: [String(acceptance)], verification: [] };
+function normalizeConvergence(acceptance, convergence) {
+  // Prefer new convergence field; fall back to legacy acceptance
+  const source = convergence || acceptance;
+  if (!source) return { criteria: [], verification: [] };
+  if (typeof source === 'object' && source.criteria) return source;
+  if (Array.isArray(source)) return { criteria: source, verification: [] };
+  return { criteria: [String(source)], verification: [] };
 }
 ```
 

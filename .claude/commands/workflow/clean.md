@@ -475,20 +475,42 @@ if (selectedCategories.includes('Sessions')) {
   }
 }
 
-// Update project-tech.json if features referenced deleted sessions
+// Update project-tech.json: remove development_index entries referencing deleted sessions
 const projectPath = '.workflow/project-tech.json'
 if (fileExists(projectPath)) {
   const project = JSON.parse(Read(projectPath))
-  const deletedPaths = new Set(results.deleted)
+  const deletedSessionIds = results.deleted
+    .filter(p => p.match(/WFS-|lite-plan/))
+    .map(p => p.split('/').pop())
 
-  project.features = project.features.filter(f =>
-    !deletedPaths.has(f.traceability?.archive_path)
-  )
+  if (project.development_index) {
+    for (const category of Object.keys(project.development_index)) {
+      project.development_index[category] = project.development_index[category].filter(entry =>
+        !deletedSessionIds.includes(entry.session_id)
+      )
+    }
+  }
 
-  project.statistics.total_features = project.features.length
-  project.statistics.last_updated = getUtc8ISOString()
-
+  project._metadata.last_updated = getUtc8ISOString()
   Write(projectPath, JSON.stringify(project, null, 2))
+}
+
+// Update specs/*.md: remove learnings referencing deleted sessions
+const guidelinesPath = '.workflow/specs/*.md'
+if (fileExists(guidelinesPath)) {
+  const guidelines = JSON.parse(Read(guidelinesPath))
+  const deletedSessionIds = results.deleted
+    .filter(p => p.match(/WFS-|lite-plan/))
+    .map(p => p.split('/').pop())
+
+  if (guidelines.learnings) {
+    guidelines.learnings = guidelines.learnings.filter(l =>
+      !deletedSessionIds.includes(l.session_id)
+    )
+  }
+
+  guidelines._metadata.updated_at = getUtc8ISOString()
+  Write(guidelinesPath, JSON.stringify(guidelines, null, 2))
 }
 ```
 
@@ -541,8 +563,10 @@ Cleanup manifest archived to: ${sessionFolder}/cleanup-manifest.json
 | Manifest parse error | Regenerate from filesystem scan |
 | Empty discovery | Report "codebase is clean" |
 
+
 ## Related Commands
 
+- `/workflow:session:sync` - Sync session work to specs/*.md + project-tech (正向写入)
 - `/workflow:session:complete` - Properly archive active sessions
-- `/memory:compact` - Save session memory before cleanup
-- `/workflow:status` - View current workflow state
+- `memory-capture` skill - Save session memory before cleanup
+- `workflow-execute` skill - View current workflow state

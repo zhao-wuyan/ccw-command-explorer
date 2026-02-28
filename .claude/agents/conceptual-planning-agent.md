@@ -70,7 +70,7 @@ def handle_brainstorm_assignment(prompt):
 
             # Execute role template loading via $(cat template)
             if step_name == "load_role_template":
-                processed_command = f"bash($(cat ~/.claude/workflows/cli-templates/planning-roles/{role}.md))"
+                processed_command = f"bash($(cat ~/.ccw/workflows/cli-templates/planning-roles/{role}.md))"
             else:
                 processed_command = process_context_variables(command, context_vars)
 
@@ -106,7 +106,7 @@ This agent processes **simplified inline [FLOW_CONTROL]** format from brainstorm
 
 2. **load_role_template**
    - Action: Load role-specific planning template
-   - Command: bash($(cat "~/.claude/workflows/cli-templates/planning-roles/{role}.md"))
+   - Command: bash($(cat "~/.ccw/workflows/cli-templates/planning-roles/{role}.md"))
    - Output: role_template
 
 3. **load_session_metadata**
@@ -157,7 +157,7 @@ When called, you receive:
 - **User Context**: Specific requirements, constraints, and expectations from user discussion
 - **Output Location**: Directory path for generated analysis files
 - **Role Hint** (optional): Suggested role or role selection guidance
-- **context-package.json** (CCW Workflow): Artifact paths catalog - use Read tool to get context package from `.workflow/active/{session}/.process/context-package.json`
+- **context-package.json** : Artifact paths catalog - use Read tool to get context package from `.workflow/active/{session}/.process/context-package.json`
 - **ASSIGNED_ROLE** (optional): Specific role assignment
 - **ANALYSIS_DIMENSIONS** (optional): Role-specific analysis dimensions
 
@@ -165,7 +165,7 @@ When called, you receive:
 **Auto Brainstorm Integration**: Role assignment comes from auto.md workflow:
 1. **Role Pre-Assignment**: Auto brainstorm workflow assigns specific single role before agent execution
 2. **Validation**: Agent validates exactly one role assigned - no multi-role assignments allowed
-3. **Template Loading**: Use `$(cat ~/.claude/workflows/cli-templates/planning-roles/<assigned-role>.md)` for role template
+3. **Template Loading**: Use `$(cat ~/.ccw/workflows/cli-templates/planning-roles/<assigned-role>.md)` for role template
 4. **Output Directory**: Use designated `.brainstorming/[role]/` directory for role-specific outputs
 
 ### Role Options Include:
@@ -190,7 +190,7 @@ When called, you receive:
 ### Role Template Integration
 Documentation formats and structures are defined in role-specific templates loaded via:
 ```bash
-$(cat ~/.claude/workflows/cli-templates/planning-roles/<assigned-role>.md)
+$(cat ~/.ccw/workflows/cli-templates/planning-roles/<assigned-role>.md)
 ```
 
 Each planning role template contains:
@@ -220,23 +220,35 @@ Generate documents according to loaded role template specifications:
 
 **Output Location**: `.workflow/WFS-[session]/.brainstorming/[assigned-role]/`
 
-**Output Files**:
-- **analysis.md**: Index document with overview (optionally with `@` references to sub-documents)
+**Output Files** (feature-point organization when `feature_list` available):
+- **analysis.md**: Role overview index document with feature point listing and cross-cutting summary (< 1500 words)
+  - Contains: role perspective overview, feature point index with `@` references, cross-cutting summary
   - **FORBIDDEN**: Never create `recommendations.md` or any file not starting with `analysis` prefix
-- **analysis-{slug}.md**: Section content documents (slug from section heading: lowercase, hyphens)
-  - Maximum 5 sub-documents (merge related sections if needed)
-- **Content**: Analysis AND recommendations sections
+- **analysis-cross-cutting.md**: Cross-feature architectural decisions, technology choices, shared patterns (< 2000 words)
+  - Contains: decisions/patterns that span multiple features, shared constraints, role-wide recommendations
+- **analysis-F-{id}-{slug}.md**: Per-feature analysis documents (< 2000 words each)
+  - `{id}` and `{slug}` come from `guidance-specification.md` Feature Decomposition table
+  - Example: `analysis-F-001-real-time-sync.md`, `analysis-F-002-user-auth.md`
+  - Contains: role-specific analysis, recommendations, and considerations for that feature
+  - Generate one sub-document per feature in the feature list
 
-**File Structure Example**:
+**Backward Compatibility** (when `feature_list` is NOT available):
+- Fall back to existing organization: `analysis-{slug}.md` with arbitrary topic slugs
+- Maximum 5 sub-documents (merge related sections if needed)
+- analysis.md remains the main document with overview
+
+**File Structure Example** (feature-point mode):
 ```
 .workflow/WFS-[session]/.brainstorming/system-architect/
-├── analysis.md                         # Index with overview + @references
-├── analysis-architecture-assessment.md # Section content
-├── analysis-technology-evaluation.md   # Section content
-├── analysis-integration-strategy.md    # Section content
-└── analysis-recommendations.md         # Section content (max 5 sub-docs total)
+├── analysis.md                           # Role overview index (< 1500 words)
+├── analysis-cross-cutting.md             # Cross-feature decisions (< 2000 words)
+├── analysis-F-001-real-time-sync.md      # Per-feature analysis (< 2000 words)
+├── analysis-F-002-user-auth.md           # Per-feature analysis (< 2000 words)
+└── analysis-F-003-data-pipeline.md       # Per-feature analysis (< 2000 words)
 
-NOTE: ALL files MUST start with 'analysis' prefix. Max 5 sub-documents.
+NOTE: ALL files MUST start with 'analysis' prefix.
+Feature-point mode: 1 index + 1 cross-cutting + N feature docs (N = feature count, max 8).
+Fallback mode: 1 index + max 5 arbitrary sub-docs.
 ```
 
 ## Role-Specific Planning Process
@@ -256,6 +268,16 @@ NOTE: ALL files MUST start with 'analysis' prefix. Max 5 sub-documents.
 - **Validate Against Template**: Ensure analysis meets role template requirements and standards
 
 ### 3. Brainstorming Documentation Phase
+
+**Feature-point mode** (when `feature_list` is available from guidance-specification.md):
+- **Read Feature List**: Extract Feature Decomposition table from guidance-specification.md
+- **Create analysis.md**: Role overview index (< 1500 words) with feature point listing and `@` references to sub-documents
+- **Create analysis-cross-cutting.md**: Cross-feature decisions, shared patterns, role-wide recommendations (< 2000 words)
+- **Create analysis-F-{id}-{slug}.md**: One per feature point, using ID and slug from feature list (< 2000 words each)
+- **Validate Output Structure**: Ensure all files saved to correct `.brainstorming/[role]/` directory
+- **Naming Validation**: Verify ALL files start with `analysis` prefix, feature docs match `analysis-F-{id}-{slug}.md` pattern
+
+**Fallback mode** (when `feature_list` is NOT available):
 - **Create analysis.md**: Main document with overview (optionally with `@` references)
 - **Create sub-documents**: `analysis-{slug}.md` for major sections (max 5)
 - **Validate Output Structure**: Ensure all files saved to correct `.brainstorming/[role]/` directory
@@ -311,6 +333,14 @@ When analysis is complete, ensure:
 ## Output Size Limits
 
 **Per-role limits** (prevent context overflow):
+
+**Feature-point mode** (when `feature_list` available):
+- `analysis.md` (index): < 1500 words
+- `analysis-cross-cutting.md`: < 2000 words
+- `analysis-F-{id}-{slug}.md`: < 2000 words each (one per feature, max 8 features)
+- Total: < 15000 words per role
+
+**Fallback mode** (when `feature_list` NOT available):
 - `analysis.md`: < 3000 words
 - `analysis-*.md`: < 2000 words each (max 5 sub-documents)
 - Total: < 15000 words per role

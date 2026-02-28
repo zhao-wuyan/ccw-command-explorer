@@ -75,6 +75,20 @@ if (file_exists(contextPackagePath)) {
 }
 ```
 
+**1.1b Project Context Loading** (MANDATORY):
+```javascript
+// Load project-level context (from spec system)
+// These provide foundational constraints for ALL context gathering
+const projectSpecs = Bash('ccw spec load --category "exploration architecture" --stdin');
+const projectTech = projectSpecs?.tech_stack ? projectSpecs : null;
+const projectGuidelines = projectSpecs?.coding_conventions ? projectSpecs : null;
+
+// Usage:
+// - projectTech → Populate project_context fields (tech_stack, architecture_patterns)
+// - projectGuidelines → Apply as constraints during relevance scoring and conflict detection
+// - If missing: Proceed with fresh analysis (discover from codebase)
+```
+
 **1.2 Foundation Setup**:
 ```javascript
 // 1. Initialize CodexLens (if available)
@@ -165,12 +179,16 @@ if (file_exists(manifestPath)) {
 }
 
 // Synthesis helper functions (conceptual)
+// NOTE: relevant_files items are now structured objects:
+//   {path, relevance, rationale, role, discovery_source?, key_symbols?}
 function synthesizeCriticalFiles(allRelevantFiles) {
-  // 1. Group by path
+  // 1. Group by path (files are objects with .path property)
   // 2. Count mentions across angles
   // 3. Average relevance scores
-  // 4. Rank by: (mention_count * 0.6) + (avg_relevance * 0.4)
-  // 5. Return top 10-15 with mentioned_by_angles attribution
+  // 4. Merge rationales from different angles (join with "; ")
+  // 5. Collect unique roles and key_symbols across angles
+  // 6. Rank by: (mention_count * 0.6) + (avg_relevance * 0.4)
+  // 7. Return top 10-15 with: path, relevance, rationale, role, mentioned_by_angles, key_symbols
 }
 
 function synthesizeConflictIndicators(explorationData) {
@@ -271,6 +289,10 @@ score = (0.4 × direct_match) +      // Filename/path match
         (0.1 × dependency_link)      // Connection strength
 
 // Filter: Include only score > 0.5
+
+// Apply projectGuidelines constraints (from 1.1b) when available:
+// - Boost files matching projectGuidelines.quality_gates patterns
+// - Penalize files matching projectGuidelines.forbidden_patterns
 ```
 
 **3.2 Dependency Graph**
@@ -288,19 +310,23 @@ Merge with conflict resolution:
 
 ```javascript
 const context = {
-  // Priority: Project docs > Existing code > Web examples
-  architecture: ref_docs.patterns || code.structure,
+  // Priority: projectTech/projectGuidelines (1.1b) > Project docs > Existing code > Web examples
+  architecture: projectTech?.architecture_type || ref_docs.patterns || code.structure,
 
   conventions: {
-    naming: ref_docs.standards || code.actual_patterns,
-    error_handling: ref_docs.standards || code.patterns || web.best_practices
+    naming: projectGuidelines?.naming_rules || ref_docs.standards || code.actual_patterns,
+    error_handling: ref_docs.standards || code.patterns || web.best_practices,
+    forbidden_patterns: projectGuidelines?.forbidden_patterns || [],
+    quality_gates: projectGuidelines?.quality_gates || []
   },
 
   tech_stack: {
-    // Actual (package.json) takes precedence
-    language: code.actual.language,
-    frameworks: merge_unique([ref_docs.declared, code.actual]),
-    libraries: code.actual.libraries
+    // projectTech provides authoritative baseline; actual (package.json) fills gaps
+    language: projectTech?.tech_stack?.language || code.actual.language,
+    frameworks: merge_unique([projectTech?.tech_stack?.frameworks, ref_docs.declared, code.actual]),
+    libraries: merge_unique([projectTech?.tech_stack?.libraries, code.actual.libraries]),
+    build_system: projectTech?.build_system || code.actual.build_system,
+    test_framework: projectTech?.test_framework || code.actual.test_framework
   },
 
   // Web examples fill gaps
@@ -310,9 +336,9 @@ const context = {
 ```
 
 **Conflict Resolution**:
-1. Architecture: Docs > Code > Web
-2. Conventions: Declared > Actual > Industry
-3. Tech Stack: Actual (package.json) > Declared
+1. Architecture: projectTech > Docs > Code > Web
+2. Conventions: projectGuidelines > Declared > Actual > Industry
+3. Tech Stack: projectTech > Actual (package.json) > Declared
 4. Missing: Use web examples
 
 **3.5 Brainstorm Artifacts Integration**
@@ -338,8 +364,35 @@ if (dir_exists(brainstormDir)) {
     synthesis_output: {
       path: `${brainstormDir}/synthesis-specification.md`,
       exists: file_exists(`${brainstormDir}/synthesis-specification.md`),
-      content: Read(`${brainstormDir}/synthesis-specification.md`) || null
-    }
+      content: Read(`${brainstormDir}/synthesis-specification.md`) || null,
+      // New feature-driven artifacts (preferred over legacy synthesis-specification.md)
+      feature_driven: dir_exists(`${brainstormDir}/feature-specs`) ? {
+        feature_index: `${brainstormDir}/feature-specs/feature-index.json`,
+        feature_specs_dir: `${brainstormDir}/feature-specs/`
+      } : undefined
+    },
+    // Feature index (optional - top level, matches action-planning-agent expected access pattern)
+    feature_index: file_exists(`${brainstormDir}/feature-specs/feature-index.json`) ? {
+      path: `${brainstormDir}/feature-specs/feature-index.json`,
+      exists: true,
+      content: Read(`${brainstormDir}/feature-specs/feature-index.json`) || null
+    } : undefined,
+    // Convenience: direct path to feature-index.json (avoids hardcoding in task-generate-agent)
+    feature_index_path: file_exists(`${brainstormDir}/feature-specs/feature-index.json`)
+      ? `${brainstormDir}/feature-specs/feature-index.json`
+      : undefined,
+    // Feature spec files (optional - individual feature specifications)
+    feature_specs: dir_exists(`${brainstormDir}/feature-specs`)
+      ? glob(`${brainstormDir}/feature-specs/F-*-*.md`).map(file => ({
+          path: file,
+          content: Read(file)
+        }))
+      : undefined,
+    // Cross-cutting specs (optional - cross-cutting concern analyses from roles)
+    cross_cutting_specs: glob(`${brainstormDir}/*/analysis-cross-cutting.md`).map(file => ({
+      path: file,
+      content: Read(file)
+    }))
   };
 }
 ```
@@ -350,6 +403,8 @@ Calculate risk level based on:
 - Existing file count (<5: low, 5-15: medium, >15: high)
 - API/architecture/data model changes
 - Breaking changes identification
+- Violations of projectGuidelines.forbidden_patterns (from 1.1b, if available)
+- Deviations from projectGuidelines.coding_conventions (from 1.1b, if available)
 
 **3.7 Context Packaging & Output**
 
@@ -461,8 +516,30 @@ Calculate risk level based on:
     "synthesis_output": {
       "path": ".workflow/WFS-xxx/.brainstorming/synthesis-specification.md",
       "exists": true,
-      "content": "# Synthesis Specification\n\n## Cross-Role Integration\n..."
-    }
+      "content": "# Synthesis Specification\n\n## Cross-Role Integration\n...",
+      "feature_driven": {
+        "feature_index": ".workflow/WFS-xxx/.brainstorming/feature-specs/feature-index.json",
+        "feature_specs_dir": ".workflow/WFS-xxx/.brainstorming/feature-specs/"
+      }
+    },
+    "feature_index": {
+      "path": ".workflow/WFS-xxx/.brainstorming/feature-specs/feature-index.json",
+      "exists": true,
+      "content": "{\"version\":\"1.0\",\"features\":[...]}"
+    },
+    "feature_index_path": ".workflow/WFS-xxx/.brainstorming/feature-specs/feature-index.json",
+    "feature_specs": [
+      {
+        "path": ".workflow/WFS-xxx/.brainstorming/feature-specs/F-001-auth.md",
+        "content": "# Feature Spec: F-001 - Auth\n..."
+      }
+    ],
+    "cross_cutting_specs": [
+      {
+        "path": ".workflow/WFS-xxx/.brainstorming/system-architect/analysis-cross-cutting.md",
+        "content": "# Cross-Cutting: Architecture Decisions\n..."
+      }
+    ]
   },
   "conflict_detection": {
     "risk_level": "medium",
@@ -495,7 +572,7 @@ Calculate risk level based on:
       }
     ],
     "aggregated_insights": {
-      "critical_files": [{"path": "src/auth/AuthService.ts", "relevance": 0.95, "mentioned_by_angles": ["architecture"]}],
+      "critical_files": [{"path": "src/auth/AuthService.ts", "relevance": 0.95, "rationale": "Contains login/register/verifyToken - core auth entry points", "role": "modify_target", "mentioned_by_angles": ["architecture"], "key_symbols": ["AuthService", "login", "verifyToken"]}],
       "conflict_indicators": [{"type": "pattern_mismatch", "description": "...", "source_angle": "architecture", "severity": "medium"}],
       "clarification_needs": [{"question": "...", "context": "...", "options": [], "source_angle": "architecture"}],
       "constraints": [{"constraint": "Must follow existing DI pattern", "source_angle": "architecture"}],

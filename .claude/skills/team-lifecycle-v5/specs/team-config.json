@@ -1,0 +1,218 @@
+{
+  "team_name": "team-lifecycle",
+  "team_display_name": "Team Lifecycle v5",
+  "description": "Unified team-worker agent architecture: shared Phase 1/5/Inner Loop in agent, role-specific Phase 2-4 from spec files",
+  "version": "5.0.0",
+  "architecture": "team-worker agent + role-specs",
+  "role_structure": "role-specs/{name}.md (Phase 2-4 only)",
+  "worker_agent": "team-worker",
+  "subagent_structure": "subagents/{name}-subagent.md",
+
+  "roles": {
+    "coordinator": {
+      "task_prefix": null,
+      "responsibility": "Pipeline orchestration, requirement clarification, task chain creation, message dispatch",
+      "message_types": ["plan_approved", "plan_revision", "task_unblocked", "fix_required", "error", "shutdown"]
+    },
+    "analyst": {
+      "task_prefix": "RESEARCH",
+      "role_spec": "role-specs/analyst.md",
+      "responsibility": "Seed analysis, codebase exploration, multi-dimensional context gathering + inline discuss",
+      "inline_discuss": "DISCUSS-001",
+      "inner_loop": false,
+      "message_types": ["research_ready", "research_progress", "error"]
+    },
+    "writer": {
+      "task_prefix": "DRAFT",
+      "role_spec": "role-specs/writer.md",
+      "responsibility": "Product Brief / PRD / Architecture / Epics document generation + inline discuss",
+      "inner_loop": true,
+      "subagent_type": "universal-executor",
+      "inline_discuss": ["DISCUSS-002", "DISCUSS-003", "DISCUSS-004", "DISCUSS-005"],
+      "message_types": ["draft_ready", "draft_revision", "error"]
+    },
+    "planner": {
+      "task_prefix": "PLAN",
+      "role_spec": "role-specs/planner.md",
+      "responsibility": "Multi-angle code exploration (via shared explore), structured implementation planning",
+      "inner_loop": true,
+      "message_types": ["plan_ready", "plan_revision", "error"]
+    },
+    "executor": {
+      "task_prefix": "IMPL",
+      "role_spec": "role-specs/executor.md",
+      "responsibility": "Code implementation following approved plans",
+      "inner_loop": true,
+      "message_types": ["impl_complete", "impl_progress", "error"]
+    },
+    "tester": {
+      "task_prefix": "TEST",
+      "role_spec": "role-specs/tester.md",
+      "responsibility": "Adaptive test-fix cycles, progressive testing, quality gates",
+      "inner_loop": false,
+      "message_types": ["test_result", "fix_required", "error"]
+    },
+    "reviewer": {
+      "task_prefix": "REVIEW",
+      "additional_prefixes": ["QUALITY", "IMPROVE"],
+      "role_spec": "role-specs/reviewer.md",
+      "responsibility": "Code review (REVIEW-*) + Spec quality validation (QUALITY-*) + Quality improvement recheck (IMPROVE-*) + inline discuss for sign-off",
+      "inline_discuss": "DISCUSS-006",
+      "inner_loop": false,
+      "message_types": ["review_result", "quality_result", "quality_recheck", "fix_required", "error"]
+    },
+    "architect": {
+      "task_prefix": "ARCH",
+      "role_spec": "role-specs/architect.md",
+      "responsibility": "Architecture assessment, tech feasibility, design pattern review. Consulting role -- on-demand by coordinator",
+      "role_type": "consulting",
+      "inner_loop": false,
+      "consultation_modes": ["spec-review", "plan-review", "code-review", "consult", "feasibility"],
+      "message_types": ["arch_ready", "arch_concern", "arch_progress", "error"]
+    },
+    "fe-developer": {
+      "task_prefix": "DEV-FE",
+      "role_spec": "role-specs/fe-developer.md",
+      "responsibility": "Frontend component/page implementation, design token consumption, responsive UI",
+      "role_type": "frontend-pipeline",
+      "inner_loop": false,
+      "message_types": ["dev_fe_complete", "dev_fe_progress", "error"]
+    },
+    "fe-qa": {
+      "task_prefix": "QA-FE",
+      "role_spec": "role-specs/fe-qa.md",
+      "responsibility": "5-dimension frontend review (quality, a11y, design compliance, UX, pre-delivery), GC loop",
+      "role_type": "frontend-pipeline",
+      "inner_loop": false,
+      "message_types": ["qa_fe_passed", "qa_fe_result", "fix_required", "error"]
+    }
+  },
+
+  "subagents": {
+    "discuss": {
+      "spec": "subagents/discuss-subagent.md",
+      "type": "cli-discuss-agent",
+      "callable_by": ["analyst", "writer", "reviewer"],
+      "purpose": "Multi-perspective critique with CLI tools, consensus synthesis"
+    },
+    "explore": {
+      "spec": "subagents/explore-subagent.md",
+      "type": "cli-explore-agent",
+      "callable_by": ["analyst", "planner", "any"],
+      "purpose": "Codebase exploration with centralized cache"
+    },
+    "doc-generation": {
+      "spec": "subagents/doc-generation-subagent.md",
+      "type": "universal-executor",
+      "callable_by": ["writer"],
+      "purpose": "Document generation engine (CLI execution)"
+    }
+  },
+
+  "checkpoint_commands": {
+    "revise": {
+      "handler": "handleRevise",
+      "pattern": "revise <TASK-ID> [feedback]",
+      "cascade": true,
+      "creates": "revision_task"
+    },
+    "feedback": {
+      "handler": "handleFeedback",
+      "pattern": "feedback <text>",
+      "cascade": true,
+      "creates": "revision_chain"
+    },
+    "recheck": {
+      "handler": "handleRecheck",
+      "pattern": "recheck",
+      "cascade": false,
+      "creates": "quality_recheck"
+    },
+    "improve": {
+      "handler": "handleImprove",
+      "pattern": "improve [dimension]",
+      "cascade": false,
+      "creates": "improvement_task + quality_recheck"
+    }
+  },
+
+  "pipelines": {
+    "spec-only": {
+      "description": "Specification pipeline: research+discuss -> draft+discuss x4 -> quality+discuss",
+      "task_chain": [
+        "RESEARCH-001",
+        "DRAFT-001", "DRAFT-002", "DRAFT-003", "DRAFT-004",
+        "QUALITY-001"
+      ],
+      "beats": 6
+    },
+    "impl-only": {
+      "description": "Implementation pipeline: plan -> implement -> test + review",
+      "task_chain": ["PLAN-001", "IMPL-001", "TEST-001", "REVIEW-001"],
+      "beats": 3
+    },
+    "full-lifecycle": {
+      "description": "Full lifecycle: spec pipeline -> implementation pipeline",
+      "task_chain": "spec-only + impl-only (PLAN-001 blockedBy QUALITY-001)",
+      "beats": 9
+    },
+    "fe-only": {
+      "description": "Frontend-only pipeline: plan -> frontend dev -> frontend QA",
+      "task_chain": ["PLAN-001", "DEV-FE-001", "QA-FE-001"],
+      "gc_loop": { "max_rounds": 2, "convergence": "score >= 8 && critical === 0" }
+    },
+    "fullstack": {
+      "description": "Fullstack pipeline: plan -> backend + frontend parallel -> test + QA",
+      "task_chain": ["PLAN-001", "IMPL-001||DEV-FE-001", "TEST-001||QA-FE-001", "REVIEW-001"],
+      "sync_points": ["REVIEW-001"]
+    },
+    "full-lifecycle-fe": {
+      "description": "Full lifecycle with frontend: spec -> plan -> backend + frontend -> test + QA",
+      "task_chain": "spec-only + fullstack (PLAN-001 blockedBy QUALITY-001)"
+    }
+  },
+
+  "frontend_detection": {
+    "keywords": ["component", "page", "UI", "frontend", "CSS", "HTML", "React", "Vue", "Tailwind", "Svelte", "Next.js", "Nuxt", "shadcn", "design system"],
+    "file_patterns": ["*.tsx", "*.jsx", "*.vue", "*.svelte", "*.css", "*.scss", "*.html"],
+    "routing_rules": {
+      "frontend_only": "All tasks match frontend keywords, no backend/API mentions",
+      "fullstack": "Mix of frontend and backend tasks",
+      "backend_only": "No frontend keywords detected (default impl-only)"
+    }
+  },
+
+  "ui_ux_pro_max": {
+    "skill_name": "ui-ux-pro-max",
+    "invocation": "Skill(skill=\"ui-ux-pro-max\", args=\"...\")",
+    "domains": ["product", "style", "typography", "color", "landing", "chart", "ux", "web"],
+    "stacks": ["html-tailwind", "react", "nextjs", "vue", "svelte", "shadcn", "swiftui", "react-native", "flutter"],
+    "design_intelligence_chain": ["analyst -> design-intelligence.json", "architect -> design-tokens.json", "fe-developer -> tokens.css", "fe-qa -> anti-pattern audit"]
+  },
+
+  "shared_memory": {
+    "file": "shared-memory.json",
+    "schema": {
+      "design_intelligence": "From analyst via ui-ux-pro-max",
+      "design_token_registry": "From architect, consumed by fe-developer/fe-qa",
+      "component_inventory": "From fe-developer, list of implemented components",
+      "style_decisions": "Accumulated design decisions",
+      "qa_history": "From fe-qa, audit trail",
+      "industry_context": "Industry + strictness config",
+      "exploration_cache": "From explore subagent, shared by all roles"
+    }
+  },
+
+  "session_dirs": {
+    "base": ".workflow/.team/TLS-{slug}-{YYYY-MM-DD}/",
+    "spec": "spec/",
+    "discussions": "discussions/",
+    "plan": "plan/",
+    "explorations": "explorations/",
+    "architecture": "architecture/",
+    "analysis": "analysis/",
+    "qa": "qa/",
+    "wisdom": "wisdom/",
+    "messages": ".msg/"
+  }
+}

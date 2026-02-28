@@ -11,6 +11,35 @@ Interactive orchestration tool: analyze task → discover commands → recommend
 
 **Execution Model**: Pseudocode guidance. Claude intelligently executes each phase based on context.
 
+## Skill 映射
+
+命令端口定义中的 workflow 操作通过 `Skill()` 调用。
+
+| Skill | 包含操作 |
+|-------|---------|
+| `workflow-lite-plan` | lite-plan, lite-execute |
+| `workflow-plan` | plan, plan-verify, replan |
+| `workflow-execute` | execute |
+| `workflow-multi-cli-plan` | multi-cli-plan |
+| `workflow-test-fix` | test-fix-gen, test-cycle-execute |
+| `workflow-tdd` | tdd-plan, tdd-verify |
+| `review-cycle` | review-session-cycle, review-module-cycle, review-cycle-fix |
+| `brainstorm` | auto-parallel, artifacts, role-analysis, synthesis |
+| `workflow:collaborative-plan-with-file` | understanding agent → parallel agents → plan-note.md |
+| `workflow:req-plan-with-file` | requirement decomposition → issue creation → execution-plan.json |
+| `workflow:integration-test-cycle` | explore → test dev → test-fix cycle → reflection |
+| `workflow:refactor-cycle` | tech debt discovery → prioritize → execute → validate |
+| `team-planex` | planner + executor wave pipeline（边规划边执行）|
+| `team-iterdev` | 迭代开发团队（planner → developer → reviewer 循环）|
+| `team-lifecycle` | 全生命周期团队（spec → impl → test）|
+| `team-issue` | issue 解决团队（discover → plan → execute）|
+| `team-testing` | 测试团队（strategy → generate → execute → analyze）|
+| `team-quality-assurance` | QA 团队（scout → strategist → generator → executor → analyst）|
+| `team-brainstorm` | 团队头脑风暴（facilitator → participants → synthesizer）|
+| `team-uidesign` | UI 设计团队（designer → implementer dual-track）|
+
+独立命令（仍使用 colon 格式）：workflow:brainstorm-with-file, workflow:debug-with-file, workflow:analyze-with-file, workflow:collaborative-plan-with-file, workflow:req-plan-with-file, workflow:integration-test-cycle, workflow:refactor-cycle, workflow:unified-execute-with-file, workflow:clean, workflow:init, workflow:init-guidelines, workflow:ui-design:*, issue:*, workflow:session:*
+
 ## Core Concept: Minimum Execution Units (最小执行单元)
 
 ### What is a Minimum Execution Unit?
@@ -30,7 +59,7 @@ Interactive orchestration tool: analyze task → discover commands → recommend
 |-----------|----------|---------|--------|
 | **Quick Implementation** | lite-plan → lite-execute | Lightweight plan and immediate execution | Working code |
 | **Multi-CLI Planning** | multi-cli-plan → lite-execute | Multi-perspective analysis and execution | Working code |
-| **Bug Fix** | lite-fix → lite-execute | Quick bug diagnosis and fix execution | Fixed code |
+| **Bug Fix** | lite-plan (--bugfix) → lite-execute | Quick bug diagnosis and fix execution | Fixed code |
 | **Full Planning + Execution** | plan → execute | Detailed planning and execution | Working code |
 | **Verified Planning + Execution** | plan → plan-verify → execute | Planning with verification and execution | Working code |
 | **Replanning + Execution** | replan → execute | Update plan and execute changes | Working code |
@@ -65,14 +94,35 @@ Interactive orchestration tool: analyze task → discover commands → recommend
 | **Brainstorm With File** | brainstorm-with-file | Multi-perspective ideation with documentation | brainstorm.md |
 | **Debug With File** | debug-with-file | Hypothesis-driven debugging with documentation | understanding.md |
 | **Analyze With File** | analyze-with-file | Collaborative analysis with documentation | discussion.md |
+| **Collaborative Plan** | collaborative-plan-with-file → unified-execute-with-file | Multi-agent collaborative planning and execution | plan-note.md + code |
+| **Requirement Plan** | req-plan-with-file → team-planex | Requirement decomposition and wave execution | execution-plan.json + code |
+
+**Cycle Units** (循环单元):
+
+| Unit Name | Commands | Purpose | Output |
+|-----------|----------|---------|--------|
+| **Integration Test Cycle** | integration-test-cycle | Self-iterating integration test with reflection | Tests passed |
+| **Refactor Cycle** | refactor-cycle | Tech debt discovery and refactoring | Refactored code |
+
+**Team Units** (团队单元):
+
+| Unit Name | Commands | Purpose | Output |
+|-----------|----------|---------|--------|
+| **Team Plan+Execute** | team-planex | Wave pipeline (planner + executor) | Working code |
+| **Team Iterative Dev** | team-iterdev | Iterative development (planner → developer → reviewer) | Working code |
+| **Team Lifecycle** | team-lifecycle | Full lifecycle (spec → impl → test) | Working code |
+| **Team Issue** | team-issue | Multi-role issue resolution | Resolved issues |
+| **Team Testing** | team-testing | Comprehensive test pipeline | Tests passed |
+| **Team QA** | team-quality-assurance | Quality assurance pipeline | QA report |
+| **Team Brainstorm** | team-brainstorm | Multi-role brainstorming | Analysis |
+| **Team UI Design** | team-uidesign | Dual-track design + implementation | UI code |
 
 ### Command-to-Unit Mapping (命令与最小单元的映射)
 
 | Command | Can Precede | Atomic Units |
 |---------|-----------|--------------|
-| lite-plan | lite-execute, convert-to-plan | Quick Implementation, Rapid-to-Issue |
+| lite-plan | lite-execute, convert-to-plan | Quick Implementation, Rapid-to-Issue, Bug Fix |
 | multi-cli-plan | lite-execute | Multi-CLI Planning |
-| lite-fix | lite-execute | Bug Fix |
 | plan | plan-verify, execute | Full Planning + Execution, Verified Planning + Execution |
 | plan-verify | execute | Verified Planning + Execution |
 | replan | execute | Replanning + Execution |
@@ -87,6 +137,19 @@ Interactive orchestration tool: analyze task → discover commands → recommend
 | issue:queue | issue:execute | Issue Workflow, Rapid-to-Issue, Brainstorm-to-Issue |
 | issue:from-brainstorm | issue:queue | Brainstorm-to-Issue |
 | brainstorm-with-file | issue:from-brainstorm (optional) | Brainstorm With File, Brainstorm-to-Issue |
+| collaborative-plan-with-file | unified-execute-with-file | Collaborative Plan |
+| req-plan-with-file | team-planex | Requirement Plan |
+| unified-execute-with-file | (terminal) | Collaborative Plan |
+| integration-test-cycle | (standalone) | Integration Test Cycle |
+| refactor-cycle | (standalone) | Refactor Cycle |
+| team-planex | (standalone) | Team Plan+Execute |
+| team-iterdev | (standalone) | Team Iterative Dev |
+| team-lifecycle | (standalone) | Team Lifecycle |
+| team-issue | (standalone) | Team Issue |
+| team-testing | (standalone) | Team Testing |
+| team-quality-assurance | (standalone) | Team QA |
+| team-brainstorm | (standalone) | Team Brainstorm |
+| team-uidesign | (standalone) | Team UI Design |
 | debug-with-file | (standalone) | Debug With File |
 | analyze-with-file | (standalone) | Analyze With File |
 
@@ -137,8 +200,23 @@ function detectTaskType(text) {
   if (/brainstorm.*issue|头脑风暴.*issue|idea.*issue|想法.*issue|从.*头脑风暴|convert.*brainstorm/.test(text)) return 'brainstorm-to-issue';
   if (/debug.*document|hypothesis.*debug|深度调试|假设.*验证|systematic debug/.test(text)) return 'debug-file';
   if (/analyze.*document|collaborative analysis|协作分析|深度.*理解/.test(text)) return 'analyze-file';
+  if (/collaborative.*plan|协作.*规划|多人.*规划|multi.*agent.*plan|Plan Note|分工.*规划/.test(text)) return 'collaborative-plan';
+  if (/roadmap|需求.*规划|需求.*拆解|requirement.*plan|req.*plan|progressive.*plan|路线.*图/.test(text)) return 'req-plan';
+  // Cycle workflow patterns
+  if (/integration.*test|集成测试|端到端.*测试|e2e.*test|integration.*cycle/.test(text)) return 'integration-test';
+  if (/refactor|重构|tech.*debt|技术债务/.test(text)) return 'refactor';
+  // Team workflow patterns (explicit "team" keyword required)
+  if (/team.*plan.*exec|team.*planex|团队.*规划.*执行|并行.*规划.*执行|wave.*pipeline/.test(text)) return 'team-planex';
+  if (/team.*iter|team.*iterdev|迭代.*开发.*团队|iterative.*dev.*team/.test(text)) return 'team-iterdev';
+  if (/team.*lifecycle|全生命周期|full.*lifecycle|spec.*impl.*test.*team/.test(text)) return 'team-lifecycle';
+  if (/team.*issue.*resolv|团队.*issue|team.*resolve.*issue/.test(text)) return 'team-issue';
+  if (/team.*test|测试团队|comprehensive.*test.*team|全面.*测试.*团队/.test(text)) return 'team-testing';
+  if (/team.*qa|quality.*assurance.*team|QA.*团队|质量.*保障.*团队|团队.*质量/.test(text)) return 'team-qa';
+  if (/team.*brainstorm|团队.*头脑风暴|team.*ideation|多人.*头脑风暴/.test(text)) return 'team-brainstorm';
+  if (/team.*ui.*design|UI.*设计.*团队|dual.*track.*design|团队.*UI/.test(text)) return 'team-uidesign';
+  // Standard workflows
+  if (/multi.*cli|多.*CLI|多模型.*协作|multi.*model.*collab/.test(text)) return 'multi-cli';
   if (/不确定|explore|研究|what if|brainstorm|权衡/.test(text)) return 'brainstorm';
-  if (/多视角|比较方案|cross-verify|multi-cli/.test(text)) return 'multi-cli';
   return 'feature';  // Default
 }
 
@@ -173,6 +251,16 @@ Each command has input/output ports (tags) for pipeline composition:
 
 ```javascript
 // Port labels represent data types flowing through the pipeline
+// Type classification:
+//   skill:   workflow-lite-plan (lite-plan, lite-execute),
+//            workflow-plan (plan, plan-verify, replan),
+//            workflow-execute (execute),
+//            workflow-multi-cli-plan (multi-cli-plan),
+//            workflow-test-fix (test-fix-gen, test-cycle-execute),
+//            workflow-tdd (tdd-plan, tdd-verify),
+//            review-cycle (review-session-cycle, review-module-cycle, review-cycle-fix)
+//   command: debug, test-gen, review, workflow:brainstorm-with-file,
+//            workflow:debug-with-file, workflow:analyze-with-file, issue:*
 const commandPorts = {
   'lite-plan': {
     name: 'lite-plan',
@@ -183,13 +271,13 @@ const commandPorts = {
   },
   'lite-execute': {
     name: 'lite-execute',
-    input: ['plan', 'multi-cli-plan', 'lite-fix'], // 输入端口：可接受多种规划输出
+    input: ['plan', 'multi-cli-plan'],             // 输入端口：可接受多种规划输出
     output: ['code'],                           // 输出端口：代码
     tags: ['execution'],
     atomic_groups: [                           // 可参与多个最小单元
       'quick-implementation',                  // lite-plan → lite-execute
       'multi-cli-planning',                    // multi-cli-plan → lite-execute
-      'bug-fix'                                // lite-fix → lite-execute
+      'bug-fix'                                // lite-plan (--bugfix) → lite-execute
     ]
   },
   'plan': {
@@ -250,12 +338,15 @@ const commandPorts = {
     output: ['tdd-verified'],
     tags: ['testing']
   },
-  'lite-fix': {
-    name: 'lite-fix',
+  // Bug Fix (使用 lite-plan 的 bugfix 变体，lite-fix 已移除)
+  'lite-plan-bugfix': {
+    name: 'lite-plan',
     input: ['bug-report'],                      // 输入端口：bug 报告
-    output: ['lite-fix'],                       // 输出端口：修复计划（供 lite-execute 执行）
-    tags: ['bugfix'],
-    atomic_group: 'bug-fix'                    // 最小单元：与 lite-execute 绑定
+    output: ['plan'],                            // 输出端口：修复计划（供 lite-execute 执行）
+    tags: ['bugfix', 'planning'],
+    atomic_group: 'bug-fix',                    // 最小单元：与 lite-execute 绑定
+    type: 'skill',                              // Skill 触发器: workflow-lite-plan
+    note: '通过 --bugfix 参数传递 bugfix 语义'
   },
   'debug': {
     name: 'debug',
@@ -291,11 +382,12 @@ const commandPorts = {
     tags: ['review'],
     atomic_group: 'code-review'                // 最小单元：与 review-session-cycle/review-module-cycle 绑定
   },
-  'brainstorm:auto-parallel': {
-    name: 'brainstorm:auto-parallel',
+  'brainstorm': {
+    name: 'brainstorm',
     input: ['exploration-topic'],               // 输入端口：探索主题
     output: ['brainstorm-analysis'],
-    tags: ['brainstorm']
+    tags: ['brainstorm'],
+    type: 'skill'                               // 统一 Skill：brainstorm (auto-parallel, artifacts, role-analysis, synthesis)
   },
   'multi-cli-plan': {
     name: 'multi-cli-plan',
@@ -384,6 +476,105 @@ const commandPorts = {
     output: ['discussion-document'],            // 输出端口：discussion.md + 结论
     tags: ['analysis', 'with-file'],
     note: 'Self-contained workflow with multi-round discussion'
+  },
+
+  // Collaborative planning workflows
+  'collaborative-plan-with-file': {
+    name: 'collaborative-plan-with-file',
+    input: ['requirement'],                     // 输入端口：需求
+    output: ['plan-note'],                      // 输出端口：plan-note.md
+    tags: ['planning', 'with-file'],
+    atomic_group: 'collaborative-plan',        // 最小单元：collaborative-plan → unified-execute
+    note: 'Multi-agent collaborative planning with Plan Note shared doc'
+  },
+  'unified-execute-with-file': {
+    name: 'unified-execute-with-file',
+    input: ['plan-note', 'brainstorm-document', 'discussion-document'],  // 可接受多种规划输出
+    output: ['code'],                           // 输出端口：代码
+    tags: ['execution', 'with-file'],
+    atomic_group: 'collaborative-plan'         // 最小单元：与 collaborative-plan-with-file 绑定
+  },
+  'req-plan-with-file': {
+    name: 'req-plan-with-file',
+    input: ['requirement'],                     // 输入端口：需求
+    output: ['execution-plan'],                 // 输出端口：execution-plan.json + issues
+    tags: ['planning', 'with-file'],
+    atomic_group: 'requirement-plan',          // 最小单元：req-plan → team-planex
+    note: 'Requirement decomposition with issue creation'
+  },
+
+  // Cycle workflows (self-iterating with reflection)
+  'integration-test-cycle': {
+    name: 'integration-test-cycle',
+    input: ['requirement'],                     // 输入端口：需求/模块
+    output: ['test-passed'],                    // 输出端口：测试通过
+    tags: ['testing', 'cycle'],
+    note: 'Self-contained: explore → test dev → test-fix cycle → reflection'
+  },
+  'refactor-cycle': {
+    name: 'refactor-cycle',
+    input: ['codebase'],                        // 输入端口：代码库
+    output: ['refactored-code'],                // 输出端口：重构后代码
+    tags: ['refactoring', 'cycle'],
+    note: 'Self-contained: tech debt discovery → prioritize → execute → validate'
+  },
+
+  // Team workflows (multi-role collaboration, all self-contained)
+  'team-planex': {
+    name: 'team-planex',
+    input: ['requirement'],
+    output: ['code'],
+    tags: ['team'],
+    note: 'Self-contained: planner + executor wave pipeline'
+  },
+  'team-iterdev': {
+    name: 'team-iterdev',
+    input: ['requirement'],
+    output: ['code'],
+    tags: ['team'],
+    note: 'Self-contained: planner → developer → reviewer iterative loop'
+  },
+  'team-lifecycle': {
+    name: 'team-lifecycle',
+    input: ['requirement'],
+    output: ['code'],
+    tags: ['team'],
+    note: 'Self-contained: spec → impl → test full lifecycle'
+  },
+  'team-issue': {
+    name: 'team-issue',
+    input: ['pending-issues'],
+    output: ['completed-issues'],
+    tags: ['team', 'issue'],
+    note: 'Self-contained: discover → plan → execute multi-role'
+  },
+  'team-testing': {
+    name: 'team-testing',
+    input: ['code'],
+    output: ['test-passed'],
+    tags: ['team', 'testing'],
+    note: 'Self-contained: strategy → generate → execute → analyze'
+  },
+  'team-quality-assurance': {
+    name: 'team-quality-assurance',
+    input: ['code'],
+    output: ['quality-report'],
+    tags: ['team', 'testing'],
+    note: 'Self-contained: scout → strategist → generator → executor → analyst'
+  },
+  'team-brainstorm': {
+    name: 'team-brainstorm',
+    input: ['exploration-topic'],
+    output: ['brainstorm-analysis'],
+    tags: ['team', 'brainstorm'],
+    note: 'Self-contained: facilitator → participants → synthesizer'
+  },
+  'team-uidesign': {
+    name: 'team-uidesign',
+    input: ['requirement'],
+    output: ['ui-code'],
+    tags: ['team', 'ui'],
+    note: 'Self-contained: designer → implementer dual-track'
   }
 };
 ```
@@ -420,6 +611,20 @@ function determinePortFlow(taskType, constraints) {
     'brainstorm-to-issue': { inputPort: 'brainstorm-document', outputPort: 'completed-issues' },
     'debug-file':         { inputPort: 'bug-report', outputPort: 'understanding-document' },
     'analyze-file':       { inputPort: 'analysis-topic', outputPort: 'discussion-document' },
+    'collaborative-plan': { inputPort: 'requirement', outputPort: 'code' },
+    'req-plan':           { inputPort: 'requirement', outputPort: 'code' },
+    // Cycle workflow types
+    'integration-test':   { inputPort: 'requirement', outputPort: 'test-passed' },
+    'refactor':           { inputPort: 'codebase', outputPort: 'refactored-code' },
+    // Team workflow types (all self-contained)
+    'team-planex':        { inputPort: 'requirement', outputPort: 'code' },
+    'team-iterdev':       { inputPort: 'requirement', outputPort: 'code' },
+    'team-lifecycle':     { inputPort: 'requirement', outputPort: 'code' },
+    'team-issue':         { inputPort: 'pending-issues', outputPort: 'completed-issues' },
+    'team-testing':       { inputPort: 'code', outputPort: 'test-passed' },
+    'team-qa':            { inputPort: 'code', outputPort: 'quality-report' },
+    'team-brainstorm':    { inputPort: 'exploration-topic', outputPort: 'brainstorm-analysis' },
+    'team-uidesign':      { inputPort: 'requirement', outputPort: 'ui-code' },
     'feature':            { inputPort: 'requirement', outputPort: constraints?.includes('skip-tests') ? 'code' : 'test-passed' }
   };
   return flows[taskType] || flows['feature'];
@@ -618,14 +823,18 @@ function formatCommand(cmd, previousResults, analysis) {
     const plan = previousResults.find(r => r.command.includes('plan'));
     if (plan?.session_id) prompt += ` --resume-session="${plan.session_id}"`;
 
-  // Bug fix commands - take bug description
-  } else if (['lite-fix', 'debug'].includes(name)) {
+  // Bug fix commands - use lite-plan with bugfix flag (lite-fix removed)
+  } else if (name === 'lite-plan' && analysis.task_type === 'bugfix') {
+    prompt += ` --bugfix "${analysis.goal}"`;
+
+  // Debug commands - take bug description
+  } else if (name === 'debug') {
     prompt += ` "${analysis.goal}"`;
 
-  // Brainstorm - take topic description
-  } else if (name === 'brainstorm:auto-parallel' || name === 'auto-parallel') {
+  // Brainstorm - take topic description (unified brainstorm skill)
+  } else if (name === 'brainstorm') {
     prompt += ` "${analysis.goal}"`;
-
+    prompt = `/brainstorm -y ${prompt.trim()}`;
   // Test generation from session - needs source session
   } else if (name === 'test-gen') {
     const impl = previousResults.find(r =>
@@ -699,6 +908,28 @@ function formatCommand(cmd, previousResults, analysis) {
       // Find latest brainstorm session
       prompt = `/issue:from-brainstorm -y --auto`;
     }
+
+  // Collaborative planning workflows
+  } else if (name === 'collaborative-plan-with-file') {
+    prompt = `/workflow:collaborative-plan-with-file -y "${analysis.goal}"`;
+
+  } else if (name === 'unified-execute-with-file') {
+    prompt = `/workflow:unified-execute-with-file -y`;
+
+  } else if (name === 'req-plan-with-file') {
+    prompt = `/workflow:req-plan-with-file -y "${analysis.goal}"`;
+
+  // Cycle workflows (self-contained)
+  } else if (name === 'integration-test-cycle') {
+    prompt = `/workflow:integration-test-cycle -y "${analysis.goal}"`;
+
+  } else if (name === 'refactor-cycle') {
+    prompt = `/workflow:refactor-cycle -y "${analysis.goal}"`;
+
+  // Team workflows (all self-contained, use Skill name directly)
+  } else if (['team-planex', 'team-iterdev', 'team-lifecycle', 'team-issue',
+              'team-testing', 'team-quality-assurance', 'team-brainstorm', 'team-uidesign'].includes(name)) {
+    prompt = `/${name} -y "${analysis.goal}"`;
   }
 
   return prompt;
@@ -845,7 +1076,7 @@ failed ←───────────────────────�
 
 **execution_results[] fields**:
 - `index`: Command position in chain (0-indexed)
-- `command`: Full command string (e.g., `/workflow:plan`)
+- `command`: Full command string (e.g., `workflow-plan` skill)
 - `status`: `in-progress` | `completed` | `skipped` | `failed`
 - `task_id`: Background task identifier (from Bash tool)
 - `session_id`: Workflow session ID (e.g., `WFS-*`) or null if failed
@@ -859,26 +1090,19 @@ failed ←───────────────────────�
 - `completed`: Successfully finished
 - `failed`: Failed to execute
 
-## CommandRegistry Integration
+## Skill & Command Discovery
 
-Sole CCW tool for command discovery:
+workflow 操作通过 `Skill()` 调用对应的 Skill。
 
 ```javascript
-import { CommandRegistry } from 'ccw/tools/command-registry';
+// Skill 调用方式
+Skill({ skill: 'workflow-lite-plan', args: '"task description"' });
+Skill({ skill: 'workflow-execute', args: '--resume-session="WFS-xxx"' });
+Skill({ skill: 'brainstorm', args: '"exploration topic"' });
 
-const registry = new CommandRegistry();
-
-// Get all commands
-const allCommands = registry.getAllCommandsSummary();
-// Map<"/workflow:lite-plan" => {name, description}>
-
-// Get categorized
-const byCategory = registry.getAllCommandsByCategory();
-// {planning, execution, testing, review, other}
-
-// Get single command metadata
-const cmd = registry.getCommand('lite-plan');
-// {name, command, description, argumentHint, allowedTools, filePath}
+// 独立命令调用方式
+Skill({ skill: 'workflow:brainstorm-with-file', args: '"topic"' });
+Skill({ skill: 'issue:discover', args: '' });
 ```
 
 ## Universal Prompt Template
@@ -917,7 +1141,7 @@ Task: <task_description>
 | **Execution (with plan)** | `--resume-session="WFS-xxx"` | `/workflow:execute -y --resume-session="WFS-plan-001"` |
 | **Execution (standalone)** | `--in-memory` or `"task"` | `/workflow:lite-execute -y --in-memory` |
 | **Session-based** | `--session="WFS-xxx"` | `/workflow:test-fix-gen -y --session="WFS-impl-001"` |
-| **Fix/Debug** | `"problem description"` | `/workflow:lite-fix -y "Fix timeout bug"` |
+| **Fix/Debug** | `--bugfix "problem description"` | `/workflow:lite-plan -y --bugfix "Fix timeout bug"` |
 
 ### Complete Examples
 
@@ -940,7 +1164,7 @@ Previous results:
 
 **Standalone Lite Execution**:
 ```bash
-ccw cli -p '/workflow:lite-fix -y "Fix login timeout in auth module"
+ccw cli -p '/workflow:lite-plan -y --bugfix "Fix login timeout in auth module"
 
 Task: Fix login timeout' --tool claude --mode write
 ```
@@ -1048,34 +1272,51 @@ break; // ⚠️ STOP HERE - DO NOT use TaskOutput polling
 ```
 
 
-## Available Commands
+## Available Skills & Commands
 
-All from `~/.claude/commands/workflow/` and `~/.claude/commands/issue/`:
+### Skills
 
-**Planning**: lite-plan, plan, multi-cli-plan, plan-verify, tdd-plan
-**Execution**: lite-execute, execute, develop-with-file
-**Testing**: test-cycle-execute, test-gen, test-fix-gen, tdd-verify
-**Review**: review, review-session-cycle, review-module-cycle, review-cycle-fix
-**Bug Fixes**: lite-fix, debug, debug-with-file
-**Brainstorming**: brainstorm:auto-parallel, brainstorm:artifacts, brainstorm:synthesis
-**Design**: ui-design:*, animation-extract, layout-extract, style-extract, codify-style
-**Session Management**: session:start, session:resume, session:complete, session:solidify, session:list
-**Tools**: context-gather, test-context-gather, task-generate, conflict-resolution, action-plan-verify
-**Utility**: clean, init, replan
-**Issue Workflow**: issue:discover, issue:plan, issue:queue, issue:execute, issue:convert-to-plan, issue:from-brainstorm
-**With-File Workflows**: brainstorm-with-file, debug-with-file, analyze-with-file
+| Skill | 包含操作 |
+|-------|---------|
+| `workflow-lite-plan` | lite-plan, lite-execute |
+| `workflow-plan` | plan, plan-verify, replan |
+| `workflow-execute` | execute |
+| `workflow-multi-cli-plan` | multi-cli-plan |
+| `workflow-test-fix` | test-fix-gen, test-cycle-execute |
+| `workflow-tdd` | tdd-plan, tdd-verify |
+| `review-cycle` | review-session-cycle, review-module-cycle, review-cycle-fix |
+| `brainstorm` | auto-parallel, artifacts, role-analysis, synthesis |
+| `team-planex` | planner + executor wave pipeline |
+| `team-iterdev` | planner → developer → reviewer 循环 |
+| `team-lifecycle` | spec → impl → test 全流程 |
+| `team-issue` | discover → plan → execute 多角色 |
+| `team-testing` | strategy → generate → execute → analyze |
+| `team-quality-assurance` | scout → strategist → generator → executor → analyst |
+| `team-brainstorm` | facilitator → participants → synthesizer |
+| `team-uidesign` | designer → implementer dual-track |
+
+### Commands（命名空间 Skill）
+
+**With-File Workflows**: workflow:brainstorm-with-file, workflow:debug-with-file, workflow:analyze-with-file, workflow:collaborative-plan-with-file, workflow:req-plan-with-file
+**Cycle Workflows**: workflow:integration-test-cycle, workflow:refactor-cycle
+**Execution**: workflow:unified-execute-with-file
+**Design**: workflow:ui-design:*
+**Session Management**: workflow:session:start, workflow:session:resume, workflow:session:complete, workflow:session:solidify, workflow:session:list
+**Tools**: workflow:tools:context-gather, workflow:tools:test-context-gather, workflow:tools:task-generate-agent, workflow:tools:conflict-resolution
+**Utility**: workflow:clean, workflow:init, workflow:init-guidelines
+**Issue Workflow**: issue:discover, issue:plan, issue:queue, issue:execute, issue:convert-to-plan, issue:from-brainstorm, issue:new
 
 ### Testing Commands Distinction
 
 | Command | Purpose | Output | Follow-up |
 |---------|---------|--------|-----------|
-| **test-gen** | 广泛测试示例生成并进行测试 | test-tasks (IMPL-001, IMPL-002) | `/workflow:execute` |
-| **test-fix-gen** | 针对特定问题生成测试并在测试中修正 | test-tasks | `/workflow:test-cycle-execute` |
+| **test-gen** | 广泛测试示例生成并进行测试 | test-tasks (IMPL-001, IMPL-002) | Skill(workflow-execute) |
+| **test-fix-gen** | 针对特定问题生成测试并在测试中修正 | test-tasks | Skill(workflow-test-fix) → test-cycle-execute |
 | **test-cycle-execute** | 执行测试周期（迭代测试和修复） | test-passed | N/A (终点) |
 
 **流程说明**:
-- **test-gen → execute**: 生成全面的测试套件，execute 执行生成和测试
-- **test-fix-gen → test-cycle-execute**: 针对特定问题生成修复任务，test-cycle-execute 迭代测试和修复直到通过
+- **test-gen → Skill(workflow-execute)**: 生成全面的测试套件，execute 执行生成和测试
+- **test-fix-gen → test-cycle-execute**: 同属 Skill(workflow-test-fix)，针对特定问题生成修复任务并迭代测试和修复直到通过
 
 ### Task Type Routing (Pipeline Summary)
 
@@ -1085,7 +1326,7 @@ All from `~/.claude/commands/workflow/` and `~/.claude/commands/issue/`:
 |-----------|----------|---|
 | **feature** (simple) | 需求 →【lite-plan → lite-execute】→ 代码 →【test-fix-gen → test-cycle-execute】→ 测试通过 | Quick Implementation + Test Validation |
 | **feature** (complex) | 需求 →【plan → plan-verify】→ validate → execute → 代码 → review → fix | Full Planning + Code Review + Testing |
-| **bugfix** | Bug报告 → lite-fix → 修复代码 →【test-fix-gen → test-cycle-execute】→ 测试通过 | Bug Fix + Test Validation |
+| **bugfix** | Bug报告 → lite-plan (--bugfix) → 修复代码 →【test-fix-gen → test-cycle-execute】→ 测试通过 | Bug Fix + Test Validation |
 | **tdd** | 需求 → tdd-plan → TDD任务 → execute → 代码 → tdd-verify | TDD Planning + Execution |
 | **test-fix** | 失败测试 →【test-fix-gen → test-cycle-execute】→ 测试通过 | Test Validation |
 | **test-gen** | 代码/会话 →【test-gen → execute】→ 测试通过 | Test Generation + Execution |
@@ -1098,5 +1339,18 @@ All from `~/.claude/commands/workflow/` and `~/.claude/commands/issue/`:
 | **brainstorm-to-issue** | brainstorm.md →【from-brainstorm → queue → execute】→ 完成 issues | Brainstorm to Issue |
 | **debug-file** | Bug报告 → debug-with-file → understanding.md (自包含) | Debug With File |
 | **analyze-file** | 分析主题 → analyze-with-file → discussion.md (自包含) | Analyze With File |
+| **collaborative-plan** | 需求 →【collaborative-plan-with-file → unified-execute-with-file】→ 代码 | Collaborative Plan |
+| **req-plan** | 需求 →【req-plan-with-file → team-planex】→ 代码 | Requirement Plan |
+| **multi-cli** | 需求 → multi-cli-plan → 对比分析 → lite-execute → test | Multi-CLI Planning |
+| **integration-test** | 需求/模块 → integration-test-cycle → 测试通过 (自包含) | Integration Test Cycle |
+| **refactor** | 代码库 → refactor-cycle → 重构后代码 (自包含) | Refactor Cycle |
+| **team-planex** | 需求 → team-planex → 代码 (自包含) | Team Plan+Execute |
+| **team-iterdev** | 需求 → team-iterdev → 代码 (自包含) | Team Iterative Dev |
+| **team-lifecycle** | 需求 → team-lifecycle → 代码 (自包含) | Team Lifecycle |
+| **team-issue** | issues → team-issue → 完成 issues (自包含) | Team Issue |
+| **team-testing** | 代码 → team-testing → 测试通过 (自包含) | Team Testing |
+| **team-qa** | 代码 → team-quality-assurance → 质量报告 (自包含) | Team QA |
+| **team-brainstorm** | 主题 → team-brainstorm → 分析 (自包含) | Team Brainstorm |
+| **team-uidesign** | 需求 → team-uidesign → UI代码 (自包含) | Team UI Design |
 
-Use `CommandRegistry.getAllCommandsSummary()` to discover all commands dynamically.
+Refer to the Skill 映射 section above for available Skills and Commands.

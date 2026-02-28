@@ -2,7 +2,7 @@
 name: issue:discover-by-prompt
 description: Discover issues from user prompt with Gemini-planned iterative multi-agent exploration. Uses ACE semantic search for context gathering and supports cross-module comparison (e.g., frontend vs backend API contracts).
 argument-hint: "[-y|--yes] <prompt> [--scope=src/**] [--depth=standard|deep] [--max-iterations=5]"
-allowed-tools: SlashCommand(*), TodoWrite(*), Read(*), Bash(*), Task(*), AskUserQuestion(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__exa__search(*)
+allowed-tools: Skill(*), TodoWrite(*), Read(*), Bash(*), Task(*), AskUserQuestion(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__exa__search(*)
 ---
 
 ## Auto Mode
@@ -508,7 +508,7 @@ function buildDimensionPromptWithACE(dimension, iteration, previousFindings, ace
 
     ## MANDATORY FIRST STEPS
     1. Read exploration plan: ${outputDir}/../exploration-plan.json
-    2. Read schema: ~/.claude/workflows/cli-templates/schemas/discovery-finding-schema.json
+    2. Read schema: ~/.ccw/workflows/cli-templates/schemas/discovery-finding-schema.json
     3. Review ACE results above for starting points
     4. Explore files identified by ACE
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Filter, Home, GitBranch, Users, AlertCircle, Database,
@@ -577,62 +577,272 @@ const GrandmaGuide = () => (
 );
 
 // 废弃命令组件
-const DeprecatedCommands = () => (
-  <div style={{ marginBottom: 40 }}>
-    <h2 style={{ fontSize: 24, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-      <X size={24} style={{ color: COLORS.danger }} />
-      已废弃的命令
-    </h2>
-    <div style={{ display: 'grid', gap: 12 }}>
-      {DEPRECATED_COMMANDS.map((item, index) => (
-        <motion.div
-          key={index}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: index * 0.1 }}
+const DeprecatedCommands = ({ searchQuery }: { searchQuery: string }) => {
+  // 过滤废弃命令
+  const filteredDeprecated = useMemo(() => {
+    if (!searchQuery) return DEPRECATED_COMMANDS;
+    const query = searchQuery.toLowerCase();
+    return DEPRECATED_COMMANDS.filter(item =>
+      item.old.toLowerCase().includes(query) ||
+      (item.newCmd && item.newCmd.toLowerCase().includes(query)) ||
+      item.reason.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
+  // 如果没有匹配的废弃命令，不显示整个组件
+  if (filteredDeprecated.length === 0) return null;
+
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <h2 style={{ fontSize: 24, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <X size={24} style={{ color: COLORS.danger }} />
+        已废弃的命令
+        <span style={{ fontSize: 16, color: COLORS.textDim, fontWeight: 'normal' }}>
+          ({filteredDeprecated.length} 个)
+        </span>
+      </h2>
+      <div
+        style={{
+          backgroundColor: COLORS.cardBg,
+          borderRadius: 12,
+          border: `1px solid ${COLORS.cardBorder}`,
+          overflow: 'hidden',
+        }}
+      >
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 13, color: COLORS.textDim, fontWeight: 600, width: '30%' }}>旧命令</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 13, color: COLORS.textDim, fontWeight: 600, width: '10%' }}></th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 13, color: COLORS.textDim, fontWeight: 600, width: '30%' }}>替代命令</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 13, color: COLORS.textDim, fontWeight: 600, width: '30%' }}>废弃原因</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredDeprecated.map((item, index) => (
+              <motion.tr
+                key={index}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: index * 0.05 }}
+                style={{
+                  borderTop: `1px solid ${COLORS.cardBorder}`,
+                }}
+              >
+                <td style={{ padding: '12px 16px' }}>
+                  <code
+                    style={{
+                      fontSize: 14,
+                      color: COLORS.danger,
+                      textDecoration: 'line-through',
+                      backgroundColor: 'rgba(239,68,68,0.1)',
+                      padding: '4px 10px',
+                      borderRadius: 4,
+                    }}
+                  >
+                    {item.old}
+                  </code>
+                </td>
+                <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                  <span style={{ fontSize: 18, color: COLORS.textMuted }}>→</span>
+                </td>
+                <td style={{ padding: '12px 16px' }}>
+                  {item.newCmd ? (
+                    <code
+                      style={{
+                        fontSize: 14,
+                        color: COLORS.secondary,
+                        backgroundColor: 'rgba(16,185,129,0.1)',
+                        padding: '4px 10px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      {item.newCmd}
+                    </code>
+                  ) : (
+                    <span style={{ fontSize: 13, color: COLORS.textDim, fontStyle: 'italic' }}>无替代</span>
+                  )}
+                </td>
+                <td style={{ padding: '12px 16px' }}>
+                  <span style={{ fontSize: 13, color: COLORS.textMuted }}>{item.reason}</span>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// 命令 Tab 组件（带目录导航）
+interface CommandsTabProps {
+  filteredCommands: Command[];
+  groupedCommands: Record<string, Command[]>;
+  searchQuery: string;
+  onCommandClick: (cmd: Command) => void;
+}
+
+const CommandsTab = ({ filteredCommands, groupedCommands, searchQuery, onCommandClick }: CommandsTabProps) => {
+  // 为每个分类创建 ref
+  const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // 获取有命令的分类列表
+  const categoriesWithCommands = useMemo(() => {
+    return Object.entries(groupedCommands).filter(([_, commands]) => commands.length > 0);
+  }, [groupedCommands]);
+
+  // 检测屏幕宽度，H5 隐藏目录，右侧空白不足也隐藏
+  const [hasEnoughSpace, setHasEnoughSpace] = useState(false);
+  useEffect(() => {
+    const checkSpace = () => {
+      const windowWidth = window.innerWidth;
+      const mainContentWidth = 1200; // main-content max-width
+      const tocWidth = 160; // 目录宽度
+      const tocMargin = 48; // 目录左右边距
+      const minGap = 24; // 目录与内容的最小间距
+
+      // 计算右侧空白区域
+      const rightSpace = (windowWidth - mainContentWidth) / 2;
+      // 需要目录宽度 + 边距 + 最小间距
+      setHasEnoughSpace(rightSpace >= tocWidth + tocMargin + minGap);
+    };
+    checkSpace();
+    window.addEventListener('resize', checkSpace);
+    return () => window.removeEventListener('resize', checkSpace);
+  }, []);
+
+  // 滚动到指定分类
+  const scrollToCategory = (category: string) => {
+    const element = categoryRefs.current[category];
+    if (element) {
+      const navHeight = 200; // 导航栏高度估算
+      const top = element.getBoundingClientRect().top + window.scrollY - navHeight;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <>
+      {/* 右侧目录导航 - 放在内容区域外，空白不足时隐藏 */}
+      {hasEnoughSpace && categoriesWithCommands.length > 0 && (
+        <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 20,
-            backgroundColor: COLORS.cardBg,
-            borderRadius: 12,
-            padding: 16,
-            flexWrap: 'wrap',
+            position: 'fixed',
+            right: 24,
+            top: 260,
+            width: 160,
+            zIndex: 50,
           }}
         >
-          <code
+          <h5
             style={{
-              fontSize: 16,
-              color: COLORS.danger,
-              textDecoration: 'line-through',
-              backgroundColor: 'rgba(239,68,68,0.1)',
-              padding: '8px 16px',
-              borderRadius: 6,
+              fontSize: 13,
+              fontWeight: 600,
+              color: COLORS.textMuted,
+              marginBottom: 12,
+              letterSpacing: '0.5px',
             }}
           >
-            {item.old}
-          </code>
-          <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: 24, color: COLORS.textMuted }}>→</span>
-            <p style={{ fontSize: 12, color: COLORS.textDim, margin: '4px 0 0 0' }}>{item.reason}</p>
+            目录
+          </h5>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {categoriesWithCommands.map(([category, commands]) => {
+              const cat = CATEGORIES[category as CommandCategory];
+              const label = cat.label.replace(/[🌟⚙️🔄🐛📚🧠🧪🔬👀🎨📋🛠️]/g, '').trim();
+              return (
+                <button
+                  key={category}
+                  onClick={() => scrollToCategory(category)}
+                  style={{
+                    padding: '6px 0',
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontSize: 14,
+                    color: COLORS.textDim,
+                    transition: 'all 0.2s',
+                    borderLeft: `2px solid transparent`,
+                    paddingLeft: 12,
+                    marginLeft: -12,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = cat.color;
+                    e.currentTarget.style.borderLeftColor = cat.color;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = COLORS.textDim;
+                    e.currentTarget.style.borderLeftColor = 'transparent';
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
-          <code
-            style={{
-              fontSize: 16,
-              color: COLORS.secondary,
-              backgroundColor: 'rgba(16,185,129,0.1)',
-              padding: '8px 16px',
-              borderRadius: 6,
-            }}
-          >
-            {item.newCmd}
-          </code>
-        </motion.div>
-      ))}
-    </div>
-  </div>
-);
+        </div>
+      )}
+
+      <motion.div
+        key="commands"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.2 }}
+      >
+        {/* 命令列表 */}
+        <div style={{ marginBottom: 40 }}>
+          <h2 style={{ fontSize: 28, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <BookOpen size={28} style={{ color: COLORS.primary }} />
+            命令列表
+            <span style={{ fontSize: 16, color: COLORS.textDim, fontWeight: 'normal' }}>
+              ({filteredCommands.length} 个命令)
+            </span>
+          </h2>
+
+          {categoriesWithCommands.map(([category, commands]) => (
+            <div
+              key={category}
+              ref={(el) => { categoryRefs.current[category] = el; }}
+              style={{ marginBottom: 30 }}
+            >
+              <h3
+                style={{
+                  fontSize: 20,
+                  marginBottom: 16,
+                  color: CATEGORIES[category as CommandCategory].color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  flexWrap: 'wrap',
+                }}
+              >
+                {ICON_MAP[CATEGORIES[category as CommandCategory].icon]}
+                {CATEGORIES[category as CommandCategory].label}
+                <span style={{ fontSize: 14, color: COLORS.textDim }}>({commands.length})</span>
+              </h3>
+              <div className="commands-grid">
+                <AnimatePresence mode="popLayout">
+                  {commands.map((cmd) => (
+                    <CommandCard
+                      key={cmd.cmd}
+                      command={cmd}
+                      onClick={() => onCommandClick(cmd)}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 废弃命令 */}
+        <DeprecatedCommands searchQuery={searchQuery} />
+      </motion.div>
+    </>
+  );
+};
 
 // 案例步骤渲染组件
 const CaseStepItem = ({ step, index, onCommandClick }: { step: CaseStep; index: number; onCommandClick?: (cmd: string) => void }) => {
@@ -1671,58 +1881,12 @@ function App() {
 
           {/* 命令 Tab */}
           {activeTab === 'commands' && (
-            <motion.div
-              key="commands"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              {/* 命令列表 */}
-              <div style={{ marginBottom: 40 }}>
-                <h2 style={{ fontSize: 28, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <BookOpen size={28} style={{ color: COLORS.primary }} />
-                  命令列表
-                  <span style={{ fontSize: 16, color: COLORS.textDim, fontWeight: 'normal' }}>
-                    ({filteredCommands.length} 个命令)
-                  </span>
-                </h2>
-
-                {Object.entries(groupedCommands).map(([category, commands]) => (
-                  <div key={category} style={{ marginBottom: 30 }}>
-                    <h3
-                      style={{
-                        fontSize: 20,
-                        marginBottom: 16,
-                        color: CATEGORIES[category as CommandCategory].color,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      {ICON_MAP[CATEGORIES[category as CommandCategory].icon]}
-                      {CATEGORIES[category as CommandCategory].label}
-                      <span style={{ fontSize: 14, color: COLORS.textDim }}>({commands.length})</span>
-                    </h3>
-                    <div className="commands-grid">
-                      <AnimatePresence mode="popLayout">
-                        {commands.map((cmd) => (
-                          <CommandCard
-                            key={cmd.cmd}
-                            command={cmd}
-                            onClick={() => setSelectedCommand(cmd)}
-                          />
-                        ))}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* 废弃命令 */}
-              <DeprecatedCommands />
-            </motion.div>
+            <CommandsTab
+              filteredCommands={filteredCommands}
+              groupedCommands={groupedCommands}
+              searchQuery={searchQuery}
+              onCommandClick={setSelectedCommand}
+            />
           )}
 
           {/* 案例 Tab */}

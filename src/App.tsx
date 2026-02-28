@@ -89,10 +89,8 @@ const CommandCard = ({ command, onClick }: { command: Command; onClick: () => vo
 
   return (
     <motion.div
-      layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
       whileHover={{ scale: 1.02, y: -2 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
@@ -747,7 +745,7 @@ const CommandsTab = ({ filteredCommands, groupedCommands, searchQuery, onCommand
             目录
           </h5>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {categoriesWithCommands.map(([category, commands]) => {
+            {categoriesWithCommands.map(([category]) => {
               const cat = CATEGORIES[category as CommandCategory];
               const label = cat.label.replace(/[🌟⚙️🔄🐛📚🧠🧪🔬👀🎨📋🛠️]/g, '').trim();
               return (
@@ -823,15 +821,13 @@ const CommandsTab = ({ filteredCommands, groupedCommands, searchQuery, onCommand
                 <span style={{ fontSize: 14, color: COLORS.textDim }}>({commands.length})</span>
               </h3>
               <div className="commands-grid">
-                <AnimatePresence mode="popLayout">
-                  {commands.map((cmd) => (
-                    <CommandCard
-                      key={cmd.cmd}
-                      command={cmd}
-                      onClick={() => onCommandClick(cmd)}
-                    />
-                  ))}
-                </AnimatePresence>
+                {commands.map((cmd) => (
+                  <CommandCard
+                    key={`${cmd.cmd}-${cmd.cli}`}
+                    command={cmd}
+                    onClick={() => onCommandClick(cmd)}
+                  />
+                ))}
               </div>
             </div>
           ))}

@@ -711,10 +711,6 @@ export const COMMANDS: Command[] = [
     usage: '功能写完了需要补测试、测试失败想自动修复'
   },
   { cmd: '/workflow-wave-plan', desc: 'CSV Wave 规划执行 - 分批探索和执行', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
-    detail: 'CSV Wave流程：①分解需求生成 explore.csv;②波浪式探索代码;③综合发现生成 tasks.csv;④波浪式执行任务。支持上下文传播',
-    usage: '需要批量探索和执行任务，保持上下文连贯'
-  },
-  { cmd: '/workflow-wave-plan', desc: 'CSV Wave 规划执行 - 分批探索和执行', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
     detail: 'CSV Wave流程：①分解需求生成 explore.csv；②波浪式探索代码；③综合发现生成 tasks.csv；④波浪式执行任务。支持上下文传播',
     usage: '需要批量探索和执行任务，保持上下文连贯'
   },
@@ -844,7 +840,7 @@ export const DEPRECATED_COMMANDS = [
   { old: '/workflow:plan-verify', newCmd: null, reason: '命令已移除' },
   { old: '/workflow:lite-plan', newCmd: '/workflow-lite-plan', reason: '命令升级为 skill，请使用新版本' },
   { old: '/workflow:lite-execute', newCmd: null, reason: '命令已移除，请使用 /workflow-execute' },
-  { old: '/workflow:lite-fix', newCmd: null, reason: '命令已移除，请使用 /review-code 进行代码审查' },
+  { old: '/workflow:lite-fix', newCmd: '/workflow:debug-with-file', reason: 'token 消耗较多且效果一般，改用 debug-with-file（Claude  Code: /workflow:debug-with-file，Codex: /debug-with-file）' },
   { old: '/workflow:tdd-plan', newCmd: '/workflow-tdd', reason: '命令升级为 skill' },
   { old: '/workflow:tdd-verify', newCmd: '/workflow-tdd', reason: '命令升级为 skill' },
   { old: '/workflow:test-gen', newCmd: '/workflow-test-fix', reason: '命令整合' },

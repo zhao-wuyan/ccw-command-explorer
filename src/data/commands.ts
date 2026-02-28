@@ -999,3 +999,289 @@ export const STATS = {
   latestVersion: 'v6.3',  // 当前最新版本
   categories: Object.keys(CATEGORIES).length,
 };
+
+// ============================================
+// 经验指南 - 场景决策树
+// ============================================
+export interface ExperienceTip {
+  id: string;
+  title: string;
+  scenario: string;
+  recommendation: string;
+  commands: string[];
+  reason: string;
+  tips?: string[];
+}
+
+export interface ExperienceCategory {
+  id: string;
+  title: string;
+  emoji: string;
+  color: string;
+  tips: ExperienceTip[];
+}
+
+export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
+  {
+    id: 'planning',
+    title: '需求规划类',
+    emoji: '📋',
+    color: COLORS.primary,
+    tips: [
+      {
+        id: 'roadmap-vs-plan',
+        title: 'Roadmap vs Plan 如何选择？',
+        scenario: '有一个需求，需要规划成开发任务',
+        recommendation: '根据需求的清晰度和复杂度选择',
+        commands: ['/workflow:roadmap', '/workflow:plan', '/workflow:lite-plan'],
+        reason: 'Roadmap 适合需求模糊、需要逐步细化的场景；Plan 适合需求明确、需要详细规划的场景',
+        tips: [
+          '/workflow:roadmap - 需求0-1：把模糊想法拆成路线图，产出一系列issue，但不做细致规划',
+          '/workflow:plan - 需求明确：5阶段详细规划，生成IMPL_PLAN.md和任务JSON',
+          '/workflow:lite-plan - 轻量快速：内存中规划，不生成文件，适合中小任务',
+        ],
+      },
+      {
+        id: 'simple-many',
+        title: '简单任务、大量任务场景',
+        scenario: '多个简单任务需要批量处理',
+        recommendation: '效率优先，选择轻量级工具',
+        commands: ['/workflow:lite-plan', '/workflow:lite-execute', '/csv-wave-pipeline'],
+        reason: '简单任务用重量级工具会降低效率，轻量工具更合适',
+        tips: [
+          '/workflow:lite-plan + /workflow:lite-execute - 快速规划执行，不生成中间文件',
+          '/csv-wave-pipeline - 批量任务流水线：CSV导入任务列表，分批执行',
+        ],
+      },
+      {
+        id: 'complex-single',
+        title: '复杂单任务场景',
+        scenario: '一个明确的复杂需求点，需要深度分析',
+        recommendation: '深度分析后再规划执行',
+        commands: ['/workflow:analyze-with-file', '/workflow:collaborative-plan-with-file'],
+        reason: '复杂需求需要先分析冲突点、理解依赖关系，再规划',
+        tips: [
+          '/workflow:analyze-with-file - 交互式协作分析：边分析边记录，发现潜在冲突',
+          '/workflow:collaborative-plan-with-file - 多领域协作规划：不同专业分工规划，自动检测冲突',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'execution',
+    title: '执行效率类',
+    emoji: '⚡',
+    color: COLORS.secondary,
+    tips: [
+      {
+        id: 'efficiency-first',
+        title: '效率优先怎么选？',
+        scenario: '追求最快完成开发任务',
+        recommendation: '根据任务数量和复杂度选择',
+        commands: ['/workflow:lite-plan', '/team-planex', '/parallel-dev-cycle'],
+        reason: '效率优先需要平衡并行度和上下文切换成本',
+        tips: [
+          '/workflow:lite-plan + /workflow:lite-execute - 单人快速执行，适合1-3个简单任务',
+          '/team-planex - 双人流水线：规划师边规划边派任务，执行者边收边写，效率翻倍',
+          '/parallel-dev-cycle - 多Agent并行：需求分析、设计、开发、测试并行推进',
+        ],
+      },
+      {
+        id: 'tdd-workflow',
+        title: 'TDD开发流程',
+        scenario: '需要高质量、可测试的代码',
+        recommendation: '严格遵循Red-Green-Refactor循环',
+        commands: ['/workflow:tdd-plan', '/workflow:execute', '/workflow:tdd-verify'],
+        reason: 'TDD确保代码可测试、高质量',
+        tips: [
+          '/workflow:tdd-plan - 生成Red-Green-Refactor任务链',
+          '/workflow:execute - 按循环顺序执行：先写测试(红)→写代码(绿)→重构',
+          '/workflow:tdd-verify - 验证TDD合规性：是否先写测试、覆盖率达标',
+        ],
+      },
+      {
+        id: 'multi-terminal',
+        title: '多终端并行开发',
+        scenario: '有多个终端可用，想同时推进多个任务',
+        recommendation: '使用Codex的多终端能力',
+        commands: ['/parallel-dev-cycle'],
+        reason: 'Codex支持多终端并行执行，Claude Code单线程',
+        tips: [
+          '/parallel-dev-cycle - 4个AI角色同时工作：需求分析师、探索规划师、代码开发、验证归档',
+          '注意：此命令需要Codex环境支持多终端',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'analysis',
+    title: '分析探索类',
+    emoji: '🔍',
+    color: COLORS.accent2,
+    tips: [
+      {
+        id: 'analyze-vs-brainstorm',
+        title: 'Analyze vs Brainstorm 如何选择？',
+        scenario: '需要深入理解代码或设计',
+        recommendation: '根据目标选择：理解用Analyze，创新用Brainstorm',
+        commands: ['/workflow:analyze-with-file', '/workflow:brainstorm-with-file', '/workflow:brainstorm:auto-parallel'],
+        reason: 'Analyze侧重理解现有代码，Brainstorm侧重创意发散',
+        tips: [
+          '/workflow:analyze-with-file - 理解代码：边分析边记录，多轮问答澄清误解',
+          '/workflow:brainstorm-with-file - 创意发散：多角度思考，记录想法演变',
+          '/workflow:brainstorm:auto-parallel - 自动角色选择：AI根据任务特征选择合适的角色',
+        ],
+      },
+      {
+        id: 'deep-analysis',
+        title: '深度代码分析',
+        scenario: '需要全面理解代码库架构',
+        recommendation: '使用多工具组合',
+        commands: ['/team-ultra-analyze', '/workflow:analyze-with-file', '/memory:code-map-memory'],
+        reason: '深度分析需要多种视角和可视化',
+        tips: [
+          '/team-ultra-analyze - 团队深度分析：多角色协作，全面理解代码库',
+          '/workflow:analyze-with-file - 交互式分析：边问边记，支持多轮澄清',
+          '/memory:code-map-memory - 生成Mermaid图：可视化代码结构和依赖',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'issue',
+    title: '问题管理类',
+    emoji: '🐛',
+    color: COLORS.warning,
+    tips: [
+      {
+        id: 'issue-discovery',
+        title: '主动发现问题',
+        scenario: '想主动发现项目中的隐患',
+        recommendation: '根据关注点选择扫描方式',
+        commands: ['/issue:discover', '/issue:discover-by-prompt', '/issue-manage'],
+        reason: '主动发现比被动修复成本更低',
+        tips: [
+          '/issue:discover - 8维度扫描：bug风险/安全漏洞/性能问题/用户体验/测试覆盖/代码质量/可维护性/最佳实践',
+          '/issue:discover-by-prompt - 定向扫描：告诉AI你关注什么（如"安全问题"），针对性发现',
+          '/issue-manage - 交互式管理：菜单式操作，查看/编辑/删除已有Issue',
+        ],
+      },
+      {
+        id: 'issue-to-execution',
+        title: '从发现到执行',
+        scenario: '发现了很多问题，如何系统化解决',
+        recommendation: '形成执行队列，批量处理',
+        commands: ['/issue:plan', '/issue:queue', '/issue:execute'],
+        reason: '批量处理效率更高，避免重复切换上下文',
+        tips: [
+          '/issue:plan - 为每个Issue规划解决方案',
+          '/issue:queue - 按优先级和依赖排成执行队列',
+          '/issue:execute - 批量执行，每个Issue单独git commit',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'testing',
+    title: '测试相关类',
+    emoji: '🧪',
+    color: COLORS.accent4,
+    tips: [
+      {
+        id: 'test-generation',
+        title: '测试生成策略',
+        scenario: '代码写完了需要补测试',
+        recommendation: '根据复杂度选择',
+        commands: ['/workflow:test-gen', '/workflow:test-fix-gen', '/workflow:test-cycle-execute'],
+        reason: '自动化程度越高，修复失败测试的效率越高',
+        tips: [
+          '/workflow:test-gen - 生成测试计划：分析代码，生成测试用例',
+          '/workflow:test-fix-gen - 生成修复计划：针对测试失败生成修复任务',
+          '/workflow:test-cycle-execute - 循环执行直到通过：自动生成→执行→修复→再测试',
+        ],
+      },
+      {
+        id: 'test-coverage',
+        title: '提升测试覆盖率',
+        scenario: '测试覆盖率不够，需要补充',
+        recommendation: '使用自动化循环',
+        commands: ['/team-quality-assurance', '/workflow:test-cycle-execute'],
+        reason: '自动化能更快达到覆盖率目标',
+        tips: [
+          '/team-quality-assurance - 6角色闭环：扫描问题→定方案→写测试→跑测试→出报告，覆盖率不够自动补',
+          '/workflow:test-cycle-execute - 循环直到95%通过率',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'review',
+    title: '代码审查类',
+    emoji: '👀',
+    color: COLORS.danger,
+    tips: [
+      {
+        id: 'review-scope',
+        title: '审查范围选择',
+        scenario: '代码写完了需要审查',
+        recommendation: '根据改动范围选择',
+        commands: ['/workflow:review-session-cycle', '/workflow:review-module-cycle', '/review-code'],
+        reason: '不同范围需要不同工具',
+        tips: [
+          '/workflow:review-session-cycle - 审查本次会话的所有改动',
+          '/workflow:review-module-cycle - 审查指定模块或文件',
+          '/review-code - 通用代码审查：7维度审查，生成详细报告',
+        ],
+      },
+      {
+        id: 'review-to-fix',
+        title: '审查后自动修复',
+        scenario: '审查发现问题后想自动修复',
+        recommendation: '使用审查修复流程',
+        commands: ['/workflow:review-fix', '/review-cycle'],
+        reason: '自动修复节省时间',
+        tips: [
+          '/workflow:review-fix - 根据审查报告自动修复',
+          '/review-cycle - 审查+修复一体化：审查完自动修复发现的问题',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'decision-tree',
+    title: '决策速查表',
+    emoji: '🌳',
+    color: COLORS.accent1,
+    tips: [
+      {
+        id: 'quick-decision',
+        title: '一句话决策',
+        scenario: '快速选择命令',
+        recommendation: '记住这几点就够了',
+        commands: ['/ccw'],
+        reason: '/ccw 会帮你做决策',
+        tips: [
+          '需求0-1、模糊 → /workflow:roadmap',
+          '需求明确、复杂 → /workflow:plan 或 /workflow:analyze-with-file',
+          '简单任务、大量 → /workflow:lite-plan 或 /csv-wave-pipeline',
+          '效率优先 → /team-planex 或 /parallel-dev-cycle',
+          '不知道用什么 → /ccw 让AI帮你选',
+        ],
+      },
+      {
+        id: 'level-guide',
+        title: '按复杂度选Level',
+        scenario: '根据任务复杂度选择',
+        recommendation: '4级工作流系统',
+        commands: ['/workflow:lite-fix', '/workflow:lite-plan', '/workflow:plan', '/workflow:brainstorm:auto-parallel'],
+        reason: '复杂度匹配避免过度设计或准备不足',
+        tips: [
+          'Level 1 - 超简单：/workflow:lite-fix，改配置、换变量名、修简单bug',
+          'Level 2 - 稍复杂：/workflow:lite-plan + lite-execute，做一个功能、修一个问题',
+          'Level 3 - 比较复杂：/workflow:plan + execute，改多个文件、多模块开发',
+          'Level 4 - 大项目：/workflow:brainstorm:*，新功能设计、架构决策',
+        ],
+      },
+    ],
+  },
+];

@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Plan Verification Agent Schema",
+  "description": "Defines dimensions, severity rules, and CLI templates for plan verification agent",
+
+  "dimensions": {
+    "A": { "name": "User Intent Alignment", "tier": 1, "severity": "CRITICAL",
+           "checks": ["Goal Alignment", "Scope Drift", "Success Criteria Match", "Intent Conflicts"] },
+    "B": { "name": "Requirements Coverage", "tier": 1, "severity": "CRITICAL",
+           "checks": ["Orphaned Requirements", "Unmapped Tasks", "NFR Coverage Gaps"] },
+    "C": { "name": "Consistency Validation", "tier": 1, "severity": "CRITICAL",
+           "checks": ["Requirement Conflicts", "Architecture Drift", "Terminology Drift", "Data Model Inconsistency"] },
+    "D": { "name": "Dependency Integrity", "tier": 2, "severity": "HIGH",
+           "checks": ["Circular Dependencies", "Missing Dependencies", "Broken Dependencies", "Logical Ordering"] },
+    "E": { "name": "Synthesis Alignment", "tier": 2, "severity": "HIGH",
+           "checks": ["Priority Conflicts", "Success Criteria Mismatch", "Risk Mitigation Gaps"] },
+    "F": { "name": "Task Specification Quality", "tier": 3, "severity": "MEDIUM",
+           "checks": ["Ambiguous Focus Paths", "Underspecified Acceptance", "Missing Artifacts", "Weak Flow Control"] },
+    "G": { "name": "Duplication Detection", "tier": 4, "severity": "LOW",
+           "checks": ["Overlapping Task Scope", "Redundant Coverage"] },
+    "H": { "name": "Feasibility Assessment", "tier": 4, "severity": "LOW",
+           "checks": ["Complexity Misalignment", "Resource Conflicts", "Skill Gap Risks"] },
+    "I": { "name": "Constraints Compliance", "tier": 1, "severity": "CRITICAL",
+           "checks": ["Consolidated Constraints Violation", "Phase Constraint Ignored", "User Constraint Override"] },
+    "J": { "name": "N+1 Context Validation", "tier": 2, "severity": "HIGH",
+           "checks": ["Deferred Item Included", "Decision Contradiction", "Revisit Flag Ignored"] }
+  },
+
+  "tiers": {
+    "1": { "dimensions": ["A", "B", "C", "I"], "priority": "CRITICAL", "limit": null, "rule": "analysis-review-architecture" },
+    "2": { "dimensions": ["D", "E", "J"], "priority": "HIGH", "limit": 15, "rule": "analysis-diagnose-bug-root-cause" },
+    "3": { "dimensions": ["F"], "priority": "MEDIUM", "limit": 20, "rule": "analysis-analyze-code-patterns" },
+    "4": { "dimensions": ["G", "H"], "priority": "LOW", "limit": 15, "rule": "analysis-analyze-code-patterns" }
+  },
+
+  "severity_rules": {
+    "CRITICAL": ["User intent violation", "Synthesis authority violation", "Zero coverage", "Circular/broken deps", "Constraint violation"],
+    "HIGH": ["NFR gaps", "Priority conflicts", "Missing risk mitigation", "Deferred item included", "Decision contradiction"],
+    "MEDIUM": ["Terminology drift", "Missing refs", "Weak flow control"],
+    "LOW": ["Style improvements", "Minor redundancy"]
+  },
+
+  "quality_gate": {
+    "BLOCK_EXECUTION": { "condition": "critical > 0", "emoji": "🛑" },
+    "PROCEED_WITH_FIXES": { "condition": "critical == 0 && high > 0", "emoji": "⚠️" },
+    "PROCEED_WITH_CAUTION": { "condition": "critical == 0 && high == 0 && medium > 0", "emoji": "✅" },
+    "PROCEED": { "condition": "only low or none", "emoji": "✅" }
+  },
+
+  "token_budget": { "total_findings": 50, "early_exit": "CRITICAL > 0 in Tier 1 → skip Tier 3-4" }
+}

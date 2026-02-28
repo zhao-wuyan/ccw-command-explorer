@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Issues JSONL Schema",
+  "description": "Schema for each line in issues.jsonl (flat storage)",
+  "type": "object",
+  "required": ["id", "title", "status", "created_at"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Issue ID (GH-123, ISS-xxx, DSC-001)"
+    },
+    "title": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["registered", "planning", "planned", "queued", "executing", "completed", "failed", "paused"],
+      "default": "registered"
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "default": 3,
+      "description": "1=critical, 2=high, 3=medium, 4=low, 5=trivial"
+    },
+    "context": {
+      "type": "string",
+      "description": "Issue context/description (markdown)"
+    },
+    "source": {
+      "type": "string",
+      "enum": ["github", "text", "discovery"],
+      "description": "Source of the issue"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Original source URL (for GitHub issues)"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Issue tags"
+    },
+    "extended_context": {
+      "type": "object",
+      "description": "Minimal extended context for planning hints",
+      "properties": {
+        "location": {
+          "type": "string",
+          "description": "file:line format (e.g., 'src/auth.ts:42')"
+        },
+        "suggested_fix": {
+          "type": "string",
+          "description": "Suggested remediation"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes (user clarifications or discovery hints)"
+        }
+      }
+    },
+    "affected_components": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Files/modules affected"
+    },
+    "feedback": {
+      "type": "array",
+      "description": "Execution feedback history (failures, clarifications, rejections) for planning phase reference",
+      "items": {
+        "type": "object",
+        "required": ["type", "stage", "content", "created_at"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["failure", "clarification", "rejection"],
+            "description": "Type of feedback"
+          },
+          "stage": {
+            "type": "string",
+            "enum": ["new", "plan", "execute"],
+            "description": "Which stage the feedback occurred (new=creation, plan=planning, execute=execution)"
+          },
+          "content": {
+            "type": "string",
+            "description": "JSON string for failures (with solution_id, task_id, error_type, message, stack_trace) or plain text for clarifications/rejections"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when feedback was created"
+          }
+        }
+      }
+    },
+    "lifecycle_requirements": {
+      "type": "object",
+      "properties": {
+        "test_strategy": {
+          "type": "string",
+          "enum": ["unit", "integration", "e2e", "manual", "auto"]
+        },
+        "regression_scope": {
+          "type": "string",
+          "enum": ["affected", "related", "full"]
+        },
+        "acceptance_type": {
+          "type": "string",
+          "enum": ["automated", "manual", "both"]
+        },
+        "commit_strategy": {
+          "type": "string",
+          "enum": ["per-task", "squash", "atomic"]
+        }
+      }
+    },
+    "bound_solution_id": {
+      "type": "string",
+      "description": "ID of the bound solution (null if none bound)"
+    },
+    "solution_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of candidate solutions"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "planned_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "examples": [
+    {
+      "id": "DSC-001",
+      "title": "Fix: SQLite connection pool memory leak",
+      "status": "registered",
+      "priority": 1,
+      "context": "Connection pool cleanup only happens when MAX_POOL_SIZE is reached...",
+      "source": "discovery",
+      "tags": ["bug", "resource-leak", "critical"],
+      "extended_context": {
+        "location": "storage/sqlite_store.py:59",
+        "suggested_fix": "Implement periodic cleanup or weak references",
+        "notes": null
+      },
+      "affected_components": ["storage/sqlite_store.py"],
+      "lifecycle_requirements": {
+        "test_strategy": "unit",
+        "regression_scope": "affected",
+        "acceptance_type": "automated",
+        "commit_strategy": "per-task"
+      },
+      "bound_solution_id": null,
+      "solution_count": 0,
+      "created_at": "2025-12-28T18:22:37Z"
+    }
+  ]
+}

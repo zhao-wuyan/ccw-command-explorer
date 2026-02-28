@@ -1,0 +1,248 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Issue Execution Queue Schema",
+  "description": "Execution queue supporting both task-level (T-N) and solution-level (S-N) granularity",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^QUE-[0-9]{8}-[0-9]{6}$",
+      "description": "Queue ID in format QUE-YYYYMMDD-HHMMSS"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "paused", "completed", "archived"],
+      "default": "active"
+    },
+    "issue_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Issues included in this queue"
+    },
+    "solutions": {
+      "type": "array",
+      "description": "Solution-level queue items (preferred for new queues)",
+      "items": {
+        "$ref": "#/definitions/solutionItem"
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "description": "Task-level queue items (legacy format)",
+      "items": {
+        "$ref": "#/definitions/taskItem"
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "description": "Detected conflicts between items",
+      "items": {
+        "$ref": "#/definitions/conflict"
+      }
+    },
+    "execution_groups": {
+      "type": "array",
+      "description": "Parallel/Sequential execution groups",
+      "items": {
+        "$ref": "#/definitions/executionGroup"
+      }
+    },
+    "_metadata": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "string", "default": "2.0" },
+        "queue_type": {
+          "type": "string",
+          "enum": ["solution", "task"],
+          "description": "Queue granularity level"
+        },
+        "total_solutions": { "type": "integer" },
+        "total_tasks": { "type": "integer" },
+        "pending_count": { "type": "integer" },
+        "ready_count": { "type": "integer" },
+        "executing_count": { "type": "integer" },
+        "completed_count": { "type": "integer" },
+        "failed_count": { "type": "integer" },
+        "last_queue_formation": { "type": "string", "format": "date-time" },
+        "last_updated": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "definitions": {
+    "solutionItem": {
+      "type": "object",
+      "required": ["item_id", "issue_id", "solution_id", "status", "task_count", "files_touched"],
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "pattern": "^S-[0-9]+$",
+          "description": "Solution-level queue item ID (S-1, S-2, ...)"
+        },
+        "issue_id": {
+          "type": "string",
+          "description": "Source issue ID"
+        },
+        "solution_id": {
+          "type": "string",
+          "description": "Bound solution ID"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "ready", "executing", "completed", "failed", "blocked"],
+          "default": "pending"
+        },
+        "task_count": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of tasks in this solution"
+        },
+        "files_touched": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "All files modified by this solution"
+        },
+        "execution_order": {
+          "type": "integer",
+          "description": "Order in execution sequence"
+        },
+        "execution_group": {
+          "type": "string",
+          "description": "Parallel (P*) or Sequential (S*) group ID"
+        },
+        "depends_on": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Solution IDs this item depends on"
+        },
+        "semantic_priority": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Semantic importance score (0.0-1.0)"
+        },
+        "queued_at": { "type": "string", "format": "date-time" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "result": {
+          "type": "object",
+          "properties": {
+            "summary": { "type": "string" },
+            "files_modified": { "type": "array", "items": { "type": "string" } },
+            "tasks_completed": { "type": "integer" },
+            "commit_hashes": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "failure_reason": { "type": "string" }
+      }
+    },
+    "taskItem": {
+      "type": "object",
+      "required": ["item_id", "issue_id", "solution_id", "task_id", "status"],
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "pattern": "^T-[0-9]+$",
+          "description": "Task-level queue item ID (T-1, T-2, ...)"
+        },
+        "issue_id": { "type": "string" },
+        "solution_id": { "type": "string" },
+        "task_id": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "ready", "executing", "completed", "failed", "blocked"],
+          "default": "pending"
+        },
+        "execution_order": { "type": "integer" },
+        "execution_group": { "type": "string" },
+        "depends_on": { "type": "array", "items": { "type": "string" } },
+        "semantic_priority": { "type": "number", "minimum": 0, "maximum": 1 },
+        "queued_at": { "type": "string", "format": "date-time" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "result": {
+          "type": "object",
+          "properties": {
+            "files_modified": { "type": "array", "items": { "type": "string" } },
+            "files_created": { "type": "array", "items": { "type": "string" } },
+            "summary": { "type": "string" },
+            "commit_hash": { "type": "string" }
+          }
+        },
+        "failure_reason": { "type": "string" }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["file_conflict", "dependency_conflict", "resource_conflict"]
+        },
+        "file": {
+          "type": "string",
+          "description": "Conflicting file path"
+        },
+        "solutions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Solution IDs involved (for solution-level queues)"
+        },
+        "tasks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Task IDs involved (for task-level queues)"
+        },
+        "resolution": {
+          "type": "string",
+          "enum": ["sequential", "merge", "manual"]
+        },
+        "resolution_order": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Execution order to resolve conflict"
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Explanation of resolution decision"
+        },
+        "resolved": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "executionGroup": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[PS][0-9]+$",
+          "description": "Group ID (P1, P2 for parallel, S1, S2 for sequential)"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["parallel", "sequential"]
+        },
+        "solutions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Solution IDs in this group"
+        },
+        "tasks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Task IDs in this group (legacy)"
+        },
+        "solution_count": {
+          "type": "integer",
+          "description": "Number of solutions in group"
+        },
+        "task_count": {
+          "type": "integer",
+          "description": "Number of tasks in group (legacy)"
+        }
+      }
+    }
+  }
+}

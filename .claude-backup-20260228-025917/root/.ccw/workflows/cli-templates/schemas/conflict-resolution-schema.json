@@ -1,0 +1,151 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Conflict Resolution Schema",
+  "description": "Schema for conflict detection, strategy generation, and resolution output",
+
+  "type": "object",
+  "required": ["conflicts", "summary"],
+  "properties": {
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "brief", "severity", "category", "strategies", "recommended"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^CON-\\d{3}$",
+            "description": "Conflict ID (CON-001, CON-002, ...)"
+          },
+          "brief": {
+            "type": "string",
+            "description": "一句话冲突摘要（中文）"
+          },
+          "severity": {
+            "enum": ["Critical", "High", "Medium"],
+            "description": "冲突严重程度"
+          },
+          "category": {
+            "enum": ["Architecture", "API", "Data", "Dependency", "ModuleOverlap"],
+            "description": "冲突类型"
+          },
+          "affected_files": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "受影响的文件路径"
+          },
+          "description": {
+            "type": "string",
+            "description": "详细冲突描述"
+          },
+          "impact": {
+            "type": "object",
+            "properties": {
+              "scope": { "type": "string", "description": "影响的模块/组件" },
+              "compatibility": { "enum": ["Yes", "No", "Partial"] },
+              "migration_required": { "type": "boolean" },
+              "estimated_effort": { "type": "string", "description": "人天估计" }
+            }
+          },
+          "overlap_analysis": {
+            "type": "object",
+            "description": "仅当 category=ModuleOverlap 时需要",
+            "properties": {
+              "new_module": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "scenarios": { "type": "array", "items": { "type": "string" } },
+                  "responsibilities": { "type": "string" }
+                }
+              },
+              "existing_modules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "file": { "type": "string" },
+                    "name": { "type": "string" },
+                    "scenarios": { "type": "array", "items": { "type": "string" } },
+                    "overlap_scenarios": { "type": "array", "items": { "type": "string" } },
+                    "responsibilities": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "strategies": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "required": ["name", "approach", "complexity", "risk", "effort", "pros", "cons"],
+              "properties": {
+                "name": { "type": "string", "description": "策略名称（中文）" },
+                "approach": { "type": "string", "description": "实现方法简述" },
+                "complexity": { "enum": ["Low", "Medium", "High"] },
+                "risk": { "enum": ["Low", "Medium", "High"] },
+                "effort": { "type": "string", "description": "时间估计" },
+                "pros": { "type": "array", "items": { "type": "string" }, "description": "优点" },
+                "cons": { "type": "array", "items": { "type": "string" }, "description": "缺点" },
+                "clarification_needed": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "需要用户澄清的问题（尤其是 ModuleOverlap）"
+                },
+                "modifications": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["file", "section", "change_type", "old_content", "new_content", "rationale"],
+                    "properties": {
+                      "file": { "type": "string", "description": "相对项目根目录的完整路径" },
+                      "section": { "type": "string", "description": "Markdown heading 用于定位" },
+                      "change_type": { "enum": ["update", "add", "remove"] },
+                      "old_content": { "type": "string", "description": "原始内容片段（20-100字符，用于唯一匹配）" },
+                      "new_content": { "type": "string", "description": "修改后的内容" },
+                      "rationale": { "type": "string", "description": "修改理由" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "recommended": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "推荐策略索引（0-based）"
+          },
+          "modification_suggestions": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 5,
+            "items": { "type": "string" },
+            "description": "自定义处理建议（2-5条，中文）"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["total", "critical", "high", "medium"],
+      "properties": {
+        "total": { "type": "integer" },
+        "critical": { "type": "integer" },
+        "high": { "type": "integer" },
+        "medium": { "type": "integer" }
+      }
+    }
+  },
+
+  "_quality_standards": {
+    "modifications": [
+      "old_content: 20-100字符，确保 Edit 工具能唯一匹配",
+      "new_content: 保持 markdown 格式",
+      "change_type: update(替换), add(插入), remove(删除)"
+    ],
+    "user_facing_text": "brief, name, pros, cons, modification_suggestions 使用中文",
+    "technical_fields": "severity, category, complexity, risk 使用英文"
+  }
+}

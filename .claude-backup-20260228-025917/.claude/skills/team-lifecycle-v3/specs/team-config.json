@@ -1,0 +1,158 @@
+{
+  "team_name": "team-lifecycle",
+  "team_display_name": "Team Lifecycle",
+  "description": "Unified team skill covering spec-to-dev-to-test full lifecycle",
+  "version": "2.0.0",
+  "architecture": "folder-based",
+  "role_structure": "roles/{name}/role.md + roles/{name}/commands/*.md",
+
+  "roles": {
+    "coordinator": {
+      "task_prefix": null,
+      "responsibility": "Pipeline orchestration, requirement clarification, task chain creation, message dispatch",
+      "message_types": ["plan_approved", "plan_revision", "task_unblocked", "fix_required", "error", "shutdown"]
+    },
+    "analyst": {
+      "task_prefix": "RESEARCH",
+      "responsibility": "Seed analysis, codebase exploration, multi-dimensional context gathering",
+      "message_types": ["research_ready", "research_progress", "error"]
+    },
+    "writer": {
+      "task_prefix": "DRAFT",
+      "responsibility": "Product Brief / PRD / Architecture / Epics document generation",
+      "message_types": ["draft_ready", "draft_revision", "impl_progress", "error"]
+    },
+    "discussant": {
+      "task_prefix": "DISCUSS",
+      "responsibility": "Multi-perspective critique, consensus building, conflict escalation",
+      "message_types": ["discussion_ready", "discussion_blocked", "impl_progress", "error"]
+    },
+    "planner": {
+      "task_prefix": "PLAN",
+      "responsibility": "Multi-angle code exploration, structured implementation planning",
+      "message_types": ["plan_ready", "plan_revision", "impl_progress", "error"]
+    },
+    "executor": {
+      "task_prefix": "IMPL",
+      "responsibility": "Code implementation following approved plans",
+      "message_types": ["impl_complete", "impl_progress", "error"]
+    },
+    "tester": {
+      "task_prefix": "TEST",
+      "responsibility": "Adaptive test-fix cycles, progressive testing, quality gates",
+      "message_types": ["test_result", "impl_progress", "fix_required", "error"]
+    },
+    "reviewer": {
+      "task_prefix": "REVIEW",
+      "additional_prefixes": ["QUALITY"],
+      "responsibility": "Code review (REVIEW-*) + Spec quality validation (QUALITY-*)",
+      "message_types": ["review_result", "quality_result", "fix_required", "error"]
+    },
+    "explorer": {
+      "task_prefix": "EXPLORE",
+      "responsibility": "Code search, pattern discovery, dependency tracing. Service role — on-demand by coordinator",
+      "role_type": "service",
+      "message_types": ["explore_ready", "explore_progress", "task_failed"]
+    },
+    "architect": {
+      "task_prefix": "ARCH",
+      "responsibility": "Architecture assessment, tech feasibility, design pattern review. Consulting role — on-demand by coordinator",
+      "role_type": "consulting",
+      "consultation_modes": ["spec-review", "plan-review", "code-review", "consult", "feasibility"],
+      "message_types": ["arch_ready", "arch_concern", "arch_progress", "error"]
+    },
+    "fe-developer": {
+      "task_prefix": "DEV-FE",
+      "responsibility": "Frontend component/page implementation, design token consumption, responsive UI",
+      "role_type": "frontend-pipeline",
+      "message_types": ["dev_fe_complete", "dev_fe_progress", "error"]
+    },
+    "fe-qa": {
+      "task_prefix": "QA-FE",
+      "responsibility": "5-dimension frontend review (quality, a11y, design compliance, UX, pre-delivery), GC loop",
+      "role_type": "frontend-pipeline",
+      "message_types": ["qa_fe_passed", "qa_fe_result", "fix_required", "error"]
+    }
+  },
+
+  "pipelines": {
+    "spec-only": {
+      "description": "Specification pipeline: research → discuss → draft → quality",
+      "task_chain": [
+        "RESEARCH-001",
+        "DISCUSS-001", "DRAFT-001", "DISCUSS-002",
+        "DRAFT-002", "DISCUSS-003", "DRAFT-003", "DISCUSS-004",
+        "DRAFT-004", "DISCUSS-005", "QUALITY-001", "DISCUSS-006"
+      ]
+    },
+    "impl-only": {
+      "description": "Implementation pipeline: plan → implement → test + review",
+      "task_chain": ["PLAN-001", "IMPL-001", "TEST-001", "REVIEW-001"]
+    },
+    "full-lifecycle": {
+      "description": "Full lifecycle: spec pipeline → implementation pipeline",
+      "task_chain": "spec-only + impl-only (PLAN-001 blockedBy DISCUSS-006)"
+    },
+    "fe-only": {
+      "description": "Frontend-only pipeline: plan → frontend dev → frontend QA",
+      "task_chain": ["PLAN-001", "DEV-FE-001", "QA-FE-001"],
+      "gc_loop": { "max_rounds": 2, "convergence": "score >= 8 && critical === 0" }
+    },
+    "fullstack": {
+      "description": "Fullstack pipeline: plan → backend + frontend parallel → test + QA",
+      "task_chain": ["PLAN-001", "IMPL-001||DEV-FE-001", "TEST-001||QA-FE-001", "REVIEW-001"],
+      "sync_points": ["REVIEW-001"]
+    },
+    "full-lifecycle-fe": {
+      "description": "Full lifecycle with frontend: spec → plan → backend + frontend → test + QA",
+      "task_chain": "spec-only + fullstack (PLAN-001 blockedBy DISCUSS-006)"
+    }
+  },
+
+  "frontend_detection": {
+    "keywords": ["component", "page", "UI", "前端", "frontend", "CSS", "HTML", "React", "Vue", "Tailwind", "组件", "页面", "样式", "layout", "responsive", "Svelte", "Next.js", "Nuxt", "shadcn", "设计系统", "design system"],
+    "file_patterns": ["*.tsx", "*.jsx", "*.vue", "*.svelte", "*.css", "*.scss", "*.html"],
+    "routing_rules": {
+      "frontend_only": "All tasks match frontend keywords, no backend/API mentions",
+      "fullstack": "Mix of frontend and backend tasks",
+      "backend_only": "No frontend keywords detected (default impl-only)"
+    }
+  },
+
+  "ui_ux_pro_max": {
+    "skill_name": "ui-ux-pro-max",
+    "install_command": "/plugin install ui-ux-pro-max@ui-ux-pro-max-skill",
+    "invocation": "Skill(skill=\"ui-ux-pro-max\", args=\"...\")",
+    "domains": ["product", "style", "typography", "color", "landing", "chart", "ux", "web"],
+    "stacks": ["html-tailwind", "react", "nextjs", "vue", "svelte", "shadcn", "swiftui", "react-native", "flutter"],
+    "fallback": "llm-general-knowledge",
+    "design_intelligence_chain": ["analyst → design-intelligence.json", "architect → design-tokens.json", "fe-developer → tokens.css", "fe-qa → anti-pattern audit"]
+  },
+
+  "shared_memory": {
+    "file": "shared-memory.json",
+    "schema": {
+      "design_intelligence": "From analyst via ui-ux-pro-max",
+      "design_token_registry": "From architect, consumed by fe-developer/fe-qa",
+      "component_inventory": "From fe-developer, list of implemented components",
+      "style_decisions": "Accumulated design decisions",
+      "qa_history": "From fe-qa, audit trail",
+      "industry_context": "Industry + strictness config"
+    }
+  },
+
+  "collaboration_patterns": ["CP-1", "CP-2", "CP-4", "CP-5", "CP-6", "CP-10"],
+
+  "session_dirs": {
+    "base": ".workflow/.team/TLS-{slug}-{YYYY-MM-DD}/",
+    "spec": "spec/",
+    "discussions": "discussions/",
+    "plan": "plan/",
+    "explorations": "explorations/",
+    "architecture": "architecture/",
+    "analysis": "analysis/",
+    "qa": "qa/",
+    "wisdom": "wisdom/",
+    "messages": ".msg/"
+  }
+}

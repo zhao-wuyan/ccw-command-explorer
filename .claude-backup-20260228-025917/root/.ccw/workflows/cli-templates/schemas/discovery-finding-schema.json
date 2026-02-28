@@ -1,0 +1,219 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "discovery-finding-schema",
+  "title": "Discovery Finding Schema",
+  "description": "Schema for perspective-based issue discovery results",
+  "type": "object",
+  "required": ["perspective", "discovery_id", "analysis_timestamp", "cli_tool_used", "summary", "findings"],
+  "properties": {
+    "perspective": {
+      "type": "string",
+      "enum": ["bug", "ux", "test", "quality", "security", "performance", "maintainability", "best-practices"],
+      "description": "Discovery perspective"
+    },
+    "discovery_id": {
+      "type": "string",
+      "pattern": "^DSC-\\d{8}-\\d{6}$",
+      "description": "Parent discovery session ID"
+    },
+    "analysis_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of analysis"
+    },
+    "cli_tool_used": {
+      "type": "string",
+      "enum": ["gemini", "qwen", "codex"],
+      "description": "CLI tool that performed the analysis"
+    },
+    "model": {
+      "type": "string",
+      "description": "Specific model version used",
+      "examples": ["gemini-2.5-pro", "qwen-max"]
+    },
+    "analysis_duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Analysis duration in milliseconds"
+    },
+    "summary": {
+      "type": "object",
+      "required": ["total_findings"],
+      "properties": {
+        "total_findings": { "type": "integer", "minimum": 0 },
+        "critical": { "type": "integer", "minimum": 0 },
+        "high": { "type": "integer", "minimum": 0 },
+        "medium": { "type": "integer", "minimum": 0 },
+        "low": { "type": "integer", "minimum": 0 },
+        "files_analyzed": { "type": "integer", "minimum": 0 }
+      },
+      "description": "Summary statistics (FLAT structure, NOT nested)"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "perspective", "priority", "category", "description", "file", "line"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^dsc-[a-z]+-\\d{3}-[a-f0-9]{8}$",
+            "description": "Unique finding ID: dsc-{perspective}-{seq}-{uuid8}",
+            "examples": ["dsc-bug-001-a1b2c3d4"]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 200,
+            "description": "Concise finding title"
+          },
+          "perspective": {
+            "type": "string",
+            "enum": ["bug", "ux", "test", "quality", "security", "performance", "maintainability", "best-practices"]
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low"],
+            "description": "Priority level (lowercase only)"
+          },
+          "category": {
+            "type": "string",
+            "description": "Perspective-specific category",
+            "examples": ["null-check", "edge-case", "missing-test", "complexity", "injection"]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 20,
+            "description": "Detailed description of the finding"
+          },
+          "file": {
+            "type": "string",
+            "description": "File path relative to project root"
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Line number of the finding"
+          },
+          "snippet": {
+            "type": "string",
+            "description": "Relevant code snippet"
+          },
+          "suggested_issue": {
+            "type": "object",
+            "required": ["title", "type", "priority"],
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "Suggested issue title for export"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["bug", "feature", "enhancement", "refactor", "test", "docs"],
+                "description": "Issue type"
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5,
+                "description": "Priority 1-5 (1=critical, 5=low)"
+              },
+              "tags": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Suggested tags for the issue"
+              }
+            },
+            "description": "Pre-filled issue suggestion for export"
+          },
+          "external_reference": {
+            "type": ["object", "null"],
+            "properties": {
+              "source": { "type": "string" },
+              "url": { "type": "string", "format": "uri" },
+              "relevance": { "type": "string" }
+            },
+            "description": "External reference from Exa research (if applicable)"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Confidence score 0.0-1.0"
+          },
+          "impact": {
+            "type": "string",
+            "description": "Description of potential impact"
+          },
+          "recommendation": {
+            "type": "string",
+            "description": "Specific recommendation to address the finding"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Additional metadata (CWE ID, OWASP category, etc.)"
+          }
+        }
+      },
+      "description": "Array of discovered findings"
+    },
+    "cross_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "finding_id": { "type": "string" },
+          "related_perspectives": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "reason": { "type": "string" }
+        }
+      },
+      "description": "Cross-references to findings in other perspectives"
+    }
+  },
+  "examples": [
+    {
+      "perspective": "bug",
+      "discovery_id": "DSC-20250128-143022",
+      "analysis_timestamp": "2025-01-28T14:35:00Z",
+      "cli_tool_used": "gemini",
+      "model": "gemini-2.5-pro",
+      "analysis_duration_ms": 45000,
+      "summary": {
+        "total_findings": 8,
+        "critical": 1,
+        "high": 2,
+        "medium": 3,
+        "low": 2,
+        "files_analyzed": 5
+      },
+      "findings": [
+        {
+          "id": "dsc-bug-001-a1b2c3d4",
+          "title": "Missing null check in user validation",
+          "perspective": "bug",
+          "priority": "high",
+          "category": "null-check",
+          "description": "User object is accessed without null check after database query, which may fail if user doesn't exist",
+          "file": "src/auth/validator.ts",
+          "line": 45,
+          "snippet": "const user = await db.findUser(id);\nreturn user.email;  // user may be null",
+          "suggested_issue": {
+            "title": "Add null check in user validation",
+            "type": "bug",
+            "priority": 2,
+            "tags": ["bug", "auth"]
+          },
+          "external_reference": null,
+          "confidence": 0.85,
+          "impact": "Runtime error when user not found",
+          "recommendation": "Add null check: if (!user) throw new NotFoundError('User not found');"
+        }
+      ],
+      "cross_references": []
+    }
+  ]
+}

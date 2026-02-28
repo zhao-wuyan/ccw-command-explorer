@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "discovery-state-schema",
+  "title": "Discovery State Schema (Merged)",
+  "description": "Unified schema for issue discovery session (state + progress merged)",
+  "type": "object",
+  "required": ["discovery_id", "target_pattern", "phase", "created_at"],
+  "properties": {
+    "discovery_id": {
+      "type": "string",
+      "description": "Unique discovery session ID",
+      "pattern": "^DSC-\\d{8}-\\d{6}$",
+      "examples": ["DSC-20250128-143022"]
+    },
+    "target_pattern": {
+      "type": "string",
+      "description": "File/directory pattern being analyzed",
+      "examples": ["src/auth/**", "codex-lens/**/*.py"]
+    },
+    "phase": {
+      "type": "string",
+      "enum": ["initialization", "parallel", "aggregation", "complete"],
+      "description": "Current execution phase"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "target": {
+      "type": "object",
+      "description": "Target module information",
+      "properties": {
+        "files_count": {
+          "type": "object",
+          "properties": {
+            "source": { "type": "integer" },
+            "tests": { "type": "integer" },
+            "total": { "type": "integer" }
+          }
+        },
+        "project": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "version": { "type": "string" }
+          }
+        }
+      }
+    },
+    "perspectives": {
+      "type": "array",
+      "description": "Perspective analysis status (merged from progress)",
+      "items": {
+        "type": "object",
+        "required": ["name", "status"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": ["bug", "ux", "test", "quality", "security", "performance", "maintainability", "best-practices"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "failed"]
+          },
+          "findings": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "external_research": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "completed": { "type": "boolean", "default": false }
+      }
+    },
+    "results": {
+      "type": "object",
+      "description": "Aggregated results (final phase)",
+      "properties": {
+        "total_findings": { "type": "integer", "minimum": 0 },
+        "issues_generated": { "type": "integer", "minimum": 0 },
+        "priority_distribution": {
+          "type": "object",
+          "properties": {
+            "critical": { "type": "integer" },
+            "high": { "type": "integer" },
+            "medium": { "type": "integer" },
+            "low": { "type": "integer" }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "discovery_id": "DSC-20251228-182237",
+      "target_pattern": "codex-lens/**/*.py",
+      "phase": "complete",
+      "created_at": "2025-12-28T18:22:37+08:00",
+      "updated_at": "2025-12-28T18:35:00+08:00",
+      "target": {
+        "files_count": { "source": 48, "tests": 44, "total": 93 },
+        "project": { "name": "codex-lens", "version": "0.1.0" }
+      },
+      "perspectives": [
+        { "name": "bug", "status": "completed", "findings": 15 },
+        { "name": "test", "status": "completed", "findings": 11 },
+        { "name": "quality", "status": "completed", "findings": 12 }
+      ],
+      "external_research": { "enabled": false, "completed": false },
+      "results": {
+        "total_findings": 37,
+        "issues_generated": 15,
+        "priority_distribution": { "critical": 4, "high": 13, "medium": 16, "low": 6 }
+      }
+    }
+  ]
+}

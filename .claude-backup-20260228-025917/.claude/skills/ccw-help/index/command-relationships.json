@@ -1,0 +1,15 @@
+{
+  "workflow:session:start": {
+    "next_steps": [],
+    "related": [
+      "workflow:session:list",
+      "workflow:session:resume"
+    ]
+  },
+  "workflow:session:resume": {
+    "alternatives": [],
+    "related": [
+      "workflow:session:list"
+    ]
+  }
+}

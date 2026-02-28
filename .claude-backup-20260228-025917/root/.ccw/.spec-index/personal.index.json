@@ -1,0 +1,35 @@
+{
+  "dimension": "personal",
+  "entries": [
+    {
+      "title": "Personal Coding Style",
+      "file": ".ccw/personal/coding-style.md",
+      "dimension": "personal",
+      "category": "general",
+      "keywords": [
+        "style",
+        "preference"
+      ],
+      "readMode": "optional",
+      "priority": "medium",
+      "scope": "project",
+      "contentLength": 402
+    },
+    {
+      "title": "Tool Preferences",
+      "file": ".ccw/personal/tool-preferences.md",
+      "dimension": "personal",
+      "category": "general",
+      "keywords": [
+        "tool",
+        "cli",
+        "editor"
+      ],
+      "readMode": "optional",
+      "priority": "low",
+      "scope": "project",
+      "contentLength": 197
+    }
+  ],
+  "built_at": "2026-02-26T16:11:46.281Z"
+}

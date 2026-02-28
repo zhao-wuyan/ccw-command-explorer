@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Debug Log Entry Schema",
+  "description": "NDJSON log entry for hypothesis-driven debugging workflow",
+  "type": "object",
+  "required": [
+    "sessionId",
+    "runId",
+    "hypothesisId",
+    "location",
+    "message",
+    "data",
+    "timestamp"
+  ],
+  "properties": {
+    "sessionId": {
+      "type": "string",
+      "pattern": "^DBG-[a-z0-9-]+-\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Debug session identifier (e.g., 'DBG-stack-length-not-found-2025-12-18')"
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^run-\\d+$",
+      "description": "Reproduction run number (e.g., 'run-1', 'run-2')"
+    },
+    "hypothesisId": {
+      "type": "string",
+      "pattern": "^H\\d+$",
+      "description": "Hypothesis identifier being tested (e.g., 'H1', 'H2')"
+    },
+    "location": {
+      "type": "string",
+      "description": "Code location in format 'file:function:line' or 'file:line'"
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable description of what's being logged"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Captured values for hypothesis validation",
+      "properties": {
+        "keys_sample": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Sample of dictionary/object keys (first 30)"
+        },
+        "value": {
+          "description": "Captured value (any type)"
+        },
+        "expected_value": {
+          "description": "Expected value for comparison"
+        },
+        "actual_type": {
+          "type": "string",
+          "description": "Actual type of captured value"
+        },
+        "count": {
+          "type": "integer",
+          "description": "Count of items (for arrays/collections)"
+        },
+        "is_null": {
+          "type": "boolean",
+          "description": "Whether value is null/None"
+        },
+        "is_empty": {
+          "type": "boolean",
+          "description": "Whether collection is empty"
+        },
+        "comparison_result": {
+          "type": "string",
+          "enum": ["match", "mismatch", "partial_match"],
+          "description": "Result of value comparison"
+        }
+      }
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Unix timestamp in milliseconds"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["debug", "info", "warning", "error"],
+      "default": "info",
+      "description": "Log severity level"
+    },
+    "stack_trace": {
+      "type": "string",
+      "description": "Stack trace if capturing exception context"
+    },
+    "parent_entry_id": {
+      "type": "string",
+      "description": "Reference to parent log entry for nested contexts"
+    }
+  },
+  "examples": [
+    {
+      "sessionId": "DBG-stack-length-not-found-2025-12-18",
+      "runId": "run-1",
+      "hypothesisId": "H1",
+      "location": "rmxprt_api/core/rmxprt_parameter.py:sync_from_machine:642",
+      "message": "Inspect stator keys from machine.to_dict and compare Stack Length vs Length",
+      "data": {
+        "keys_sample": ["Length", "Outer Diameter", "Inner Diameter", "Slot"],
+        "stack_length_value": "未找到",
+        "length_value": "120mm",
+        "comparison_result": "mismatch"
+      },
+      "timestamp": 1734523456789
+    },
+    {
+      "sessionId": "DBG-registered-zero-2025-12-18",
+      "runId": "run-1",
+      "hypothesisId": "H2",
+      "location": "rmxprt_api/utils/param_core.py:update_variables_from_result_model:670",
+      "message": "Check result parameters count and sample keys",
+      "data": {
+        "count": 0,
+        "is_empty": true,
+        "sections_parsed": ["Stator", "Rotor", "General"],
+        "expected_count": 145
+      },
+      "timestamp": 1734523457123
+    }
+  ]
+}

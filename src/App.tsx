@@ -9,9 +9,9 @@ import {
 } from 'lucide-react';
 import {
   COMMANDS, CATEGORIES, TIMELINE, WORKFLOW_LEVELS, GRANDMA_COMMANDS,
-  DEPRECATED_COMMANDS, STATS, COLORS, CLI_CONFIG
+  DEPRECATED_COMMANDS, STATS, COLORS, CLI_CONFIG, EXPERIENCE_GUIDE
 } from './data/commands';
-import type { Command, CommandCategory, TimelineItem, CLIType } from './data/commands';
+import type { Command, CommandCategory, TimelineItem, CLIType, ExperienceTip } from './data/commands';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { ALL_CASES, CASES_BY_LEVEL, LEVEL_CONFIG } from './data/cases';
@@ -1057,6 +1057,122 @@ const CasesSection = ({
   );
 };
 
+// 经验指南卡片组件
+const ExperienceCard = ({ 
+  tip, 
+  categoryColor,
+  onCommandClick 
+}: { 
+  tip: ExperienceTip; 
+  categoryColor: string;
+  onCommandClick: (cmd: string) => void;
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      whileHover={{ scale: 1.02, y: -2 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      style={{
+        backgroundColor: isHovered ? 'rgba(255,255,255,0.08)' : COLORS.cardBg,
+        borderRadius: 12,
+        padding: '16px 20px',
+        border: `1px solid ${isHovered ? categoryColor + '60' : COLORS.cardBorder}`,
+        cursor: 'default',
+        transition: 'all 0.2s ease',
+      }}
+    >
+      <h4 style={{ fontSize: 16, color: COLORS.text, margin: '0 0 8px 0' }}>{tip.title}</h4>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{tip.scenario}</p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {tip.commands.map((cmd, i) => (
+          <code
+            key={i}
+            onClick={() => onCommandClick(cmd)}
+            style={{
+              fontSize: 12,
+              color: categoryColor,
+              backgroundColor: categoryColor + '15',
+              padding: '4px 10px',
+              borderRadius: 4,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = categoryColor + '30';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = categoryColor + '15';
+            }}
+          >
+            {cmd}
+          </code>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// 经验指南区域组件
+const ExperienceSection = ({ 
+  onCommandClick 
+}: { 
+  onCommandClick: (cmd: string) => void;
+}) => {
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <h2 style={{ fontSize: 28, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <TipIcon size={28} style={{ color: COLORS.accent1 }} />
+        经验指南
+      </h2>
+      <p style={{ color: COLORS.textMuted, marginBottom: 24, fontSize: 15 }}>
+        点击命令可查看详情 - 来自实战经验的命令选择建议
+      </p>
+
+      {EXPERIENCE_GUIDE.map((category) => (
+        <motion.div
+          key={category.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ marginBottom: 30 }}
+        >
+          <h3
+            style={{
+              fontSize: 20,
+              marginBottom: 16,
+              color: category.color,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span>{category.emoji}</span>
+            {category.title}
+            <span style={{ fontSize: 14, color: COLORS.textDim }}>({category.tips.length})</span>
+          </h3>
+          <div className="commands-grid">
+            <AnimatePresence mode="popLayout">
+              {category.tips.map((tip) => (
+                <ExperienceCard
+                  key={tip.id}
+                  tip={tip}
+                  categoryColor={category.color}
+                  onCommandClick={onCommandClick}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
 // 版本详情弹窗
 const VersionDetailModal = ({ version, onClose }: { version: TimelineItem; onClose: () => void }) => {
   return (
@@ -1214,13 +1330,14 @@ const VersionDetailModal = ({ version, onClose }: { version: TimelineItem; onClo
 };
 
 // Tab 类型定义
-type TabType = 'overview' | 'commands' | 'cases' | 'install';
+type TabType = 'overview' | 'commands' | 'cases' | 'install' | 'experience';
 
 // Tab 配置
 const TABS: { key: TabType; label: string; icon: React.ReactNode; desc: string }[] = [
   { key: 'overview', label: '概览', icon: <Home size={18} />, desc: '成长地图、工作流、快速入门' },
   { key: 'commands', label: '命令', icon: <Terminal size={18} />, desc: '所有命令列表' },
   { key: 'cases', label: '案例', icon: <Play size={18} />, desc: '使用案例和场景' },
+  { key: 'experience', label: '经验', icon: <TipIcon size={18} />, desc: '场景决策指南' },
   { key: 'install', label: '安装', icon: <Wrench size={18} />, desc: '安装和使用指南' },
 ];
 
@@ -1482,6 +1599,26 @@ function App() {
                 selectedLevel={selectedCaseLevel}
                 onSelectLevel={setSelectedCaseLevel}
                 onSelectCase={setSelectedCase}
+              />
+            </motion.div>
+          )}
+
+          {/* 经验指南 Tab */}
+          {activeTab === 'experience' && (
+            <motion.div
+              key="experience"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ExperienceSection
+                onCommandClick={(cmd) => {
+                  const command = COMMANDS.find(c => c.cmd === cmd);
+                  if (command) {
+                    setSelectedCommand(command);
+                  }
+                }}
               />
             </motion.div>
           )}

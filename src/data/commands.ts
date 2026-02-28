@@ -239,7 +239,7 @@ export const TIMELINE: TimelineItem[] = [
     date: '2026-02',
     version: 'v6.3',
     title: '4级工作流',
-    desc: '当前最新版本',
+    desc: 'UI设计工作流上线',
     color: COLORS.accent3,
     commands: 75,
     detail: {
@@ -257,6 +257,37 @@ export const TIMELINE: TimelineItem[] = [
         '/workflow:test-cycle-execute'
       ],
       usage: '4级工作流让复杂度选择更清晰！还有全新的 UI 设计工作流！'
+    }
+  },
+  {
+    date: '2026-02',
+    version: 'v6.4',
+    title: '团队协作架构',
+    desc: '当前最新版本',
+    color: COLORS.accent5,
+    commands: 95,
+    detail: {
+      version: 'v6.4',
+      highlights: [
+        'Team-Worker 代理架构',
+        '动态角色生成',
+        '团队生命周期多版本演进',
+        'CSV Wave 规划执行'
+      ],
+      newCommands: [
+        '/team-coordinate',
+        '/team-coordinate-v2',
+        '/team-lifecycle-v3',
+        '/team-lifecycle-v4',
+        '/team-lifecycle-v5',
+        '/team-executor',
+        '/team-executor-v2',
+        '/team-iterdev',
+        '/team-roadmap-dev',
+        '/workflow:wave-plan',
+        '/csv-wave-pipeline'
+      ],
+      usage: '团队协作架构大升级！新增 team-worker 代理架构，支持动态角色生成和多种生命周期版本选择！'
     }
   },
 ];
@@ -799,13 +830,45 @@ export const COMMANDS: Command[] = [
     detail: '持续迭代：架构师设计→开发者写代码→测试→审查，发现质量问题自动退回修改。跨Sprint累积经验，越做越聪明',
     usage: '需要多轮迭代、持续交付的功能开发'
   },
-  { cmd: '/team-lifecycle', desc: '团队全生命周期 - spec/impl/test', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
-    detail: '8个角色分工：分析师调研→作家写文档→评论员挑刺→规划师拆任务→执行者写代码→测试→审查。三种模式：只写文档/只写代码/完整流程',
+  { cmd: '/team-lifecycle', desc: '团队全生命周期 - spec/impl/test (默认使用最新版本)', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
+    detail: '完整团队工作流：需求分析→文档编写→规划→执行→测试→审查。自动使用最新的 team-lifecycle 版本',
     usage: '大项目从0到1，需要完整的需求→设计→开发→测试流程'
   },
-  { cmd: '/team-lifecycle-v2', desc: '团队全生命周期 v2 - 增强版', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.3',
-    detail: '比v1增强：12个角色(含前端专用)、支持前端流水线、跨角色知识积累(wisdom)、会话暂停恢复。自动检测前端任务，切换到前端专用流程',
-    usage: '大型全栈项目，需要前后端并行开发，或者需要暂停/恢复工作'
+  { cmd: '/team-lifecycle-v3', desc: '团队全生命周期 v3 - 8角色协作', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.3',
+    detail: '8个角色：协调者、分析师、作家、评论员、规划师、执行者、测试员、审查员。支持按需加载架构师和前端开发',
+    usage: '需要完整生命周期的团队协作开发'
+  },
+  { cmd: '/team-lifecycle-v4', desc: '团队全生命周期 v4 - 优化节拍版', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '相比v3优化：内联讨论子代理、共享探索工具，规格阶段节拍从12降到6。更高效的团队协作',
+    usage: '需要更高效的生命周期开发流程'
+  },
+  { cmd: '/team-lifecycle-v5', desc: '团队全生命周期 v5 - 团队工作代理架构', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '最新架构：基于 team-worker 代理，所有工作角色共享单一代理定义，从角色规格文件加载 Phase 2-4。更灵活的角色定制',
+    usage: '需要最新的团队协作架构，支持自定义角色'
+  },
+  { cmd: '/team-coordinate', desc: '通用团队协调 - 动态角色生成', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '通用协调技能：分析任务→生成角色→派发→执行→交付。只有协调者是内置的，所有工作角色在运行时动态生成',
+    usage: '需要灵活的团队协作，角色根据任务动态生成'
+  },
+  { cmd: '/team-coordinate-v2', desc: '通用团队协调 v2 - 角色规格文件架构', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
+    detail: 'v2架构：使用团队工作代理和角色规格文件。工作角色作为轻量级规格文件生成，通过 team-worker 代理派发',
+    usage: '需要基于角色规格的团队协调'
+  },
+  { cmd: '/team-executor', desc: '轻量级会话执行 - 恢复并执行会话', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '轻量执行：加载现有 team-coordinate 会话→协调状态→派发工作代理→执行→交付。无分析、无角色生成，纯执行',
+    usage: '已有规划好的会话，需要恢复执行'
+  },
+  { cmd: '/team-executor-v2', desc: '轻量级会话执行 v2 - team-worker 代理', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
+    detail: 'v2架构：恢复 team-coordinate-v2 会话，通过 team-worker 代理执行。需要提供会话路径',
+    usage: '已有 v2 架构的会话，需要恢复执行'
+  },
+  { cmd: '/team-iterdev', desc: '团队迭代开发 - 生成器-批评者循环', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '迭代开发团队：开发者-审查者循环（最多3轮）、任务账本实时进度、共享内存跨冲刺学习、动态流水线选择增量交付',
+    usage: '需要迭代式开发，持续改进代码质量'
+  },
+  { cmd: '/team-roadmap-dev', desc: '路线图驱动开发 - 分阶段执行流水线', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
+    detail: '路线图驱动：协调者与用户讨论路线图→派发分阶段执行流水线（规划→执行→验证）。支持暂停/恢复',
+    usage: '需要根据路线图分阶段开发'
   },
   { cmd: '/team-planex', desc: '团队 PlanEx - 规划执行流水线', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
     detail: '2人流水线：规划师边规划边派任务，执行者边收任务边写代码。规划师不等待执行完成，直接规划下一批，效率翻倍',
@@ -861,15 +924,15 @@ export const COMMANDS: Command[] = [
     detail: '自动化测试循环：①自动生成测试用例；②执行测试；③发现失败自动修复；④再测试。直到全部通过',
     usage: '功能写完了需要补测试、测试失败想自动修复'
   },
+  { cmd: '/workflow:wave-plan', desc: 'CSV Wave 规划执行 - 分批探索和执行', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
+    detail: 'CSV Wave流程：①分解需求生成 explore.csv；②波浪式探索代码；③综合发现生成 tasks.csv；④波浪式执行任务。支持上下文传播',
+    usage: '需要批量探索和执行任务，保持上下文连贯'
+  },
 
   // ==================== Codex 预检清单 (Prompts) ====================
   { cmd: '/prompts:prep-plan', desc: 'workflow:plan 预检清单 - 环境验证、任务质量评估、执行配置', status: 'stable', category: 'prompt', cli: 'codex', addedInVersion: 'v6.2',
     detail: '执行前检查5项：①项目环境OK吗；②目标清晰吗；③成功标准明确吗；④范围边界清楚吗；⑤有什么限制。避免执行到一半发现问题',
     usage: '重要任务执行前想确保万无一失'
-  },
-  { cmd: '/prompts:prep-loop', desc: 'ccw-loop 预检清单 - 发现上游任务、验证转换', status: 'stable', category: 'prompt', cli: 'codex', addedInVersion: 'v6.2',
-    detail: '自动找之前的规划文件：查找brainstorm、分析会话等产生的任务，验证格式正确，转换成可执行格式',
-    usage: '之前做过规划，现在想执行那些任务'
   },
   { cmd: '/prompts:prep-cycle', desc: 'parallel-dev-cycle 预检清单 - 0→1→100 迭代配置', status: 'stable', category: 'prompt', cli: 'codex', addedInVersion: 'v6.2',
     detail: '配置两阶段迭代：0→1先做出能跑的原型；1→100打磨到生产质量(测试90%通过、代码覆盖80%)',
@@ -968,6 +1031,14 @@ export const COMMANDS: Command[] = [
     detail: '自动扫描清理：废弃的工作流会话、临时文件、死代码、过时的依赖。让项目保持整洁',
     usage: '项目做久了文件变多，想清理不需要的东西'
   },
+  { cmd: '/csv-wave-pipeline', desc: 'CSV 波浪流水线 - 批量任务执行', status: 'new', category: 'skill', cli: 'codex', addedInVersion: 'v6.4',
+    detail: 'CSV驱动批量执行：读取 tasks.csv，分波次执行任务，支持进度保存和断点续传',
+    usage: '有任务清单(CSV格式)需要批量执行'
+  },
+  { cmd: '/team-lifecycle', desc: '团队全生命周期 - Codex 版', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
+    detail: '完整生命周期：需求分析→架构设计→开发→测试→审查。包含多个模板文件(产品简介、PRD、架构文档、Epic模板)',
+    usage: 'Codex 环境下的完整项目开发流程'
+  },
 
 ];
 
@@ -987,6 +1058,8 @@ export const GRANDMA_COMMANDS = [
 // ============================================
 export const DEPRECATED_COMMANDS = [
   { old: '/task:replan', newCmd: '/workflow:replan', reason: '命令整合' },
+  { old: '/prompts:prep-loop', newCmd: null, reason: '预检清单文件已移除' },
+  { old: '/team-lifecycle-v2', newCmd: '/team-lifecycle-v5', reason: '已升级到 v5 版本，使用 team-worker 代理架构' },
 ];
 
 // ============================================
@@ -996,7 +1069,7 @@ export const STATS = {
   totalCommands: COMMANDS.length,
   claudeCount: COMMANDS.filter(c => c.cli === 'claude').length,
   codexCount: COMMANDS.filter(c => c.cli === 'codex').length,
-  latestVersion: 'v6.3',  // 当前最新版本
+  latestVersion: 'v6.4',  // 当前最新版本
   categories: Object.keys(CATEGORIES).length,
 };
 

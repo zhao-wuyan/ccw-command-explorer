@@ -261,9 +261,42 @@ export const TIMELINE: TimelineItem[] = [
   },
   {
     date: '2026-02',
+    version: 'v7.0.5',
+    title: '重大架构更新',
+    desc: '当前最新版本',
+    color: COLORS.accent5,
+    commands: 120,
+    detail: {
+      version: 'v7.0.5',
+      highlights: [
+        'Team 架构全面升级 v2-v5',
+        '统一工作流引擎',
+        'Terminal Dashboard 重新设计',
+        '队列调度系统',
+        'Skill Hub 社区技能',
+        '前端部署修复'
+      ],
+      newCommands: [
+        '/team-lifecycle-v5',
+        '/team-coordinate-v2',
+        '/team-executor-v2',
+        '/team-ultra-analyze',
+        '/team-brainstorm',
+        '/team-quality-assurance',
+        '/workflow:session:*',
+        '/workflow:tdd-*',
+        '/workflow:test-fix-*',
+        '/skill-generator',
+        '/issue-manage'
+      ],
+      usage: '重大架构更新！Team 系统重构、工作流引擎改革、Dashboard 升级、队列调度系统，335+ 提交，442+ 新功能！'
+    }
+  },
+  {
+    date: '2026-02',
     version: 'v6.4',
     title: '团队协作架构',
-    desc: '当前最新版本',
+    desc: '上一个版本',
     color: COLORS.accent5,
     commands: 95,
     detail: {
@@ -882,7 +915,7 @@ export const STATS = {
   totalCommands: COMMANDS.length,
   claudeCount: COMMANDS.filter(c => c.cli === 'claude').length,
   codexCount: COMMANDS.filter(c => c.cli === 'codex').length,
-  latestVersion: 'v6.4',  // 当前最新版本
+  latestVersion: 'v7.0.5',  // 当前最新版本
   categories: Object.keys(CATEGORIES).length,
 };
 

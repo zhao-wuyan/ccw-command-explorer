@@ -14,31 +14,24 @@ CCW Command Explorer 是一个交互式的命令文档网站，帮助开发者�
 - 学习实际使用案例
 - 了解项目的版本演进历史
 
-## v6.4 新版本亮点
+## v7.0.5 新版本亮点
 
-### Team-Worker 代理架构
+### Team 架构全面升级
 
-全新的团队协作架构，所有工作角色共享单一代理定义，从角色规格文件加载执行逻辑：
+全新设计的团队协作架构 v2-v5，支持动态角色生成和 team-worker 代理架构：
 
-- **动态角色生成**：根据任务分析自动生成所需角色
-- **轻量级角色规格**：角色定义存储为 Markdown 文件，易于定制
-- **跨版本兼容**：支持 v3/v4/v5 多种生命周期版本选择
+- **Team Lifecycle v5**：最新生命周期版本，team-worker 架构
+- **Team Coordinate v2**：增强协调能力，team-executor-v2 改进代理编排
+- **12+ 团队技能更新**：所有团队技能迁移到 v3 设计模式
+- **新增团队技能**：team-roadmap-dev、team-tech-debt、team-iterdev、team-frontend、team-uidesign
 
-### 新增团队协作命令
+### 统一工作流引擎
 
-| 命令 | 说明 |
-|------|------|
-| `/team-coordinate` | 通用团队协调，动态角色生成 |
-| `/team-lifecycle-v5` | 最新生命周期版本，team-worker 架构 |
-| `/team-iterdev` | 迭代开发团队，生成器-批评者循环 |
-| `/team-roadmap-dev` | 路线图驱动开发，分阶段执行流水线 |
+重构的工作流系统，提供更灵活的规划和执行能力：
 
-### CSV Wave 规划执行
-
-全新的批量任务执行模式，支持上下文传播和断点续传：
-
-- `/workflow:wave-plan` - Claude Code 版本
-- `/csv-wave-pipeline` - Codex 版本
+- **Lightweight Interactive Planning**：内存执行模式，代码探索
+- **Session 管理命令**：智能会话发现、恢复、同步、完成、固化
+- **新工作流命令**：workflow:analyze-with-file、workflow:brainstorm-with-file、workflow:debug-with-file 等
 
 ## 功能特性
 

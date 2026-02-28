@@ -298,39 +298,39 @@ export const TIMELINE: TimelineItem[] = [
 export const WORKFLOW_LEVELS: WorkflowLevel[] = [
   {
     level: 1,
-    name: '/workflow:lite-fix',
+    name: '/review-code',
     emoji: '⚡',
-    desc: '超简单！直接修bug',
-    useCase: '改配置、换变量名、修简单bug',
+    desc: '超简单！代码审查和快速修复',
+    useCase: '代码质量检查、简单bug修复',
     color: COLORS.secondary,
-    commands: ['/workflow:lite-fix']
+    commands: ['/review-code']
   },
   {
     level: 2,
-    name: '/workflow:lite-plan /lite-execute',
+    name: '/workflow-lite-plan',
     emoji: '📝',
-    desc: '稍微复杂，先想再做',
+    desc: '稍微复杂，快速规划执行',
     useCase: '做一个功能、修一个问题',
     color: COLORS.primary,
-    commands: ['/workflow:lite-plan', '/workflow:lite-execute']
+    commands: ['/workflow-lite-plan', '/workflow-execute']
   },
   {
     level: 3,
-    name: '/workflow:plan /tdd-plan',
+    name: '/workflow-plan / workflow-tdd',
     emoji: '🏗️',
     desc: '比较复杂，需要完整规划',
     useCase: '改多个文件、多模块开发',
     color: COLORS.warning,
-    commands: ['/workflow:plan', '/workflow:tdd-plan', '/workflow:execute', '/workflow:replan']
+    commands: ['/workflow-plan', '/workflow-tdd', '/workflow-execute']
   },
   {
     level: 4,
-    name: '/workflow:brainstorm:*',
+    name: '/team-* 系列命令',
     emoji: '🎯',
-    desc: '大项目！多个角色头脑风暴',
-    useCase: '新功能设计、架构决策',
+    desc: '大项目！多角色团队协作',
+    useCase: '新功能设计、架构决策、复杂开发',
     color: COLORS.accent1,
-    commands: ['/workflow:brainstorm:auto-parallel', '/workflow:brainstorm:artifacts', '/workflow:brainstorm:synthesis']
+    commands: ['/team-lifecycle-v5', '/team-coordinate', '/team-planex']
   },
 ];
 

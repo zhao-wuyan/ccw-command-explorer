@@ -261,13 +261,13 @@ export const TIMELINE: TimelineItem[] = [
   },
   {
     date: '2026-02',
-    version: 'v7.0.5',
+    version: 'v7.0',
     title: '重大架构更新',
     desc: '当前最新版本',
     color: COLORS.accent5,
     commands: 120,
     detail: {
-      version: 'v7.0.5',
+      version: 'v7.0',
       highlights: [
         'Team 架构全面升级 v2-v5',
         '统一工作流引擎',
@@ -884,7 +884,7 @@ export const STATS = {
   totalCommands: COMMANDS.length,
   claudeCount: COMMANDS.filter(c => c.cli === 'claude').length,
   codexCount: COMMANDS.filter(c => c.cli === 'codex').length,
-  latestVersion: 'v7.0.5',  // 当前最新版本
+  latestVersion: 'v7.0',  // 当前最新版本
   categories: Object.keys(CATEGORIES).length,
 };
 

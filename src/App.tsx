@@ -1161,6 +1161,7 @@ const ExperienceCard = ({
   onCommandClick: (cmd: string) => void;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const isSequence = tip.commandType === 'sequence';
 
   return (
     <motion.div
@@ -1180,33 +1181,79 @@ const ExperienceCard = ({
         transition: 'all 0.2s ease',
       }}
     >
-      <h4 style={{ fontSize: 16, color: COLORS.text, margin: '0 0 8px 0' }}>{tip.title}</h4>
-      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{tip.scenario}</p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {tip.commands.map((cmd, i) => (
-          <code
-            key={i}
-            onClick={() => onCommandClick(cmd)}
-            style={{
-              fontSize: 12,
-              color: categoryColor,
-              backgroundColor: categoryColor + '15',
-              padding: '4px 10px',
-              borderRadius: 4,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = categoryColor + '30';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = categoryColor + '15';
-            }}
-          >
-            {cmd}
-          </code>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <h4 style={{ fontSize: 16, color: COLORS.text, margin: 0 }}>{tip.title}</h4>
+        <span
+          style={{
+            fontSize: 11,
+            padding: '2px 8px',
+            borderRadius: 4,
+            backgroundColor: isSequence ? COLORS.accent1 + '20' : COLORS.secondary + '20',
+            color: isSequence ? COLORS.accent1 : COLORS.secondary,
+          }}
+        >
+          {isSequence ? '按顺序执行' : '多选一'}
+        </span>
       </div>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{tip.scenario}</p>
+      
+      {isSequence ? (
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+          {tip.commands.map((cmd, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <code
+                onClick={() => onCommandClick(cmd)}
+                style={{
+                  fontSize: 12,
+                  color: categoryColor,
+                  backgroundColor: categoryColor + '15',
+                  padding: '4px 10px',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = categoryColor + '30';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = categoryColor + '15';
+                }}
+              >
+                {cmd}
+              </code>
+              {i < tip.commands.length - 1 && (
+                <span style={{ color: COLORS.textDim, fontSize: 14 }}>→</span>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {tip.commands.map((cmd, i) => (
+            <code
+              key={i}
+              onClick={() => onCommandClick(cmd)}
+              style={{
+                fontSize: 12,
+                color: categoryColor,
+                backgroundColor: categoryColor + '15',
+                padding: '4px 10px',
+                borderRadius: 4,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = categoryColor + '30';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = categoryColor + '15';
+              }}
+            >
+              {cmd}
+            </code>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 };

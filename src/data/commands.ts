@@ -314,7 +314,7 @@ export const WORKFLOW_LEVELS: WorkflowLevel[] = [
     desc: '稍微复杂，快速规划执行',
     useCase: '做一个功能、修一个问题',
     color: COLORS.primary,
-    commands: ['/workflow-lite-plan', '/workflow-execute']
+    commands: ['/workflow-lite-plan']
   },
   {
     level: 3,

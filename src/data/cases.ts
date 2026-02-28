@@ -207,7 +207,7 @@ export const LEVEL_3_CASES: Case[] = [
       { role: 'system', content: '┌─ TDD 合规报告 ───────────────────────────────┐\n│ ✅ 4 个循环全部遵循 Red-Green-Refactor       │\n│ ✅ 测试覆盖率: 92%                           │\n│ ✅ 所有测试通过                              │\n│ ⚠️ 建议: Cycle 3 重构步骤可进一步优化        │\n└──────────────────────────────────────────────┘', type: 'response' },
       { role: 'system', content: '✅ TDD 开发完成！\n\n📁 新增文件:\n   - src/payment/IPaymentGateway.ts\n   - src/payment/WechatPaymentGateway.ts\n   - src/payment/AlipayGateway.ts\n   - src/payment/PaymentFactory.ts\n   - tests/payment/*.test.ts (4个测试文件)\n\n📊 测试覆盖率: 92%', type: 'result', highlight: true },
     ],
-    tips: ['严格遵循 Red-Green-Refactor 循环', 'tdd-verify 确保 TDD 过程规范'],
+    tips: ['严格遵循 Red-Green-Refactor 循环', '/workflow-tdd 支持验证 TDD 合规性'],
   },
   {
     id: 'L3-002',
@@ -234,7 +234,7 @@ export const LEVEL_3_CASES: Case[] = [
       { role: 'system', content: '🤖 执行中...\n\n  ☑️ [1/6] 创建 OAuth2 数据模型... ✓\n  ☑️ [2/6] 实现 GitHub OAuth Provider... ✓\n  ☑️ [3/6] 实现 Google OAuth Provider... ✓\n  ☑️ [4/6] 创建 Session 管理... ✓\n  ☑️ [5/6] 添加 Refresh Token 逻辑... ✓\n  ☑️ [6/6] 集成到现有认证系统... ✓', type: 'response' },
       { role: 'system', content: '✅ 开发完成！\n\n📁 新增/修改文件: 12 个\n📝 IMPL_PLAN.md: .workflow/sessions/WFS-OAuth2/IMPL_PLAN.md\n\n💡 建议:\n   - 运行 /review-cycle 审查代码\n   - 运行 /workflow-test-fix 生成测试', type: 'result', highlight: true },
     ],
-    tips: ['5阶段规划生成详细文档', 'plan-verify 检测潜在冲突', '适合复杂功能、多模块开发'],
+    tips: ['5阶段规划生成详细文档', '/workflow-plan --verify 检测潜在冲突', '适合复杂功能、多模块开发'],
   },
   {
     id: 'L3-003',

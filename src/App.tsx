@@ -635,7 +635,7 @@ const DeprecatedCommands = () => (
 );
 
 // 案例步骤渲染组件
-const CaseStepItem = ({ step, index }: { step: CaseStep; index: number }) => {
+const CaseStepItem = ({ step, index, onCommandClick }: { step: CaseStep; index: number; onCommandClick?: (cmd: string) => void }) => {
   const getStyle = () => {
     switch (step.type) {
       case 'command':
@@ -679,6 +679,52 @@ const CaseStepItem = ({ step, index }: { step: CaseStep; index: number }) => {
 
   const style = getStyle();
 
+  const renderContentWithCommands = (content: string) => {
+    const commandRegex = /(\/[\w:\-]+)/g;
+    const parts = content.split(commandRegex);
+    
+    return parts.map((part, i) => {
+      if (part.match(commandRegex)) {
+        const cmd = COMMANDS.find(c => c.cmd === part);
+        return (
+          <code
+            key={i}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (cmd && onCommandClick) {
+                onCommandClick(part);
+              }
+            }}
+            style={{
+              fontSize: 'inherit',
+              backgroundColor: cmd ? 'rgba(99,102,241,0.2)' : 'transparent',
+              padding: cmd ? '2px 6px' : 0,
+              borderRadius: 4,
+              color: cmd ? COLORS.primary : 'inherit',
+              cursor: cmd ? 'pointer' : 'inherit',
+              fontFamily: 'monospace',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              if (cmd) {
+                e.currentTarget.style.backgroundColor = 'rgba(99,102,241,0.3)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (cmd) {
+                e.currentTarget.style.backgroundColor = 'rgba(99,102,241,0.2)';
+              }
+            }}
+            title={cmd ? `${cmd.desc} - 点击查看详情` : undefined}
+          >
+            {part}
+          </code>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
@@ -716,7 +762,7 @@ const CaseStepItem = ({ step, index }: { step: CaseStep; index: number }) => {
               lineHeight: 1.6,
             }}
           >
-            {step.content}
+            {onCommandClick ? renderContentWithCommands(step.content) : step.content}
           </pre>
         </div>
       </div>
@@ -725,7 +771,7 @@ const CaseStepItem = ({ step, index }: { step: CaseStep; index: number }) => {
 };
 
 // 案例卡片组件
-const CaseCard = ({ caseItem, onClick }: { caseItem: Case; onClick: () => void }) => {
+const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onClick: () => void; onCommandClick?: (cmd: string) => void }) => {
   // 获取 level 配置的 key
   const getLevelKey = (level: CaseLevel): string => {
     if (typeof level === 'number') {
@@ -776,27 +822,49 @@ const CaseCard = ({ caseItem, onClick }: { caseItem: Case; onClick: () => void }
       <p style={{ fontSize: 14, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{caseItem.scenario}</p>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {caseItem.commands.map((cmd, i) => (
-          <code
-            key={i}
-            style={{
-              fontSize: 12,
-              backgroundColor: 'rgba(0,0,0,0.3)',
-              padding: '4px 10px',
-              borderRadius: 4,
-              color: COLORS.secondary,
-            }}
-          >
-            {cmd.cmd}
-          </code>
-        ))}
+        {caseItem.commands.map((cmd, i) => {
+          const cmdInfo = COMMANDS.find(c => c.cmd === cmd.cmd);
+          return (
+            <code
+              key={i}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (cmdInfo && onCommandClick) {
+                  onCommandClick(cmd.cmd);
+                }
+              }}
+              style={{
+                fontSize: 12,
+                backgroundColor: cmdInfo ? levelConfig.color + '15' : 'rgba(0,0,0,0.3)',
+                padding: '4px 10px',
+                borderRadius: 4,
+                color: cmdInfo ? levelConfig.color : COLORS.secondary,
+                cursor: cmdInfo ? 'pointer' : 'default',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                if (cmdInfo) {
+                  e.currentTarget.style.backgroundColor = levelConfig.color + '30';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (cmdInfo) {
+                  e.currentTarget.style.backgroundColor = levelConfig.color + '15';
+                }
+              }}
+              title={cmdInfo ? `${cmd.desc} - 点击查看详情` : undefined}
+            >
+              {cmd.cmd}
+            </code>
+          );
+        })}
       </div>
     </motion.div>
   );
 };
 
 // 案例详情弹窗
-const CaseDetail = ({ caseItem, onClose }: { caseItem: Case; onClose: () => void }) => {
+const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onClose: () => void; onCommandClick?: (cmd: string) => void }) => {
   // 获取 level 配置的 key
   const getLevelKey = (level: CaseLevel): string => {
     if (typeof level === 'number') {
@@ -897,25 +965,47 @@ const CaseDetail = ({ caseItem, onClose }: { caseItem: Case; onClose: () => void
             marginBottom: 20,
           }}
         >
-          <h4 style={{ color: COLORS.text, marginBottom: 12, fontSize: 14 }}>🔧 涉及命令</h4>
+          <h4 style={{ color: COLORS.text, marginBottom: 12, fontSize: 14 }}>🔧 涉及命令 <span style={{ color: COLORS.textDim, fontWeight: 'normal' }}>(点击查看详情)</span></h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {caseItem.commands.map((cmd, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <code
-                  style={{
-                    fontSize: 14,
-                    backgroundColor: levelConfig.color + '20',
-                    padding: '6px 12px',
-                    borderRadius: 6,
-                    color: levelConfig.color,
-                    minWidth: 200,
-                  }}
-                >
-                  {cmd.cmd}
-                </code>
-                <span style={{ fontSize: 14, color: COLORS.textMuted }}>{cmd.desc}</span>
-              </div>
-            ))}
+            {caseItem.commands.map((cmd, i) => {
+              const cmdInfo = COMMANDS.find(c => c.cmd === cmd.cmd);
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <code
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (cmdInfo && onCommandClick) {
+                        onCommandClick(cmd.cmd);
+                      }
+                    }}
+                    style={{
+                      fontSize: 14,
+                      backgroundColor: cmdInfo ? levelConfig.color + '20' : 'rgba(0,0,0,0.3)',
+                      padding: '6px 12px',
+                      borderRadius: 6,
+                      color: cmdInfo ? levelConfig.color : COLORS.textMuted,
+                      minWidth: 200,
+                      cursor: cmdInfo ? 'pointer' : 'default',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (cmdInfo) {
+                        e.currentTarget.style.backgroundColor = levelConfig.color + '35';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (cmdInfo) {
+                        e.currentTarget.style.backgroundColor = levelConfig.color + '20';
+                      }
+                    }}
+                    title={cmdInfo ? '点击查看命令详情' : undefined}
+                  >
+                    {cmd.cmd}
+                  </code>
+                  <span style={{ fontSize: 14, color: COLORS.textMuted }}>{cmd.desc}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -930,11 +1020,11 @@ const CaseDetail = ({ caseItem, onClose }: { caseItem: Case; onClose: () => void
         >
           <h4 style={{ color: COLORS.text, marginBottom: 16, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
             <Play size={16} style={{ color: levelConfig.color }} />
-            交互过程
+            交互过程 <span style={{ color: COLORS.textDim, fontWeight: 'normal' }}>(命令可点击)</span>
           </h4>
           <div>
             {caseItem.steps.map((step, i) => (
-              <CaseStepItem key={i} step={step} index={i} />
+              <CaseStepItem key={i} step={step} index={i} onCommandClick={onCommandClick} />
             ))}
           </div>
         </div>
@@ -971,11 +1061,13 @@ const CaseDetail = ({ caseItem, onClose }: { caseItem: Case; onClose: () => void
 const CasesSection = ({
   selectedLevel,
   onSelectLevel,
-  onSelectCase
+  onSelectCase,
+  onCommandClick
 }: {
   selectedLevel: string;
   onSelectLevel: (level: string) => void;
   onSelectCase: (caseItem: Case) => void;
+  onCommandClick?: (cmd: string) => void;
 }) => {
   const filteredCases = selectedLevel === 'all'
     ? ALL_CASES
@@ -1049,6 +1141,7 @@ const CasesSection = ({
               key={caseItem.id}
               caseItem={caseItem}
               onClick={() => onSelectCase(caseItem)}
+              onCommandClick={onCommandClick}
             />
           ))}
         </AnimatePresence>
@@ -1599,6 +1692,12 @@ function App() {
                 selectedLevel={selectedCaseLevel}
                 onSelectLevel={setSelectedCaseLevel}
                 onSelectCase={setSelectedCase}
+                onCommandClick={(cmd) => {
+                  const command = COMMANDS.find(c => c.cmd === cmd);
+                  if (command) {
+                    setSelectedCommand(command);
+                  }
+                }}
               />
             </motion.div>
           )}

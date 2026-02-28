@@ -868,9 +868,9 @@ export const DEPRECATED_COMMANDS = [
   { old: '/memory:workflow-skill-memory', newCmd: '/memory-capture', reason: '命令整合到统一记忆捕获' },
   { old: '/issue-resolve', newCmd: '/issue-manage', reason: '命令整合到统一 Issue 管理' },
   { old: '/issue-execute', newCmd: '/issue:execute', reason: '命令迁移到 Claude Code' },
-  { old: '/issue-devpipeline', newCmd: '/team-issue', reason: '命令升级为团队 skill' },
+  { old: '/issue-devpipeline', newCmd: '/team-planex', reason: '命令升级为团队 plan-and-execute 流水线' },
   { old: '/plan-converter', newCmd: '/workflow-execute', reason: '命令整合到工作流执行' },
-  { old: '/req-plan-with-file', newCmd: '/workflow:req-plan-with-file', reason: '命令迁移到 Claude Code' },
+  { old: '/req-plan-with-file', newCmd: '/workflow-lite-plan', reason: '命令迁移到轻量级规划执行流程' },
   { old: '/workflow-req-plan', newCmd: '/workflow-plan', reason: '命令整合' },
   { old: '/team-lifecycle-v2', newCmd: '/team-lifecycle-v5', reason: '已升级到 v5 版本' },
 ];

@@ -614,10 +614,6 @@ export const COMMANDS: Command[] = [
     detail: '5个角色分工协作：分析师(需求+设计智能)→架构师(设计令牌)→开发者(写代码)→QA(审查)。内置行业设计知识库，自动匹配最佳UI方案',
     usage: '开发前端页面或组件，需要从需求到上线全流程时'
   },
-  { cmd: '/team-iterdev', desc: '团队迭代开发 - 多角色协作', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
-    detail: '持续迭代：架构师设计→开发者写代码→测试→审查，发现质量问题自动退回修改。跨Sprint累积经验，越做越聪明',
-    usage: '需要多轮迭代、持续交付的功能开发'
-  },
   { cmd: '/team-lifecycle', desc: '团队全生命周期 - spec/impl/test (默认使用最新版本)', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
     detail: '完整团队工作流：需求分析→文档编写→规划→执行→测试→审查。自动使用最新的 team-lifecycle 版本',
     usage: '大项目从0到1，需要完整的需求→设计→开发→测试流程'
@@ -685,8 +681,12 @@ export const COMMANDS: Command[] = [
 
   // 工作流技能
   { cmd: '/workflow-execute', desc: '工作流执行技能 - 协调 Agent 执行', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '按依赖顺序执行任务：A任务完成后才执行B任务，支持并行执行无依赖的任务，实时显示进度',
+    detail: '按依赖顺序执行任务：A任务完成后才执行B任务，支持并行执行无依赖的任务、实时显示进度',
     usage: '有规划好的任务列表需要执行时'
+  },
+  { cmd: '/workflow-lite-plan', desc: '轻量规划技能 - 快速内存规划', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
+    detail: '快速规划：在内存中分析→拆解任务→排列顺序。不生成文件，适合中小任务，规划完立即执行',
+    usage: '任务不复杂，想快速规划然后马上开始做'
   },
   { cmd: '/workflow-multi-cli-plan', desc: '多 CLI 规划 - 并行 CLI 执行', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
     detail: '同时用多个AI分析：Gemini、Codex、Claude同时分析同一问题，然后交叉验证，综合得出最佳方案',
@@ -705,8 +705,12 @@ export const COMMANDS: Command[] = [
     usage: '想用专业方式开发、确保代码可测试、追求高质量代码'
   },
   { cmd: '/workflow-test-fix', desc: '测试修复技能 - 生成+执行+修复', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.0',
-    detail: '自动化测试循环：①自动生成测试用例；②执行测试；③发现失败自动修复；④再测试。直到全部通过',
+    detail: '自动化测试循环：①自动生成测试用例；②执行测试;③发现失败自动修复;④再测试。直到全部通过',
     usage: '功能写完了需要补测试、测试失败想自动修复'
+  },
+  { cmd: '/workflow-wave-plan', desc: 'CSV Wave 规划执行 - 分批探索和执行', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
+    detail: 'CSV Wave流程：①分解需求生成 explore.csv;②波浪式探索代码;③综合发现生成 tasks.csv;④波浪式执行任务。支持上下文传播',
+    usage: '需要批量探索和执行任务，保持上下文连贯'
   },
   { cmd: '/workflow-wave-plan', desc: 'CSV Wave 规划执行 - 分批探索和执行', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
     detail: 'CSV Wave流程：①分解需求生成 explore.csv；②波浪式探索代码；③综合发现生成 tasks.csv；④波浪式执行任务。支持上下文传播',
@@ -811,8 +815,7 @@ export const COMMANDS: Command[] = [
 // ============================================
 export const GRANDMA_COMMANDS = [
   { cmd: '/ccw', desc: '有事找 ccw！它会帮你选命令', emoji: '🌟', scenario: '不知道用什么命令时', category: '万能入口', detail: '这是万能入口！不知道用什么命令就说这个，AI会帮你分析意图，自动选择最合适的命令。' },
-  { cmd: '/workflow:lite-fix', desc: '修 bug 用这个', emoji: '🔧', scenario: '发现问题需要修复', category: 'Level 1-2', detail: '发现bug了？用这个命令，AI会帮你诊断问题原因，然后自动修复。' },
-  { cmd: '/workflow:lite-plan', desc: '先想清楚再做', emoji: '📝', scenario: '做一个功能、改几个文件', category: 'Level 2', detail: '做一个功能、修一个bug，先用这个规划一下，看看要做什么再开始。' },
+  { cmd: '/review-code', desc: '代码审查用这个', emoji: '👀', scenario: '代码写完需要检查', category: '代码审查', detail: '7维度代码审查：生成详细报告，方便查看问题。' },
   { cmd: '/ccw-help', desc: '忘了命令？查一下！', emoji: '❓', scenario: '想看看有哪些命令', category: '帮助系统', detail: '想看看有哪些命令可用？这个命令会列出所有命令，还能搜索。' },
   { cmd: '/issue:discover', desc: '发现问题！', emoji: '🔍', scenario: '想找出项目的问题', category: 'Issue管理', detail: '多角度发现项目潜在问题，代码质量、安全问题、性能问题等。' },
 ];
@@ -837,9 +840,9 @@ export const DEPRECATED_COMMANDS = [
   { old: '/workflow:status', newCmd: null, reason: '命令已移除' },
   { old: '/workflow:review', newCmd: '/review-code', reason: '命令升级为 skill' },
   { old: '/workflow:plan-verify', newCmd: null, reason: '命令已移除' },
-  { old: '/workflow:lite-plan', newCmd: '/workflow-lite-plan', reason: '命令升级为 skill' },
-  { old: '/workflow:lite-execute', newCmd: null, reason: '命令已移除' },
-  { old: '/workflow:lite-fix', newCmd: null, reason: '命令已移除' },
+  { old: '/workflow:lite-plan', newCmd: '/workflow-lite-plan', reason: '命令升级为 skill，请使用新版本' },
+  { old: '/workflow:lite-execute', newCmd: null, reason: '命令已移除，请使用 /workflow-execute' },
+  { old: '/workflow:lite-fix', newCmd: null, reason: '命令已移除，请使用 /review-code 进行代码审查' },
   { old: '/workflow:tdd-plan', newCmd: '/workflow-tdd', reason: '命令升级为 skill' },
   { old: '/workflow:tdd-verify', newCmd: '/workflow-tdd', reason: '命令升级为 skill' },
   { old: '/workflow:test-gen', newCmd: '/workflow-test-fix', reason: '命令整合' },

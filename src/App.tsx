@@ -978,15 +978,7 @@ const CaseStepItem = ({ step, index, onCommandClick }: { step: CaseStep; index: 
 
 // 案例卡片组件
 const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onClick: () => void; onCommandClick?: (cmd: string) => void }) => {
-  // 获取 level 配置的 key
-  const getLevelKey = (level: CaseLevel): string => {
-    if (typeof level === 'number') {
-      return `Level ${level}`;
-    }
-    // 首字母大写匹配 LEVEL_CONFIG 的 key
-    return level.charAt(0).toUpperCase() + level.slice(1);
-  };
-  const levelConfig = LEVEL_CONFIG[getLevelKey(caseItem.level)] || LEVEL_CONFIG['Level 2'];
+  const levelConfig = LEVEL_CONFIG[String(caseItem.level)] || LEVEL_CONFIG['2'];
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -1071,14 +1063,7 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
 
 // 案例详情弹窗
 const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onClose: () => void; onCommandClick?: (cmd: string) => void }) => {
-  // 获取 level 配置的 key
-  const getLevelKey = (level: CaseLevel): string => {
-    if (typeof level === 'number') {
-      return `Level ${level}`;
-    }
-    return level.charAt(0).toUpperCase() + level.slice(1);
-  };
-  const levelConfig = LEVEL_CONFIG[getLevelKey(caseItem.level)] || LEVEL_CONFIG['Level 2'];
+  const levelConfig = LEVEL_CONFIG[String(caseItem.level)] || LEVEL_CONFIG['2'];
 
   return (
     <motion.div

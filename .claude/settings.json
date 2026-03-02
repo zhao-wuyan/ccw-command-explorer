@@ -1,0 +1,46 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e 'const fs=require(\"fs\");const p=JSON.parse(fs.readFileSync(0,\"utf8\")||\"{}\");const file=(p.tool_input&&p.tool_input.file_path)||\"\";if(/workflow-session\\.json$|session-metadata\\.json$/.test(file)){try{const content=fs.readFileSync(file,\"utf8\");const data=JSON.parse(content);const cp=require(\"child_process\");const payload=JSON.stringify({type:\"SESSION_STATE_CHANGED\",file:file,sessionId:data.session_id||\"\",status:data.status||\"unknown\",project:process.env.CLAUDE_PROJECT_DIR||process.cwd(),timestamp:Date.now()});cp.spawnSync(\"curl\",[\"-s\",\"-X\",\"POST\",\"-H\",\"Content-Type: application/json\",\"-d\",payload,\"http://localhost:3456/api/hook\"],{stdio:\"inherit\",shell:true})}catch(e){}}'"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__ccw-tools__core_memory",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e 'const cp=require(\"child_process\");const payload=JSON.stringify({type:\"MEMORY_V2_STATUS_UPDATED\",project:process.env.CLAUDE_PROJECT_DIR||process.cwd(),timestamp:Date.now()});cp.spawnSync(\"curl\",[\"-s\",\"-X\",\"POST\",\"-H\",\"Content-Type: application/json\",\"-d\",payload,\"http://localhost:3456/api/hook\"],{stdio:\"inherit\",shell:true})'"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e 'const cp=require(\"child_process\");const payload=JSON.stringify({type:\"SESSION_CREATED\",timestamp:Date.now(),project:process.env.CLAUDE_PROJECT_DIR||process.cwd()});cp.spawnSync(\"curl\",[\"-s\",\"-X\",\"POST\",\"-H\",\"Content-Type: application/json\",\"-d\",payload,\"http://localhost:3456/api/hook\"],{stdio:\"inherit\",shell:true})'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ccw memory consolidate --threshold 50"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "dimension": "personal",
+  "entries": [
+    {
+      "title": "Personal Coding Style",
+      "file": "../../../Users/xinghe_zwy/.ccw/personal/coding-style.md",
+      "dimension": "personal",
+      "category": "general",
+      "keywords": [
+        "style",
+        "preference"
+      ],
+      "readMode": "optional",
+      "priority": "medium",
+      "scope": "global",
+      "contentLength": 402
+    },
+    {
+      "title": "Tool Preferences",
+      "file": "../../../Users/xinghe_zwy/.ccw/personal/tool-preferences.md",
+      "dimension": "personal",
+      "category": "general",
+      "keywords": [
+        "tool",
+        "cli",
+        "editor"
+      ],
+      "readMode": "optional",
+      "priority": "low",
+      "scope": "global",
+      "contentLength": 197
+    }
+  ],
+  "built_at": "2026-03-02T06:33:42.754Z"
+}

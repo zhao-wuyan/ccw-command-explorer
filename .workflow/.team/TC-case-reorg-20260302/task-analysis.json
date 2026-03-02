@@ -1,0 +1,110 @@
+{
+  "task_description": "重新梳理所有案例，现有案例有点乱，需要清理一遍，且有些案例是错误的演示，请你再梳理一遍，生成新的案例。重点关照最新更新的一些命令和技能，需要有claude code和codex协作的场景案例。",
+  "capabilities": [
+    {
+      "name": "analyst",
+      "prefix": "ANALYSIS",
+      "responsibility_type": "read-only",
+      "tasks": [
+        {
+          "id": "ANALYSIS-001",
+          "goal": "全面审计现有 39 个案例，识别错误/过时/不准确的演示，并梳理最新命令特性（v7.0 IDAW、team-coordinate-v2、workflow-wave-plan 等），输出案例问题清单和新案例需求规格",
+          "steps": [
+            "step 1: 逐一审查 LEVEL_1_CASES 到 MULTI_CLI_CASES 所有案例，标注问题（错误演示、命令不存在、步骤不合理等）",
+            "step 2: 梳理最新 v7.0 命令（IDAW 系列、workflow-tdd-plan、wave-plan-pipeline）和 v6.4 命令的实际使用方式",
+            "step 3: 定义 claude code + codex 协作场景规格，确定需要新增哪些 multi-cli 案例",
+            "step 4: 输出问题报告和新案例规格文档"
+          ],
+          "key_files": [
+            "src/data/cases.ts",
+            "src/data/commands.ts"
+          ],
+          "upstream_artifacts": [],
+          "success_criteria": "输出完整的案例审计报告 + 新案例需求规格，包含每个案例的评级（保留/修改/删除）和新案例的详细设计",
+          "constraints": "只分析，不修改代码；重点关注 v7.0 和 v6.4 新命令；明确标注 claude+codex 协作场景的设计思路"
+        }
+      ],
+      "artifacts": ["case-audit-report.md"]
+    },
+    {
+      "name": "developer",
+      "prefix": "IMPL",
+      "responsibility_type": "code-gen",
+      "tasks": [
+        {
+          "id": "IMPL-001",
+          "goal": "根据审计报告，重写 src/data/cases.ts，清除问题案例，修正保留案例，新增高质量案例（尤其是 claude code + codex 协作场景、IDAW 流程、team-coordinate-v2 场景等）",
+          "steps": [
+            "step 1: 读取审计报告，按指导删除/修改现有问题案例",
+            "step 2: 修正保留案例中的不准确步骤和命令描述",
+            "step 3: 新增 IDAW 工作流案例（包含 add/run/status 完整流程）",
+            "step 4: 新增 claude code + codex 双 CLI 协作场景（至少 3 个新案例）",
+            "step 5: 新增 team-coordinate-v2 动态角色生成场景",
+            "step 6: 新增 workflow-wave-plan、workflow-tdd-plan 等最新命令的案例",
+            "step 7: 验证所有案例引用的命令在 commands.ts 中存在"
+          ],
+          "key_files": [
+            "src/data/cases.ts",
+            "src/data/commands.ts",
+            ".workflow/.team/TC-case-reorg-20260302/artifacts/case-audit-report.md"
+          ],
+          "upstream_artifacts": ["case-audit-report.md"],
+          "success_criteria": "完整重写的 cases.ts，所有案例准确、命令正确，包含 claude+codex 协作场景，覆盖最新 v7.0/v6.4 命令",
+          "constraints": "严格遵循现有 TypeScript 类型定义；命令名称必须与 commands.ts 中完全一致；案例步骤要真实可操作"
+        }
+      ],
+      "artifacts": ["implementation-summary.md"]
+    }
+  ],
+  "dependency_graph": {
+    "ANALYSIS-001": [],
+    "IMPL-001": ["ANALYSIS-001"]
+  },
+  "roles": [
+    {
+      "name": "analyst",
+      "prefix": "ANALYSIS",
+      "responsibility_type": "read-only",
+      "task_count": 1,
+      "inner_loop": false,
+      "role_spec_metadata": {
+        "subagents": ["explore"],
+        "pattern_hint": "analysis",
+        "output_type": "artifact",
+        "message_types": {
+          "success": "analysis_complete",
+          "error": "error"
+        }
+      }
+    },
+    {
+      "name": "developer",
+      "prefix": "IMPL",
+      "responsibility_type": "code-gen",
+      "task_count": 1,
+      "inner_loop": false,
+      "role_spec_metadata": {
+        "subagents": [],
+        "pattern_hint": "code",
+        "output_type": "codebase",
+        "message_types": {
+          "success": "impl_complete",
+          "error": "error"
+        }
+      }
+    }
+  ],
+  "complexity": {
+    "capability_count": 2,
+    "cross_domain_factor": false,
+    "parallel_tracks": 0,
+    "serial_depth": 2,
+    "total_score": 4,
+    "level": "medium"
+  },
+  "needs_research": false,
+  "artifacts": [
+    { "name": "case-audit-report.md", "producer": "analyst", "path": "artifacts/case-audit-report.md" },
+    { "name": "implementation-summary.md", "producer": "developer", "path": "artifacts/implementation-summary.md" }
+  ]
+}

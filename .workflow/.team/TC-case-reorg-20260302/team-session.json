@@ -1,0 +1,34 @@
+{
+  "session_id": "TC-case-reorg-20260302",
+  "task_description": "重新梳理所有案例，现有案例有点乱，需要清理一遍，且有些案例是错误的演示，请你再梳理一遍，生成新的案例。重点关照最新更新的一些命令和技能，需要有claude code和codex协作的场景案例。",
+  "status": "active",
+  "team_name": "TC-case-reorg-20260302",
+  "roles": [
+    {
+      "name": "analyst",
+      "prefix": "ANALYSIS",
+      "responsibility_type": "read-only",
+      "inner_loop": false,
+      "role_spec": "role-specs/analyst.md"
+    },
+    {
+      "name": "developer",
+      "prefix": "IMPL",
+      "responsibility_type": "code-gen",
+      "inner_loop": false,
+      "role_spec": "role-specs/developer.md"
+    }
+  ],
+  "pipeline": {
+    "dependency_graph": {
+      "ANALYSIS-001": [],
+      "IMPL-001": ["ANALYSIS-001"]
+    },
+    "tasks_total": 2,
+    "tasks_completed": 0
+  },
+  "active_workers": [],
+  "completed_tasks": [],
+  "completion_action": "interactive",
+  "created_at": "2026-03-02T00:00:00Z"
+}

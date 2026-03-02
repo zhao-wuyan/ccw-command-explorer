@@ -18,7 +18,7 @@ When `--yes` or `-y`: Auto-categorize and add guideline without confirmation.
 
 ## Overview
 
-Crystallizes ephemeral session context (insights, decisions, constraints) into permanent project guidelines stored in `.workflow/specs/*.md`. This ensures valuable learnings persist across sessions and inform future planning.
+Crystallizes ephemeral session context (insights, decisions, constraints) into permanent project guidelines stored in `.ccw/specs/*.md`. This ensures valuable learnings persist across sessions and inform future planning.
 
 ## Use Cases
 
@@ -112,8 +112,10 @@ ELSE (convention/constraint/learning):
 
 ### Step 1: Ensure Guidelines File Exists
 
+**Uses .ccw/specs/ directory (same as frontend/backend spec-index-builder)**
+
 ```bash
-bash(test -f .workflow/specs/coding-conventions.md && echo "EXISTS" || echo "NOT_FOUND")
+bash(test -f .ccw/specs/coding-conventions.md && echo "EXISTS" || echo "NOT_FOUND")
 ```
 
 **If NOT_FOUND**, initialize spec system:
@@ -187,9 +189,10 @@ function buildEntry(rule, type, category, sessionId) {
 
 ```javascript
 // Map type+category to target spec file
+// Uses .ccw/specs/ directory (same as frontend/backend spec-index-builder)
 const specFileMap = {
-  convention: '.workflow/specs/coding-conventions.md',
-  constraint: '.workflow/specs/architecture-constraints.md'
+  convention: '.ccw/specs/coding-conventions.md',
+  constraint: '.ccw/specs/architecture-constraints.md'
 }
 
 if (type === 'convention' || type === 'constraint') {
@@ -204,7 +207,8 @@ if (type === 'convention' || type === 'constraint') {
   }
 } else if (type === 'learning') {
   // Learnings go to coding-conventions.md as a special section
-  const targetFile = '.workflow/specs/coding-conventions.md'
+  // Uses .ccw/specs/ directory (same as frontend/backend spec-index-builder)
+  const targetFile = '.ccw/specs/coding-conventions.md'
   const existing = Read(targetFile)
   const entry = buildEntry(rule, type, category, sessionId)
   const learningText = `- [learning/${category}] ${entry.insight} (${entry.date})`
@@ -228,7 +232,7 @@ Type: ${type}
 Category: ${category}
 Rule: "${rule}"
 
-Location: .workflow/specs/*.md -> ${type}s.${category}
+Location: .ccw/specs/*.md -> ${type}s.${category}
 
 Total ${type}s in ${category}: ${count}
 ```
@@ -373,13 +377,9 @@ AskUserQuestion({
 /workflow:session:solidify "Use async/await instead of callbacks" --type convention --category coding_style
 ```
 
-Result in `specs/*.md`:
-```json
-{
-  "conventions": {
-    "coding_style": ["Use async/await instead of callbacks"]
-  }
-}
+Result in `.ccw/specs/coding-conventions.md`:
+```markdown
+- [coding_style] Use async/await instead of callbacks
 ```
 
 ### Add an Architectural Constraint
@@ -387,13 +387,9 @@ Result in `specs/*.md`:
 /workflow:session:solidify "No direct DB access from controllers" --type constraint --category architecture
 ```
 
-Result:
-```json
-{
-  "constraints": {
-    "architecture": ["No direct DB access from controllers"]
-  }
-}
+Result in `.ccw/specs/architecture-constraints.md`:
+```markdown
+- [architecture] No direct DB access from controllers
 ```
 
 ### Capture a Session Learning
@@ -401,18 +397,9 @@ Result:
 /workflow:session:solidify "Cache invalidation requires event sourcing for consistency" --type learning
 ```
 
-Result:
-```json
-{
-  "learnings": [
-    {
-      "date": "2024-12-28",
-      "session_id": "WFS-auth-feature",
-      "insight": "Cache invalidation requires event sourcing for consistency",
-      "category": "architecture"
-    }
-  ]
-}
+Result in `.ccw/specs/coding-conventions.md`:
+```markdown
+- [learning/architecture] Cache invalidation requires event sourcing for consistency (2024-12-28)
 ```
 
 ### Compress Recent Memories

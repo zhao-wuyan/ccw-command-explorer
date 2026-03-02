@@ -373,7 +373,7 @@ try {
 ## Related Skills
 
 **Prerequisite Skills**:
-- `workflow:plan` or `workflow:execute` - Complete implementation (Session Mode)
+- `workflow-plan` or `workflow-execute` - Complete implementation (Session Mode)
 - None for Prompt Mode
 
 **Phase 1 Agents** (used by phases/01-test-fix-gen.md via spawn_agent):

@@ -11,7 +11,7 @@ examples:
 # Workflow Init Command (/workflow:init)
 
 ## Overview
-Initialize `.workflow/project-tech.json` and `.workflow/specs/*.md` with comprehensive project understanding by delegating analysis to **cli-explore-agent**.
+Initialize `.workflow/project-tech.json` and `.ccw/specs/*.md` with comprehensive project understanding by delegating analysis to **cli-explore-agent**.
 
 **Dual File System**:
 - `project-tech.json`: Auto-generated technical analysis (stack, architecture, components)
@@ -58,7 +58,7 @@ Analysis Flow:
 
 Output:
    ├─ .workflow/project-tech.json (+ .backup if regenerate)
-   └─ .workflow/specs/*.md (scaffold or configured, unless --skip-specs)
+   └─ .ccw/specs/*.md (scaffold or configured, unless --skip-specs)
 ```
 
 ## Implementation
@@ -75,14 +75,14 @@ const skipSpecs = $ARGUMENTS.includes('--skip-specs')
 
 ```bash
 bash(test -f .workflow/project-tech.json && echo "TECH_EXISTS" || echo "TECH_NOT_FOUND")
-bash(test -f .workflow/specs/coding-conventions.md && echo "SPECS_EXISTS" || echo "SPECS_NOT_FOUND")
+bash(test -f .ccw/specs/coding-conventions.md && echo "SPECS_EXISTS" || echo "SPECS_NOT_FOUND")
 ```
 
 **If BOTH_EXIST and no --regenerate**: Exit early
 ```
 Project already initialized:
 - Tech analysis: .workflow/project-tech.json
-- Guidelines: .workflow/specs/*.md
+- Guidelines: .ccw/specs/*.md
 
 Use /workflow:init --regenerate to rebuild tech analysis
 Use /workflow:session:solidify to add guidelines
@@ -171,7 +171,7 @@ Project root: ${projectRoot}
 // Skip spec initialization if --skip-specs flag is provided
 if (!skipSpecs) {
   // Initialize spec system if not already initialized
-  const specsCheck = Bash('test -f .workflow/specs/coding-conventions.md && echo EXISTS || echo NOT_FOUND')
+  const specsCheck = Bash('test -f .ccw/specs/coding-conventions.md && echo EXISTS || echo NOT_FOUND')
   if (specsCheck.includes('NOT_FOUND')) {
     console.log('Initializing spec system...')
     Bash('ccw spec init')
@@ -186,7 +186,7 @@ if (!skipSpecs) {
 
 ```javascript
 const projectTech = JSON.parse(Read('.workflow/project-tech.json'));
-const specsInitialized = !skipSpecs && file_exists('.workflow/specs/coding-conventions.md');
+const specsInitialized = !skipSpecs && file_exists('.ccw/specs/coding-conventions.md');
 
 console.log(`
 Project initialized successfully
@@ -206,7 +206,7 @@ Components: ${projectTech.overview.key_components.length} core modules
 ---
 Files created:
 - Tech analysis: .workflow/project-tech.json
-${!skipSpecs ? `- Specs: .workflow/specs/ ${specsInitialized ? '(initialized)' : ''}` : '- Specs: (skipped via --skip-specs)'}
+${!skipSpecs ? `- Specs: .ccw/specs/ ${specsInitialized ? '(initialized)' : ''}` : '- Specs: (skipped via --skip-specs)'}
 ${regenerate ? '- Backup: .workflow/project-tech.json.backup' : ''}
 `);
 ```
@@ -222,7 +222,7 @@ if (skipSpecs) {
 Next steps:
 - Use /workflow:init-specs to create individual specs
 - Use /workflow:init-guidelines to configure specs interactively
-- Use /workflow:plan to start planning
+- Use /workflow-plan to start planning
 `);
   return;
 }
@@ -260,7 +260,7 @@ Next steps:
 - Use /workflow:init-specs to create individual specs
 - Use /workflow:init-guidelines to configure specs interactively
 - Use ccw spec load to import specs from external sources
-- Use /workflow:plan to start planning
+- Use /workflow-plan to start planning
 `);
   }
 } else {
@@ -271,7 +271,7 @@ Next steps:
 - Use /workflow:init-specs to create additional specs
 - Use /workflow:init-guidelines --reset to reconfigure
 - Use /workflow:session:solidify to add individual rules
-- Use /workflow:plan to start planning
+- Use /workflow-plan to start planning
 `);
 }
 ```

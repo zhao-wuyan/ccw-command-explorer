@@ -273,6 +273,17 @@ const allClarifications = results.flatMap((r, i) =>
 ```javascript
 if (allClarifications.length > 0) {
   for (const clarification of allClarifications) {
+    // Auto mode: use recommended resolution (first option)
+    if (autoYes) {
+      const autoAnswer = clarification.options[0]?.label || 'skip';
+      Task(
+        subagent_type="issue-queue-agent",
+        resume=clarification.agent_id,
+        prompt=`Conflict ${clarification.conflict_id} resolved: ${autoAnswer}`
+      );
+      continue;
+    }
+
     // Present to user via AskUserQuestion
     const answer = AskUserQuestion({
       questions: [{
@@ -345,6 +356,14 @@ ccw issue queue list --brief
 
 **AskUserQuestion:**
 ```javascript
+// Auto mode: merge into existing queue
+if (autoYes) {
+  Bash(`ccw issue queue merge ${newQueueId} --queue ${activeQueueId}`);
+  Bash(`ccw issue queue delete ${newQueueId}`);
+  console.log(`Auto-merged new queue into ${activeQueueId}`);
+  return;
+}
+
 AskUserQuestion({
   questions: [{
     question: "Active queue exists. How would you like to proceed?",

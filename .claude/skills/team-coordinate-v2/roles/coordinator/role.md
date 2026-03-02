@@ -182,13 +182,15 @@ Regardless of complexity score or role count, coordinator MUST:
 
 4. **Call TeamCreate** with team name derived from session ID
 
-5. **Read `specs/role-spec-template.md`** + task-analysis.json
+5. **Read `specs/role-spec-template.md`** for Behavioral Traits + Reference Patterns
 
 6. **For each role in task-analysis.json#roles**:
-   - Fill role-spec template with:
-     - YAML frontmatter: role, prefix, inner_loop, subagents, message_types
-     - Phase 2-4 content from responsibility type reference sections in template
-     - Task-specific instructions from task description
+   - Fill YAML frontmatter: role, prefix, inner_loop, subagents, message_types
+   - **Compose Phase 2-4 content** (NOT copy from template):
+     - Phase 2: Derive input sources and context loading steps from **task description + upstream dependencies**
+     - Phase 3: Describe **execution goal** (WHAT to achieve) from task description — do NOT prescribe specific subagent or tool
+     - Phase 4: Combine **Behavioral Traits** (from template) + **output_type** (from task analysis) to compose verification steps
+     - Reference Patterns may guide phase structure, but task description determines specific content
    - Write generated role-spec to `<session>/role-specs/<role-name>.md`
 
 7. **Register roles** in team-session.json#roles (with `role_spec` path instead of `role_file`)

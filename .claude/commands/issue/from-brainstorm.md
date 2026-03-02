@@ -154,8 +154,8 @@ Phase 6: Bind Solution
    ├─ Update issue status to 'planned'
    └─ Returns: SOL-{issue-id}-{uid}
 
-Phase 7: Next Steps
-   └─ Offer: Form queue | Convert another idea | View details | Done
+Phase 7: Next Steps (skip in auto mode)
+   └─ Auto mode: complete directly | Interactive: Form queue | Convert another | Done
 ```
 
 ## Context Enrichment Logic

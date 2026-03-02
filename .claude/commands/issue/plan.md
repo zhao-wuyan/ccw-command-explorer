@@ -263,6 +263,14 @@ for (let i = 0; i < agentTasks.length; i += MAX_PARALLEL) {
 for (const pending of pendingSelections) {
   if (pending.solutions.length === 0) continue;
 
+  // Auto mode: auto-bind first (highest-ranked) solution
+  if (autoYes) {
+    const solId = pending.solutions[0].id;
+    Bash(`ccw issue bind ${pending.issue_id} ${solId}`);
+    console.log(`✓ ${pending.issue_id}: ${solId} bound (auto)`);
+    continue;
+  }
+
   const options = pending.solutions.slice(0, 4).map(sol => ({
     label: `${sol.id} (${sol.task_count} tasks)`,
     description: sol.description || sol.approach || 'No description'

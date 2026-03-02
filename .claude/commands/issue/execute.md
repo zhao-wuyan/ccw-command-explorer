@@ -152,6 +152,12 @@ if (!QUEUE_ID) {
     return;
   }
 
+  // Auto mode: auto-select if exactly one active queue
+  if (autoYes && activeQueues.length === 1) {
+    QUEUE_ID = activeQueues[0].id;
+    console.log(`Auto-selected queue: ${QUEUE_ID}`);
+  } else {
+
   // Display and prompt user
   console.log('\nAvailable Queues:');
   console.log('ID'.padEnd(22) + 'Status'.padEnd(12) + 'Progress'.padEnd(12) + 'Issues');
@@ -176,6 +182,7 @@ if (!QUEUE_ID) {
   });
 
   QUEUE_ID = answer['Queue'];
+  } // end else (multi-queue prompt)
 }
 
 console.log(`\n## Executing Queue: ${QUEUE_ID}\n`);
@@ -202,6 +209,13 @@ console.log(`
 - Completed: ${dag.completed_count}
 - Parallel in batch 1: ${dag.parallel_batches[0]?.length || 0}
 `);
+
+// Auto mode: use recommended defaults (Codex + Execute + Worktree)
+if (autoYes) {
+  var executor = 'codex';
+  var isDryRun = false;
+  var useWorktree = true;
+} else {
 
 // Interactive selection via AskUserQuestion
 const answer = AskUserQuestion({
@@ -237,9 +251,10 @@ const answer = AskUserQuestion({
   ]
 });
 
-const executor = answer['Executor'].toLowerCase().split(' ')[0];  // codex|gemini|agent
-const isDryRun = answer['Mode'].includes('Dry-run');
-const useWorktree = answer['Worktree'].includes('Yes');
+var executor = answer['Executor'].toLowerCase().split(' ')[0];  // codex|gemini|agent
+var isDryRun = answer['Mode'].includes('Dry-run');
+var useWorktree = answer['Worktree'].includes('Yes');
+} // end else (interactive selection)
 
 // Dry run mode
 if (isDryRun) {
@@ -451,27 +466,33 @@ if (refreshedDag.ready_count > 0) {
 if (useWorktree && refreshedDag.ready_count === 0 && refreshedDag.completed_count === refreshedDag.total) {
   console.log('\n## All Solutions Completed - Worktree Cleanup');
 
-  const answer = AskUserQuestion({
-    questions: [{
-      question: `Queue complete. What to do with worktree branch "${worktreeBranch}"?`,
-      header: 'Merge',
-      multiSelect: false,
-      options: [
-        { label: 'Create PR (Recommended)', description: 'Push branch and create pull request' },
-        { label: 'Merge to main', description: 'Merge all commits and cleanup worktree' },
-        { label: 'Keep branch', description: 'Cleanup worktree, keep branch for manual handling' }
-      ]
-    }]
-  });
+  // Auto mode: Create PR (recommended)
+  if (autoYes) {
+    var mergeAction = 'Create PR';
+  } else {
+    const answer = AskUserQuestion({
+      questions: [{
+        question: `Queue complete. What to do with worktree branch "${worktreeBranch}"?`,
+        header: 'Merge',
+        multiSelect: false,
+        options: [
+          { label: 'Create PR (Recommended)', description: 'Push branch and create pull request' },
+          { label: 'Merge to main', description: 'Merge all commits and cleanup worktree' },
+          { label: 'Keep branch', description: 'Cleanup worktree, keep branch for manual handling' }
+        ]
+      }]
+    });
+    var mergeAction = answer['Merge'];
+  }
 
   const repoRoot = Bash('git rev-parse --show-toplevel').trim();
 
-  if (answer['Merge'].includes('Create PR')) {
+  if (mergeAction.includes('Create PR')) {
     Bash(`git -C "${worktreePath}" push -u origin "${worktreeBranch}"`);
     Bash(`gh pr create --title "Queue ${dag.queue_id}" --body "Issue queue execution - all solutions completed" --head "${worktreeBranch}"`);
     Bash(`git worktree remove "${worktreePath}"`);
     console.log(`PR created for branch: ${worktreeBranch}`);
-  } else if (answer['Merge'].includes('Merge to main')) {
+  } else if (mergeAction.includes('Merge to main')) {
     // Check main is clean
     const mainDirty = Bash('git status --porcelain').trim();
     if (mainDirty) {

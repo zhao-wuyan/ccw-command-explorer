@@ -800,7 +800,7 @@ Offer user follow-up actions based on brainstorming results.
 
 | Option | Purpose | Action |
 |--------|---------|--------|
-| **创建实施计划** | Plan implementation of top idea | Launch `workflow:lite-plan` |
+| **创建实施计划** | Plan implementation of top idea | Launch `workflow-lite-plan` |
 | **创建Issue** | Track top ideas for later | Launch `issue:new` with ideas |
 | **深入分析** | Analyze top idea in detail | Launch `workflow:analyze-with-file` |
 | **导出分享** | Generate shareable report | Create formatted report document |

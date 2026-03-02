@@ -59,7 +59,12 @@ Receive callback from [<role>]
       +- None completed -> STOP
 ```
 
-**Fast-advance awareness**: Check if next task is already `in_progress` (fast-advanced by worker). If yes -> skip spawning, update active_workers.
+**Fast-advance reconciliation**: When processing any callback or resume:
+1. Read recent `fast_advance` messages from team_msg (type="fast_advance")
+2. For each: add spawned successor to `active_workers` if not already present
+3. Check if expected next task is already `in_progress` (fast-advanced)
+4. If yes -> skip spawning (already running)
+5. If no -> normal handleSpawnNext
 
 ---
 
@@ -204,6 +209,13 @@ Detect orphaned in_progress task (no active_worker):
   +- Check creation time: if > 5 min with no progress
   +- Reset to pending -> handleSpawnNext
 ```
+
+### Fast-Advance State Sync
+
+On every coordinator wake (handleCallback, handleResume, handleCheck):
+1. Read team_msg entries with `type="fast_advance"` since last coordinator wake
+2. For each entry: sync `active_workers` with the spawned successor
+3. This ensures coordinator's state reflects fast-advance decisions even before the successor's callback arrives
 
 ### Consensus-Blocked Handling
 

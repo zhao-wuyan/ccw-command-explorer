@@ -534,7 +534,7 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 | Scenario | Recommended Command |
 |----------|-------------------|
 | Strategic planning, need issue tracking | `/workflow:roadmap-with-file` |
-| Quick task breakdown, immediate execution | `/workflow:lite-plan` |
+| Quick task breakdown, immediate execution | `/workflow-lite-plan` |
 | Collaborative multi-agent planning | `/workflow:collaborative-plan-with-file` |
 | Full specification documents | `spec-generator` skill |
 | Code implementation from existing plan | `/workflow:lite-execute` |

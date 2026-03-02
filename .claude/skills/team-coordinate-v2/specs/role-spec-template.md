@@ -63,233 +63,117 @@ message_types:
 | `<placeholder>` notation | Use angle brackets for variable substitution |
 | Reference subagents by name | team-worker resolves invocation from its delegation templates |
 
-## Phase 2-4 Content by Responsibility Type
+## Behavioral Traits
 
-Select the matching section based on `responsibility_type` from task analysis.
+All dynamically generated role-specs MUST embed these traits into Phase 4. Coordinator copies this section verbatim into every generated role-spec as a Phase 4 appendix.
 
-### orchestration
+**Design principle**: Constrain behavioral characteristics (accuracy, feedback, quality gates), NOT specific actions (which tool, which subagent, which path). Tasks are diverse — the coordinator composes task-specific Phase 2-3 instructions, while these traits ensure execution quality regardless of task type.
 
-**Phase 2: Context Assessment**
+### Accuracy — outputs must be verifiable
+
+- Files claimed as **created** → Read to confirm file exists and has content
+- Files claimed as **modified** → Read to confirm content actually changed
+- Analysis claimed as **complete** → artifact file exists in `<session>/artifacts/`
+
+### Feedback Contract — completion report must include evidence
+
+Phase 4 must produce a verification summary with these fields:
+
+| Field | When Required | Content |
+|-------|---------------|---------|
+| `files_produced` | New files created | Path list |
+| `files_modified` | Existing files changed | Path + before/after line count |
+| `artifacts_written` | Always | Paths in `<session>/artifacts/` |
+| `verification_method` | Always | How verified: Read confirm / syntax check / diff |
+
+### Quality Gate — verify before reporting complete
+
+- Phase 4 MUST verify Phase 3's **actual output** (not planned output)
+- Verification fails → retry Phase 3 (max 2 retries)
+- Still fails → report `partial_completion` with details, NOT `completed`
+- Update `shared-memory.json` with key findings after verification passes
+
+### Error Protocol
+
+- Primary approach fails → try alternative (different subagent / different tool)
+- 2 retries exhausted → escalate to coordinator with failure details
+- NEVER: skip verification and report completed
+
+---
+
+## Reference Patterns
+
+Coordinator MAY reference these patterns when composing Phase 2-4 content for a role-spec. These are **structural guidance, not mandatory templates**. The task description determines specific behavior — patterns only suggest common phase structures.
+
+### Research / Exploration
+
+- Phase 2: Define exploration scope + load prior knowledge from shared-memory and wisdom
+- Phase 3: Explore via subagents, direct tool calls, or codebase search — approach chosen by agent
+- Phase 4: Verify findings documented (Behavioral Traits) + update shared-memory
+
+### Document / Content
+
+- Phase 2: Load upstream artifacts + read target files (if modifying existing docs)
+- Phase 3: Create new documents OR modify existing documents — determined by task, not template
+- Phase 4: Verify documents exist with expected content (Behavioral Traits) + update shared-memory
+
+### Code Implementation
+
+- Phase 2: Load design/spec artifacts from upstream
+- Phase 3: Implement code changes — subagent choice and approach determined by task complexity
+- Phase 4: Syntax check + file verification (Behavioral Traits) + update shared-memory
+
+### Analysis / Audit
+
+- Phase 2: Load analysis targets (artifacts or source files)
+- Phase 3: Multi-dimension analysis — perspectives and depth determined by task
+- Phase 4: Verify report exists + severity classification (Behavioral Traits) + update shared-memory
+
+### Validation / Testing
+
+- Phase 2: Detect test framework + identify changed files from upstream
+- Phase 3: Run test-fix cycle — iteration count and strategy determined by task
+- Phase 4: Verify pass rate + coverage (Behavioral Traits) + update shared-memory
+
+---
+
+## Knowledge Transfer Protocol
+
+How context flows between roles. Coordinator MUST reference this when composing Phase 2 of any role-spec.
+
+### Transfer Channels
+
+| Channel | Scope | Mechanism | When to Use |
+|---------|-------|-----------|-------------|
+| **Artifacts** | Producer -> Consumer | Write to `<session>/artifacts/<name>.md`, consumer reads in Phase 2 | Structured deliverables (reports, plans, specs) |
+| **shared-memory.json** | Cross-role | Read-merge-write `<session>/shared-memory.json` | Key findings, decisions, metadata (small, structured data) |
+| **Wisdom** | Cross-task | Append to `<session>/wisdom/{learnings,decisions,conventions,issues}.md` | Patterns, conventions, risks discovered during execution |
+| **context_accumulator** | Intra-role (inner loop) | In-memory array, passed to each subsequent task in same-prefix loop | Prior task summaries within same role's inner loop |
+| **Exploration cache** | Cross-role | `<session>/explorations/cache-index.json` + per-angle JSON | Codebase discovery results, prevents duplicate exploration |
+
+### Phase 2 Context Loading (role-spec must specify)
+
+Every generated role-spec Phase 2 MUST declare which upstream sources to load:
 
 ```
-| Input | Source | Required |
-|-------|--------|----------|
-| Task description | From TaskGet | Yes |
-| Shared memory | <session>/shared-memory.json | No |
-| Prior artifacts | <session>/artifacts/ | No |
-| Wisdom | <session>/wisdom/ | No |
-
-Loading steps:
 1. Extract session path from task description
-2. Read shared-memory.json for cross-role context
-3. Read prior artifacts (if any from upstream tasks)
+2. Read upstream artifacts: <list which artifacts from which upstream role>
+3. Read shared-memory.json for cross-role decisions
 4. Load wisdom files for accumulated knowledge
-5. Optionally call explore subagent for codebase context
+5. For inner_loop roles: load context_accumulator from prior tasks
+6. Check exploration cache before running new explorations
 ```
 
-**Phase 3: Subagent Execution**
+### shared-memory.json Usage Convention
 
-```
-Delegate to appropriate subagent based on task:
-
-Task({
-  subagent_type: "general-purpose",
-  run_in_background: false,
-  description: "<task-type> for <task-id>",
-  prompt: "## Task
-  - <task description>
-  - Session: <session-folder>
-  ## Context
-  <prior artifacts + shared memory + explore results>
-  ## Expected Output
-  Write artifact to: <session>/artifacts/<artifact-name>.md
-  Return JSON summary: { artifact_path, summary, key_decisions[], warnings[] }"
-})
-```
-
-**Phase 4: Result Aggregation**
-
-```
-1. Verify subagent output artifact exists
-2. Read artifact, validate structure/completeness
-3. Update shared-memory.json with key findings
-4. Write insights to wisdom/ files
-```
-
-### code-gen (docs)
-
-**Phase 2: Load Prior Context**
-
-```
-| Input | Source | Required |
-|-------|--------|----------|
-| Task description | From TaskGet | Yes |
-| Prior artifacts | <session>/artifacts/ from upstream | Conditional |
-| Shared memory | <session>/shared-memory.json | No |
-
-Loading steps:
-1. Extract session path from task description
-2. Read upstream artifacts
-3. Read shared-memory.json for cross-role context
-```
-
-**Phase 3: Document Generation**
-
-```
-Task({
-  subagent_type: "universal-executor",
-  run_in_background: false,
-  description: "Generate <doc-type> for <task-id>",
-  prompt: "## Task
-  - Generate: <document type>
-  - Session: <session-folder>
-  ## Prior Context
-  <upstream artifacts + shared memory>
-  ## Expected Output
-  Write document to: <session>/artifacts/<doc-name>.md
-  Return JSON: { artifact_path, summary, key_decisions[], warnings[] }"
-})
-```
-
-**Phase 4: Structure Validation**
-
-```
-1. Verify document artifact exists
-2. Check document has expected sections
-3. Validate no placeholder text remains
-4. Update shared-memory.json with document metadata
-```
-
-### code-gen (code)
-
-**Phase 2: Load Plan/Specs**
-
-```
-| Input | Source | Required |
-|-------|--------|----------|
-| Task description | From TaskGet | Yes |
-| Plan/design artifacts | <session>/artifacts/ | Conditional |
-| Shared memory | <session>/shared-memory.json | No |
-
-Loading steps:
-1. Extract session path from task description
-2. Read plan/design artifacts from upstream
-3. Load shared-memory.json for implementation context
-```
-
-**Phase 3: Code Implementation**
-
-```
-Task({
-  subagent_type: "code-developer",
-  run_in_background: false,
-  description: "Implement <task-id>",
-  prompt: "## Task
-  - <implementation description>
-  - Session: <session-folder>
-  ## Plan/Design Context
-  <upstream artifacts>
-  ## Expected Output
-  Implement code changes.
-  Write summary to: <session>/artifacts/implementation-summary.md
-  Return JSON: { artifact_path, summary, files_changed[], warnings[] }"
-})
-```
-
-**Phase 4: Syntax Validation**
-
-```
-1. Run syntax check (tsc --noEmit or equivalent)
-2. Verify all planned files exist
-3. If validation fails -> attempt auto-fix (max 2 attempts)
-4. Write implementation summary to artifacts/
-```
-
-### read-only
-
-**Phase 2: Target Loading**
-
-```
-| Input | Source | Required |
-|-------|--------|----------|
-| Task description | From TaskGet | Yes |
-| Target artifacts/files | From task description or upstream | Yes |
-| Shared memory | <session>/shared-memory.json | No |
-
-Loading steps:
-1. Extract session path and target files from task description
-2. Read target artifacts or source files for analysis
-3. Load shared-memory.json for context
-```
-
-**Phase 3: Multi-Dimension Analysis**
-
-```
-Task({
-  subagent_type: "general-purpose",
-  run_in_background: false,
-  description: "Analyze <target> for <task-id>",
-  prompt: "## Task
-  - Analyze: <target description>
-  - Dimensions: <analysis dimensions from coordinator>
-  - Session: <session-folder>
-  ## Target Content
-  <artifact content or file content>
-  ## Expected Output
-  Write report to: <session>/artifacts/analysis-report.md
-  Return JSON: { artifact_path, summary, findings[], severity_counts }"
-})
-```
-
-**Phase 4: Severity Classification**
-
-```
-1. Verify analysis report exists
-2. Classify findings by severity (Critical/High/Medium/Low)
-3. Update shared-memory.json with key findings
-4. Write issues to wisdom/issues.md
-```
-
-### validation
-
-**Phase 2: Environment Detection**
-
-```
-| Input | Source | Required |
-|-------|--------|----------|
-| Task description | From TaskGet | Yes |
-| Implementation artifacts | Upstream code changes | Yes |
-
-Loading steps:
-1. Detect test framework from project files
-2. Get changed files from implementation
-3. Identify test command and coverage tool
-```
-
-**Phase 3: Test-Fix Cycle**
-
-```
-Task({
-  subagent_type: "test-fix-agent",
-  run_in_background: false,
-  description: "Test-fix for <task-id>",
-  prompt: "## Task
-  - Run tests and fix failures
-  - Session: <session-folder>
-  - Max iterations: 5
-  ## Changed Files
-  <from upstream implementation>
-  ## Expected Output
-  Write report to: <session>/artifacts/test-report.md
-  Return JSON: { artifact_path, pass_rate, coverage, remaining_failures[] }"
-})
-```
-
-**Phase 4: Result Analysis**
-
-```
-1. Check pass rate >= 95%
-2. Check coverage meets threshold
-3. Generate test report with pass/fail counts
-4. Update shared-memory.json with test results
-```
+- **Read-merge-write**: Read current content -> merge new keys -> write back (NOT overwrite)
+- **Namespaced keys**: Each role writes under its own namespace: `{ "<role_name>": { ... } }`
+- **Small data only**: Key findings, decision summaries, metadata. NOT full documents
+- **Example**:
+  ```json
+  {
+    "researcher": { "key_findings": [...], "scope": "..." },
+    "writer": { "documents_created": [...], "style_decisions": [...] },
+    "developer": { "files_changed": [...], "patterns_used": [...] }
+  }
+  ```

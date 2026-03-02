@@ -107,24 +107,24 @@ async function selectCommandCategory() {
 async function selectCommand(category) {
   const commandOptions = {
     'Planning': [
-      { label: "/workflow:lite-plan", description: "Lightweight merged-mode planning" },
-      { label: "/workflow:plan", description: "Full planning with architecture design" },
-      { label: "/workflow:multi-cli-plan", description: "Multi-CLI collaborative planning (Gemini+Codex+Claude)" },
-      { label: "/workflow:tdd-plan", description: "TDD workflow planning with Red-Green-Refactor" },
+      { label: "/workflow-lite-plan", description: "Lightweight merged-mode planning" },
+      { label: "/workflow-plan", description: "Full planning with architecture design" },
+      { label: "/workflow-multi-cli-plan", description: "Multi-CLI collaborative planning (Gemini+Codex+Claude)" },
+      { label: "/workflow-tdd-plan", description: "TDD workflow planning with Red-Green-Refactor" },
       { label: "/workflow:quick-plan-with-file", description: "Rapid planning with minimal docs" },
-      { label: "/workflow:plan-verify", description: "Verify plan against requirements" },
+      { label: "/workflow-plan-verify", description: "Verify plan against requirements" },
       { label: "/workflow:replan", description: "Update plan and execute changes" }
     ],
     'Execution': [
       { label: "/workflow:lite-execute", description: "Execute from in-memory plan" },
-      { label: "/workflow:execute", description: "Execute from planning session" },
+      { label: "/workflow-execute", description: "Execute from planning session" },
       { label: "/workflow:unified-execute-with-file", description: "Universal execution engine" }
     ],
     'Testing': [
-      { label: "/workflow:test-fix-gen", description: "Generate test tasks for specific issues" },
-      { label: "/workflow:test-cycle-execute", description: "Execute iterative test-fix cycle (>=95% pass)" },
+      { label: "/workflow-test-fix", description: "Generate test tasks for specific issues" },
+      { label: "/workflow-test-fix", description: "Execute iterative test-fix cycle (>=95% pass)" },
       { label: "/workflow:test-gen", description: "Generate comprehensive test suite" },
-      { label: "/workflow:tdd-verify", description: "Verify TDD workflow compliance" }
+      { label: "/workflow-tdd-verify", description: "Verify TDD workflow compliance" }
     ],
     'Review': [
       { label: "/workflow:review-session-cycle", description: "Session-based multi-dimensional code review" },
@@ -133,7 +133,7 @@ async function selectCommand(category) {
       { label: "/workflow:review", description: "Post-implementation review" }
     ],
     'Bug Fix': [
-      { label: "/workflow:lite-plan", description: "Lightweight bug diagnosis and fix (with --bugfix flag)" },
+      { label: "/workflow-lite-plan", description: "Lightweight bug diagnosis and fix (with --bugfix flag)" },
       { label: "/workflow:debug-with-file", description: "Hypothesis-driven debugging with documentation" }
     ],
     'Brainstorm': [
@@ -303,10 +303,10 @@ async function defineSteps(templateDesign) {
   "description": "Quick implementation with testing",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow:lite-plan", "args": "\"{{goal}}\"", "unit": "quick-implementation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create lightweight implementation plan" },
+    { "cmd": "/workflow-lite-plan", "args": "\"{{goal}}\"", "unit": "quick-implementation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create lightweight implementation plan" },
     { "cmd": "/workflow:lite-execute", "args": "--in-memory", "unit": "quick-implementation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Execute implementation based on plan" },
-    { "cmd": "/workflow:test-fix-gen", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate test tasks" },
-    { "cmd": "/workflow:test-cycle-execute", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test-fix cycle until pass rate >= 95%" }
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate test tasks" },
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test-fix cycle until pass rate >= 95%" }
   ]
 }
 ```
@@ -318,13 +318,13 @@ async function defineSteps(templateDesign) {
   "description": "Full workflow with verification, review, and testing",
   "level": 3,
   "steps": [
-    { "cmd": "/workflow:plan", "args": "\"{{goal}}\"", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create detailed implementation plan" },
-    { "cmd": "/workflow:plan-verify", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Verify plan against requirements" },
-    { "cmd": "/workflow:execute", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute implementation" },
+    { "cmd": "/workflow-plan", "args": "\"{{goal}}\"", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create detailed implementation plan" },
+    { "cmd": "/workflow-plan-verify", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Verify plan against requirements" },
+    { "cmd": "/workflow-execute", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute implementation" },
     { "cmd": "/workflow:review-session-cycle", "unit": "code-review", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Multi-dimensional code review" },
     { "cmd": "/workflow:review-cycle-fix", "unit": "code-review", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Fix review findings" },
-    { "cmd": "/workflow:test-fix-gen", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate test tasks" },
-    { "cmd": "/workflow:test-cycle-execute", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test-fix cycle" }
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate test tasks" },
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test-fix cycle" }
   ]
 }
 ```
@@ -336,10 +336,10 @@ async function defineSteps(templateDesign) {
   "description": "Bug diagnosis and fix with testing",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow:lite-plan", "args": "--bugfix \"{{goal}}\"", "unit": "bug-fix", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Diagnose and plan bug fix" },
+    { "cmd": "/workflow-lite-plan", "args": "--bugfix \"{{goal}}\"", "unit": "bug-fix", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Diagnose and plan bug fix" },
     { "cmd": "/workflow:lite-execute", "args": "--in-memory", "unit": "bug-fix", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Execute bug fix" },
-    { "cmd": "/workflow:test-fix-gen", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate regression tests" },
-    { "cmd": "/workflow:test-cycle-execute", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Verify fix with tests" }
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate regression tests" },
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Verify fix with tests" }
   ]
 }
 ```
@@ -351,7 +351,7 @@ async function defineSteps(templateDesign) {
   "description": "Urgent production bug fix (no tests)",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow:lite-plan", "args": "--hotfix \"{{goal}}\"", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Emergency hotfix mode" }
+    { "cmd": "/workflow-lite-plan", "args": "--hotfix \"{{goal}}\"", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Emergency hotfix mode" }
   ]
 }
 ```
@@ -363,9 +363,9 @@ async function defineSteps(templateDesign) {
   "description": "Test-driven development with Red-Green-Refactor",
   "level": 3,
   "steps": [
-    { "cmd": "/workflow:tdd-plan", "args": "\"{{goal}}\"", "unit": "tdd-planning-execution", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create TDD task chain" },
-    { "cmd": "/workflow:execute", "unit": "tdd-planning-execution", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute TDD cycle" },
-    { "cmd": "/workflow:tdd-verify", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Verify TDD compliance" }
+    { "cmd": "/workflow-tdd-plan", "args": "\"{{goal}}\"", "unit": "tdd-planning-execution", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create TDD task chain" },
+    { "cmd": "/workflow-execute", "unit": "tdd-planning-execution", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute TDD cycle" },
+    { "cmd": "/workflow-tdd-verify", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Verify TDD compliance" }
   ]
 }
 ```
@@ -379,8 +379,8 @@ async function defineSteps(templateDesign) {
   "steps": [
     { "cmd": "/workflow:review-session-cycle", "unit": "code-review", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Multi-dimensional code review" },
     { "cmd": "/workflow:review-cycle-fix", "unit": "code-review", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Fix review findings" },
-    { "cmd": "/workflow:test-fix-gen", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate tests for fixes" },
-    { "cmd": "/workflow:test-cycle-execute", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Verify fixes pass tests" }
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate tests for fixes" },
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Verify fixes pass tests" }
   ]
 }
 ```
@@ -392,8 +392,8 @@ async function defineSteps(templateDesign) {
   "description": "Fix failing tests",
   "level": 3,
   "steps": [
-    { "cmd": "/workflow:test-fix-gen", "args": "\"{{goal}}\"", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate test fix tasks" },
-    { "cmd": "/workflow:test-cycle-execute", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test-fix cycle" }
+    { "cmd": "/workflow-test-fix", "args": "\"{{goal}}\"", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate test fix tasks" },
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test-fix cycle" }
   ]
 }
 ```
@@ -420,7 +420,7 @@ async function defineSteps(templateDesign) {
   "description": "Bridge lightweight planning to issue workflow",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow:lite-plan", "args": "\"{{goal}}\"", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create lightweight plan" },
+    { "cmd": "/workflow-lite-plan", "args": "\"{{goal}}\"", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create lightweight plan" },
     { "cmd": "/issue:convert-to-plan", "args": "--latest-lite-plan -y", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Convert to issue plan" },
     { "cmd": "/issue:queue", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Form execution queue" },
     { "cmd": "/issue:execute", "args": "--queue auto", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute issue queue" }
@@ -486,11 +486,11 @@ async function defineSteps(templateDesign) {
   "level": 4,
   "steps": [
     { "cmd": "/brainstorm", "args": "\"{{goal}}\"", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Unified brainstorming with multi-perspective exploration" },
-    { "cmd": "/workflow:plan", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create detailed plan from brainstorm" },
-    { "cmd": "/workflow:plan-verify", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Verify plan quality" },
-    { "cmd": "/workflow:execute", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute implementation" },
-    { "cmd": "/workflow:test-fix-gen", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate comprehensive tests" },
-    { "cmd": "/workflow:test-cycle-execute", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test cycle" }
+    { "cmd": "/workflow-plan", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create detailed plan from brainstorm" },
+    { "cmd": "/workflow-plan-verify", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Verify plan quality" },
+    { "cmd": "/workflow-execute", "unit": "verified-planning-execution", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute implementation" },
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate comprehensive tests" },
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test cycle" }
   ]
 }
 ```
@@ -502,10 +502,10 @@ async function defineSteps(templateDesign) {
   "description": "Multi-CLI collaborative planning with cross-verification",
   "level": 3,
   "steps": [
-    { "cmd": "/workflow:multi-cli-plan", "args": "\"{{goal}}\"", "unit": "multi-cli-planning", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Gemini+Codex+Claude collaborative planning" },
+    { "cmd": "/workflow-multi-cli-plan", "args": "\"{{goal}}\"", "unit": "multi-cli-planning", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Gemini+Codex+Claude collaborative planning" },
     { "cmd": "/workflow:lite-execute", "args": "--in-memory", "unit": "multi-cli-planning", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Execute converged plan" },
-    { "cmd": "/workflow:test-fix-gen", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate tests" },
-    { "cmd": "/workflow:test-cycle-execute", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test cycle" }
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate tests" },
+    { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test cycle" }
   ]
 }
 ```
@@ -656,9 +656,9 @@ async function generateTemplate(design, steps, outputPath) {
 → Level: 3 (Standard)
 → Steps: Customize
   → Step 1: /brainstorm (standalone, mainprocess)
-  → Step 2: /workflow:plan (verified-planning-execution, mainprocess)
-  → Step 3: /workflow:plan-verify (verified-planning-execution, mainprocess)
-  → Step 4: /workflow:execute (verified-planning-execution, async)
+  → Step 2: /workflow-plan (verified-planning-execution, mainprocess)
+  → Step 3: /workflow-plan-verify (verified-planning-execution, mainprocess)
+  → Step 4: /workflow-execute (verified-planning-execution, async)
   → Step 5: /workflow:review-session-cycle (code-review, mainprocess)
   → Step 6: /workflow:review-cycle-fix (code-review, mainprocess)
   → Done

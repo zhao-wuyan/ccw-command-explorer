@@ -469,7 +469,7 @@ ${selected_roles.length > 1 ? `
   - Run synthesis: /brainstorm --session ${session_id} (auto mode)
 ` : `
   - Clarify insights: /brainstorm --session ${session_id} (auto mode)
-  - Generate plan: /workflow:plan --session ${session_id}
+  - Generate plan: /workflow-plan --session ${session_id}
 `}
 ```
 

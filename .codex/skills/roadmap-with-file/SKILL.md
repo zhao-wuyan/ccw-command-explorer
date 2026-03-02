@@ -687,7 +687,8 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
      if (feedback.feedback === 'approve') {
        approved = true
      } else {
-       // Handle feedback type
+       // CONSTRAINT: All modifications below ONLY touch roadmap.md and issues.jsonl
+       // NEVER modify source code or project files during interactive rounds
        switch (feedback.feedback) {
          case 'scope':
            // Collect scope adjustments
@@ -695,8 +696,9 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
              { id: "adjustments", type: "text", prompt: "Describe scope adjustments needed:" }
            ])  // BLOCKS
 
-           // Update roadmap.md and issues
-           // ... implementation ...
+           // Update ONLY roadmap.md Roadmap table + Convergence sections
+           Edit({ path: `${sessionFolder}/roadmap.md`, /* scope changes */ })
+           // Update ONLY issues.jsonl entries (scope/context fields)
 
            break
 
@@ -706,8 +708,8 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
              { id: "refinements", type: "text", prompt: "Describe convergence refinements needed:" }
            ])  // BLOCKS
 
-           // Update roadmap.md
-           // ... implementation ...
+           // Update ONLY roadmap.md Convergence Criteria section
+           Edit({ path: `${sessionFolder}/roadmap.md`, /* convergence changes */ })
 
            break
 
@@ -726,8 +728,7 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
            ])  // BLOCKS
 
            selectedMode = newStrategy.strategy
-           // Re-execute Phase 2
-           // ... goto Phase 2 ...
+           // Re-execute Phase 2 (updates roadmap.md + issues.jsonl only)
            break
        }
 
@@ -871,6 +872,7 @@ To execute later:
 4. **Testable Convergence**: criteria = assertions, DoD = business language
 5. **Explicit Lifecycle**: Always close_agent after wait completes to free resources
 6. **DO NOT STOP**: Continuous workflow until handoff complete
+7. **Plan-Only Modifications**: Interactive feedback (Phase 3) MUST only update `roadmap.md` and `issues.jsonl`. NEVER modify source code, configuration files, or any project files during interactive rounds. Code changes happen only after handoff (Phase 4) via team-planex or other execution skills
 
 ---
 

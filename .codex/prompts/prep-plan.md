@@ -1,11 +1,11 @@
 ---
-description: "Interactive pre-flight checklist for workflow:plan. Validates environment, refines task to GOAL/SCOPE/CONTEXT, collects source docs, configures execution preferences, writes prep-package.json, then launches the workflow."
+description: "Interactive pre-flight checklist for workflow-plan. Validates environment, refines task to GOAL/SCOPE/CONTEXT, collects source docs, configures execution preferences, writes prep-package.json, then launches the workflow."
 argument-hint: TASK="<task description>" [EXEC_METHOD=agent|cli|hybrid] [CLI_TOOL=codex|gemini|qwen]
 ---
 
 # Pre-Flight Checklist for Workflow Plan
 
-You are an interactive preparation assistant. Your job is to ensure everything is ready for an **unattended** `workflow:plan` run with `--yes` mode. Follow each step sequentially. **Ask the user questions when information is missing.** At the end, write `prep-package.json` and invoke the skill.
+You are an interactive preparation assistant. Your job is to ensure everything is ready for an **unattended** `workflow-plan` run with `--yes` mode. Follow each step sequentially. **Ask the user questions when information is missing.** At the end, write `prep-package.json` and invoke the skill.
 
 ---
 
@@ -112,7 +112,7 @@ Display detected sources:
 
 ### 2.1 Scoring
 
-Score the user's TASK against 5 dimensions, mapped to workflow:plan's GOAL/SCOPE/CONTEXT format.
+Score the user's TASK against 5 dimensions, mapped to workflow-plan's GOAL/SCOPE/CONTEXT format.
 Each dimension scores 0-2 (0=missing, 1=vague, 2=clear). **Total minimum: 6/10 to proceed.**
 
 | # | 维度 | 映射 | 评分标准 |
@@ -165,7 +165,7 @@ For dimensions still at score 1 after Q&A, auto-enhance from codebase:
 
 ### 2.5 Assemble Structured Description
 
-Map to workflow:plan's GOAL/SCOPE/CONTEXT format:
+Map to workflow-plan's GOAL/SCOPE/CONTEXT format:
 
 ```
 GOAL: {objective + success criteria}
@@ -353,7 +353,7 @@ $workflow-plan-execute --yes --with-commit TASK="$TASK_STRUCTURED"
 
 Print:
 ```
-启动 workflow:plan (自动模式)...
+启动 workflow-plan (自动模式)...
   prep-package.json → Phase 1 自动加载并校验
   执行方式: hybrid (codex) + auto-commit
 ```

@@ -124,7 +124,7 @@ Tech [${detectCategory(summary)}]:
   ${techEntry.title}
 
 Target files:
-  .workflow/specs/*.md
+  .ccw/specs/*.md
   .workflow/project-tech.json
 `)
 
@@ -138,12 +138,13 @@ if (!autoYes) {
 
 ```javascript
 // ── Update specs/*.md ──
+// Uses .ccw/specs/ directory (same as frontend/backend spec-index-builder)
 if (guidelineUpdates.length > 0) {
   // Map guideline types to spec files
   const specFileMap = {
-    convention: '.workflow/specs/coding-conventions.md',
-    constraint: '.workflow/specs/architecture-constraints.md',
-    learning: '.workflow/specs/coding-conventions.md' // learnings appended to conventions
+    convention: '.ccw/specs/coding-conventions.md',
+    constraint: '.ccw/specs/architecture-constraints.md',
+    learning: '.ccw/specs/coding-conventions.md' // learnings appended to conventions
   }
 
   for (const g of guidelineUpdates) {

@@ -80,17 +80,39 @@ GC loop (max 2 rounds): QA-FE verdict=NEEDS_FIX -> create DEV-FE-002 + QA-FE-002
 
 ### Task Description Template
 
-Every task description includes session, scope, and metadata:
+Every task description uses structured format for clarity:
 
 ```
 TaskCreate({
   subject: "<TASK-ID>",
   owner: "<role>",
-  description: "<task description>\nSession: <session-folder>\nScope: <scope>\nInlineDiscuss: <DISCUSS-NNN or none>\nInnerLoop: <true|false>",
+  description: "PURPOSE: <what this task achieves> | Success: <measurable completion criteria>
+TASK:
+  - <step 1: specific action>
+  - <step 2: specific action>
+  - <step 3: specific action>
+CONTEXT:
+  - Session: <session-folder>
+  - Scope: <scope>
+  - Upstream artifacts: <artifact-1.md>, <artifact-2.md>
+  - Key files: <file1>, <file2> (if applicable)
+  - Shared memory: <session>/shared-memory.json
+EXPECTED: <deliverable path> + <quality criteria>
+CONSTRAINTS: <scope limits, focus areas>
+---
+InlineDiscuss: <DISCUSS-NNN or none>
+InnerLoop: <true|false>",
   blockedBy: [<dependency-list>],
   status: "pending"
 })
 ```
+
+**Field Guidelines**:
+- **PURPOSE**: Clear goal statement + success criteria
+- **TASK**: 2-5 actionable steps with specific verbs
+- **CONTEXT**: Session path, scope, upstream artifacts, relevant files
+- **EXPECTED**: Output artifact path + quality requirements
+- **CONSTRAINTS**: Scope boundaries, focus areas, exclusions
 
 **InnerLoop Flag Rules**:
 
@@ -107,13 +129,22 @@ TaskCreate({
 TaskCreate({
   subject: "<ORIGINAL-ID>-R1",
   owner: "<same-role-as-original>",
-  description: "<revision-type> revision of <ORIGINAL-ID>.\n
-    Session: <session-folder>\n
-    Original artifact: <artifact-path>\n
-    User feedback: <feedback-text or 'system-initiated'>\n
-    Revision scope: <targeted|full>\n
-    InlineDiscuss: <same-discuss-round-as-original>\n
-    InnerLoop: <true|false based on role>",
+  description: "PURPOSE: <revision-type> revision of <ORIGINAL-ID> | Success: Address feedback and pass quality checks
+TASK:
+  - Review original artifact and feedback
+  - Apply targeted fixes to weak areas
+  - Validate against quality criteria
+CONTEXT:
+  - Session: <session-folder>
+  - Original artifact: <artifact-path>
+  - User feedback: <feedback-text or 'system-initiated'>
+  - Revision scope: <targeted|full>
+  - Shared memory: <session>/shared-memory.json
+EXPECTED: Updated artifact at <artifact-path> + revision summary
+CONSTRAINTS: <revision scope limits>
+---
+InlineDiscuss: <same-discuss-round-as-original>
+InnerLoop: <true|false based on role>",
   status: "pending",
   blockedBy: [<predecessor-R1 if cascaded>]
 })
@@ -138,14 +169,23 @@ TaskCreate({
 TaskCreate({
   subject: "IMPROVE-<dimension>-001",
   owner: "writer",
-  description: "Quality improvement: <dimension>.\n
-    Session: <session-folder>\n
-    Current score: <X>%\n
-    Target: 80%\n
-    Readiness report: <session>/spec/readiness-report.md\n
-    Weak areas: <extracted-from-report>\n
-    Strategy: <from-dimension-strategy-table>\n
-    InnerLoop: true",
+  description: "PURPOSE: Improve <dimension> quality from <X>% to 80% | Success: Pass quality threshold
+TASK:
+  - Review readiness report weak areas
+  - Apply dimension-specific improvement strategy
+  - Validate improvements against criteria
+CONTEXT:
+  - Session: <session-folder>
+  - Current score: <X>%
+  - Target: 80%
+  - Readiness report: <session>/spec/readiness-report.md
+  - Weak areas: <extracted-from-report>
+  - Strategy: <from-dimension-strategy-table>
+  - Shared memory: <session>/shared-memory.json
+EXPECTED: Improved artifacts + quality improvement summary
+CONSTRAINTS: Focus on <dimension> only
+---
+InnerLoop: true",
   status: "pending"
 })
 ```

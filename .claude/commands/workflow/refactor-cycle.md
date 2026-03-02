@@ -39,7 +39,7 @@ Closed-loop tech debt lifecycle: **Discover → Assess → Plan → Refactor →
 
 **vs Existing Commands**:
 - **workflow:lite-fix**: Single bug fix, no systematic debt analysis
-- **workflow:plan + execute**: Generic implementation, no debt-aware prioritization or regression validation
+- **workflow-plan + execute**: Generic implementation, no debt-aware prioritization or regression validation
 - **This command**: Full debt lifecycle — discovery through multi-dimensional scan, prioritized execution with per-item regression validation
 
 ### Value Proposition

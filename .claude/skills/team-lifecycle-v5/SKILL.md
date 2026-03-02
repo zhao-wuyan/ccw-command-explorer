@@ -192,7 +192,9 @@ Beat Cycle (single beat)
   Fast-Advance (skips coordinator for simple linear successors)
 ======================================================================
   [Worker A] Phase 5 complete
-    +- 1 ready task? simple successor? --> spawn team-worker B directly
+    +- 1 ready task? simple successor?
+    |   --> spawn team-worker B directly
+    |   --> log fast_advance to message bus (coordinator syncs on next wake)
     +- complex case? --> SendMessage to coordinator
 ======================================================================
 ```

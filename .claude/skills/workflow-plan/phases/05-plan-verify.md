@@ -90,11 +90,11 @@ ELSE:
     SYNTHESIS_AVAILABLE = true
 
 IF NOT EXISTS(IMPL_PLAN):
-    ERROR: "IMPL_PLAN.md not found. Run /workflow:plan first"
+    ERROR: "IMPL_PLAN.md not found. Run /workflow-plan first"
     EXIT
 
 IF TASK_FILES.count == 0:
-    ERROR: "No task JSON files found. Run /workflow:plan first"
+    ERROR: "No task JSON files found. Run /workflow-plan first"
     EXIT
 ```
 
@@ -320,7 +320,7 @@ ${recommendation === 'BLOCK_EXECUTION' ? 'BLOCK: Fix critical issues then re-ver
   recommendation === 'PROCEED_WITH_FIXES' ? 'FIX RECOMMENDED: Address high issues then re-verify or execute' :
   'READY: Proceed to Skill(skill="workflow-execute")'}
 
-Re-verify: \`/workflow:plan-verify --session ${session_id}\`
+Re-verify: \`/workflow-plan-verify --session ${session_id}\`
 Execute: \`Skill(skill="workflow-execute", args="--resume-session=${session_id}")\`
 `
 

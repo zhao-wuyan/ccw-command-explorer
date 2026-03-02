@@ -632,6 +632,14 @@ Why is config value None during update?
 
 **Auto-sync**: 执行 `/workflow:session:sync -y "{summary}"` 更新 specs/*.md + project-tech。
 
+```javascript
+// Auto mode: skip expansion question, complete session directly
+if (autoYes) {
+  console.log('Debug session complete. Auto mode: skipping expansion.');
+  return;
+}
+```
+
 完成后询问用户是否扩展为issue(test/enhance/refactor/doc)，选中项调用 `/issue:new "{summary} - {dimension}"`
 
 ---

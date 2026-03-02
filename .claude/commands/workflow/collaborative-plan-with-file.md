@@ -208,7 +208,7 @@ Task(
 ### Project Context (MANDATORY)
 Read and incorporate:
 - \`.workflow/project-tech.json\` (if exists): Technology stack, architecture
-- \`.workflow/specs/*.md\` (if exists): Constraints, conventions -- apply as HARD CONSTRAINTS on sub-domain splitting and plan structure
+- \`.ccw/specs/*.md\` (if exists): Constraints, conventions -- apply as HARD CONSTRAINTS on sub-domain splitting and plan structure
 
 ### Input Requirements
 ${taskDescription}
@@ -357,7 +357,7 @@ subDomains.map(sub =>
 ### Project Context (MANDATORY)
 Read and incorporate:
 - \`.workflow/project-tech.json\` (if exists): Technology stack, architecture
-- \`.workflow/specs/*.md\` (if exists): Constraints, conventions -- apply as HARD CONSTRAINTS
+- \`.ccw/specs/*.md\` (if exists): Constraints, conventions -- apply as HARD CONSTRAINTS
 
 ## Dual Output Tasks
 

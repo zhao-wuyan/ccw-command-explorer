@@ -341,7 +341,7 @@
     },
     {
       "name": "execute",
-      "command": "/workflow:execute",
+      "command": "/workflow-execute",
       "description": "Coordinate agent execution for workflow tasks with automatic session discovery, parallel task processing, and status tracking",
       "arguments": "[-y|--yes] [--resume-session=\\\"session-id\\\"]",
       "category": "workflow",
@@ -396,7 +396,7 @@
     },
     {
       "name": "lite-plan",
-      "command": "/workflow:lite-plan",
+      "command": "/workflow-lite-plan",
       "description": "Lightweight interactive planning workflow with in-memory planning, code exploration, and execution execute to lite-execute after user confirmation",
       "arguments": "[-y|--yes] [-e|--explore] \\\"task description\\\"|file.md",
       "category": "workflow",
@@ -406,8 +406,8 @@
       "source": "../../commands/workflow/lite-plan.md"
     },
     {
-      "name": "workflow:multi-cli-plan",
-      "command": "/workflow:multi-cli-plan",
+      "name": "workflow-multi-cli-plan",
+      "command": "/workflow-multi-cli-plan",
       "description": "Multi-CLI collaborative planning workflow with ACE context gathering and iterative cross-verification. Uses cli-discuss-agent for Gemini+Codex+Claude analysis to converge on optimal execution plan.",
       "arguments": "[-y|--yes] <task description> [--max-rounds=3] [--tools=gemini,codex] [--mode=parallel|serial]",
       "category": "workflow",
@@ -418,7 +418,7 @@
     },
     {
       "name": "plan-verify",
-      "command": "/workflow:plan-verify",
+      "command": "/workflow-plan-verify",
       "description": "Perform READ-ONLY verification analysis between IMPL_PLAN.md, task JSONs, and brainstorming artifacts. Generates structured report with quality gate recommendation. Does NOT modify any files.",
       "arguments": "[optional: --session session-id]",
       "category": "workflow",
@@ -429,7 +429,7 @@
     },
     {
       "name": "plan",
-      "command": "/workflow:plan",
+      "command": "/workflow-plan",
       "description": "5-phase planning workflow with action-planning-agent task generation, outputs IMPL_PLAN.md and task JSONs",
       "arguments": "[-y|--yes] \\\"text description\\\"|file.md",
       "category": "workflow",
@@ -550,7 +550,7 @@
     },
     {
       "name": "tdd-plan",
-      "command": "/workflow:tdd-plan",
+      "command": "/workflow-tdd-plan",
       "description": "TDD workflow planning with Red-Green-Refactor task chain generation, test-first development structure, and cycle tracking",
       "arguments": "\\\"feature description\\\"|file.md",
       "category": "workflow",
@@ -561,7 +561,7 @@
     },
     {
       "name": "tdd-verify",
-      "command": "/workflow:tdd-verify",
+      "command": "/workflow-tdd-verify",
       "description": "Verify TDD workflow compliance against Red-Green-Refactor cycles. Generates quality report with coverage analysis and quality gate recommendation. Orchestrates sub-commands for comprehensive validation.",
       "arguments": "[optional: --session WFS-session-id]",
       "category": "workflow",
@@ -572,7 +572,7 @@
     },
     {
       "name": "test-cycle-execute",
-      "command": "/workflow:test-cycle-execute",
+      "command": "/workflow-test-fix",
       "description": "Execute test-fix workflow with dynamic task generation and iterative fix cycles until test pass rate >= 95% or max iterations reached. Uses @cli-planning-agent for failure analysis and task generation.",
       "arguments": "[--resume-session=\\\"session-id\\\"] [--max-iterations=N]",
       "category": "workflow",
@@ -583,7 +583,7 @@
     },
     {
       "name": "test-fix-gen",
-      "command": "/workflow:test-fix-gen",
+      "command": "/workflow-test-fix",
       "description": "Create test-fix workflow session from session ID, description, or file path with test strategy generation and task planning",
       "arguments": "(source-session-id | \\\"feature description\\\" | /path/to/file.md)",
       "category": "workflow",
@@ -716,7 +716,7 @@
     {
       "name": "design-sync",
       "command": "/workflow:ui-design:design-sync",
-      "description": "Synchronize finalized design system references to brainstorming artifacts, preparing them for /workflow:plan consumption",
+      "description": "Synchronize finalized design system references to brainstorming artifacts, preparing them for /workflow-plan consumption",
       "arguments": "--session <session_id> [--selected-prototypes \"<list>\"]",
       "category": "workflow",
       "subcategory": "ui-design",

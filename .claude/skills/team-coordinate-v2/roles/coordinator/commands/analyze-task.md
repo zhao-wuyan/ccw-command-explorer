@@ -58,6 +58,27 @@ Each capability produces default output artifacts:
 | tester | Test results | `<session>/artifacts/test-report.md` |
 | planner | Execution plan | `<session>/artifacts/execution-plan.md` |
 
+### Step 2.5: Key File Inference
+
+For each task, infer relevant files based on capability type and task keywords:
+
+| Capability | File Inference Strategy |
+|------------|------------------------|
+| researcher | Extract domain keywords → map to likely directories (e.g., "auth" → `src/auth/**`, `middleware/auth.ts`) |
+| developer | Extract feature/module keywords → map to source files (e.g., "payment" → `src/payments/**`, `types/payment.ts`) |
+| designer | Look for architecture/config keywords → map to config/schema files |
+| analyst | Extract target keywords → map to files under analysis |
+| tester | Extract test target keywords → map to source + test files |
+| writer | Extract documentation target → map to relevant source files for context |
+| planner | No specific files (planning is abstract) |
+
+**Inference rules:**
+- Extract nouns and verbs from task description
+- Match against common directory patterns (src/, lib/, components/, services/, utils/)
+- Include related type definition files (types/, *.d.ts)
+- For "fix bug" tasks, include error-prone areas (error handlers, validation)
+- For "implement feature" tasks, include similar existing features as reference
+
 ### Step 3: Dependency Graph Construction
 
 Build a DAG of work streams using natural ordering tiers:
@@ -90,15 +111,25 @@ Apply merging rules to reduce role count (cap at 5).
 
 ### Step 6: Role-Spec Metadata Assignment
 
-For each role, determine frontmatter fields:
+For each role, determine frontmatter and generation hints:
 
 | Field | Derivation |
 |-------|------------|
 | `prefix` | From capability prefix (e.g., RESEARCH, DRAFT, IMPL) |
 | `inner_loop` | `true` if role has 2+ serial same-prefix tasks |
-| `subagents` | Inferred from responsibility type: orchestration -> [explore], code-gen (docs) -> [explore], validation -> [] |
+| `subagents` | Suggested, not mandatory — coordinator may adjust based on task needs |
+| `pattern_hint` | Reference pattern name from role-spec-template (research/document/code/analysis/validation) — guides coordinator's Phase 2-4 composition, NOT a rigid template selector |
+| `output_type` | `artifact` (new files in session/artifacts/) / `codebase` (modify existing project files) / `mixed` (both) — determines verification strategy in Behavioral Traits |
 | `message_types.success` | `<prefix>_complete` |
 | `message_types.error` | `error` |
+
+**output_type derivation**:
+
+| Task Signal | output_type | Example |
+|-------------|-------------|---------|
+| "write report", "analyze", "research" | `artifact` | New analysis-report.md in session |
+| "update docs", "modify code", "fix bug" | `codebase` | Modify existing project files |
+| "implement feature + write summary" | `mixed` | Code changes + implementation summary |
 
 ## Phase 4: Output
 
@@ -113,7 +144,22 @@ Write `<session-folder>/task-analysis.json`:
       "prefix": "RESEARCH",
       "responsibility_type": "orchestration",
       "tasks": [
-        { "id": "RESEARCH-001", "description": "..." }
+        {
+          "id": "RESEARCH-001",
+          "goal": "What this task achieves and why",
+          "steps": [
+            "step 1: specific action with clear verb",
+            "step 2: specific action with clear verb",
+            "step 3: specific action with clear verb"
+          ],
+          "key_files": [
+            "src/path/to/relevant.ts",
+            "src/path/to/other.ts"
+          ],
+          "upstream_artifacts": [],
+          "success_criteria": "Measurable completion condition",
+          "constraints": "Scope limits, focus areas"
+        }
       ],
       "artifacts": ["research-findings.md"]
     }
@@ -132,6 +178,8 @@ Write `<session-folder>/task-analysis.json`:
       "inner_loop": false,
       "role_spec_metadata": {
         "subagents": ["explore"],
+        "pattern_hint": "research",
+        "output_type": "artifact",
         "message_types": {
           "success": "research_complete",
           "error": "error"

@@ -252,6 +252,17 @@ await updateDiscoveryState(outputDir, {
 const hasHighPriority = issues.some(i => i.priority === 'critical' || i.priority === 'high');
 const hasMediumFindings = prioritizedFindings.some(f => f.priority === 'medium');
 
+// Auto mode: auto-select recommended action
+if (autoYes) {
+  if (hasHighPriority) {
+    await appendJsonl('.workflow/issues/issues.jsonl', issues);
+    console.log(`Exported ${issues.length} issues. Run /issue:plan to continue.`);
+  } else {
+    console.log('Discovery complete. No significant issues found.');
+  }
+  return;
+}
+
 await AskUserQuestion({
   questions: [{
     question: `Discovery complete: ${issues.length} issues generated, ${prioritizedFindings.length} total findings. What would you like to do next?`,

@@ -123,7 +123,7 @@
 | **命令调用语法** | 转换为 Phase 文件的相对路径 | `/workflow:session:start` → `phases/01-session-discovery.md` |
 | **命令路径引用** | 转换为 Skill 目录内路径 | `commands/workflow/tools/` → `phases/` |
 | **跨命令引用** | 转换为 Phase 间文件引用 | `workflow-plan` skill (context-gather phase) → `phases/02-context-gathering.md` |
-| **命令参数说明** | 移除或转为 Phase Prerequisites | `usage: /workflow:plan [session-id]` → Phase Prerequisites 中说明 |
+| **命令参数说明** | 移除或转为 Phase Prerequisites | `usage: /workflow-plan [session-id]` → Phase Prerequisites 中说明 |
 
 **转换示例**：
 

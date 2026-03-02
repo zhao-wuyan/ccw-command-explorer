@@ -455,7 +455,7 @@ function buildCliCommand(task, cliTool, cliPrompt) {
    
    **Auto-Check Workflow Context**:
    - Verify session context paths are provided in agent prompt
-   - If missing, request session context from workflow:execute
+   - If missing, request session context from workflow-execute
    - Never assume default paths without explicit session context
 
 ### 5. Problem-Solving

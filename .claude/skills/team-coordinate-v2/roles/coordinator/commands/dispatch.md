@@ -26,7 +26,21 @@ Create task chains from dynamic dependency graphs. Builds pipelines from the tas
 TaskCreate({
   subject: "<PREFIX>-<NNN>",
   owner: "<role-name>",
-  description: "<task description from task-analysis>\nSession: <session-folder>\nScope: <scope>\nInnerLoop: <true|false>\nRoleSpec: <session-folder>/role-specs/<role-name>.md",
+  description: "PURPOSE: <goal> | Success: <success_criteria>
+TASK:
+  - <step 1>
+  - <step 2>
+  - <step 3>
+CONTEXT:
+  - Session: <session-folder>
+  - Upstream artifacts: <artifact-1.md>, <artifact-2.md>
+  - Key files: <file1>, <file2>
+  - Shared memory: <session>/shared-memory.json
+EXPECTED: <deliverable path> + <quality criteria>
+CONSTRAINTS: <scope limits>
+---
+InnerLoop: <true|false>
+RoleSpec: <session-folder>/role-specs/<role-name>.md",
   blockedBy: [<dependency-list from graph>],
   status: "pending"
 })
@@ -37,15 +51,33 @@ TaskCreate({
 
 ### Task Description Template
 
-Every task description includes session path, inner loop flag, and role-spec path:
+Every task description includes structured fields for clarity:
 
 ```
-<task description>
-Session: <session-folder>
-Scope: <scope>
+PURPOSE: <goal from task-analysis.json#tasks[].goal> | Success: <success_criteria from task-analysis.json#tasks[].success_criteria>
+TASK:
+  - <step 1 from task-analysis.json#tasks[].steps[]>
+  - <step 2 from task-analysis.json#tasks[].steps[]>
+  - <step 3 from task-analysis.json#tasks[].steps[]>
+CONTEXT:
+  - Session: <session-folder>
+  - Upstream artifacts: <comma-separated list from task-analysis.json#tasks[].upstream_artifacts[]>
+  - Key files: <comma-separated list from task-analysis.json#tasks[].key_files[]>
+  - Shared memory: <session>/shared-memory.json
+EXPECTED: <artifact path from task-analysis.json#capabilities[].artifacts[]> + <quality criteria based on capability type>
+CONSTRAINTS: <constraints from task-analysis.json#tasks[].constraints>
+---
 InnerLoop: <true|false>
 RoleSpec: <session-folder>/role-specs/<role-name>.md
 ```
+
+**Field Mapping**:
+- `PURPOSE`: From `task-analysis.json#capabilities[].tasks[].goal` + `success_criteria`
+- `TASK`: From `task-analysis.json#capabilities[].tasks[].steps[]`
+- `CONTEXT.Upstream artifacts`: From `task-analysis.json#capabilities[].tasks[].upstream_artifacts[]`
+- `CONTEXT.Key files`: From `task-analysis.json#capabilities[].tasks[].key_files[]`
+- `EXPECTED`: From `task-analysis.json#capabilities[].artifacts[]` + quality criteria
+- `CONSTRAINTS`: From `task-analysis.json#capabilities[].tasks[].constraints`
 
 ### InnerLoop Flag Rules
 

@@ -142,70 +142,70 @@ def analyze_agent_file(file_path: Path) -> Dict[str, Any]:
 def build_command_relationships() -> Dict[str, Any]:
     """Build command relationship mappings."""
     return {
-        "workflow:plan": {
+        "workflow-plan": {
             "calls_internally": ["workflow:session:start", "workflow:tools:context-gather", "workflow:tools:conflict-resolution", "workflow:tools:task-generate-agent"],
-            "next_steps": ["workflow:plan-verify", "workflow:status", "workflow:execute"],
-            "alternatives": ["workflow:tdd-plan"],
+            "next_steps": ["workflow-plan-verify", "workflow:status", "workflow-execute"],
+            "alternatives": ["workflow-tdd-plan"],
             "prerequisites": []
         },
-        "workflow:tdd-plan": {
+        "workflow-tdd-plan": {
             "calls_internally": ["workflow:session:start", "workflow:tools:context-gather", "workflow:tools:task-generate-tdd"],
-            "next_steps": ["workflow:tdd-verify", "workflow:status", "workflow:execute"],
-            "alternatives": ["workflow:plan"],
+            "next_steps": ["workflow-tdd-verify", "workflow:status", "workflow-execute"],
+            "alternatives": ["workflow-plan"],
             "prerequisites": []
         },
-        "workflow:execute": {
-            "prerequisites": ["workflow:plan", "workflow:tdd-plan"],
+        "workflow-execute": {
+            "prerequisites": ["workflow-plan", "workflow-tdd-plan"],
             "related": ["workflow:status", "workflow:resume"],
-            "next_steps": ["workflow:review", "workflow:tdd-verify"]
+            "next_steps": ["workflow:review", "workflow-tdd-verify"]
         },
-        "workflow:plan-verify": {
-            "prerequisites": ["workflow:plan"],
-            "next_steps": ["workflow:execute"],
+        "workflow-plan-verify": {
+            "prerequisites": ["workflow-plan"],
+            "next_steps": ["workflow-execute"],
             "related": ["workflow:status"]
         },
-        "workflow:tdd-verify": {
-            "prerequisites": ["workflow:execute"],
+        "workflow-tdd-verify": {
+            "prerequisites": ["workflow-execute"],
             "related": ["workflow:tools:tdd-coverage-analysis"]
         },
         "workflow:session:start": {
-            "next_steps": ["workflow:plan", "workflow:execute"],
+            "next_steps": ["workflow-plan", "workflow-execute"],
             "related": ["workflow:session:list", "workflow:session:resume"]
         },
         "workflow:session:resume": {
             "alternatives": ["workflow:resume"],
             "related": ["workflow:session:list", "workflow:status"]
         },
-        "workflow:lite-plan": {
+        "workflow-lite-plan": {
             "calls_internally": ["workflow:lite-execute"],
             "next_steps": ["workflow:lite-execute", "workflow:status"],
-            "alternatives": ["workflow:plan"],
+            "alternatives": ["workflow-plan"],
             "prerequisites": []
         },
         "workflow:lite-fix": {
             "next_steps": ["workflow:lite-execute", "workflow:status"],
-            "alternatives": ["workflow:lite-plan"],
-            "related": ["workflow:test-cycle-execute"]
+            "alternatives": ["workflow-lite-plan"],
+            "related": ["workflow-test-fix"]
         },
         "workflow:lite-execute": {
-            "prerequisites": ["workflow:lite-plan", "workflow:lite-fix"],
-            "related": ["workflow:execute", "workflow:status"]
+            "prerequisites": ["workflow-lite-plan", "workflow:lite-fix"],
+            "related": ["workflow-execute", "workflow:status"]
         },
         "workflow:review-session-cycle": {
-            "prerequisites": ["workflow:execute"],
+            "prerequisites": ["workflow-execute"],
             "next_steps": ["workflow:review-fix"],
             "related": ["workflow:review-module-cycle"]
         },
         "workflow:review-fix": {
             "prerequisites": ["workflow:review-module-cycle", "workflow:review-session-cycle"],
-            "related": ["workflow:test-cycle-execute"]
+            "related": ["workflow-test-fix"]
         },
         "memory:docs": {
             "calls_internally": ["workflow:session:start", "workflow:tools:context-gather"],
-            "next_steps": ["workflow:execute"]
+            "next_steps": ["workflow-execute"]
         },
         "memory:skill-memory": {
-            "next_steps": ["workflow:plan", "cli:analyze"],
+            "next_steps": ["workflow-plan", "cli:analyze"],
             "related": ["memory:load-skill-memory"]
         }
     }
@@ -213,11 +213,11 @@ def build_command_relationships() -> Dict[str, Any]:
 def identify_essential_commands(all_commands: List[Dict]) -> List[Dict]:
     """Identify the most essential commands for beginners."""
     essential_names = [
-        "workflow:lite-plan", "workflow:lite-fix", "workflow:plan",
-        "workflow:execute", "workflow:status", "workflow:session:start",
+        "workflow-lite-plan", "workflow:lite-fix", "workflow-plan",
+        "workflow-execute", "workflow:status", "workflow:session:start",
         "workflow:review-session-cycle", "cli:analyze", "cli:chat",
         "memory:docs", "workflow:brainstorm:artifacts",
-        "workflow:plan-verify", "workflow:resume", "version"
+        "workflow-plan-verify", "workflow:resume", "version"
     ]
 
     essential = []

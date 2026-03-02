@@ -744,7 +744,7 @@ Write(context_pkg_path, JSON.stringify(context_pkg))
 **Changelog**: .brainstorming/synthesis-changelog.md
 
 ### Next Steps
-PROCEED: `/workflow:plan --session {session-id}`
+PROCEED: `/workflow-plan --session {session-id}`
 ```
 
 ## Output

@@ -1,6 +1,6 @@
 ---
 name: workflow-plan
-description: Unified planning skill - 4-phase planning workflow, plan verification, and interactive replanning. Triggers on "workflow:plan", "workflow:plan-verify", "workflow:replan".
+description: Unified planning skill - 4-phase planning workflow, plan verification, and interactive replanning. Triggers on "workflow-plan", "workflow-plan-verify", "workflow:replan".
 allowed-tools: Skill, Task, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
 ---
 
@@ -107,9 +107,9 @@ const mode = detectMode(args)
 
 function detectMode(args) {
   // Skill trigger determines mode
-  if (skillName === 'workflow:plan-verify') return 'verify'
+  if (skillName === 'workflow-plan-verify') return 'verify'
   if (skillName === 'workflow:replan') return 'replan'
-  return 'plan'  // default: workflow:plan
+  return 'plan'  // default: workflow-plan
 }
 ```
 

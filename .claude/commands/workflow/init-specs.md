@@ -54,7 +54,7 @@ Step 1: Gather Requirements (Interactive)
    └─ Ask content (rule text)
 
 Step 2: Determine Target File
-   ├─ specs dimension → .workflow/specs/coding-conventions.md or architecture-constraints.md
+   ├─ specs dimension → .ccw/specs/coding-conventions.md or architecture-constraints.md
    └─ personal dimension → ~/.ccw/specs/personal/ or .ccw/specs/personal/
 
 Step 3: Write Spec
@@ -109,7 +109,7 @@ if (!dimension) {
       options: [
         {
           label: "Project Spec",
-          description: "Coding conventions, constraints, quality rules for this project (stored in .workflow/specs/)"
+          description: "Coding conventions, constraints, quality rules for this project (stored in .ccw/specs/)"
         },
         {
           label: "Personal Spec",
@@ -234,19 +234,19 @@ let targetFile: string
 let targetDir: string
 
 if (dimension === 'specs') {
-  // Project specs
-  targetDir = '.workflow/specs'
+  // Project specs - use .ccw/specs/ (same as frontend/backend spec-index-builder)
+  targetDir = '.ccw/specs'
   if (isConstraint) {
     targetFile = path.join(targetDir, 'architecture-constraints.md')
   } else {
     targetFile = path.join(targetDir, 'coding-conventions.md')
   }
 } else {
-  // Personal specs
+  // Personal specs - use .ccw/personal/ (same as backend spec-index-builder)
   if (scope === 'global') {
-    targetDir = path.join(os.homedir(), '.ccw', 'specs', 'personal')
+    targetDir = path.join(os.homedir(), '.ccw', 'personal')
   } else {
-    targetDir = path.join('.ccw', 'specs', 'personal')
+    targetDir = path.join('.ccw', 'personal')
   }
 
   // Create category-based filename
@@ -333,7 +333,7 @@ Use 'ccw spec load --category ${category}' to load specs by category
 
 ### Project Specs (dimension: specs)
 ```
-.workflow/specs/
+.ccw/specs/
 ├── coding-conventions.md    ← conventions, learnings
 ├── architecture-constraints.md  ← constraints
 └── quality-rules.md         ← quality rules
@@ -341,14 +341,14 @@ Use 'ccw spec load --category ${category}' to load specs by category
 
 ### Personal Specs (dimension: personal)
 ```
-# Global (~/.ccw/specs/personal/)
-~/.ccw/specs/personal/
+# Global (~/.ccw/personal/)
+~/.ccw/personal/
 ├── conventions.md           ← personal conventions (all projects)
 ├── constraints.md           ← personal constraints (all projects)
 └── learnings.md             ← personal learnings (all projects)
 
-# Project-local (.ccw/specs/personal/)
-.ccw/specs/personal/
+# Project-local (.ccw/personal/)
+.ccw/personal/
 ├── conventions.md           ← personal conventions (this project only)
 ├── constraints.md           ← personal constraints (this project only)
 └── learnings.md             ← personal learnings (this project only)

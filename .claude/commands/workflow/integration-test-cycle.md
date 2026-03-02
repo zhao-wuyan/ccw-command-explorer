@@ -923,7 +923,7 @@ Single evolving state file — each phase writes its section:
 - Already have a completed implementation session (WFS-*)
 - Only need unit/component level tests
 
-**Use `workflow-tdd` skill when:**
+**Use `workflow-tdd-plan` skill when:**
 - Building new features with test-first approach
 - Red-Green-Refactor cycle
 

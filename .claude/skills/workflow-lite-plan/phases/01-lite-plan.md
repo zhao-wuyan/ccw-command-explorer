@@ -104,6 +104,17 @@ const sessionFolder = `.workflow/.lite-plan/${sessionId}`
 bash(`mkdir -p ${sessionFolder} && test -d ${sessionFolder} && echo "SUCCESS: ${sessionFolder}" || echo "FAILED: ${sessionFolder}"`)
 ```
 
+**TodoWrite (Phase 1 start)**:
+```javascript
+TodoWrite({ todos: [
+  { content: "Phase 1: Exploration", status: "in_progress", activeForm: "Exploring codebase" },
+  { content: "Phase 2: Clarification", status: "pending", activeForm: "Collecting clarifications" },
+  { content: "Phase 3: Planning", status: "pending", activeForm: "Generating plan" },
+  { content: "Phase 4: Confirmation", status: "pending", activeForm: "Awaiting confirmation" },
+  { content: "Phase 5: Execution", status: "pending", activeForm: "Executing tasks" }
+]})
+```
+
 **Exploration Decision Logic**:
 ```javascript
 // Check if task description already contains prior analysis context (from analyze-with-file)
@@ -307,6 +318,17 @@ Angles explored: ${explorationManifest.explorations.map(e => e.angle).join(', ')
 `)
 ```
 
+**TodoWrite (Phase 1 complete)**:
+```javascript
+TodoWrite({ todos: [
+  { content: "Phase 1: Exploration", status: "completed", activeForm: "Exploring codebase" },
+  { content: "Phase 2: Clarification", status: "in_progress", activeForm: "Collecting clarifications" },
+  { content: "Phase 3: Planning", status: "pending", activeForm: "Generating plan" },
+  { content: "Phase 4: Confirmation", status: "pending", activeForm: "Awaiting confirmation" },
+  { content: "Phase 5: Execution", status: "pending", activeForm: "Executing tasks" }
+]})
+```
+
 **Output**:
 - `${sessionFolder}/exploration-{angle1}.json`
 - `${sessionFolder}/exploration-{angle2}.json`
@@ -507,15 +529,17 @@ ${task_description}
 
 ## Multi-Angle Exploration Context
 
-${manifest.explorations.map(exp => `### Exploration: ${exp.angle} (${exp.file})
+${manifest.explorations.length > 0
+  ? manifest.explorations.map(exp => `### Exploration: ${exp.angle} (${exp.file})
 Path: ${exp.path}
 
-Read this file for detailed ${exp.angle} analysis.`).join('\n\n')}
+Read this file for detailed ${exp.angle} analysis.`).join('\n\n') + `
 
 Total explorations: ${manifest.exploration_count}
 Angles covered: ${manifest.explorations.map(e => e.angle).join(', ')}
 
-Manifest: ${sessionFolder}/explorations-manifest.json
+Manifest: ${sessionFolder}/explorations-manifest.json`
+  : `No exploration files. Task Description above contains "## Prior Analysis" with analysis summary, key files, and findings — use it as primary planning context.`}
 
 ## User Clarifications
 ${JSON.stringify(clarificationContext) || "None"}
@@ -559,6 +583,17 @@ Note: Use files[].change (not modification_points), convergence.criteria (not ac
 ```
 
 **Output**: `${sessionFolder}/plan.json`
+
+**TodoWrite (Phase 3 complete)**:
+```javascript
+TodoWrite({ todos: [
+  { content: "Phase 1: Exploration", status: "completed", activeForm: "Exploring codebase" },
+  { content: "Phase 2: Clarification", status: "completed", activeForm: "Collecting clarifications" },
+  { content: "Phase 3: Planning", status: "completed", activeForm: "Generating plan" },
+  { content: "Phase 4: Confirmation", status: "in_progress", activeForm: "Awaiting confirmation" },
+  { content: "Phase 5: Execution", status: "pending", activeForm: "Executing tasks" }
+]})
+```
 
 ---
 
@@ -647,6 +682,19 @@ if (autoYes) {
     ]
   })
 }
+```
+
+**TodoWrite (Phase 4 confirmed)**:
+```javascript
+const executionLabel = userSelection.execution_method
+
+TodoWrite({ todos: [
+  { content: "Phase 1: Exploration", status: "completed", activeForm: "Exploring codebase" },
+  { content: "Phase 2: Clarification", status: "completed", activeForm: "Collecting clarifications" },
+  { content: "Phase 3: Planning", status: "completed", activeForm: "Generating plan" },
+  { content: `Phase 4: Confirmed [${executionLabel}]`, status: "completed", activeForm: "Confirmed" },
+  { content: `Phase 5: Execution [${executionLabel}]`, status: "in_progress", activeForm: `Executing [${executionLabel}]` }
+]})
 ```
 
 ---
@@ -755,7 +803,7 @@ Read("phases/02-lite-execute.md")
 | Planning agent failure | Fallback to direct planning by Claude |
 | Clarification timeout | Use exploration findings as-is |
 | Confirmation timeout | Save context, display resume instructions |
-| Modify loop > 3 times | Suggest breaking task or using /workflow:plan |
+| Modify loop > 3 times | Suggest breaking task or using /workflow-plan |
 
 ## Next Phase
 

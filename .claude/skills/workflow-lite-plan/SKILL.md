@@ -1,6 +1,6 @@
 ---
 name: workflow-lite-plan
-description: Lightweight planning and execution skill - route to lite-plan or lite-execute with prompt enhancement. Triggers on "workflow:lite-plan", "workflow:lite-execute".
+description: Lightweight planning and execution skill - route to lite-plan or lite-execute with prompt enhancement. Triggers on "workflow-lite-plan", "workflow:lite-execute".
 allowed-tools: Skill, Task, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
 ---
 
@@ -41,7 +41,7 @@ const mode = detectMode()
 
 function detectMode() {
   if (skillName === 'workflow:lite-execute') return 'execute'
-  return 'plan'  // default: workflow:lite-plan
+  return 'plan'  // default: workflow-lite-plan
 }
 ```
 
@@ -49,7 +49,7 @@ function detectMode() {
 
 | Trigger | Mode | Phase Document | Description |
 |---------|------|----------------|-------------|
-| `workflow:lite-plan` | plan | [phases/01-lite-plan.md](phases/01-lite-plan.md) | Full planning pipeline (explore → plan → confirm → execute) |
+| `workflow-lite-plan` | plan | [phases/01-lite-plan.md](phases/01-lite-plan.md) | Full planning pipeline (explore → plan → confirm → execute) |
 | `workflow:lite-execute` | execute | [phases/02-lite-execute.md](phases/02-lite-execute.md) | Standalone execution (in-memory / prompt / file) |
 
 ## Interactive Preference Collection

@@ -1,6 +1,6 @@
 ---
 name: workflow-test-fix
-description: Unified test-fix pipeline combining test generation (session, context, analysis, task gen) with iterative test-cycle execution (adaptive strategy, progressive testing, CLI fallback). Triggers on "workflow:test-fix-gen", "workflow:test-cycle-execute", "test fix workflow".
+description: Unified test-fix pipeline combining test generation (session, context, analysis, task gen) with iterative test-cycle execution (adaptive strategy, progressive testing, CLI fallback). Triggers on "workflow-test-fix", "workflow-test-fix", "test fix workflow".
 allowed-tools: Skill, Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep
 ---
 
@@ -60,8 +60,8 @@ Task Pipeline (generated in Phase 4, executed in Phase 5):
 
 Full pipeline and execute-only modes are triggered by skill name routing (see Mode Detection). Workflow preferences (auto mode) are collected interactively via AskUserQuestion before dispatching to phases.
 
-**Full pipeline** (workflow:test-fix-gen): Task description or session ID as arguments → interactive preference collection → generate + execute pipeline
-**Execute only** (workflow:test-cycle-execute): Auto-discovers active session → interactive preference collection → execution loop
+**Full pipeline** (workflow-test-fix): Task description or session ID as arguments → interactive preference collection → generate + execute pipeline
+**Execute only** (workflow-test-fix): Auto-discovers active session → interactive preference collection → execution loop
 
 ## Interactive Preference Collection
 
@@ -109,8 +109,8 @@ Multi-phase test-fix pipeline (Phase 1-5) spans long conversations, especially P
 
 ```
 Entry Point Detection:
-   ├─ /workflow:test-fix-gen → Full Pipeline (Phase 1→2→3→4→Summary→5)
-   └─ /workflow:test-cycle-execute → Execution Only (Phase 5)
+   ├─ /workflow-test-fix → Full Pipeline (Phase 1→2→3→4→Summary→5)
+   └─ /workflow-test-fix → Execution Only (Phase 5)
 
 Phase 1: Session Start (session-start)
    └─ Ref: phases/01-session-start.md

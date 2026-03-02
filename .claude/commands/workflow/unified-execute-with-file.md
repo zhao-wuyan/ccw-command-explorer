@@ -477,8 +477,8 @@ ${recommendations.map(r => \`- ${r}\`).join('\\n')}
    const projectTech = file_exists('.workflow/project-tech.json')
      ? JSON.parse(Read('.workflow/project-tech.json')) : null
    // Read specs/*.md (if exists)
-   const projectGuidelines = file_exists('.workflow/specs/*.md')
-     ? JSON.parse(Read('.workflow/specs/*.md')) : null
+   const projectGuidelines = file_exists('.ccw/specs/*.md')
+     ? JSON.parse(Read('.ccw/specs/*.md')) : null
    ```
 
    ```javascript

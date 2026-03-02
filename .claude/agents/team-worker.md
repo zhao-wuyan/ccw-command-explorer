@@ -237,7 +237,7 @@ After Phase 4 completes, determine Phase 5 variant:
 ### Phase 5-L: Loop Completion (when inner_loop=true AND more same-prefix tasks pending)
 
 1. **TaskUpdate**: Mark current task `completed`
-2. **Message Bus**: Log completion
+2. **Message Bus**: Log completion with verification evidence
    ```
    mcp__ccw-tools__team_msg(
      operation="log",
@@ -245,7 +245,7 @@ After Phase 4 completes, determine Phase 5 variant:
      from=<role>,
      to="coordinator",
      type=<message_types.success>,
-     summary="[<role>] <task-id> complete. <brief-summary>",
+     summary="[<role>] <task-id> complete. <brief-summary>. Verified: <verification_method>",
      ref=<artifact-path>
    )
    ```
@@ -283,7 +283,7 @@ After Phase 4 completes, determine Phase 5 variant:
 | Condition | Action |
 |-----------|--------|
 | Same-prefix successor (inner loop role) | Do NOT spawn — main agent handles via inner loop |
-| 1 ready task, simple linear successor, different prefix | Spawn directly via `Task(run_in_background: true)` |
+| 1 ready task, simple linear successor, different prefix | Spawn directly via `Task(run_in_background: true)` + log `fast_advance` to message bus |
 | Multiple ready tasks (parallel window) | SendMessage to coordinator (needs orchestration) |
 | No ready tasks + others running | SendMessage to coordinator (status update) |
 | No ready tasks + nothing running | SendMessage to coordinator (pipeline may be complete) |
@@ -311,6 +311,23 @@ inner_loop: <true|false based on successor role>`
 })
 ```
 
+### Fast-Advance Notification
+
+After spawning a successor via fast-advance, MUST log to message bus:
+
+```
+mcp__ccw-tools__team_msg(
+  operation="log",
+  team=<session_id>,
+  from=<role>,
+  to="coordinator",
+  type="fast_advance",
+  summary="[<role>] fast-advanced <completed-task-id> → spawned <successor-role> for <successor-task-id>"
+)
+```
+
+This is a passive log entry (NOT a SendMessage). Coordinator reads it on next callback to reconcile `active_workers`.
+
 ### SendMessage Format
 
 ```
@@ -320,8 +337,10 @@ SendMessage(team_name=<team_name>, recipient="coordinator", message="[<role>] <f
 **Final report contents**:
 - Tasks completed (count + list)
 - Artifacts produced (paths)
+- Files modified (paths + before/after evidence from Phase 4 verification)
 - Discuss results (verdicts + ratings)
 - Key decisions (from context_accumulator)
+- Verification summary (methods used, pass/fail status)
 - Any warnings or issues
 
 ---
@@ -382,6 +401,48 @@ Write discoveries to corresponding wisdom files:
 - Architecture/design decisions → `decisions.md`
 - Codebase conventions → `conventions.md`
 - Risks and known issues → `issues.md`
+
+---
+
+## Knowledge Transfer
+
+### Upstream Context Loading (Phase 2)
+
+When executing Phase 2 of a role-spec, the worker MUST load available cross-role context:
+
+| Source | Path | Load Method |
+|--------|------|-------------|
+| Upstream artifacts | `<session>/artifacts/*.md` | Read files listed in task description or dependency chain |
+| Shared memory | `<session>/shared-memory.json` | Read and parse JSON |
+| Wisdom | `<session>/wisdom/*.md` | Read all wisdom files |
+| Exploration cache | `<session>/explorations/cache-index.json` | Check before new explorations |
+
+### Downstream Context Publishing (Phase 4)
+
+After Phase 4 verification, the worker MUST publish its contributions:
+
+1. **Artifact**: Write deliverable to `<session>/artifacts/<prefix>-<task-id>-<name>.md`
+2. **shared-memory.json**: Read-merge-write under role namespace
+   ```json
+   { "<role>": { "key_findings": [...], "decisions": [...], "files_modified": [...] } }
+   ```
+3. **Wisdom**: Append new patterns to `learnings.md`, decisions to `decisions.md`, issues to `issues.md`
+
+### Inner Loop Context Accumulator
+
+For `inner_loop: true` roles, `context_accumulator` is maintained in-memory:
+
+```
+context_accumulator.append({
+  task: "<task-id>",
+  artifact: "<output-path>",
+  key_decisions: [...],
+  summary: "<brief>",
+  files_modified: [...]
+})
+```
+
+Pass the full accumulator to each subsequent task's Phase 3 subagent as `## Prior Context`.
 
 ---
 

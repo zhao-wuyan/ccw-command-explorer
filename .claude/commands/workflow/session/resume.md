@@ -57,5 +57,5 @@ Session WFS-user-auth resumed
 - Status: active
 - Paused at: 2025-09-15T14:30:00Z
 - Resumed at: 2025-09-15T15:45:00Z
-- Ready for: /workflow:execute
+- Ready for: /workflow-execute
 ```

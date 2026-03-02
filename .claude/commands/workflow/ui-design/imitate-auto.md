@@ -606,7 +606,7 @@ Total workflow time: ~{estimate_total_time()} minutes
 
 {IF session_id:
 2. Create implementation tasks:
-   /workflow:plan --session {session_id}
+   /workflow-plan --session {session_id}
 
 3. Generate tests (if needed):
    /workflow:test-gen {session_id}
@@ -741,5 +741,5 @@ Design Quality:
   - Design token driven
   - {generated_count} assembled prototypes
 
-Next: [/workflow:execute] OR [Open compare.html → /workflow:plan]
+Next: [/workflow-execute] OR [Open compare.html → /workflow-plan]
 ```

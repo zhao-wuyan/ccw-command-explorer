@@ -11,7 +11,7 @@ examples:
 
 ## Overview
 
-Interactive multi-round wizard that analyzes the current project (via `project-tech.json`) and asks targeted questions to populate `.workflow/specs/*.md` with coding conventions, constraints, and quality rules.
+Interactive multi-round wizard that analyzes the current project (via `project-tech.json`) and asks targeted questions to populate `.ccw/specs/*.md` with coding conventions, constraints, and quality rules.
 
 **Design Principle**: Questions are dynamically generated based on the project's tech stack, architecture, and patterns — not generic boilerplate.
 
@@ -55,7 +55,7 @@ Step 5: Display Summary
 
 ```bash
 bash(test -f .workflow/project-tech.json && echo "TECH_EXISTS" || echo "TECH_NOT_FOUND")
-bash(test -f .workflow/specs/coding-conventions.md && echo "SPECS_EXISTS" || echo "SPECS_NOT_FOUND")
+bash(test -f .ccw/specs/coding-conventions.md && echo "SPECS_EXISTS" || echo "SPECS_NOT_FOUND")
 ```
 
 **If TECH_NOT_FOUND**: Exit with message
@@ -332,8 +332,15 @@ For each category of collected answers, append rules to the corresponding spec M
 
 ```javascript
 // Helper: append rules to a spec MD file with category support
+// Uses .ccw/specs/ directory (same as frontend/backend spec-index-builder)
 function appendRulesToSpecFile(filePath, rules, defaultCategory = 'general') {
   if (rules.length === 0) return
+
+  // Ensure .ccw/specs/ directory exists
+  const specDir = path.dirname(filePath)
+  if (!fs.existsSync(specDir)) {
+    fs.mkdirSync(specDir, { recursive: true })
+  }
 
   // Check if file exists
   if (!file_exists(filePath)) {
@@ -360,19 +367,19 @@ keywords: [${defaultCategory}, ${filePath.includes('conventions') ? 'convention'
   Write(filePath, newContent)
 }
 
-// Write conventions (general category)
-appendRulesToSpecFile('.workflow/specs/coding-conventions.md',
+// Write conventions (general category) - use .ccw/specs/ (same as frontend/backend)
+appendRulesToSpecFile('.ccw/specs/coding-conventions.md',
   [...newCodingStyle, ...newNamingPatterns, ...newFileStructure, ...newDocumentation],
   'general')
 
 // Write constraints (planning category)
-appendRulesToSpecFile('.workflow/specs/architecture-constraints.md',
+appendRulesToSpecFile('.ccw/specs/architecture-constraints.md',
   [...newArchitecture, ...newTechStack, ...newPerformance, ...newSecurity],
   'planning')
 
 // Write quality rules (execution category)
 if (newQualityRules.length > 0) {
-  const qualityPath = '.workflow/specs/quality-rules.md'
+  const qualityPath = '.ccw/specs/quality-rules.md'
   if (!file_exists(qualityPath)) {
     Write(qualityPath, `---
 title: Quality Rules

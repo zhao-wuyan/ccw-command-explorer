@@ -27,7 +27,7 @@ The `--type` parameter classifies sessions for CCW dashboard organization:
 |------|-------------|-------------|
 | `workflow` | Standard implementation (default) | `workflow-plan` skill |
 | `review` | Code review sessions | `review-cycle` skill |
-| `tdd` | TDD-based development | `workflow-tdd` skill |
+| `tdd` | TDD-based development | `workflow-tdd-plan` skill |
 | `test` | Test generation/fix sessions | `workflow-test-fix` skill |
 | `docs` | Documentation sessions | `memory-manage` skill |
 
@@ -44,7 +44,7 @@ ERROR: Invalid session type. Valid types: workflow, review, tdd, test, docs
 ```bash
 # Check if project state exists (both files required)
 bash(test -f .workflow/project-tech.json && echo "TECH_EXISTS" || echo "TECH_NOT_FOUND")
-bash(test -f .workflow/specs/*.md && echo "GUIDELINES_EXISTS" || echo "GUIDELINES_NOT_FOUND")
+bash(test -f .ccw/specs/*.md && echo "GUIDELINES_EXISTS" || echo "GUIDELINES_NOT_FOUND")
 ```
 
 **If either NOT_FOUND**, delegate to `/workflow:init`:
@@ -60,7 +60,7 @@ Skill(skill="workflow:init");
 - If BOTH_EXIST: `PROJECT_STATE: initialized`
 - If NOT_FOUND: Calls `/workflow:init` → creates:
   - `.workflow/project-tech.json` with full technical analysis
-  - `.workflow/specs/*.md` with empty scaffold
+  - `.ccw/specs/*.md` with empty scaffold
 
 **Note**: `/workflow:init` uses cli-explore-agent to build comprehensive project understanding (technology stack, architecture, key components). This step runs once per project. Subsequent executions skip initialization.
 

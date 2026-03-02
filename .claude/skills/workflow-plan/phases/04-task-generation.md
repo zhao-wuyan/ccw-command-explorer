@@ -338,13 +338,20 @@ Output:
 )
 ```
 
+**Executor Label** (computed after Step 4.0):
+```javascript
+const executorLabel = userConfig.executionMethod === 'agent' ? 'Agent'
+  : userConfig.executionMethod === 'hybrid' ? 'Hybrid'
+  : `CLI (${userConfig.preferredCliTool})`
+```
+
 ### TodoWrite Update (Phase 4 in progress)
 
 ```json
 [
   {"content": "Phase 1: Session Discovery", "status": "completed", "activeForm": "Executing session discovery"},
   {"content": "Phase 2: Context Gathering", "status": "completed", "activeForm": "Executing context gathering"},
-  {"content": "Phase 4: Task Generation", "status": "in_progress", "activeForm": "Executing task generation"}
+  {"content": "Phase 4: Task Generation [${executorLabel}]", "status": "in_progress", "activeForm": "Generating tasks [${executorLabel}]"}
 ]
 ```
 
@@ -354,7 +361,7 @@ Output:
 [
   {"content": "Phase 1: Session Discovery", "status": "completed", "activeForm": "Executing session discovery"},
   {"content": "Phase 2: Context Gathering", "status": "completed", "activeForm": "Executing context gathering"},
-  {"content": "Phase 4: Task Generation", "status": "completed", "activeForm": "Executing task generation"}
+  {"content": "Phase 4: Task Generation [${executorLabel}]", "status": "completed", "activeForm": "Generating tasks [${executorLabel}]"}
 ]
 ```
 

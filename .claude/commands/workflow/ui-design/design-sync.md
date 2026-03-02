@@ -1,6 +1,6 @@
 ---
 name: design-sync
-description: Synchronize finalized design system references to brainstorming artifacts, preparing them for /workflow:plan consumption
+description: Synchronize finalized design system references to brainstorming artifacts, preparing them for /workflow-plan consumption
 argument-hint: --session <session_id> [--selected-prototypes "<list>"]
 allowed-tools: Read(*), Write(*), Edit(*), TodoWrite(*), Glob(*), Bash(*)
 ---
@@ -351,10 +351,10 @@ Updated artifacts:
 ✓ {role_count} role analysis.md files - Design system references
 ✓ ui-designer/design-system-reference.md - Design system reference guide
 
-Design system assets ready for /workflow:plan:
+Design system assets ready for /workflow-plan:
 - design-tokens.json | style-guide.md | {prototype_count} reference prototypes
 
-Next: /workflow:plan [--agent] "<task description>"
+Next: /workflow-plan [--agent] "<task description>"
       The plan phase will automatically discover and utilize the design system.
 ```
 
@@ -394,7 +394,7 @@ Next: /workflow:plan [--agent] "<task description>"
 @../../{design_id}/prototypes/{prototype}.html
 ```
 
-## Integration with /workflow:plan
+## Integration with /workflow-plan
 
 After this update, `workflow-plan` skill will discover design assets through:
 

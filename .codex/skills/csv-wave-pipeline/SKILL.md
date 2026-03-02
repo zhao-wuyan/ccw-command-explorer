@@ -73,11 +73,11 @@ Wave-based batch execution using `spawn_agents_on_csv` with **cross-wave context
 ### tasks.csv (Master State)
 
 ```csv
-id,title,description,deps,context_from,wave,status,findings,files_modified,error
-1,Setup auth module,Create auth directory structure and base files,,,1,,,,
-2,Implement OAuth,Add OAuth provider integration with Google and GitHub,1,1,2,,,,
-3,Add JWT tokens,Implement JWT generation and validation,1,1,2,,,,
-4,Setup 2FA,Add TOTP-based 2FA with QR code generation,2;3,1;2;3,3,,,,
+id,title,description,test,acceptance_criteria,scope,hints,execution_directives,deps,context_from,wave,status,findings,files_modified,tests_passed,acceptance_met,error
+"1","Setup auth module","Create auth directory structure and base files","Verify directory exists and base files export expected interfaces","auth/ dir created; index.ts and types.ts export AuthProvider interface","src/auth/**","Follow monorepo module pattern || package.json;src/shared/types.ts","","","","1","","","","","",""
+"2","Implement OAuth","Add OAuth provider integration with Google and GitHub","Unit test: mock OAuth callback returns valid token; Integration test: verify redirect URL generation","OAuth login redirects to provider; callback returns JWT; supports Google and GitHub","src/auth/oauth/**","Use passport.js strategy pattern || src/auth/index.ts;docs/oauth-flow.md","Run npm test -- --grep oauth before completion","1","1","2","","","","","",""
+"3","Add JWT tokens","Implement JWT generation and validation","Unit test: sign/verify round-trip; Edge test: expired token returns 401","generateToken() returns valid JWT; verifyToken() rejects expired/tampered tokens","src/auth/jwt/**","Use jsonwebtoken library; Set default expiry 1h || src/config/auth.ts","Ensure tsc --noEmit passes","1","1","2","","","","","",""
+"4","Setup 2FA","Add TOTP-based 2FA with QR code generation","Unit test: TOTP verify with correct code; Test: QR data URL is valid","QR code generates scannable image; TOTP verification succeeds within time window","src/auth/2fa/**","Use speakeasy + qrcode libraries || src/auth/oauth/strategy.ts;src/auth/jwt/token.ts","Run full test suite: npm test","2;3","1;2;3","3","","","","","",""
 ```
 
 **Columns**:
@@ -86,13 +86,20 @@ id,title,description,deps,context_from,wave,status,findings,files_modified,error
 |--------|-------|-------------|
 | `id` | Input | Unique task identifier (string) |
 | `title` | Input | Short task title |
-| `description` | Input | Detailed task description |
+| `description` | Input | Detailed task description — what to implement |
+| `test` | Input | Test cases: what tests to write and how to verify (unit/integration/edge) |
+| `acceptance_criteria` | Input | Acceptance criteria: measurable conditions that define "done" |
+| `scope` | Input | Target file/directory glob — constrains agent work area, prevents cross-task file conflicts |
+| `hints` | Input | Implementation tips + reference files. Format: `tips text \|\| file1;file2`. Before `\|\|` = how to implement; after `\|\|` = existing files to read before starting. Either part is optional |
+| `execution_directives` | Input | Execution constraints: commands to run for verification, tool restrictions, environment requirements |
 | `deps` | Input | Semicolon-separated dependency task IDs (empty = no deps) |
 | `context_from` | Input | Semicolon-separated task IDs whose findings this task needs |
 | `wave` | Computed | Wave number (computed by topological sort, 1-based) |
 | `status` | Output | `pending` → `completed` / `failed` / `skipped` |
 | `findings` | Output | Key discoveries or implementation notes (max 500 chars) |
 | `files_modified` | Output | Semicolon-separated file paths |
+| `tests_passed` | Output | Whether all defined test cases passed (true/false) |
+| `acceptance_met` | Output | Summary of which acceptance criteria were met/unmet |
 | `error` | Output | Error message if failed (empty if success) |
 
 ### Per-Wave CSV (Temporary)
@@ -100,9 +107,9 @@ id,title,description,deps,context_from,wave,status,findings,files_modified,error
 Each wave generates a temporary `wave-{N}.csv` with an extra `prev_context` column:
 
 ```csv
-id,title,description,deps,context_from,wave,prev_context
-2,Implement OAuth,Add OAuth integration,1,1,2,"[Task 1] Created auth/ with index.ts and types.ts"
-3,Add JWT tokens,Implement JWT,1,1,2,"[Task 1] Created auth/ with index.ts and types.ts"
+id,title,description,test,acceptance_criteria,scope,hints,execution_directives,deps,context_from,wave,prev_context
+"2","Implement OAuth","Add OAuth integration","Unit test: mock OAuth callback returns valid token","OAuth login redirects to provider; callback returns JWT","src/auth/oauth/**","Use passport.js strategy pattern || src/auth/index.ts;docs/oauth-flow.md","Run npm test -- --grep oauth","1","1","2","[Task 1] Created auth/ with index.ts and types.ts"
+"3","Add JWT tokens","Implement JWT","Unit test: sign/verify round-trip; Edge test: expired token returns 401","generateToken() returns valid JWT; verifyToken() rejects expired/tampered tokens","src/auth/jwt/**","Use jsonwebtoken library; Set default expiry 1h || src/config/auth.ts","Ensure tsc --noEmit passes","1","1","2","[Task 1] Created auth/ with index.ts and types.ts"
 ```
 
 The `prev_context` column is built from `context_from` by looking up completed tasks' `findings` in the master CSV.
@@ -187,16 +194,26 @@ Bash(`mkdir -p ${sessionFolder}`)
    ```javascript
    // Use ccw cli to decompose requirement into subtasks
    Bash({
-     command: `ccw cli -p "PURPOSE: Decompose requirement into 3-10 atomic tasks for batch agent execution.
+     command: `ccw cli -p "PURPOSE: Decompose requirement into 3-10 atomic tasks for batch agent execution. Each task must include implementation description, test cases, and acceptance criteria.
 TASK:
   • Parse requirement into independent subtasks
   • Identify dependencies between tasks (which must complete before others)
   • Identify context flow (which tasks need previous tasks' findings)
+  • For each task, define concrete test cases (unit/integration/edge)
+  • For each task, define measurable acceptance criteria (what defines 'done')
   • Each task must be executable by a single agent with file read/write access
 MODE: analysis
 CONTEXT: @**/*
-EXPECTED: JSON object with tasks array. Each task: {id: string, title: string, description: string, deps: string[], context_from: string[]}. deps = task IDs that must complete first. context_from = task IDs whose findings are needed.
-CONSTRAINTS: 3-10 tasks | Each task is atomic | No circular deps | description must be specific enough for an agent to execute independently
+EXPECTED: JSON object with tasks array. Each task: {id: string, title: string, description: string, test: string, acceptance_criteria: string, scope: string, hints: string, execution_directives: string, deps: string[], context_from: string[]}.
+  - description: what to implement (specific enough for an agent to execute independently)
+  - test: what tests to write and how to verify (e.g. 'Unit test: X returns Y; Edge test: handles Z')
+  - acceptance_criteria: measurable conditions that define done (e.g. 'API returns 200; token expires after 1h')
+  - scope: target file/directory glob (e.g. 'src/auth/**') — tasks in same wave MUST have non-overlapping scopes
+  - hints: implementation tips + reference files, format '<tips> || <ref_file1>;<ref_file2>' (e.g. 'Use strategy pattern || src/base/Strategy.ts;docs/design.md')
+  - execution_directives: commands to run for verification or tool constraints (e.g. 'Run npm test --bail; Ensure tsc passes')
+  - deps: task IDs that must complete first
+  - context_from: task IDs whose findings are needed
+CONSTRAINTS: 3-10 tasks | Each task is atomic | No circular deps | test and acceptance_criteria must be concrete and verifiable | Same-wave tasks must have non-overlapping scopes
 
 REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-breakdown-task-steps`,
      run_in_background: true
@@ -266,19 +283,26 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
 3. **Generate tasks.csv**
 
    ```javascript
-   const header = 'id,title,description,deps,context_from,wave,status,findings,files_modified,error'
+   const header = 'id,title,description,test,acceptance_criteria,scope,hints,execution_directives,deps,context_from,wave,status,findings,files_modified,tests_passed,acceptance_met,error'
    const rows = decomposedTasks.map(task => {
      const wave = waveAssignment.get(task.id)
      return [
        task.id,
        csvEscape(task.title),
        csvEscape(task.description),
+       csvEscape(task.test),
+       csvEscape(task.acceptance_criteria),
+       csvEscape(task.scope),
+       csvEscape(task.hints),
+       csvEscape(task.execution_directives),
        task.deps.join(';'),
        task.context_from.join(';'),
        wave,
        'pending',  // status
        '',         // findings
        '',         // files_modified
+       '',         // tests_passed
+       '',         // acceptance_met
        ''          // error
      ].map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
    })
@@ -387,9 +411,9 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
      }
 
      // 5. Write wave CSV
-     const waveHeader = 'id,title,description,deps,context_from,wave,prev_context'
+     const waveHeader = 'id,title,description,test,acceptance_criteria,scope,hints,execution_directives,deps,context_from,wave,prev_context'
      const waveRows = executableTasks.map(t =>
-       [t.id, t.title, t.description, t.deps, t.context_from, t.wave, t.prev_context]
+       [t.id, t.title, t.description, t.test, t.acceptance_criteria, t.scope, t.hints, t.execution_directives, t.deps, t.context_from, t.wave, t.prev_context]
          .map(cell => `"${String(cell).replace(/"/g, '""')}"`)
          .join(',')
      )
@@ -412,9 +436,11 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
            status: { type: "string", enum: ["completed", "failed"] },
            findings: { type: "string" },
            files_modified: { type: "array", items: { type: "string" } },
+           tests_passed: { type: "boolean" },
+           acceptance_met: { type: "string" },
            error: { type: "string" }
          },
-         required: ["id", "status", "findings"]
+         required: ["id", "status", "findings", "tests_passed"]
        }
      })
      // ↑ Blocks until all agents in this wave complete
@@ -426,6 +452,8 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
          status: result.status,
          findings: result.findings || '',
          files_modified: (result.files_modified || []).join(';'),
+         tests_passed: String(result.tests_passed ?? ''),
+         acceptance_met: result.acceptance_met || '',
          error: result.error || ''
        })
 
@@ -462,6 +490,23 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
 **Task ID**: {id}
 **Title**: {title}
 **Description**: {description}
+**Scope**: {scope}
+
+### Implementation Hints & Reference Files
+{hints}
+
+> Format: \`<tips> || <ref_file1>;<ref_file2>\`. Read ALL reference files (after ||) before starting implementation. Apply tips (before ||) as implementation guidance.
+
+### Execution Directives
+{execution_directives}
+
+> Commands to run for verification, tool restrictions, or environment requirements. Follow these constraints during and after implementation.
+
+### Test Cases
+{test}
+
+### Acceptance Criteria
+{acceptance_criteria}
 
 ### Previous Tasks' Findings (Context)
 {prev_context}
@@ -470,14 +515,20 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
 
 ## Execution Protocol
 
-1. **Read discoveries**: Load ${sessionFolder}/discoveries.ndjson for shared exploration findings
-2. **Use context**: Apply previous tasks' findings from prev_context above
-3. **Execute**: Implement the task as described
-4. **Share discoveries**: Append exploration findings to shared board:
+1. **Read references**: Parse {hints} — read all files listed after \`||\` to understand existing patterns
+2. **Read discoveries**: Load ${sessionFolder}/discoveries.ndjson for shared exploration findings
+3. **Use context**: Apply previous tasks' findings from prev_context above
+4. **Stay in scope**: ONLY create/modify files within {scope} — do NOT touch files outside this boundary
+5. **Apply hints**: Follow implementation tips from {hints} (before \`||\`)
+6. **Execute**: Implement the task as described
+7. **Write tests**: Implement the test cases defined above
+8. **Run directives**: Execute commands from {execution_directives} to verify your work
+9. **Verify acceptance**: Ensure all acceptance criteria are met before reporting completion
+10. **Share discoveries**: Append exploration findings to shared board:
    \`\`\`bash
    echo '{"ts":"<ISO8601>","worker":"{id}","type":"<type>","data":{...}}' >> ${sessionFolder}/discoveries.ndjson
    \`\`\`
-5. **Report result**: Return JSON via report_agent_job_result
+11. **Report result**: Return JSON via report_agent_job_result
 
 ### Discovery Types to Share
 - \`code_pattern\`: {name, file, description} — reusable patterns found
@@ -495,8 +546,15 @@ Return JSON:
   "status": "completed" | "failed",
   "findings": "Key discoveries and implementation notes (max 500 chars)",
   "files_modified": ["path1", "path2"],
+  "tests_passed": true | false,
+  "acceptance_met": "Summary of which acceptance criteria were met/unmet",
   "error": ""
 }
+
+**IMPORTANT**: Set status to "completed" ONLY if:
+- All test cases pass
+- All acceptance criteria are met
+Otherwise set status to "failed" with details in error field.
 `
    }
    ```
@@ -576,6 +634,7 @@ Return JSON:
 | Completed | ${completed.length} |
 | Failed | ${failed.length} |
 | Skipped | ${skipped.length} |
+| Waves | ${maxWave} |
 
 ---
 
@@ -584,7 +643,7 @@ Return JSON:
 ${Array.from({ length: maxWave }, (_, i) => i + 1).map(w => {
   const waveTasks = tasks.filter(t => parseInt(t.wave) === w)
   return `### Wave ${w}
-${waveTasks.map(t => `- **[${t.id}] ${t.title}**: ${t.status}${t.error ? ' — ' + t.error : ''}
+${waveTasks.map(t => `- **[${t.id}] ${t.title}**: ${t.status}${t.tests_passed ? ' ✓tests' : ''}${t.error ? ' — ' + t.error : ''}
   ${t.findings ? 'Findings: ' + t.findings : ''}`).join('\n')}`
 }).join('\n\n')}
 
@@ -598,9 +657,22 @@ ${tasks.map(t => `### ${t.id}: ${t.title}
 |-------|-------|
 | Status | ${t.status} |
 | Wave | ${t.wave} |
+| Scope | ${t.scope || 'none'} |
 | Dependencies | ${t.deps || 'none'} |
 | Context From | ${t.context_from || 'none'} |
+| Tests Passed | ${t.tests_passed || 'N/A'} |
+| Acceptance Met | ${t.acceptance_met || 'N/A'} |
 | Error | ${t.error || 'none'} |
+
+**Description**: ${t.description}
+
+**Test Cases**: ${t.test || 'N/A'}
+
+**Acceptance Criteria**: ${t.acceptance_criteria || 'N/A'}
+
+**Hints**: ${t.hints || 'N/A'}
+
+**Execution Directives**: ${t.execution_directives || 'N/A'}
 
 **Findings**: ${t.findings || 'N/A'}
 

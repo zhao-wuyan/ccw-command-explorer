@@ -373,7 +373,7 @@ Initial → Phase 1 Mode Routing (completed)
 - `/workflow:session:start` - Start a new workflow session (optional, brainstorm creates its own)
 
 **Follow-ups** (after brainstorm completes):
-- `/workflow:plan --session {sessionId}` - Generate implementation plan
+- `/workflow-plan --session {sessionId}` - Generate implementation plan
 - `/workflow:brainstorm:synthesis --session {sessionId}` - Run synthesis standalone (if skipped)
 
 ## Reference Information

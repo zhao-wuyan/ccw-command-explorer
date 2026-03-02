@@ -210,7 +210,7 @@ AskUserQuestion({
       options: [
         {
           label: "Execute via lite-plan",
-          description: "Start implementing with /workflow:lite-plan, one Epic at a time"
+          description: "Start implementing with /workflow-lite-plan, one Epic at a time"
         },
         {
           label: "Create roadmap",
@@ -218,7 +218,7 @@ AskUserQuestion({
         },
         {
           label: "Full planning",
-          description: "Detailed planning with /workflow:plan for the full scope"
+          description: "Detailed planning with /workflow-plan for the full scope"
         },
         {
           label: "Create Issues",
@@ -242,7 +242,7 @@ if (selection === "Execute via lite-plan") {
   const epicContent = Read(firstMvpFile);
   const title = extractTitle(epicContent);       // First # heading
   const description = extractSection(epicContent, "Description");
-  Skill(skill="workflow:lite-plan", args=`"${title}: ${description}"`)
+  Skill(skill="workflow-lite-plan", args=`"${title}: ${description}"`)
 }
 
 if (selection === "Full planning" || selection === "Create roadmap") {
@@ -368,7 +368,7 @@ ${extractSection(epicContent, "Architecture")}
   // → context-package.json.brainstorm_artifacts populated
   // → action-planning-agent loads guidance_specification (P1) + feature_index (P2)
   if (selection === "Full planning") {
-    Skill(skill="workflow:plan", args=`"${structuredDesc}"`)
+    Skill(skill="workflow-plan", args=`"${structuredDesc}"`)
   } else {
     Skill(skill="workflow:req-plan-with-file", args=`"${extractGoal(specSummary)}"`)
   }

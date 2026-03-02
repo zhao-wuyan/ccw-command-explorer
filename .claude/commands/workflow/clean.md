@@ -496,7 +496,7 @@ if (fileExists(projectPath)) {
 }
 
 // Update specs/*.md: remove learnings referencing deleted sessions
-const guidelinesPath = '.workflow/specs/*.md'
+const guidelinesPath = '.ccw/specs/*.md'
 if (fileExists(guidelinesPath)) {
   const guidelines = JSON.parse(Read(guidelinesPath))
   const deletedSessionIds = results.deleted

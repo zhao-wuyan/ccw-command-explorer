@@ -350,9 +350,9 @@ executionCalls = createExecutionCalls(getTasks(planObject), executionMethod).map
 
 TodoWrite({
   todos: executionCalls.map(c => ({
-    content: `${c.executionType === "parallel" ? "⚡" : "→"} ${c.id} (${c.tasks.length} tasks)`,
+    content: `${c.executionType === "parallel" ? "⚡" : "→"} ${c.id} [${c.executor}] (${c.tasks.length} tasks)`,
     status: "pending",
-    activeForm: `Executing ${c.id}`
+    activeForm: `Executing ${c.id} [${c.executor}]`
   }))
 })
 ```

@@ -1,6 +1,6 @@
 ---
 name: workflow-multi-cli-plan
-description: Multi-CLI collaborative planning and execution skill - route to multi-cli-plan or lite-execute with prompt enhancement. Triggers on "workflow:multi-cli-plan", "workflow:lite-execute".
+description: Multi-CLI collaborative planning and execution skill - route to multi-cli-plan or lite-execute with prompt enhancement. Triggers on "workflow-multi-cli-plan", "workflow:lite-execute".
 allowed-tools: Skill, Task, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context
 ---
 
@@ -33,7 +33,7 @@ const mode = detectMode()
 
 function detectMode() {
   if (skillName === 'workflow:lite-execute') return 'execute'
-  return 'plan'  // default: workflow:multi-cli-plan
+  return 'plan'  // default: workflow-multi-cli-plan
 }
 ```
 
@@ -41,7 +41,7 @@ function detectMode() {
 
 | Trigger | Mode | Phase Document | Description |
 |---------|------|----------------|-------------|
-| `workflow:multi-cli-plan` | plan | [phases/01-multi-cli-plan.md](phases/01-multi-cli-plan.md) | Multi-CLI collaborative planning (ACE context → discussion → plan → execute) |
+| `workflow-multi-cli-plan` | plan | [phases/01-multi-cli-plan.md](phases/01-multi-cli-plan.md) | Multi-CLI collaborative planning (ACE context → discussion → plan → execute) |
 | `workflow:lite-execute` | execute | [phases/02-lite-execute.md](phases/02-lite-execute.md) | Standalone execution (in-memory / prompt / file) |
 
 ## Interactive Preference Collection
@@ -124,7 +124,7 @@ Multi-phase execution (multi-cli-plan → lite-execute) spans long conversations
 
 ## Execution Flow
 
-### Plan Mode (workflow:multi-cli-plan)
+### Plan Mode (workflow-multi-cli-plan)
 
 ```
 1. Collect preferences via AskUserQuestion (autoYes)

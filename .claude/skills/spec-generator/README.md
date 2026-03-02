@@ -67,9 +67,9 @@ spec-generator/
 ## Handoff
 
 After Phase 6, choose execution path:
-- `workflow:lite-plan` - Execute per Epic
+- `workflow-lite-plan` - Execute per Epic
 - `workflow:req-plan-with-file` - Roadmap decomposition
-- `workflow:plan` - Full planning
+- `workflow-plan` - Full planning
 - `issue:new` - Create issues per Epic
 
 ## Design Principles

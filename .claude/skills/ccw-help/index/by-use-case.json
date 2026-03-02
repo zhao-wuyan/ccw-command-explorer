@@ -282,7 +282,7 @@
     {
       "name": "design-sync",
       "command": "/workflow:ui-design:design-sync",
-      "description": "Synchronize finalized design system references to brainstorming artifacts, preparing them for /workflow:plan consumption",
+      "description": "Synchronize finalized design system references to brainstorming artifacts, preparing them for /workflow-plan consumption",
       "arguments": "--session <session_id> [--selected-prototypes \"<list>\"]",
       "category": "workflow",
       "subcategory": "ui-design",

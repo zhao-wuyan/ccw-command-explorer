@@ -27,25 +27,26 @@ def get_claude_commands() -> Set[str]:
     """扫描 .claude/commands 目录"""
     commands = set()
     commands_dir = ROOT_DIR / '.claude' / 'commands'
-    
+
     if not commands_dir.exists():
         return commands
-    
+
     for root, dirs, files in os.walk(commands_dir):
         # 排除 agent 目录
         dirs[:] = [d for d in dirs if d != 'agent']
-        
+
         for f in files:
             if f.endswith('.md'):
-                path = os.path.join(root, f)
-                rel_path = path.replace(str(commands_dir) + '/', '').replace('.md', '')
-                parts = rel_path.split('/')
+                file_path = Path(root) / f
+                rel_path = file_path.relative_to(commands_dir)
+                parts = list(rel_path.parts)
+                parts[-1] = parts[-1][:-3]  # 移除 .md 后缀
                 if len(parts) == 1:
                     cmd = '/' + parts[0]
                 else:
                     cmd = '/' + parts[0] + ':' + ':'.join(parts[1:])
                 commands.add(cmd)
-    
+
     return commands
 
 def get_claude_skills() -> Set[str]:

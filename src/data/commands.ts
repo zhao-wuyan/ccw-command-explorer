@@ -358,6 +358,28 @@ export const COMMANDS: Command[] = [
     usage: '有固定的工作流程想反复使用'
   },
 
+  // ==================== IDAW 任务管理 ====================
+  { cmd: '/idaw:add', desc: '添加 IDAW 任务 - 手动创建或从 issue 导入', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+    detail: '创建 IDAW 任务：手动填写描述，或从 ccw issue 导入。支持 --yes 自动模式跳过确认',
+    usage: '需要添加新的 IDAW 任务，或将 issue 转换为 IDAW 任务时'
+  },
+  { cmd: '/idaw:run', desc: 'IDAW 执行器 - 串行执行技能链，附带 git 检查点', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+    detail: 'IDAW 任务串行执行：按任务类型映射技能链（bugfix→lite-plan+test-fix，feature→plan+test-fix），每次提交创建 git 检查点',
+    usage: '执行 IDAW 任务队列，希望有 git 安全点'
+  },
+  { cmd: '/idaw:run-coordinate', desc: 'IDAW 协调器 - 通过 CLI 执行技能链（支持 hook 回调）', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+    detail: 'IDAW 协调模式：通过外部 CLI 工具执行，支持 hook 回调和 git 检查点。适合需要 CLI 集成的场景',
+    usage: '需要通过外部 CLI（如 Gemini）执行 IDAW 任务时'
+  },
+  { cmd: '/idaw:resume', desc: '恢复中断的 IDAW 会话', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+    detail: '从最后一个检查点恢复中断的 IDAW 会话，无需重新开始',
+    usage: 'IDAW 任务执行中断后，想从断点继续'
+  },
+  { cmd: '/idaw:status', desc: '查看 IDAW 任务和会话进度', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+    detail: '显示 IDAW 任务列表、当前会话状态、每个任务的执行进度和结果',
+    usage: '想查看 IDAW 任务的执行状态'
+  },
+
   // ==================== CLI 工具 ====================
   { cmd: '/cli:cli-init', desc: '初始化 CLI 工具配置 (Gemini/Qwen)', status: 'stable', category: 'main', cli: 'claude', addedInVersion: 'v6.2',
     detail: '首次配置：为Gemini和Qwen创建配置文件(.gemini/、.qwen/)，设置API密钥、模型选择等',
@@ -714,6 +736,14 @@ export const COMMANDS: Command[] = [
     detail: 'CSV Wave流程：①分解需求生成 explore.csv；②波浪式探索代码；③综合发现生成 tasks.csv；④波浪式执行任务。支持上下文传播',
     usage: '需要批量探索和执行任务，保持上下文连贯'
   },
+  { cmd: '/wave-plan-pipeline', desc: '先勘探再施工 - 探索>计划>执行一条龙流水线', status: 'new', category: 'skill', cli: 'codex', addedInVersion: 'v7.0',
+    detail: '三阶段流水线：①并发探索（架构入口、集成点、测试命令、约束）生成 explore.csv；②综合探索结果生成 tasks.csv；③按依赖分 Wave 执行。探索结果自动喂给后续任务（E*→T*上下文链接）',
+    usage: '代码库不熟、怕改错地方，想先探索再动手；需要多角度并发探索后再实施'
+  },
+  { cmd: '/workflow-tdd-plan', desc: 'TDD 规划技能 - 6阶段规划+Red-Green-Refactor任务链', status: 'stable', category: 'tdd', cli: 'claude', addedInVersion: 'v7.0',
+    detail: '统一 TDD 工作流：6阶段 TDD 规划 + Red-Green-Refactor 任务链生成 + 4阶段验证。触发词：workflow-tdd-plan、workflow-tdd-verify',
+    usage: 'TDD 开发前规划测试用例，生成完整的 Red→Green→Refactor 执行任务链'
+  },
 
   // ==================== Codex 预检清单 (Prompts) ====================
   { cmd: '/prep-plan', desc: 'workflow:plan 预检清单 - 环境验证、任务质量评估、执行配置', status: 'stable', category: 'prompt', cli: 'codex', addedInVersion: 'v6.2',
@@ -925,6 +955,20 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
           '/workflow:roadmap-with-file - 需求0-1：把模糊想法拆成路线图，产出一系列issue',
           '/workflow-plan - 需求明确：5阶段详细规划，生成任务文件',
           '/workflow-lite-plan - 轻量快速：内存中规划，不生成文件，适合中小任务',
+        ],
+      },
+      {
+        id: 'three-ways-guide',
+        title: '三种干活方式如何选？',
+        scenario: '知道要做什么，但不确定用哪种工作流推进',
+        recommendation: '按"先想清楚"到"直接开干"的程度选择',
+        commands: ['/workflow:roadmap-with-file', '/wave-plan-pipeline', '/csv-wave-pipeline'],
+        commandType: 'select',
+        reason: '三种方式对应不同的准备程度：路线图对齐范围、探索再施工降低风险、直接排班最高效率',
+        tips: [
+          '/workflow:roadmap-with-file - 需要先对齐范围/里程碑/验收，沉淀可追踪的任务清单（issue）',
+          '/wave-plan-pipeline - 不熟代码库、怕改错地方，先并发探索（架构/集成点/约束）再动手，探索结果自动喂给实施任务',
+          '/csv-wave-pipeline - 已经知道要改什么，直接拆 tasks.csv 按依赖分 Wave 并发执行',
         ],
       },
       {
@@ -1177,6 +1221,8 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         reason: '/ccw 会帮你做决策',
         tips: [
           '需求0-1、模糊 → /workflow:roadmap-with-file',
+          '不熟代码库、先探索再动手 → /wave-plan-pipeline（explore.csv→tasks.csv→Wave执行）',
+          '需求明确、直接并发推进 → /csv-wave-pipeline（tasks.csv→按依赖Wave执行）',
           '需求明确、复杂 → /workflow-plan 或 /workflow:analyze-with-file',
           '简单任务、大量 → /workflow-lite-plan 或 /csv-wave-pipeline',
           '效率优先 → /team-planex 或 /parallel-dev-cycle',

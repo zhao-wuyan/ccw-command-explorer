@@ -921,15 +921,15 @@ export const CASES_BY_LEVEL: Record<string, Case[]> = {
 };
 
 export const LEVEL_CONFIG: Record<string, { name: string; emoji: string; color: string; desc: string }> = {
-  '1': { name: 'Level 1', emoji: '⚡', color: 'green', desc: '超简单任务' },
-  '2': { name: 'Level 2', emoji: '🚀', color: 'blue', desc: '轻量规划与执行' },
-  'skill': { name: 'Skill', emoji: '🎯', color: 'purple', desc: '专项技能' },
-  '3': { name: 'Level 3', emoji: '🔧', color: 'orange', desc: '标准工作流' },
-  '4': { name: 'Level 4', emoji: '🌊', color: 'cyan', desc: '探索性任务' },
-  'issue': { name: 'Issue', emoji: '🐛', color: 'red', desc: 'Issue 工作流' },
-  'team': { name: 'Team', emoji: '👥', color: 'indigo', desc: '团队协作' },
-  'ui': { name: 'UI', emoji: '🎨', color: 'pink', desc: 'UI 设计' },
-  'memory': { name: 'Memory', emoji: '🧠', color: 'yellow', desc: '记忆系统' },
-  'session': { name: 'Session', emoji: '💾', color: 'teal', desc: '会话管理' },
-  'multi-cli': { name: 'Multi-CLI', emoji: '🔀', color: 'violet', desc: '多 CLI 协作' },
+  '1': { name: '超简单', emoji: '⚡', color: 'green', desc: '超简单任务' },
+  '2': { name: '轻量规划', emoji: '🚀', color: 'blue', desc: '轻量规划与执行' },
+  'skill': { name: '专项技能', emoji: '🎯', color: 'purple', desc: '专项技能' },
+  '3': { name: '标准工作流', emoji: '🔧', color: 'orange', desc: '标准工作流' },
+  '4': { name: '探索性任务', emoji: '🌊', color: 'cyan', desc: '探索性任务' },
+  'issue': { name: 'Issue 工作流', emoji: '🐛', color: 'red', desc: 'Issue 工作流' },
+  'team': { name: '团队协作', emoji: '👥', color: 'indigo', desc: '团队协作' },
+  'ui': { name: 'UI 设计', emoji: '🎨', color: 'pink', desc: 'UI 设计' },
+  'memory': { name: '记忆系统', emoji: '🧠', color: 'yellow', desc: '记忆系统' },
+  'session': { name: '会话管理', emoji: '💾', color: 'teal', desc: '会话管理' },
+  'multi-cli': { name: '多 CLI 协作', emoji: '🔀', color: 'violet', desc: '多 CLI 协作' },
 };

@@ -164,157 +164,7 @@ function getRelatedExperiences(cmd: string): { category: ExperienceCategory; tip
   return result;
 }
 
-// 二次弹框：案例详情（轻量版，用于命令详情内嵌）
-const CasePopup = ({
-  caseItem,
-  onClose,
-}: {
-  caseItem: Case;
-  onClose: () => void;
-}) => {
-  const levelConfig = LEVEL_CONFIG[String(caseItem.level)] || LEVEL_CONFIG['2'];
-  return (
-    <motion.div
-      key={caseItem.id}
-      initial={{ opacity: 0, scale: 0.95, y: 10 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: 10 }}
-      transition={{ duration: 0.18 }}
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        backgroundColor: '#1a1a2e',
-        borderRadius: 16,
-        padding: '20px 24px',
-        border: `2px solid ${levelConfig.color}50`,
-        width: '100%',
-        maxHeight: 420,
-        overflow: 'auto',
-        boxShadow: `0 8px 40px rgba(0,0,0,0.6)`,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 20 }}>{levelConfig.emoji}</span>
-          <span style={{ fontSize: 13, color: levelConfig.color, fontWeight: 600,
-            backgroundColor: levelConfig.color + '20', padding: '3px 10px', borderRadius: 8 }}>
-            {levelConfig.name}
-          </span>
-          <span style={{ fontSize: 12, color: COLORS.textDim }}>{caseItem.category}</span>
-        </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textMuted, cursor: 'pointer', padding: 4 }}>
-          <X size={18} />
-        </button>
-      </div>
-      <h3 style={{ fontSize: 16, color: COLORS.text, margin: '0 0 8px 0' }}>{caseItem.title}</h3>
-      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{caseItem.scenario}</p>
-      <div>
-        {caseItem.steps.slice(0, 5).map((step, i) => {
-          const typeColors: Record<string, string> = {
-            command: '#6366f1', response: '#10b981', result: '#10b981',
-            note: '#f59e0b', choice: '#8b5cf6',
-          };
-          const c = typeColors[step.type || ''] || '#666';
-          return (
-            <div key={i} style={{
-              backgroundColor: c + '12',
-              borderLeft: `2px solid ${c}50`,
-              borderRadius: 6,
-              padding: '8px 12px',
-              marginBottom: 6,
-              fontSize: 12,
-              color: step.type === 'command' ? COLORS.secondary : COLORS.text,
-              fontFamily: step.type === 'command' ? 'monospace' : 'inherit',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-              lineHeight: 1.5,
-            }}>
-              <span style={{ fontSize: 10, color: COLORS.textDim, marginRight: 6 }}>
-                {step.role === 'user' ? '👤' : '🤖'}
-              </span>
-              {step.content.length > 120 ? step.content.slice(0, 120) + '…' : step.content}
-            </div>
-          );
-        })}
-        {caseItem.steps.length > 5 && (
-          <p style={{ fontSize: 11, color: COLORS.textDim, margin: '4px 0 0 0' }}>…还有 {caseItem.steps.length - 5} 步</p>
-        )}
-      </div>
-    </motion.div>
-  );
-};
 
-// 二次弹框：经验详情（轻量版）
-const ExperiencePopup = ({
-  item,
-  onClose,
-}: {
-  item: { category: ExperienceCategory; tip: ExperienceTip };
-  onClose: () => void;
-}) => {
-  const { category, tip } = item;
-  const isSequence = tip.commandType === 'sequence';
-  return (
-    <motion.div
-      key={tip.id}
-      initial={{ opacity: 0, scale: 0.95, y: 10 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: 10 }}
-      transition={{ duration: 0.18 }}
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        backgroundColor: '#1a1a2e',
-        borderRadius: 16,
-        padding: '20px 24px',
-        border: `2px solid ${category.color}50`,
-        width: '100%',
-        maxHeight: 420,
-        overflow: 'auto',
-        boxShadow: `0 8px 40px rgba(0,0,0,0.6)`,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 18 }}>{category.emoji}</span>
-          <span style={{ fontSize: 12, color: category.color, fontWeight: 600,
-            backgroundColor: category.color + '20', padding: '2px 8px', borderRadius: 6 }}>
-            {isSequence ? '按顺序执行' : '多选一'}
-          </span>
-          <span style={{ fontSize: 11, color: COLORS.textDim }}>{category.title}</span>
-        </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textMuted, cursor: 'pointer', padding: 4 }}>
-          <X size={18} />
-        </button>
-      </div>
-      <h3 style={{ fontSize: 16, color: COLORS.text, margin: '0 0 6px 0' }}>{tip.title}</h3>
-      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{tip.scenario}</p>
-      <div style={{ fontSize: 13, color: COLORS.text, marginBottom: 12, lineHeight: 1.6 }}>{tip.recommendation}</div>
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-        {tip.commands.map((cmd, i) => (
-          <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <code style={{
-              fontSize: 12, color: category.color,
-              backgroundColor: category.color + '20',
-              padding: '3px 8px', borderRadius: 4,
-            }}>{cmd}</code>
-            {isSequence && i < tip.commands.length - 1 && (
-              <span style={{ color: COLORS.textDim, fontSize: 12 }}>→</span>
-            )}
-          </span>
-        ))}
-      </div>
-      {tip.reason && (
-        <p style={{ fontSize: 12, color: COLORS.textDim, margin: 0, fontStyle: 'italic' }}>{tip.reason}</p>
-      )}
-      {tip.tips && tip.tips.length > 0 && (
-        <ul style={{ margin: '8px 0 0 0', paddingLeft: 18 }}>
-          {tip.tips.map((t, i) => (
-            <li key={i} style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 4 }}>{t}</li>
-          ))}
-        </ul>
-      )}
-    </motion.div>
-  );
-};
 
 // 侧边面板条目
 const SidePanelItem = ({
@@ -358,7 +208,7 @@ const SidePanelItem = ({
     }}
   >
     <div style={{ fontSize: 12, color: isActive ? color : COLORS.text, fontWeight: isActive ? 600 : 400,
-      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      whiteSpace: 'normal', overflow: 'visible', wordBreak: 'break-all', lineHeight: 1.4 }}>
       {label}
     </div>
     {sub && (
@@ -368,6 +218,84 @@ const SidePanelItem = ({
       </div>
     )}
   </button>
+);
+
+// 经验详情弹窗（position: fixed，自然覆盖一切）
+const ExperienceDetailModal = ({ item, onClose }: {
+  item: { category: ExperienceCategory; tip: ExperienceTip };
+  onClose: () => void;
+}) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundColor: 'rgba(0,0,0,0.85)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+      zIndex: 200,
+      padding: 20,
+      overflow: 'auto',
+    }}
+    onClick={onClose}
+  >
+    <motion.div
+      initial={{ scale: 0.95, y: 20 }}
+      animate={{ scale: 1, y: 0 }}
+      exit={{ scale: 0.95, y: 20 }}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: '100%',
+        maxWidth: 700,
+        backgroundColor: '#1a1a2e',
+        borderRadius: 20,
+        padding: 30,
+        border: `2px solid ${item.category.color}40`,
+        marginTop: 20,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 13, color: item.category.color, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>{item.category.emoji}</span>
+            <span>{item.category.title}</span>
+          </div>
+          <h2 style={{ fontSize: 22, color: COLORS.text, margin: 0 }}>{item.tip.title}</h2>
+        </div>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textMuted, cursor: 'pointer', padding: 5, flexShrink: 0 }}>
+          <X size={24} />
+        </button>
+      </div>
+      <p style={{ fontSize: 15, color: COLORS.textMuted, marginBottom: 16, lineHeight: 1.6 }}>{item.tip.scenario}</p>
+      <div style={{ backgroundColor: item.category.color + '10', borderRadius: 12, padding: 16, marginBottom: 16, borderLeft: `4px solid ${item.category.color}` }}>
+        <p style={{ color: COLORS.text, fontSize: 14, margin: 0, lineHeight: 1.7 }}>{item.tip.recommendation}</p>
+      </div>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 13, color: COLORS.textDim, marginBottom: 8 }}>关联命令：</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {item.tip.commands.map((cmd, i) => (
+            <code key={i} style={{ fontSize: 13, color: item.category.color, backgroundColor: item.category.color + '15', padding: '4px 10px', borderRadius: 4 }}>
+              {cmd}
+            </code>
+          ))}
+        </div>
+      </div>
+      {item.tip.tips && item.tip.tips.length > 0 && (
+        <div>
+          <div style={{ fontSize: 13, color: COLORS.textDim, marginBottom: 8 }}>使用建议：</div>
+          {item.tip.tips.map((t, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+              <span style={{ color: item.category.color, flexShrink: 0 }}>•</span>
+              <span style={{ fontSize: 13, color: COLORS.textMuted, lineHeight: 1.6 }}>{t}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  </motion.div>
 );
 
 // 命令详情弹窗
@@ -404,12 +332,13 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
     setActiveExp(prev => prev?.tip.id === e.tip.id ? null : e);
   };
 
-  const SIDE_WIDTH = 160;
+  const SIDE_WIDTH = 200;
   const hasCases = relatedCases.length > 0;
   const hasExps = relatedExperiences.length > 0;
   const hasSides = hasCases || hasExps;
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -435,13 +364,14 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
             display: 'flex',
             alignItems: 'flex-start',
             gap: 12,
-            maxWidth: hasSides ? 960 : 640,
+            maxWidth: hasSides ? 1100 : 640,
             width: '100%',
             maxHeight: '90vh',
           }}
         >
-          {/* 左侧：案例面板 */}
-          {hasCases && (
+          {/* 左侧：案例面板（无数据时用占位保持宽度对称） */}
+          {hasSides && (
+            hasCases ? (
             <div style={{
               width: SIDE_WIDTH,
               flexShrink: 0,
@@ -477,19 +407,22 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
                 })}
               </div>
             </div>
+            ) : (
+              <div style={{ width: SIDE_WIDTH, flexShrink: 0 }} />
+            )
           )}
 
-          {/* 中间：命令详情 + 二次弹框 */}
-          <div style={{ flex: 1, minWidth: 0, maxHeight: '90vh', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {/* 命令详情主体 */}
+          {/* 中间：命令详情 */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* 命令详情主体：高度随内容，最高 90vh 可滚动 */}
             <div style={{
               backgroundColor: '#1a1a2e',
               borderRadius: 20,
               padding: 30,
               overflow: 'auto',
               border: `2px solid ${category.color}40`,
-              flex: activeCase || activeExp ? '0 0 auto' : '1',
-              maxHeight: activeCase || activeExp ? '45vh' : '90vh',
+              maxHeight: '90vh',
+              boxSizing: 'border-box',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                 <div>
@@ -567,19 +500,11 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
               )}
             </div>
 
-            {/* 二次弹框：案例或经验详情 */}
-            <AnimatePresence mode="wait">
-              {activeCase && (
-                <CasePopup key={activeCase.id} caseItem={activeCase} onClose={() => setActiveCase(null)} />
-              )}
-              {activeExp && (
-                <ExperiencePopup key={activeExp.tip.id} item={activeExp} onClose={() => setActiveExp(null)} />
-              )}
-            </AnimatePresence>
-          </div>
+            </div>
 
-          {/* 右侧：经验面板 */}
-          {hasExps && (
+          {/* 右侧：经验面板（无数据时用占位保持宽度对称） */}
+          {hasSides && (
+            hasExps ? (
             <div style={{
               width: SIDE_WIDTH,
               flexShrink: 0,
@@ -612,6 +537,9 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
                 ))}
               </div>
             </div>
+            ) : (
+              <div style={{ width: SIDE_WIDTH, flexShrink: 0 }} />
+            )
           )}
         </div>
       ) : (
@@ -698,13 +626,6 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
                   );
                 })}
               </div>
-              <AnimatePresence mode="wait">
-                {activeCase && (
-                  <div style={{ marginTop: 10 }}>
-                    <CasePopup caseItem={activeCase} onClose={() => setActiveCase(null)} />
-                  </div>
-                )}
-              </AnimatePresence>
             </div>
           )}
 
@@ -737,18 +658,24 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
                   </button>
                 ))}
               </div>
-              <AnimatePresence mode="wait">
-                {activeExp && (
-                  <div style={{ marginTop: 10 }}>
-                    <ExperiencePopup item={activeExp} onClose={() => setActiveExp(null)} />
-                  </div>
-                )}
-              </AnimatePresence>
             </div>
           )}
         </div>
       )}
     </motion.div>
+    {/* 复用 CaseDetail（position: fixed，自然覆盖整个屏幕包括侧边面板） */}
+    <AnimatePresence>
+      {activeCase && (
+        <CaseDetail key={activeCase.id} caseItem={activeCase} onClose={() => setActiveCase(null)} />
+      )}
+    </AnimatePresence>
+    {/* 经验详情弹窗（position: fixed） */}
+    <AnimatePresence>
+      {activeExp && (
+        <ExperienceDetailModal key={activeExp.tip.id} item={activeExp} onClose={() => setActiveExp(null)} />
+      )}
+    </AnimatePresence>
+    </>
   );
 };
 

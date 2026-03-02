@@ -359,25 +359,25 @@ export const COMMANDS: Command[] = [
   },
 
   // ==================== IDAW 任务管理 ====================
-  { cmd: '/idaw:add', desc: '添加 IDAW 任务 - 手动创建或从 issue 导入', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
-    detail: '创建 IDAW 任务：手动填写描述，或从 ccw issue 导入。支持 --yes 自动模式跳过确认',
-    usage: '需要添加新的 IDAW 任务，或将 issue 转换为 IDAW 任务时'
+  { cmd: '/idaw:add', desc: '任务队列入口 - 手动描述或从 issue 批量导入，攒好再统一执行', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+    detail: 'IDAW（Iterative Development Automated Workflow）的任务入口。支持两种创建方式：① 直接描述需求（手动创建）；② 从 ccw issue 系统导入（--from-issue）。任务类型（bugfix/feature/refactor/tdd 等）可手动指定，也可在执行时自动推断。创建的任务以 IDAW-001.json 格式保存到 .workflow/.idaw/tasks/，等待 /idaw:run 串行执行。',
+    usage: '攒好一批待处理任务（bugfix、feature、重构等），先 add 进队列，再统一交给 /idaw:run 批量执行。也适合将 issue 系统里的问题单批量转为可执行任务。'
   },
-  { cmd: '/idaw:run', desc: 'IDAW 执行器 - 串行执行技能链，附带 git 检查点', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
-    detail: 'IDAW 任务串行执行：按任务类型映射技能链（bugfix→lite-plan+test-fix，feature→plan+test-fix），每次提交创建 git 检查点',
-    usage: '执行 IDAW 任务队列，希望有 git 安全点'
+  { cmd: '/idaw:run', desc: '批量执行任务队列 - 自动 Skill 链映射 + 失败 CLI 诊断 + 每任务 git 检查点', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+    detail: 'IDAW 的核心执行命令。按优先级串行处理所有 pending 任务，每个任务完整流程：① 根据任务类型自动映射 Skill 链（bugfix → workflow-lite-plan + workflow-test-fix；feature-complex → workflow-plan + workflow-execute + workflow-test-fix 等 10 种类型）；② 对 bugfix/complex 任务先触发 Gemini CLI 预分析获取上下文；③ 串行执行链中每个 Skill；④ Skill 失败时自动触发 CLI 诊断 + 重试一次；⑤ 任务完成后自动 git commit 打检查点。支持 --dry-run 预览执行计划，-y 全自动无人值守模式。',
+    usage: '已用 /idaw:add 积累了一批任务，现在要统一执行。特别适合「下班前挂着跑」或「一次性清掉积压任务」的场景——每个任务完成都有 git 检查点，失败了可以用 /idaw:resume 续跑，不怕中途中断。'
   },
-  { cmd: '/idaw:run-coordinate', desc: 'IDAW 协调器 - 通过 CLI 执行技能链（支持 hook 回调）', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
-    detail: 'IDAW 协调模式：通过外部 CLI 工具执行，支持 hook 回调和 git 检查点。适合需要 CLI 集成的场景',
-    usage: '需要通过外部 CLI（如 Gemini）执行 IDAW 任务时'
+  { cmd: '/idaw:run-coordinate', desc: '后台 CLI 协调执行 - 上下文隔离，hook 驱动，适合长链或大量任务', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+    detail: '/idaw:run 的外部 CLI 变体，执行模型改为后台 hook 驱动：通过 ccw cli 在后台启动每个 Skill，等待 hook 回调后再推进下一步，而非在主进程阻塞。核心优势：每个 CLI 调用获得独立的上下文窗口，任务再多也不会膨胀主进程上下文；支持指定 --tool（claude/gemini/qwen）；状态文件额外记录 prompts_used 便于追溯。错误恢复同样支持 CLI 诊断 + 重试，任务完成后 git checkpoint。',
+    usage: '任务链较长（如 feature-complex: plan + execute + test-fix）、或同时积压多个上下文重的任务时，用 coordinate 模式避免主进程上下文压力。也适合需要用 Gemini 等特定 CLI 工具执行任务的场景。'
   },
-  { cmd: '/idaw:resume', desc: '恢复中断的 IDAW 会话', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
-    detail: '从最后一个检查点恢复中断的 IDAW 会话，无需重新开始',
-    usage: 'IDAW 任务执行中断后，想从断点继续'
+  { cmd: '/idaw:resume', desc: '续跑中断会话 - 从断点恢复，跳过或重试中断任务，无需重跑已完成部分', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+    detail: '恢复 status 为 running 的 IDAW 会话（默认找最近一个，也可指定 session-id）。对中断时处于 in_progress 状态的任务，提供 Retry（重置为 pending 重跑）或 Skip（标记跳过继续）两种处理方式；-y 模式下自动 Skip。找到剩余 pending 任务后，复用 /idaw:run 完整执行逻辑（Skill 链 + CLI 诊断 + git checkpoint）继续推进，会话进度文件中追加 Resumed 标记。',
+    usage: 'IDAW 执行中途因网络/系统原因中断、或手动 Ctrl+C 打断后，用此命令从断点继续，无需重跑已完成的任务。'
   },
-  { cmd: '/idaw:status', desc: '查看 IDAW 任务和会话进度', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
-    detail: '显示 IDAW 任务列表、当前会话状态、每个任务的执行进度和结果',
-    usage: '想查看 IDAW 任务的执行状态'
+  { cmd: '/idaw:status', desc: '查看任务队列和会话执行进度（只读）', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+    detail: '只读命令，不触发任何执行。无参数时显示：全部任务的状态表（ID、标题、类型、优先级、状态）+ 最新会话的概要统计。传入 session-id 时显示该会话详情：每个任务的状态、git commit hash、以及 progress.md 的完整执行日志。',
+    usage: '/idaw:run 跑完后查看哪些任务成功/失败；或在执行过程中另开终端随时检查进度；也可在用 /idaw:resume 前先确认哪些任务还剩余。'
   },
 
   // ==================== CLI 工具 ====================

@@ -15,7 +15,7 @@ import type { Command, CommandCategory, TimelineItem, CLIType, ExperienceTip } f
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { ALL_CASES, CASES_BY_LEVEL, LEVEL_CONFIG } from './data/cases';
-import type { Case, CaseStep, CaseLevel } from './data/cases';
+import type { Case, CaseStep } from './data/cases';
 import './App.css';
 
 // 图标映射

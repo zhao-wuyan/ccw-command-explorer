@@ -11,7 +11,7 @@ import {
   COMMANDS, CATEGORIES, TIMELINE, WORKFLOW_LEVELS, GRANDMA_COMMANDS,
   DEPRECATED_COMMANDS, STATS, COLORS, CLI_CONFIG, EXPERIENCE_GUIDE
 } from './data/commands';
-import type { Command, CommandCategory, TimelineItem, CLIType, ExperienceTip } from './data/commands';
+import type { Command, CommandCategory, TimelineItem, CLIType, ExperienceTip, ExperienceCategory } from './data/commands';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { ALL_CASES, CASES_BY_LEVEL, LEVEL_CONFIG } from './data/cases';
@@ -140,12 +140,274 @@ const CommandCard = ({ command, onClick }: { command: Command; onClick: () => vo
   );
 };
 
+// ============================================
+// 命令详情弹窗 - 带左侧案例/右侧经验侧边面板
+// ============================================
+
+// 反向查找：此命令相关的案例
+function getRelatedCases(cmd: string): Case[] {
+  return ALL_CASES.filter(c =>
+    c.commands.some(cc => cc.cmd === cmd)
+  );
+}
+
+// 反向查找：此命令相关的经验
+function getRelatedExperiences(cmd: string): { category: ExperienceCategory; tip: ExperienceTip }[] {
+  const result: { category: ExperienceCategory; tip: ExperienceTip }[] = [];
+  for (const cat of EXPERIENCE_GUIDE) {
+    for (const tip of cat.tips) {
+      if (tip.commands.includes(cmd)) {
+        result.push({ category: cat, tip });
+      }
+    }
+  }
+  return result;
+}
+
+// 二次弹框：案例详情（轻量版，用于命令详情内嵌）
+const CasePopup = ({
+  caseItem,
+  onClose,
+}: {
+  caseItem: Case;
+  onClose: () => void;
+}) => {
+  const levelConfig = LEVEL_CONFIG[String(caseItem.level)] || LEVEL_CONFIG['2'];
+  return (
+    <motion.div
+      key={caseItem.id}
+      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+      transition={{ duration: 0.18 }}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        backgroundColor: '#1a1a2e',
+        borderRadius: 16,
+        padding: '20px 24px',
+        border: `2px solid ${levelConfig.color}50`,
+        width: '100%',
+        maxHeight: 420,
+        overflow: 'auto',
+        boxShadow: `0 8px 40px rgba(0,0,0,0.6)`,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 20 }}>{levelConfig.emoji}</span>
+          <span style={{ fontSize: 13, color: levelConfig.color, fontWeight: 600,
+            backgroundColor: levelConfig.color + '20', padding: '3px 10px', borderRadius: 8 }}>
+            {levelConfig.name}
+          </span>
+          <span style={{ fontSize: 12, color: COLORS.textDim }}>{caseItem.category}</span>
+        </div>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textMuted, cursor: 'pointer', padding: 4 }}>
+          <X size={18} />
+        </button>
+      </div>
+      <h3 style={{ fontSize: 16, color: COLORS.text, margin: '0 0 8px 0' }}>{caseItem.title}</h3>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{caseItem.scenario}</p>
+      <div>
+        {caseItem.steps.slice(0, 5).map((step, i) => {
+          const typeColors: Record<string, string> = {
+            command: '#6366f1', response: '#10b981', result: '#10b981',
+            note: '#f59e0b', choice: '#8b5cf6',
+          };
+          const c = typeColors[step.type || ''] || '#666';
+          return (
+            <div key={i} style={{
+              backgroundColor: c + '12',
+              borderLeft: `2px solid ${c}50`,
+              borderRadius: 6,
+              padding: '8px 12px',
+              marginBottom: 6,
+              fontSize: 12,
+              color: step.type === 'command' ? COLORS.secondary : COLORS.text,
+              fontFamily: step.type === 'command' ? 'monospace' : 'inherit',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              lineHeight: 1.5,
+            }}>
+              <span style={{ fontSize: 10, color: COLORS.textDim, marginRight: 6 }}>
+                {step.role === 'user' ? '👤' : '🤖'}
+              </span>
+              {step.content.length > 120 ? step.content.slice(0, 120) + '…' : step.content}
+            </div>
+          );
+        })}
+        {caseItem.steps.length > 5 && (
+          <p style={{ fontSize: 11, color: COLORS.textDim, margin: '4px 0 0 0' }}>…还有 {caseItem.steps.length - 5} 步</p>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
+// 二次弹框：经验详情（轻量版）
+const ExperiencePopup = ({
+  item,
+  onClose,
+}: {
+  item: { category: ExperienceCategory; tip: ExperienceTip };
+  onClose: () => void;
+}) => {
+  const { category, tip } = item;
+  const isSequence = tip.commandType === 'sequence';
+  return (
+    <motion.div
+      key={tip.id}
+      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+      transition={{ duration: 0.18 }}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        backgroundColor: '#1a1a2e',
+        borderRadius: 16,
+        padding: '20px 24px',
+        border: `2px solid ${category.color}50`,
+        width: '100%',
+        maxHeight: 420,
+        overflow: 'auto',
+        boxShadow: `0 8px 40px rgba(0,0,0,0.6)`,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>{category.emoji}</span>
+          <span style={{ fontSize: 12, color: category.color, fontWeight: 600,
+            backgroundColor: category.color + '20', padding: '2px 8px', borderRadius: 6 }}>
+            {isSequence ? '按顺序执行' : '多选一'}
+          </span>
+          <span style={{ fontSize: 11, color: COLORS.textDim }}>{category.title}</span>
+        </div>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textMuted, cursor: 'pointer', padding: 4 }}>
+          <X size={18} />
+        </button>
+      </div>
+      <h3 style={{ fontSize: 16, color: COLORS.text, margin: '0 0 6px 0' }}>{tip.title}</h3>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{tip.scenario}</p>
+      <div style={{ fontSize: 13, color: COLORS.text, marginBottom: 12, lineHeight: 1.6 }}>{tip.recommendation}</div>
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        {tip.commands.map((cmd, i) => (
+          <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <code style={{
+              fontSize: 12, color: category.color,
+              backgroundColor: category.color + '20',
+              padding: '3px 8px', borderRadius: 4,
+            }}>{cmd}</code>
+            {isSequence && i < tip.commands.length - 1 && (
+              <span style={{ color: COLORS.textDim, fontSize: 12 }}>→</span>
+            )}
+          </span>
+        ))}
+      </div>
+      {tip.reason && (
+        <p style={{ fontSize: 12, color: COLORS.textDim, margin: 0, fontStyle: 'italic' }}>{tip.reason}</p>
+      )}
+      {tip.tips && tip.tips.length > 0 && (
+        <ul style={{ margin: '8px 0 0 0', paddingLeft: 18 }}>
+          {tip.tips.map((t, i) => (
+            <li key={i} style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 4 }}>{t}</li>
+          ))}
+        </ul>
+      )}
+    </motion.div>
+  );
+};
+
+// 侧边面板条目
+const SidePanelItem = ({
+  label,
+  sub,
+  color,
+  isActive,
+  onClick,
+}: {
+  label: string;
+  sub: string;
+  color: string;
+  isActive: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    style={{
+      display: 'block',
+      width: '100%',
+      textAlign: 'left',
+      background: isActive ? color + '20' : 'transparent',
+      border: `1px solid ${isActive ? color + '60' : color + '20'}`,
+      borderRadius: 8,
+      padding: '8px 10px',
+      cursor: 'pointer',
+      transition: 'all 0.15s',
+      marginBottom: 6,
+    }}
+    onMouseEnter={(e) => {
+      if (!isActive) {
+        e.currentTarget.style.background = color + '15';
+        e.currentTarget.style.borderColor = color + '40';
+      }
+    }}
+    onMouseLeave={(e) => {
+      if (!isActive) {
+        e.currentTarget.style.background = 'transparent';
+        e.currentTarget.style.borderColor = color + '20';
+      }
+    }}
+  >
+    <div style={{ fontSize: 12, color: isActive ? color : COLORS.text, fontWeight: isActive ? 600 : 400,
+      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      {label}
+    </div>
+    {sub && (
+      <div style={{ fontSize: 11, color: COLORS.textDim, marginTop: 2,
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {sub}
+      </div>
+    )}
+  </button>
+);
+
 // 命令详情弹窗
 const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => void }) => {
   const category = CATEGORIES[command.category];
   const relatedCommands = COMMANDS.filter(
     c => c.category === command.category && c.cmd !== command.cmd
   ).slice(0, 5);
+
+  // 反向关联
+  const relatedCases = useMemo(() => getRelatedCases(command.cmd), [command.cmd]);
+  const relatedExperiences = useMemo(() => getRelatedExperiences(command.cmd), [command.cmd]);
+
+  // 二次弹框状态
+  const [activeCase, setActiveCase] = useState<Case | null>(null);
+  const [activeExp, setActiveExp] = useState<{ category: ExperienceCategory; tip: ExperienceTip } | null>(null);
+
+  // 检测移动端
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  const handleCaseClick = (c: Case) => {
+    setActiveExp(null);
+    setActiveCase(prev => prev?.id === c.id ? null : c);
+  };
+
+  const handleExpClick = (e: { category: ExperienceCategory; tip: ExperienceTip }) => {
+    setActiveCase(null);
+    setActiveExp(prev => prev?.tip.id === e.tip.id ? null : e);
+  };
+
+  const SIDE_WIDTH = 160;
+  const hasCases = relatedCases.length > 0;
+  const hasExps = relatedExperiences.length > 0;
+  const hasSides = hasCases || hasExps;
 
   return (
     <motion.div
@@ -160,184 +422,332 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 100,
-        padding: 20,
+        padding: isMobile ? '12px 0 0 0' : 20,
+        overflow: isMobile ? 'auto' : 'hidden',
       }}
       onClick={onClose}
     >
-      <motion.div
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: '#1a1a2e',
-          borderRadius: 20,
-          padding: 30,
-          maxWidth: 600,
-          width: '100%',
-          maxHeight: '80vh',
-          overflow: 'auto',
-          border: `2px solid ${category.color}40`,
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-          <div>
-            <code
-              style={{
-                fontSize: 24,
-                color: category.color,
-                fontWeight: 'bold',
-                backgroundColor: 'rgba(0,0,0,0.4)',
-                padding: '8px 16px',
-                borderRadius: 8,
-                display: 'inline-block',
-              }}
-            >
-              {command.cmd}
-            </code>
+      {/* 桌面端：三列布局 */}
+      {!isMobile ? (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 12,
+            maxWidth: hasSides ? 960 : 640,
+            width: '100%',
+            maxHeight: '90vh',
+          }}
+        >
+          {/* 左侧：案例面板 */}
+          {hasCases && (
+            <div style={{
+              width: SIDE_WIDTH,
+              flexShrink: 0,
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+            }}>
+              <div style={{
+                backgroundColor: 'rgba(18,18,38,0.95)',
+                borderRadius: 14,
+                padding: '14px 12px',
+                border: `1px solid ${COLORS.accent3}30`,
+                maxHeight: '90vh',
+                overflow: 'auto',
+              }}>
+                <div style={{ fontSize: 12, color: COLORS.accent3, fontWeight: 600, marginBottom: 10,
+                  display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Play size={12} />
+                  关联案例 ({relatedCases.length})
+                </div>
+                {relatedCases.map((c) => {
+                  const lc = LEVEL_CONFIG[String(c.level)] || LEVEL_CONFIG['2'];
+                  return (
+                    <SidePanelItem
+                      key={c.id}
+                      label={c.title}
+                      sub={`${lc.emoji} ${lc.name}`}
+                      color={lc.color}
+                      isActive={activeCase?.id === c.id}
+                      onClick={() => handleCaseClick(c)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 中间：命令详情 + 二次弹框 */}
+          <div style={{ flex: 1, minWidth: 0, maxHeight: '90vh', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* 命令详情主体 */}
+            <div style={{
+              backgroundColor: '#1a1a2e',
+              borderRadius: 20,
+              padding: 30,
+              overflow: 'auto',
+              border: `2px solid ${category.color}40`,
+              flex: activeCase || activeExp ? '0 0 auto' : '1',
+              maxHeight: activeCase || activeExp ? '45vh' : '90vh',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+                <div>
+                  <code style={{
+                    fontSize: 24, color: category.color, fontWeight: 'bold',
+                    backgroundColor: 'rgba(0,0,0,0.4)', padding: '8px 16px', borderRadius: 8, display: 'inline-block',
+                  }}>
+                    {command.cmd}
+                  </code>
+                </div>
+                <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textMuted, cursor: 'pointer', padding: 5 }}>
+                  <X size={24} />
+                </button>
+              </div>
+
+              <p style={{ fontSize: 18, color: COLORS.text, marginBottom: 20 }}>{command.desc}</p>
+
+              <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6,
+                  backgroundColor: CLI_CONFIG[command.cli].color + '25', color: CLI_CONFIG[command.cli].color,
+                  fontWeight: 600, border: `1px solid ${CLI_CONFIG[command.cli].color}40` }}>
+                  {CLI_CONFIG[command.cli].label}
+                </span>
+                <StatusBadge status={command.status} />
+                <span style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6,
+                  backgroundColor: category.color + '20', color: category.color }}>
+                  {category.label}
+                </span>
+                {command.level && (
+                  <span style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6,
+                    backgroundColor: WORKFLOW_LEVELS[command.level - 1].color + '20',
+                    color: WORKFLOW_LEVELS[command.level - 1].color }}>
+                    复杂度 Level {command.level}
+                  </span>
+                )}
+              </div>
+
+              {command.detail && (
+                <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 16, marginBottom: 20, borderLeft: `4px solid ${category.color}` }}>
+                  <h4 style={{ color: COLORS.text, marginBottom: 8, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <BookOpen size={16} style={{ color: category.color }} />
+                    详细说明
+                  </h4>
+                  <p style={{ color: COLORS.textMuted, fontSize: 14, margin: 0, lineHeight: 1.7 }}>{command.detail}</p>
+                </div>
+              )}
+
+              {command.usage && (
+                <div style={{ backgroundColor: category.color + '10', borderRadius: 12, padding: 16, marginBottom: 20, border: `1px solid ${category.color}30` }}>
+                  <h4 style={{ color: COLORS.text, marginBottom: 8, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    💡 使用场景
+                  </h4>
+                  <p style={{ color: COLORS.text, fontSize: 14, margin: 0, lineHeight: 1.7 }}>{command.usage}</p>
+                </div>
+              )}
+
+              {command.level && (
+                <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                  <h4 style={{ color: COLORS.text, marginBottom: 8, fontSize: 14 }}>💡 适用场景</h4>
+                  <p style={{ color: COLORS.textMuted, fontSize: 14, margin: 0 }}>{WORKFLOW_LEVELS[command.level - 1].useCase}</p>
+                </div>
+              )}
+
+              {relatedCommands.length > 0 && (
+                <div>
+                  <h4 style={{ color: COLORS.textMuted, marginBottom: 12, fontSize: 14 }}>相关命令</h4>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {relatedCommands.map((c, i) => (
+                      <code key={i} style={{ fontSize: 13, color: CATEGORIES[c.category].color, backgroundColor: 'rgba(0,0,0,0.3)', padding: '4px 10px', borderRadius: 4 }}>
+                        {c.cmd}
+                      </code>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 二次弹框：案例或经验详情 */}
+            <AnimatePresence mode="wait">
+              {activeCase && (
+                <CasePopup key={activeCase.id} caseItem={activeCase} onClose={() => setActiveCase(null)} />
+              )}
+              {activeExp && (
+                <ExperiencePopup key={activeExp.tip.id} item={activeExp} onClose={() => setActiveExp(null)} />
+              )}
+            </AnimatePresence>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: COLORS.textMuted,
-              cursor: 'pointer',
-              padding: 5,
-            }}
-          >
-            <X size={24} />
-          </button>
-        </div>
 
-        <p style={{ fontSize: 18, color: COLORS.text, marginBottom: 20 }}>
-          {command.desc}
-        </p>
-
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-          <span
-            style={{
-              fontSize: 12,
-              padding: '4px 10px',
-              borderRadius: 6,
-              backgroundColor: CLI_CONFIG[command.cli].color + '25',
-              color: CLI_CONFIG[command.cli].color,
-              fontWeight: 600,
-              border: `1px solid ${CLI_CONFIG[command.cli].color}40`,
-            }}
-          >
-            {CLI_CONFIG[command.cli].label}
-          </span>
-          <StatusBadge status={command.status} />
-          <span
-            style={{
-              fontSize: 12,
-              padding: '4px 10px',
-              borderRadius: 6,
-              backgroundColor: category.color + '20',
-              color: category.color,
-            }}
-          >
-            {category.label}
-          </span>
-          {command.level && (
-            <span
-              style={{
-                fontSize: 12,
-                padding: '4px 10px',
-                borderRadius: 6,
-                backgroundColor: WORKFLOW_LEVELS[command.level - 1].color + '20',
-                color: WORKFLOW_LEVELS[command.level - 1].color,
-              }}
-            >
-              复杂度 Level {command.level}
-            </span>
+          {/* 右侧：经验面板 */}
+          {hasExps && (
+            <div style={{
+              width: SIDE_WIDTH,
+              flexShrink: 0,
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+            }}>
+              <div style={{
+                backgroundColor: 'rgba(18,18,38,0.95)',
+                borderRadius: 14,
+                padding: '14px 12px',
+                border: `1px solid ${COLORS.accent1}30`,
+                maxHeight: '90vh',
+                overflow: 'auto',
+              }}>
+                <div style={{ fontSize: 12, color: COLORS.accent1, fontWeight: 600, marginBottom: 10,
+                  display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <TipIcon size={12} />
+                  关联经验 ({relatedExperiences.length})
+                </div>
+                {relatedExperiences.map((e) => (
+                  <SidePanelItem
+                    key={e.tip.id}
+                    label={e.tip.title}
+                    sub={`${e.category.emoji} ${e.category.title}`}
+                    color={e.category.color}
+                    isActive={activeExp?.tip.id === e.tip.id}
+                    onClick={() => handleExpClick(e)}
+                  />
+                ))}
+              </div>
+            </div>
           )}
         </div>
-
-        {/* 详细说明 */}
-        {command.detail && (
-          <div
-            style={{
-              backgroundColor: 'rgba(0,0,0,0.3)',
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 20,
-              borderLeft: `4px solid ${category.color}`,
-            }}
-          >
-            <h4 style={{ color: COLORS.text, marginBottom: 8, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <BookOpen size={16} style={{ color: category.color }} />
-              详细说明
-            </h4>
-            <p style={{ color: COLORS.textMuted, fontSize: 14, margin: 0, lineHeight: 1.7 }}>
-              {command.detail}
-            </p>
-          </div>
-        )}
-
-        {/* 使用场景 */}
-        {command.usage && (
-          <div
-            style={{
-              backgroundColor: category.color + '10',
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 20,
-              border: `1px solid ${category.color}30`,
-            }}
-          >
-            <h4 style={{ color: COLORS.text, marginBottom: 8, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-              💡 使用场景
-            </h4>
-            <p style={{ color: COLORS.text, fontSize: 14, margin: 0, lineHeight: 1.7 }}>
-              {command.usage}
-            </p>
-          </div>
-        )}
-
-        {command.level && (
-          <div
-            style={{
-              backgroundColor: 'rgba(0,0,0,0.3)',
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 20,
-            }}
-          >
-            <h4 style={{ color: COLORS.text, marginBottom: 8, fontSize: 14 }}>
-              💡 适用场景
-            </h4>
-            <p style={{ color: COLORS.textMuted, fontSize: 14, margin: 0 }}>
-              {WORKFLOW_LEVELS[command.level - 1].useCase}
-            </p>
-          </div>
-        )}
-
-        {relatedCommands.length > 0 && (
-          <div>
-            <h4 style={{ color: COLORS.textMuted, marginBottom: 12, fontSize: 14 }}>
-              相关命令
-            </h4>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {relatedCommands.map((c, i) => (
-                <code
-                  key={i}
-                  style={{
-                    fontSize: 13,
-                    color: CATEGORIES[c.category].color,
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                    padding: '4px 10px',
-                    borderRadius: 4,
-                  }}
-                >
-                  {c.cmd}
-                </code>
-              ))}
+      ) : (
+        /* 移动端：垂直堆叠 */
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: '100%',
+            maxHeight: '100vh',
+            overflow: 'auto',
+            padding: '0 12px 24px 12px',
+          }}
+        >
+          {/* 命令详情主体 */}
+          <div style={{
+            backgroundColor: '#1a1a2e',
+            borderRadius: 20,
+            padding: 20,
+            border: `2px solid ${category.color}40`,
+            marginBottom: 12,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+              <code style={{ fontSize: 18, color: category.color, fontWeight: 'bold', backgroundColor: 'rgba(0,0,0,0.4)', padding: '6px 12px', borderRadius: 8, display: 'inline-block' }}>
+                {command.cmd}
+              </code>
+              <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textMuted, cursor: 'pointer', padding: 5 }}>
+                <X size={22} />
+              </button>
             </div>
+            <p style={{ fontSize: 16, color: COLORS.text, marginBottom: 16 }}>{command.desc}</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+              <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5,
+                backgroundColor: CLI_CONFIG[command.cli].color + '25', color: CLI_CONFIG[command.cli].color,
+                fontWeight: 600, border: `1px solid ${CLI_CONFIG[command.cli].color}40` }}>
+                {CLI_CONFIG[command.cli].label}
+              </span>
+              <StatusBadge status={command.status} />
+              <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, backgroundColor: category.color + '20', color: category.color }}>
+                {category.label}
+              </span>
+            </div>
+            {command.detail && (
+              <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, padding: 12, marginBottom: 12, borderLeft: `3px solid ${category.color}` }}>
+                <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0, lineHeight: 1.6 }}>{command.detail}</p>
+              </div>
+            )}
+            {command.usage && (
+              <div style={{ backgroundColor: category.color + '10', borderRadius: 10, padding: 12, border: `1px solid ${category.color}30` }}>
+                <p style={{ color: COLORS.text, fontSize: 13, margin: 0, lineHeight: 1.6 }}>{command.usage}</p>
+              </div>
+            )}
           </div>
-        )}
-      </motion.div>
+
+          {/* 移动端：案例面板 */}
+          {hasCases && (
+            <div style={{
+              backgroundColor: 'rgba(18,18,38,0.95)',
+              borderRadius: 14,
+              padding: '12px 14px',
+              border: `1px solid ${COLORS.accent3}30`,
+              marginBottom: 10,
+            }}>
+              <div style={{ fontSize: 12, color: COLORS.accent3, fontWeight: 600, marginBottom: 10,
+                display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Play size={12} />
+                关联案例 ({relatedCases.length})
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {relatedCases.map((c) => {
+                  const lc = LEVEL_CONFIG[String(c.level)] || LEVEL_CONFIG['2'];
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => handleCaseClick(c)}
+                      style={{
+                        background: activeCase?.id === c.id ? lc.color + '25' : lc.color + '10',
+                        border: `1px solid ${activeCase?.id === c.id ? lc.color + '60' : lc.color + '25'}`,
+                        borderRadius: 8, padding: '6px 10px', cursor: 'pointer', textAlign: 'left',
+                        fontSize: 12, color: activeCase?.id === c.id ? lc.color : COLORS.text,
+                      }}
+                    >
+                      {lc.emoji} {c.title}
+                    </button>
+                  );
+                })}
+              </div>
+              <AnimatePresence mode="wait">
+                {activeCase && (
+                  <div style={{ marginTop: 10 }}>
+                    <CasePopup caseItem={activeCase} onClose={() => setActiveCase(null)} />
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* 移动端：经验面板 */}
+          {hasExps && (
+            <div style={{
+              backgroundColor: 'rgba(18,18,38,0.95)',
+              borderRadius: 14,
+              padding: '12px 14px',
+              border: `1px solid ${COLORS.accent1}30`,
+            }}>
+              <div style={{ fontSize: 12, color: COLORS.accent1, fontWeight: 600, marginBottom: 10,
+                display: 'flex', alignItems: 'center', gap: 6 }}>
+                <TipIcon size={12} />
+                关联经验 ({relatedExperiences.length})
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {relatedExperiences.map((e) => (
+                  <button
+                    key={e.tip.id}
+                    onClick={() => handleExpClick(e)}
+                    style={{
+                      background: activeExp?.tip.id === e.tip.id ? e.category.color + '25' : e.category.color + '10',
+                      border: `1px solid ${activeExp?.tip.id === e.tip.id ? e.category.color + '60' : e.category.color + '25'}`,
+                      borderRadius: 8, padding: '6px 10px', cursor: 'pointer', textAlign: 'left',
+                      fontSize: 12, color: activeExp?.tip.id === e.tip.id ? e.category.color : COLORS.text,
+                    }}
+                  >
+                    {e.category.emoji} {e.tip.title}
+                  </button>
+                ))}
+              </div>
+              <AnimatePresence mode="wait">
+                {activeExp && (
+                  <div style={{ marginTop: 10 }}>
+                    <ExperiencePopup item={activeExp} onClose={() => setActiveExp(null)} />
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 };

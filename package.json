@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "npm run scan-commands && npm run build:llm-prompt && vite",
+    "dev": "npm run scan-commands && npm run build:llm-prompt && concurrently \"node scripts/api-server.js\" \"vite\" --kill-others",
     "build": "npm run scan-commands && npm run build:llm-prompt && tsc -b && vite build",
     "scan-commands": "node scripts/scan-commands.js",
     "build:llm-prompt": "node scripts/build-llm-prompt.js",
@@ -25,6 +25,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",

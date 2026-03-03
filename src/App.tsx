@@ -1911,32 +1911,24 @@ ${ccwContext}
 
 请只返回 JSON，不要有其他内容。`;
 
-  // 处理 baseUrl，确保正确的 URL 格式
-  let baseUrl = config.baseUrl.trim();
-  // 移除末尾斜杠
-  if (baseUrl.endsWith('/')) {
-    baseUrl = baseUrl.slice(0, -1);
-  }
-  // 确保有 /v1 前缀
-  if (!baseUrl.endsWith('/v1')) {
-    baseUrl = baseUrl + '/v1';
-  }
-
   try {
-    const response = await fetch(`${baseUrl}/chat/completions`, {
+    // 使用 Vercel Serverless Function 代理解决 CORS
+    const proxyUrl = '/api/proxy';
+
+    const response = await fetch(proxyUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiKey}`,
       },
       body: JSON.stringify({
-        model: config.modelId,
+        baseUrl: config.baseUrl,
+        apiKey: config.apiKey,
+        modelId: config.modelId,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: input },
         ],
         temperature: 0.3,
-        max_tokens: 1000,
       }),
     });
 

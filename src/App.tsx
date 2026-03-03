@@ -1941,10 +1941,32 @@ ${ccwContext}
     const content = data.choices?.[0]?.message?.content;
 
     if (content) {
-      // 提取 JSON
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+      // 提取最外层 JSON（处理嵌套括号）
+      let braceCount = 0;
+      let startIdx = -1;
+      let jsonStr = '';
+
+      for (let i = 0; i < content.length; i++) {
+        if (content[i] === '{') {
+          if (braceCount === 0) startIdx = i;
+          braceCount++;
+        } else if (content[i] === '}') {
+          braceCount--;
+          if (braceCount === 0 && startIdx !== -1) {
+            jsonStr = content.slice(startIdx, i + 1);
+            break;
+          }
+        }
+      }
+
+      if (!jsonStr) {
+        // 回退到正则提取
+        const jsonMatch = content.match(/\{[\s\S]*?\}/);
+        if (jsonMatch) jsonStr = jsonMatch[0];
+      }
+
+      if (jsonStr) {
+        const parsed = JSON.parse(jsonStr);
 
         // 从 COMMAND_CHAINS 获取完整的 chain 信息
         const chain = COMMAND_CHAINS[parsed.flow] || COMMAND_CHAINS['rapid'];

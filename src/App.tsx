@@ -5,7 +5,7 @@ import {
   Lightbulb, TestTube, FlaskConical, Search as SearchIcon, Palette,
   Wrench, X, Clock, Target, Sparkles, BookOpen, Info, Bot, Play,
   ChevronRight, Terminal, MessageSquare, CheckCircle, AlertTriangle,
-  Lightbulb as TipIcon, Cpu, Settings as SettingsIcon, Zap
+  Lightbulb as TipIcon, Cpu, Settings as SettingsIcon
 } from 'lucide-react';
 import {
   COMMANDS, CATEGORIES, TIMELINE, WORKFLOW_LEVELS, GRANDMA_COMMANDS,
@@ -1809,8 +1809,38 @@ const saveLLMConfig = (config: LLMConfig) => {
   }
 };
 
-// 构建 CCW-Help 上下文用于 LLM 分析
-const buildCCWHelpContext = (): string => {
+// LLM 提示词缓存
+let cachedLLMPrompt: string | null = null;
+
+// 动态加载 LLM 提示词（从构建生成的文件）
+const loadLLMPrompt = async (): Promise<string | null> => {
+  if (cachedLLMPrompt) return cachedLLMPrompt;
+
+  try {
+    const response = await fetch('/llm-prompt.txt');
+    if (response.ok) {
+      cachedLLMPrompt = await response.text();
+      console.log('[LLM] Loaded skill-based prompt, size:', cachedLLMPrompt.length);
+      return cachedLLMPrompt;
+    }
+  } catch (e) {
+    console.warn('[LLM] Failed to load skill-based prompt:', e);
+  }
+  return null;
+};
+
+// 构建 CCW-Help 上下文用于 LLM 分析（使用 skill 内容）
+const buildCCWHelpContextFromSkill = async (): Promise<string> => {
+  const skillPrompt = await loadLLMPrompt();
+  if (skillPrompt) {
+    return skillPrompt;
+  }
+  // Fallback to built-in context
+  return buildCCWHelpContextBuiltin();
+};
+
+// 构建 CCW-Help 上下文（内置硬编码版本，作为 fallback）
+const buildCCWHelpContextBuiltin = (): string => {
   const taskTypes = TASK_PATTERNS.map(p =>
     `- ${p.type} (Level ${p.level}, flow: ${p.flow}): ${p.desc} ${p.emoji}`
   ).join('\n');
@@ -1842,7 +1872,8 @@ const analyzeWithLLM = async (config: LLMConfig, input: string): Promise<IntentA
     return null;
   }
 
-  const ccwContext = buildCCWHelpContext();
+  // 使用 skill 内容构建上下文（异步加载）
+  const ccwContext = await buildCCWHelpContextFromSkill();
 
   const systemPrompt = `你是一个 CCW 命令推荐专家。根据用户的任务描述，分析并推荐最合适的工作流程。
 

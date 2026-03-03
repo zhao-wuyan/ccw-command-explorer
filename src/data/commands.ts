@@ -1612,10 +1612,6 @@ export function analyzeIntent(input: string): IntentAnalysis {
   // 按得分排序
   allMatches.sort((a, b) => b.score - a.score);
 
-  // 判断是否使用了默认兜底
-  const isDefaultFallback = allMatches.length === 0 ||
-                            (allMatches.length === 1 && allMatches[0].pattern.type === 'feature');
-
   // 选择最佳匹配（第一个）
   const bestMatch = allMatches[0];
 

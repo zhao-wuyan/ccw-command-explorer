@@ -4,8 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "npm run scan-commands && npm run build:llm-prompt && vite",
+    "build": "npm run scan-commands && npm run build:llm-prompt && tsc -b && vite build",
+    "scan-commands": "node scripts/scan-commands.js",
+    "build:llm-prompt": "node scripts/build-llm-prompt.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

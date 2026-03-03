@@ -884,13 +884,13 @@ export const MULTI_CLI_CASES: Case[] = [
     scenario: 'Claude Code 生成协作规划文档，Codex 消费并执行实现',
     commands: [
       { cmd: '/workflow:collaborative-plan-with-file', desc: '协作式规划，输出规划文件 (Claude Code)' },
-      { cmd: '/workflow:unified-execute-with-file', desc: '通用执行引擎，消费规划文件 (Codex)' },
+      { cmd: '/unified-execute-with-file', desc: '通用执行引擎，消费规划文件 (Codex)' },
     ],
     steps: [
       { role: 'user', content: '[Claude Code]\n/workflow:collaborative-plan-with-file "为电商平台实现优惠券系统"', type: 'command' },
       { role: 'system', content: '┌─ 协作式规划 (Claude Code) ──────────────────┐\n│ 📋 分析需求...                              │\n│ 🔍 探索现有代码库...                        │\n│ 🧠 多维度规划中...                          │\n└──────────────────────────────────────────────┘', type: 'response' },
       { role: 'system', content: '📊 规划文档已生成:\n\n  .workflow/plans/coupon-system-plan.md\n\n  内容:\n  ├── 背景与目标\n  ├── 架构设计 (策略模式 + 状态机)\n  ├── 数据模型 (CouponTemplate, CouponCode)\n  ├── 任务分解 (6 个 IMPL 任务)\n  └── 技术约束 (幂等, 并发控制)\n\n✅ 规划完成，文件已输出供 Codex 消费', type: 'result', highlight: true },
-      { role: 'user', content: '[Codex]\n/workflow:unified-execute-with-file .workflow/plans/coupon-system-plan.md', type: 'command' },
+      { role: 'user', content: '[Codex]\n/unified-execute-with-file .workflow/plans/coupon-system-plan.md', type: 'command' },
       { role: 'system', content: '┌─ 通用执行引擎 (Codex) ──────────────────────┐\n│ 📖 解析规划文件...                          │\n│ 🔄 构建任务 DAG...                          │\n│ 🚀 开始执行...                              │\n└──────────────────────────────────────────────┘', type: 'response' },
       { role: 'system', content: '🔄 执行进度:\n\n  ✅ IMPL-001: CouponTemplate 数据模型\n  ✅ IMPL-002: CouponCode 状态机\n  ✅ IMPL-003: 优惠券发放服务\n  ✅ IMPL-004: 优惠券核销服务\n  ✅ IMPL-005: 并发冲突防护 (Redis 锁)\n  ✅ IMPL-006: REST API + 集成测试\n\n覆盖率: 91%', type: 'response' },
       { role: 'system', content: '✅ 执行完成！\n\n📊 统计:\n   - 新增文件: 8 个\n   - 代码行数: 1,240 行\n   - 测试: 34 个，全部通过\n\n💡 Claude Code 负责思考规划，Codex 负责快速实现\n   两者分工协作，发挥各自优势', type: 'result', highlight: true },

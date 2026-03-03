@@ -1,0 +1,186 @@
+#CCW
+# CCW-Help Skill
+## Trigger Conditions
+- 关键词: "ccw-help", "ccw-issue", "帮助", "命令", "怎么用", "ccw 怎么用", "工作流"
+- 场景: 询问命令用法、搜索命令、请求下一步建议、询问任务应该用哪个工作流
+## Operation Modes
+### Mode 1: Command Search
+**Triggers**: "搜索命令", "find command", "search"
+### Mode 2: Smart Recommendations
+**Triggers**: "下一步", "what's next", "推荐"
+### Mode 3: Documentation
+**Triggers**: "怎么用", "how to use", "详情"
+### Mode 4: Beginner Onboarding
+**Triggers**: "新手", "getting started", "常用命令"
+### Mode 5: CCW Command Orchestration
+**Triggers**: "ccw ", "自动工作流", "自动选择工作流", "帮我规划"
+- **Level 1** (Lite-Lite-Lite): Ultra-simple quick tasks
+- **Level 2** (Rapid/Hotfix): Bug fixes, simple features, documentation
+- **Level 2.5** (Rapid-to-Issue): Bridge from quick planning to issue workflow
+- **Level 3** (Coupled): Complex features with planning, execution, review, tests
+- **Level 3 Variants**:
+- **Level 4** (Full): Exploratory tasks with brainstorming
+- **With-File Workflows**: Documented exploration with multi-CLI collaboration
+- **Issue Workflow**: Batch issue discovery, planning, queueing, execution
+### Mode 6: Issue Reporting
+**Triggers**: "ccw-issue", "报告 bug"
+## Data Source
+### Source Path Format
+## Slash Commands
+### CCW Command Examples
+## Maintenance
+### Update Mechanism
+- Yes: Run auto-update and regenerate command.json
+- No: Use current index
+- **`auto-update.py`**: Simple wrapper that runs analyze_commands.py
+- **`analyze_commands.py`**: Scans directories and generates command index
+## Statistics
+- **Commands**: 50+
+- **Agents**: 16
+- **Workflows**: 6 main levels + 3 with-file variants
+- **Essential**: 10 core commands
+## Core Principle
+- 理解用户具体情况
+- 整合多个来源信息
+- 定制示例和说明
+
+#CMD
+
+[claude]
+cli:
+  /cli:cli-init|Generate .gemini/ and .qwen/ config directories with settings.json and ignore files based on workspace technology detection|[--tool gemini|qwen|all] [--output path] [--preview]|i
+  /cli:codex-review|Interactive code review using Codex CLI via ccw endpoint with configurable review target, model, and custom instructions|[--uncommitted|--base <branch>|--commit <sha>] [--model <model>] [--title <title>] [prompt]|a
+general:
+  /ccw|Main workflow orchestrator - analyze intent, select workflow, execute command chain in main process|\"task description\"|i
+  /ccw-coordinator|Command orchestration tool - analyze requirements, recommend chain, execute sequentially with state persistence|[task description]|i
+idaw:
+  /idaw:add|Add IDAW tasks - manual creation or import from ccw issue|[-y|--yes] [--from-issue <id>[,<id>,...]] \"description\" [--type <task_type>] [--priority <1-5>]|i
+  /idaw:resume|Resume interrupted IDAW session from last checkpoint|[-y|--yes] [session-id]|s
+  /idaw:run|IDAW orchestrator - execute task skill chains serially with git checkpoints|[-y|--yes] [--task <id>[,<id>,...]] [--dry-run]|i
+  /idaw:run-coordinate|IDAW coordinator - execute task skill chains via external CLI with hook callbacks and git checkpoints|[-y|--yes] [--task <id>[,<id>,...]] [--dry-run] [--tool <tool>]|i
+  /idaw:status|View IDAW task and session progress|[session-id]|s
+issue:
+  /issue:convert-to-plan|Convert planning artifacts (lite-plan, workflow session, markdown) to issue solutions|[-y|--yes] [--issue <id>] [--supplement] <SOURCE>|p
+  /issue:execute|Execute queue with DAG-based parallel orchestration (one commit per solution)|[-y|--yes] --queue <queue-id> [--worktree [<existing-path>]]|i
+  /issue:from-brainstorm|Convert brainstorm session ideas into issue with executable solution for parallel-dev-cycle|SESSION=\"<session-id>\" [--idea=<index>] [--auto] [-y|--yes]|p
+  /issue:discover|Discover potential issues from multiple perspectives (bug, UX, test, quality, security, performance, maintainability, best-practices) using CLI explore. Supports Exa external research for security and best-practices perspectives.|[-y|--yes] <path-pattern> [--perspectives=bug,ux,...] [--external]|t
+  /issue:discover-by-prompt|Discover issues from user prompt with Gemini-planned iterative multi-agent exploration. Uses ACE semantic search for context gathering and supports cross-module comparison (e.g., frontend vs backend API contracts).|[-y|--yes] <prompt> [--scope=src/**] [--depth=standard|deep] [--max-iterations=5]|p
+  /issue:new|Create structured issue from GitHub URL or text description|[-y|--yes] <github-url | text-description> [--priority 1-5]|i
+  /issue:plan|Batch plan issue resolution using issue-plan-agent (explore + plan closed-loop)|[-y|--yes] --all-pending <issue-id>[,<issue-id>,...] [--batch-size 3]|p
+  /issue:queue|Form execution queue from bound solutions using issue-queue-agent (solution-level)|[-y|--yes] [--queues <n>] [--issue <id>]|i
+memory:
+  /memory:prepare|Delegate to universal-executor agent to analyze project via Gemini/Qwen CLI and return JSON core content package for task context|[--tool gemini|qwen] \"task context description\"|a
+  /memory:style-skill-memory|Generate SKILL memory package from style reference for easy loading and consistent design system usage|[package-name] [--regenerate]|p
+skill:
+  /brainstorm|Unified brainstorming skill with dual-mode operation - auto pipeline and single role analysis. Triggers on "brainstorm", "头脑风暴".|p
+  /ccw-help|CCW command help system. Search, browse, recommend commands. Triggers "ccw-help", "ccw-issue".|i
+  /command-generator|Command file generator - 5 phase workflow for creating Claude Code command files with YAML frontmatter. Generates .md command files for project or user scope. Triggers on "create command", "new command", "command generator".|i
+  /issue-manage|Interactive issue management with menu-driven CRUD operations. Use when managing issues, viewing issue status, editing issue fields, performing bulk operations, or viewing issue history. Triggers on "manage issue", "list issues", "edit issue", "delete issue", "bulk update", "issue dashboard", "issue history", "completed issues".|s
+  /memory-capture|Unified memory capture with routing - session compact or quick tips. Triggers on "memory capture", "compact session", "save session", "quick tip", "memory tips", "记录", "压缩会话".|d
+  /memory-manage|Unified memory management - CLAUDE.md updates and documentation generation with interactive routing. Triggers on "memory manage", "update claude", "update memory", "generate docs", "更新记忆", "生成文档".|i
+  /review-code|Multi-dimensional code review with structured reports. Analyzes correctness, readability, performance, security, testing, and architecture. Triggers on "review code", "code review", "审查代码", "代码审查".|t
+  /review-cycle|Unified multi-dimensional code review with automated fix orchestration. Routes to session-based (git changes), module-based (path patterns), or fix mode. Triggers on "workflow:review-cycle", "workflow:review-session-cycle", "workflow:review-module-cycle", "workflow:review-cycle-fix".|s
+  /skill-generator|Meta-skill for creating new Claude Code skills with configurable execution modes. Supports sequential (fixed order) and autonomous (stateless) phase patterns. Use for skill scaffolding, skill creation, or building new workflows. Triggers on "create skill", "new skill", "skill generator".|i
+  /skill-tuning|Universal skill diagnosis and optimization tool. Detect and fix skill execution issues including context explosion, long-tail forgetting, data flow disruption, and agent coordination failures. Supports Gemini CLI for deep analysis. Triggers on "skill tuning", "tune skill", "skill diagnosis", "optimize skill", "skill debug".|a
+  /spec-generator|Specification generator - 6 phase document chain producing product brief, PRD, architecture, and epics. Triggers on "generate spec", "create specification", "spec generator", "workflow:spec".|i
+  /team-brainstorm|Unified team skill for brainstorming team. All roles invoke this skill with --role arg for role-specific execution. Triggers on "team brainstorm".|p
+  /team-coordinate|Universal team coordination skill with dynamic role generation. Only coordinator is built-in -- all worker roles are generated at runtime based on task analysis. Beat/cadence model for orchestration. Triggers on "team coordinate".|i
+  /team-coordinate-v2|Universal team coordination skill with dynamic role generation. Uses team-worker agent architecture with role-spec files. Only coordinator is built-in -- all worker roles are generated at runtime as role-specs and spawned via team-worker agent. Beat/cadence model for orchestration. Triggers on "team coordinate v2".|i
+  /team-executor|Lightweight session execution skill. Resumes existing team-coordinate sessions for pure execution. No analysis, no role generation -- only loads and executes. Session path required. Triggers on "team executor".|i
+  /team-executor-v2|Lightweight session execution skill. Resumes existing team-coordinate-v2 sessions for pure execution via team-worker agents. No analysis, no role generation -- only loads and executes. Session path required. Triggers on "team executor v2".|i
+  /team-frontend|Unified team skill for frontend development team. All roles invoke this skill with --role arg. Built-in ui-ux-pro-max design intelligence. Triggers on "team frontend".|p
+  /team-issue|Unified team skill for issue resolution. All roles invoke this skill with --role arg for role-specific execution. Triggers on "team issue".|i
+  /team-iterdev|Unified team skill for iterative development team. All roles invoke this skill with --role arg for role-specific execution. Triggers on "team iterdev".|g
+  /team-lifecycle-v3|Unified team skill for full lifecycle - spec/impl/test. All roles invoke this skill with --role arg for role-specific execution. Triggers on "team lifecycle".|t
+  /team-lifecycle-v4|Unified team skill for full lifecycle - spec/impl/test. Optimized cadence with inline discuss subagent and shared explore. All roles invoke this skill with --role arg for role-specific execution. Triggers on "team lifecycle".|t
+  /team-lifecycle-v5|Unified team skill for full lifecycle - spec/impl/test. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents loaded with role-specific Phase 2-4 specs. Triggers on "team lifecycle".|t
+  /team-planex|Unified team skill for plan-and-execute pipeline. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on "team planex".|p
+  /team-quality-assurance|Unified team skill for quality assurance team. All roles invoke this skill with --role arg for role-specific execution. Triggers on "team quality-assurance", "team qa".|g
+  /team-review|Unified team skill for code scanning, vulnerability review, optimization suggestions, and automated fix. 4-role team: coordinator, scanner, reviewer, fixer. Triggers on team-review.|a
+  /team-roadmap-dev|Unified team skill for roadmap-driven development workflow. Coordinator discusses roadmap with user, then dispatches phased execution pipeline (plan -> execute -> verify). All roles invoke this skill with --role arg. Triggers on "team roadmap-dev".|p
+  /team-tech-debt|Unified team skill for tech debt identification and cleanup. All roles invoke this skill with --role arg for role-specific execution. Triggers on "team tech-debt", "tech debt cleanup", "技术债务".|g
+  /team-testing|Unified team skill for testing team. All roles invoke this skill with --role arg for role-specific execution. Triggers on "team testing".|t
+  /team-uidesign|Unified team skill for UI design team. All roles invoke this skill with --role arg for role-specific execution. CP-9 Dual-Track design+implementation.|p
+  /team-ultra-analyze|Unified team skill for deep collaborative analysis. All roles invoke this skill with --role arg for role-specific execution. Triggers on "team ultra-analyze", "team analyze".|a
+  /workflow-execute|Coordinate agent execution for workflow tasks with automatic session discovery, parallel task processing, and status tracking. Triggers on "workflow-execute".|i
+  /workflow-lite-plan|Lightweight planning and execution skill - route to lite-plan or lite-execute with prompt enhancement. Triggers on "workflow-lite-plan", "workflow:lite-execute".|p
+  /workflow-multi-cli-plan|Multi-CLI collaborative planning and execution skill - route to multi-cli-plan or lite-execute with prompt enhancement. Triggers on "workflow-multi-cli-plan", "workflow:lite-execute".|p
+  /workflow-plan|Unified planning skill - 4-phase planning workflow, plan verification, and interactive replanning. Triggers on "workflow-plan", "workflow-plan-verify", "workflow:replan".|p
+  /workflow-skill-designer|Meta-skill for designing orchestrator+phases structured workflow skills. Creates SKILL.md coordinator with progressive phase loading, TodoWrite patterns, and data flow. Triggers on "design workflow skill", "create workflow skill", "workflow skill designer".|p
+  /workflow-tdd|Unified TDD workflow skill combining 6-phase TDD planning with Red-Green-Refactor task chain generation, and 4-phase TDD verification with compliance reporting. Triggers on "workflow:tdd-plan", "workflow:tdd-verify".|p
+  /workflow-tdd-plan-plan|Unified TDD workflow skill combining 6-phase TDD planning with Red-Green-Refactor task chain generation, and 4-phase TDD verification with compliance reporting. Triggers on "workflow-tdd-plan", "workflow-tdd-verify".|p
+  /workflow-test-fix|Unified test-fix pipeline combining test generation (session, context, analysis, task gen) with iterative test-cycle execution (adaptive strategy, progressive testing, CLI fallback). Triggers on "workflow-test-fix", "workflow-test-fix", "test fix workflow".|t
+  /workflow-wave-plan|CSV Wave planning and execution - explore via wave, resolve conflicts, execute from CSV with linked exploration context. Triggers on "workflow:wave-plan".|<task description> [--yes|-y] [--concurrency|-c N]|p
+workflow:
+  /workflow:analyze-with-file|Interactive collaborative analysis with documented discussions, CLI-assisted exploration, and evolving understanding|[-y|--yes] [-c|--continue] \"topic or question\"|a
+  /workflow:workflow/ui-design:animation-extract|Extract animation and transition patterns from prompt inference and image references for design system documentation|[-y|--yes] [--design-id <id>] [--session <id>] [--images "<glob>"] [--focus "<types>"] [--interactive] [--refine]|p
+  /workflow:brainstorm-with-file|Interactive brainstorming with multi-CLI collaboration, idea expansion, and documented thought evolution|[-y|--yes] [-c|--continue] [-m|--mode creative|structured] \"idea or topic\"|p
+  /workflow:clean|Intelligent code cleanup with mainline detection, stale artifact discovery, and safe execution|[-y|--yes] [--dry-run] [\"focus area\"]|a
+  /workflow:workflow/session:complete|Mark active workflow session as complete, archive with lessons learned, update manifest, remove active flag|[-y|--yes] [--detailed]|s
+  /workflow:debug-with-file|Interactive hypothesis-driven debugging with documented exploration, understanding evolution, and Gemini-assisted correction|[-y|--yes] \"bug description or error message\"|d
+  /workflow:workflow/ui-design:design-sync|Synchronize finalized design system references to brainstorming artifacts, preparing them for /workflow-plan consumption|--session <session_id> [--selected-prototypes "<list>"]|p
+  /workflow:workflow/ui-design:explore-auto|Interactive exploratory UI design workflow with style-centric batch generation, creates design variants from prompts/images with parallel execution and user selection|[--input "<value>"] [--targets "<list>"] [--target-type "page|component"] [--session <id>] [--style-variants <count>] [--layout-variants <count>]|p
+  /workflow:workflow/ui-design:generate|Assemble UI prototypes by combining layout templates with design tokens (default animation support), pure assembler without new content generation|[--design-id <id>] [--session <id>]|p
+  /workflow:workflow/ui-design:imitate-auto|UI design workflow with direct code/image input for design token extraction and prototype generation|[--input "<value>"] [--session <id>]|p
+  /workflow:init|Initialize project-level state with intelligent project analysis using cli-explore-agent|[--regenerate] [--skip-specs]|g
+  /workflow:init-guidelines|Interactive wizard to fill specs/*.md based on project analysis|[--reset]|g
+  /workflow:init-specs|Interactive wizard to create individual specs or personal constraints with scope selection|[--scope <global|project>] [--dimension <specs|personal>] [--category <general|exploration|planning|execution>]|i
+  /workflow:integration-test-cycle|Self-iterating integration test workflow with codebase exploration, test development, autonomous test-fix cycles, and reflection-driven strategy adjustment|[-y|--yes] [-c|--continue] [--max-iterations=N] \"module or feature description\"|t
+  /workflow:workflow/ui-design:layout-extract|Extract structural layout information from reference images or text prompts using Claude analysis with variant generation or refinement mode|[-y|--yes] [--design-id <id>] [--session <id>] [--images "<glob>"] [--prompt "<desc>"] [--targets "<list>"] [--variants <count>] [--device-type <desktop|mobile|tablet|responsive>] [--interactive] [--refine]|g
+  /workflow:workflow/session:list|List all workflow sessions with status filtering, shows session metadata and progress information|s
+  /workflow:refactor-cycle|Tech debt discovery and self-iterating refactoring with multi-dimensional analysis, prioritized execution, regression validation, and reflection-driven adjustment|[-y|--yes] [-c|--continue] [--scope=module|project] \"module or refactoring goal\"|a
+  /workflow:workflow/session:resume|Resume the most recently paused workflow session with automatic session discovery and status update|s
+  /workflow:roadmap-with-file|Strategic requirement roadmap with iterative decomposition and issue creation. Outputs roadmap.md (human-readable, single source) + issues.jsonl (machine-executable). Handoff to team-planex.|[-y|--yes] [-c|--continue] [-m progressive|direct|auto] \"requirement description\"|p
+  /workflow:workflow/session:solidify|Crystallize session learnings and user-defined constraints into permanent project guidelines, or compress recent memories|[-y|--yes] [--type <convention|constraint|learning|compress>] [--category <category>] [--limit <N>] \"rule or insight\"|s
+  /workflow:workflow/session:start|Discover existing sessions or start new workflow session with intelligent session management and conflict detection|[--type <workflow|review|tdd|test|docs>] [--auto|--new] [optional: task description for new session]|s
+  /workflow:workflow/ui-design:style-extract|Extract design style from reference images or text prompts using Claude analysis with variant generation or refinement mode|[-y|--yes] [--design-id <id>] [--session <id>] [--images "<glob>"] [--prompt "<desc>"] [--variants <count>] [--interactive] [--refine]|p
+  /workflow:workflow/session:sync|Quick-sync session work to specs/*.md and project-tech|[-y|--yes] [\"what was done\"]|s
+  /workflow:unified-execute-with-file|Universal execution engine for consuming any planning/brainstorm/analysis output with minimal progress tracking, multi-agent coordination, and incremental execution|[-y|--yes] [<path>[,<path2>] | -p|--plan <path>[,<path2>]] [--auto-commit] [--commit-prefix \"prefix\"] [\"execution context or task name\"]|p
+  /workflow:collaborative-plan-with-file|Collaborative planning with Plan Note - Understanding agent creates shared plan-note.md template, parallel agents fill pre-allocated sections, conflict detection without merge. Outputs executable plan-note.md.|[-y|--yes] <task description> [--max-agents=5]|p
+  /workflow:ui-design:codify-style|Orchestrator to extract styles from code and generate shareable reference package with preview (automatic file discovery)|<path> [--package-name <name>] [--output-dir <path>] [--overwrite]|p
+  /workflow:ui-design:import-from-code|Import design system from code files (CSS/JS/HTML/SCSS) with automatic file discovery and parallel agent analysis|[--design-id <id>] [--session <id>] [--source <path>]|p
+  /workflow:ui-design:reference-page-generator|Generate multi-component reference pages and documentation from design run extraction|[--design-run <path>] [--package-name <name>] [--output-dir <path>]|p
+
+[codex]
+prompt:
+  /codex:prep-cycle|Interactive pre-flight checklist for parallel-dev-cycle. Validates environment, refines task via Q&A, configures auto-iteration (0→1→100), writes prep-package.json, then launches the cycle.|TASK="<task description>" [MAX_ITER=5] [TEST_RATE=90] [COVERAGE=80]|i
+  /codex:prep-plan|Interactive pre-flight checklist for workflow-plan. Validates environment, refines task to GOAL/SCOPE/CONTEXT, collects source docs, configures execution preferences, writes prep-package.json, then launches the workflow.|TASK="<task description>" [EXEC_METHOD=agent|cli|hybrid] [CLI_TOOL=codex|gemini|qwen]|p
+skill:
+  /analyze-with-file|Interactive collaborative analysis with documented discussions, inline exploration, and evolving understanding. Serial execution with no agent delegation.|TOPIC=\"<question or topic>\" [--depth=quick|standard|deep] [--continue]|a
+  /brainstorm-with-file|Interactive brainstorming with parallel subagent collaboration, idea expansion, and documented thought evolution. Parallel multi-perspective analysis for Codex.|TOPIC=\"<idea or topic>\" [--perspectives=creative,pragmatic,systematic] [--max-ideas=<n>]|p
+  /ccw-cli-tools|CLI tools execution specification (gemini/claude/codex/qwen/opencode) with unified prompt template, mode options, and auto-invoke triggers for code analysis and implementation tasks. Supports configurable CLI endpoints for analysis, write, and review modes.|i
+  /clean|Intelligent code cleanup with mainline detection, stale artifact discovery, and safe execution. Supports targeted cleanup and confirmation.|[--dry-run] [--focus=<area>]|a
+  /collaborative-plan-with-file|Serial collaborative planning with Plan Note - Multi-domain serial task generation, unified plan-note.md, conflict detection. No agent delegation.|[-y|--yes] <task description> [--max-domains=5]|p
+  /compact|Compact current session memory into structured text for session recovery. Supports custom descriptions and tagging.|[--description=\"...\"] [--tags=<tag1,tag2>] [--force]|d
+  /csv-wave-pipeline|Requirement planning to wave-based CSV execution pipeline. Decomposes requirement into dependency-sorted CSV tasks, computes execution waves, runs wave-by-wave via spawn_agents_on_csv with cross-wave context propagation.|[-y|--yes] [-c|--concurrency N] [--continue] \"requirement description\"|p
+  /debug-with-file|Interactive hypothesis-driven debugging with documented exploration, understanding evolution, and analysis-assisted correction.|BUG=\"<bug description or error message>\"|d
+  /issue-discover|Unified issue discovery and creation. Create issues from GitHub/text, discover issues via multi-perspective analysis, or prompt-driven iterative exploration. Triggers on "issue:new", "issue:discover", "issue:discover-by-prompt", "create issue", "discover issues", "find issues".|i
+  /parallel-dev-cycle|Multi-agent parallel development cycle with requirement analysis, exploration planning, code development, and validation. Orchestration runs inline in main flow (no separate orchestrator agent). Supports continuous iteration with markdown progress documentation. Triggers on "parallel-dev-cycle".|p
+  /review-cycle|Unified multi-dimensional code review with automated fix orchestration. Supports session-based (git changes) and module-based (path patterns) review modes with 7-dimension parallel analysis, iterative deep-dive, and automated fix pipeline. Triggers on "workflow:review-cycle", "workflow:review-session-cycle", "workflow:review-module-cycle", "workflow:review-cycle-fix".|s
+  /roadmap-with-file|Strategic requirement roadmap with iterative decomposition and issue creation. Outputs roadmap.md (human-readable, single source) + issues.jsonl (machine-executable). Handoff to team-planex.|[-y|--yes] [-c|--continue] [-m progressive|direct|auto] \"requirement description\"|p
+  /team-lifecycle|Full lifecycle orchestrator - spec/impl/test. Spawn-wait-close pipeline with inline discuss subagent, shared explore cache, fast-advance, and consensus severity routing.|t
+  /team-planex|||p
+  /unified-execute-with-file|Universal execution engine consuming .task/*.json directory format. Serial task execution with convergence verification, progress tracking via execution.md + execution-events.md.|PLAN=\"<path/to/.task/>\" [--auto-commit] [--dry-run]|i
+  /wave-plan-pipeline|Explore-first wave pipeline. Decomposes requirement into exploration angles, runs wave exploration via spawn_agents_on_csv, synthesizes findings into execution tasks with cross-phase context linking (E*→T*), then wave-executes via spawn_agents_on_csv.|[-y|--yes] [-c|--concurrency N] [--continue] \"requirement description\"|p
+  /workflow-test-fix-cycle|End-to-end test-fix workflow generate test sessions with progressive layers (L0-L3), then execute iterative fix cycles until pass rate >= 95%. Combines test-fix-gen and test-cycle-execute into a unified pipeline. Triggers on "workflow:test-fix-cycle".|i
+
+#REL
+prep-plan:next:/scope,/context
+
+#INST
+You are CCW command recommendation expert.
+Analyze user input, choose CLI(claude|codex), recommend commands.
+
+Return JSON:
+{taskType:string,level:1-4,flow:string,cli:string,confidence:0-1,reason:string,commands:[{cmd:string,desc:string}]}
+
+Levels:
+1=simple task
+2=plan+execute
+3=plan+execute+verify
+4=explore+plan+execute+verify
+
+Rules:
+-Match to specific commands
+-Consider prerequisites
+-Suggest alternatives

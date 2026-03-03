@@ -1,0 +1,362 @@
+[
+  {
+    "name": "brainstorm",
+    "description": "Unified brainstorming skill with dual-mode operation - auto pipeline and single role analysis. Triggers on \"brainstorm\", \"头脑风暴\".",
+    "category": "standalone",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/brainstorm/SKILL.md"
+  },
+  {
+    "name": "command-generator",
+    "description": "Command file generator - 5 phase workflow for creating Claude Code command files with YAML frontmatter. Generates .md command files for project or user scope. Triggers on \"create command\", \"new command\", \"command generator\".",
+    "category": "meta",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/command-generator/SKILL.md"
+  },
+  {
+    "name": "issue-manage",
+    "description": "Interactive issue management with menu-driven CRUD operations. Use when managing issues, viewing issue status, editing issue fields, performing bulk operations, or viewing issue history. Triggers on \"manage issue\", \"list issues\", \"edit issue\", \"delete issue\", \"bulk update\", \"issue dashboard\", \"issue history\", \"completed issues\".",
+    "category": "utility",
+    "is_team": false,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/issue-manage/SKILL.md"
+  },
+  {
+    "name": "memory-capture",
+    "description": "Unified memory capture with routing - session compact or quick tips. Triggers on \"memory capture\", \"compact session\", \"save session\", \"quick tip\", \"memory tips\", \"记录\", \"压缩会话\".",
+    "category": "utility",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/memory-capture/SKILL.md"
+  },
+  {
+    "name": "memory-manage",
+    "description": "Unified memory management - CLAUDE.md updates and documentation generation with interactive routing. Triggers on \"memory manage\", \"update claude\", \"update memory\", \"generate docs\", \"更新记忆\", \"生成文档\".",
+    "category": "utility",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/memory-manage/SKILL.md"
+  },
+  {
+    "name": "review-code",
+    "description": "Multi-dimensional code review with structured reports. Analyzes correctness, readability, performance, security, testing, and architecture. Triggers on \"review code\", \"code review\", \"审查代码\", \"代码审查\".",
+    "category": "review",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/review-code/SKILL.md"
+  },
+  {
+    "name": "review-cycle",
+    "description": "Unified multi-dimensional code review with automated fix orchestration. Routes to session-based (git changes), module-based (path patterns), or fix mode. Triggers on \"workflow:review-cycle\", \"workflow:review-session-cycle\", \"workflow:review-module-cycle\", \"workflow:review-cycle-fix\".",
+    "category": "review",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/review-cycle/SKILL.md"
+  },
+  {
+    "name": "skill-generator",
+    "description": "Meta-skill for creating new Claude Code skills with configurable execution modes. Supports sequential (fixed order) and autonomous (stateless) phase patterns. Use for skill scaffolding, skill creation, or building new workflows. Triggers on \"create skill\", \"new skill\", \"skill generator\".",
+    "category": "meta",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/skill-generator/SKILL.md"
+  },
+  {
+    "name": "skill-tuning",
+    "description": "Universal skill diagnosis and optimization tool. Detect and fix skill execution issues including context explosion, long-tail forgetting, data flow disruption, and agent coordination failures. Supports Gemini CLI for deep analysis. Triggers on \"skill tuning\", \"tune skill\", \"skill diagnosis\", \"optimize skill\", \"skill debug\".",
+    "category": "meta",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/skill-tuning/SKILL.md"
+  },
+  {
+    "name": "spec-generator",
+    "description": "Specification generator - 6 phase document chain producing product brief, PRD, architecture, and epics. Triggers on \"generate spec\", \"create specification\", \"spec generator\", \"workflow:spec\".",
+    "category": "meta",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/spec-generator/SKILL.md"
+  },
+  {
+    "name": "team-brainstorm",
+    "description": "Unified team skill for brainstorming team. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team brainstorm\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-brainstorm/SKILL.md"
+  },
+  {
+    "name": "team-coordinate",
+    "description": "Universal team coordination skill with dynamic role generation. Only coordinator is built-in -- all worker roles are generated at runtime based on task analysis. Beat/cadence model for orchestration. Triggers on \"team coordinate\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-coordinate/SKILL.md"
+  },
+  {
+    "name": "team-coordinate-v2",
+    "description": "Universal team coordination skill with dynamic role generation. Uses team-worker agent architecture with role-spec files. Only coordinator is built-in -- all worker roles are generated at runtime as role-specs and spawned via team-worker agent. Beat/cadence model for orchestration. Triggers on \"team coordinate v2\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-coordinate-v2/SKILL.md"
+  },
+  {
+    "name": "team-executor",
+    "description": "Lightweight session execution skill. Resumes existing team-coordinate sessions for pure execution. No analysis, no role generation -- only loads and executes. Session path required. Triggers on \"team executor\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-executor/SKILL.md"
+  },
+  {
+    "name": "team-executor-v2",
+    "description": "Lightweight session execution skill. Resumes existing team-coordinate-v2 sessions for pure execution via team-worker agents. No analysis, no role generation -- only loads and executes. Session path required. Triggers on \"team executor v2\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-executor-v2/SKILL.md"
+  },
+  {
+    "name": "team-frontend",
+    "description": "Unified team skill for frontend development team. All roles invoke this skill with --role arg. Built-in ui-ux-pro-max design intelligence. Triggers on \"team frontend\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-frontend/SKILL.md"
+  },
+  {
+    "name": "team-issue",
+    "description": "Unified team skill for issue resolution. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team issue\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-issue/SKILL.md"
+  },
+  {
+    "name": "team-iterdev",
+    "description": "Unified team skill for iterative development team. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team iterdev\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-iterdev/SKILL.md"
+  },
+  {
+    "name": "team-lifecycle-v3",
+    "description": "Unified team skill for full lifecycle - spec/impl/test. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team lifecycle\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-lifecycle-v3/SKILL.md"
+  },
+  {
+    "name": "team-lifecycle-v4",
+    "description": "Unified team skill for full lifecycle - spec/impl/test. Optimized cadence with inline discuss subagent and shared explore. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team lifecycle\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-lifecycle-v4/SKILL.md"
+  },
+  {
+    "name": "team-lifecycle-v5",
+    "description": "Unified team skill for full lifecycle - spec/impl/test. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents loaded with role-specific Phase 2-4 specs. Triggers on \"team lifecycle\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": true,
+    "version": "",
+    "source": "../../../skills/team-lifecycle-v5/SKILL.md"
+  },
+  {
+    "name": "team-planex",
+    "description": "Unified team skill for plan-and-execute pipeline. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team planex\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": true,
+    "version": "",
+    "source": "../../../skills/team-planex/SKILL.md"
+  },
+  {
+    "name": "team-quality-assurance",
+    "description": "Unified team skill for quality assurance team. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team quality-assurance\", \"team qa\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-quality-assurance/SKILL.md"
+  },
+  {
+    "name": "team-review",
+    "description": "Unified team skill for code scanning, vulnerability review, optimization suggestions, and automated fix. 4-role team: coordinator, scanner, reviewer, fixer. Triggers on team-review.",
+    "category": "team",
+    "is_team": false,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-review/SKILL.md"
+  },
+  {
+    "name": "team-roadmap-dev",
+    "description": "Unified team skill for roadmap-driven development workflow. Coordinator discusses roadmap with user, then dispatches phased execution pipeline (plan -> execute -> verify). All roles invoke this skill with --role arg. Triggers on \"team roadmap-dev\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-roadmap-dev/SKILL.md"
+  },
+  {
+    "name": "team-tech-debt",
+    "description": "Unified team skill for tech debt identification and cleanup. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team tech-debt\", \"tech debt cleanup\", \"技术债务\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-tech-debt/SKILL.md"
+  },
+  {
+    "name": "team-testing",
+    "description": "Unified team skill for testing team. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team testing\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-testing/SKILL.md"
+  },
+  {
+    "name": "team-uidesign",
+    "description": "Unified team skill for UI design team. All roles invoke this skill with --role arg for role-specific execution. CP-9 Dual-Track design+implementation.",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-uidesign/SKILL.md"
+  },
+  {
+    "name": "team-ultra-analyze",
+    "description": "Unified team skill for deep collaborative analysis. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team ultra-analyze\", \"team analyze\".",
+    "category": "team",
+    "is_team": true,
+    "has_phases": false,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/team-ultra-analyze/SKILL.md"
+  },
+  {
+    "name": "workflow-execute",
+    "description": "Coordinate agent execution for workflow tasks with automatic session discovery, parallel task processing, and status tracking. Triggers on \"workflow-execute\".",
+    "category": "workflow",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/workflow-execute/SKILL.md"
+  },
+  {
+    "name": "workflow-lite-planex",
+    "description": "Lightweight planning and execution skill (Phase 1: plan, Phase 2: execute). Triggers on \"workflow-lite-planex\".",
+    "category": "workflow",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/workflow-lite-planex/SKILL.md"
+  },
+  {
+    "name": "workflow-multi-cli-plan",
+    "description": "Multi-CLI collaborative planning and execution skill with integrated execution phase. Triggers on \"workflow-multi-cli-plan\".",
+    "category": "workflow",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/workflow-multi-cli-plan/SKILL.md"
+  },
+  {
+    "name": "workflow-plan",
+    "description": "Unified planning skill - 4-phase planning workflow, plan verification, and interactive replanning. Triggers on \"workflow-plan\", \"workflow-plan-verify\", \"workflow:replan\".",
+    "category": "workflow",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/workflow-plan/SKILL.md"
+  },
+  {
+    "name": "workflow-skill-designer",
+    "description": "Meta-skill for designing orchestrator+phases structured workflow skills. Creates SKILL.md coordinator with progressive phase loading, TodoWrite patterns, and data flow. Triggers on \"design workflow skill\", \"create workflow skill\", \"workflow skill designer\".",
+    "category": "workflow",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/workflow-skill-designer/SKILL.md"
+  },
+  {
+    "name": "workflow-tdd-plan-plan",
+    "description": "Unified TDD workflow skill combining 6-phase TDD planning with Red-Green-Refactor task chain generation, and 4-phase TDD verification with compliance reporting. Triggers on \"workflow-tdd-plan\", \"workflow-tdd-verify\".",
+    "category": "workflow",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/workflow-tdd-plan/SKILL.md"
+  },
+  {
+    "name": "workflow-test-fix",
+    "description": "Unified test-fix pipeline combining test generation (session, context, analysis, task gen) with iterative test-cycle execution (adaptive strategy, progressive testing, CLI fallback). Triggers on \"workflow-test-fix\", \"workflow-test-fix\", \"test fix workflow\".",
+    "category": "workflow",
+    "is_team": false,
+    "has_phases": true,
+    "has_role_specs": false,
+    "version": "",
+    "source": "../../../skills/workflow-test-fix/SKILL.md"
+  }
+]

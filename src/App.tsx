@@ -1952,8 +1952,8 @@ ${ccwContext}
         // 构建匹配的 pattern
         const pattern = TASK_PATTERNS.find(p => p.type === parsed.taskType) || TASK_PATTERNS[TASK_PATTERNS.length - 1];
 
-        // 构建 IntentAnalysis 结构
-        return {
+        // 构建 IntentAnalysis 结构（支持多链条）
+        const result: IntentAnalysis = {
           goal: input,
           taskType: parsed.taskType,
           level: parsed.level,
@@ -1965,10 +1965,32 @@ ${ccwContext}
           },
           pattern,
           confidence: parsed.confidence || 0.8,
-          matchedKeyword: parsed.reason?.substring(0, 50), // 用 reason 作为 matchedKeyword 显示
+          matchedKeyword: parsed.reason?.substring(0, 50),
           isDefaultFallback: false,
           allMatches: [],
         };
+
+        // 如果 LLM 返回了多链条方案，使用它
+        if (parsed.chains && Array.isArray(parsed.chains) && parsed.chains.length > 0) {
+          const mappedChains = parsed.chains.map((c: any) => ({
+            name: c.name || `Level ${c.level} 方案`,
+            flow: c.flow,
+            level: c.level,
+            commands: c.commands || [],
+            tips: c.tips || chain.tips,
+          }));
+          result.chains = mappedChains;
+          // 用第一个方案作为主 chain（向后兼容）
+          const firstChain = mappedChains[0];
+          result.chain = {
+            ...COMMAND_CHAINS[firstChain.flow] || chain,
+            commands: firstChain.commands,
+          };
+          result.flow = firstChain.flow;
+          result.level = firstChain.level;
+        }
+
+        return result;
       }
     }
     return null;
@@ -1987,6 +2009,7 @@ const RecommenderSection = ({
   const [input, setInput] = useState('');
   const [analysisResult, setAnalysisResult] = useState<IntentAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [selectedChainIndex, setSelectedChainIndex] = useState(0); // 当前选中的链条方案
 
   // LLM 配置状态
   const [llmConfig, setLLMConfig] = useState<LLMConfig>(loadLLMConfig);
@@ -2006,19 +2029,19 @@ const RecommenderSection = ({
     setIsAnalyzing(true);
     setLLMError(null);
     setAnalysisResult(null);
+    setSelectedChainIndex(0); // 重置选中的链条方案
 
     // 如果启用了 LLM，优先使用 LLM 分析
     if (llmConfig.enabled && llmConfig.baseUrl && llmConfig.apiKey && llmConfig.modelId) {
       try {
         const result = await analyzeWithLLM(llmConfig, input);
         if (result) {
-          setAnalysisResult(result); // LLM 结果也用 analysisResult，复用渲染
+          setAnalysisResult(result);
           setIsAnalyzing(false);
-          return; // LLM 成功，不再执行关键词匹配
+          return;
         }
       } catch (e: any) {
         setLLMError(e.message || 'LLM 调用失败');
-        // LLM 失败，回退到关键词匹配
       }
     }
 
@@ -2498,14 +2521,48 @@ const RecommenderSection = ({
               </div>
             </div>
 
-            {/* 推荐命令链 */}
+            {/* 推荐命令链 - 支持多方案 */}
             <div style={{ marginBottom: 24 }}>
-              <h4 style={{ fontSize: 16, color: COLORS.text, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <GitBranch size={18} style={{ color: COLORS.primary }} />
-                推荐命令链
-              </h4>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <h4 style={{ fontSize: 16, color: COLORS.text, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <GitBranch size={18} style={{ color: COLORS.primary }} />
+                  推荐命令链
+                  {analysisResult.chains && analysisResult.chains.length > 1 && (
+                    <span style={{ fontSize: 12, color: COLORS.textMuted }}>
+                      ({analysisResult.chains.length} 个方案)
+                    </span>
+                  )}
+                </h4>
+              </div>
+
+              {/* 多方案标签页 */}
+              {analysisResult.chains && analysisResult.chains.length > 1 && (
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                  {analysisResult.chains.map((chain, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedChainIndex(idx)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: selectedChainIndex === idx ? COLORS.primary : 'rgba(0,0,0,0.2)',
+                        color: selectedChainIndex === idx ? '#fff' : COLORS.textMuted,
+                        fontSize: 13,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <div style={{ fontWeight: 600 }}>{chain.name}</div>
+                      <div style={{ fontSize: 11, opacity: 0.8 }}>Level {chain.level}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* 当前选中的命令链 */}
               <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                {analysisResult.chain.commands.map((cmd, i) => {
+                {(analysisResult.chains?.[selectedChainIndex]?.commands || analysisResult.chain.commands).map((cmd, i) => {
                   const cmdInfo = COMMANDS.find(c => c.cmd === cmd.cmd || c.cmd.includes(cmd.cmd.replace('/', '')));
                   return (
                     <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -2550,7 +2607,7 @@ const RecommenderSection = ({
                         </code>
                         <span style={{ fontSize: 12, color: COLORS.textMuted }}>{cmd.desc}</span>
                       </motion.div>
-                      {i < analysisResult.chain.commands.length - 1 && (
+                      {i < (analysisResult.chains?.[selectedChainIndex]?.commands || analysisResult.chain.commands).length - 1 && (
                         <ChevronRight size={20} style={{ color: COLORS.textDim }} />
                       )}
                     </span>
@@ -2560,7 +2617,7 @@ const RecommenderSection = ({
             </div>
 
             {/* 使用提示 */}
-            {analysisResult.chain.tips.length > 0 && (
+            {(analysisResult.chains?.[selectedChainIndex]?.tips || analysisResult.chain.tips).length > 0 && (
               <div style={{
                 padding: '16px 20px',
                 background: COLORS.secondary + '10',
@@ -2572,7 +2629,7 @@ const RecommenderSection = ({
                   使用提示
                 </h5>
                 <ul style={{ margin: 0, paddingLeft: 20 }}>
-                  {analysisResult.chain.tips.map((tip, i) => (
+                  {(analysisResult.chains?.[selectedChainIndex]?.tips || analysisResult.chain.tips).map((tip, i) => (
                     <li key={i} style={{ color: COLORS.textMuted, marginBottom: 4, fontSize: 13 }}>{tip}</li>
                   ))}
                 </ul>

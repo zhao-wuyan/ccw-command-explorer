@@ -1570,13 +1570,23 @@ export interface MatchResult {
   score: number;            // 匹配得分（权重 * 关键词长度权重）
 }
 
+// 单个命令链方案
+export interface ChainOption {
+  name: string;              // 方案名称
+  flow: string;              // 工作流标识
+  level: number;             // 复杂度级别
+  commands: {cmd: string; desc: string}[];  // 命令列表
+  tips?: string[];           // 使用提示
+}
+
 // 意图分析结果类型
 export interface IntentAnalysis {
   goal: string;              // 提取的目标
   taskType: string;          // 任务类型
   level: number;             // 复杂度级别
-  flow: string;              // 工作流标识
-  chain: CommandChain;       // 推荐命令链
+  flow: string;              // 工作流标识（主推荐）
+  chain: CommandChain;       // 推荐命令链（向后兼容）
+  chains?: ChainOption[];    // 多命令链方案（新）
   pattern: TaskPattern;      // 匹配的模式
   confidence: number;        // 置信度 0-1
   matchedKeyword?: string;   // 匹配到的关键词

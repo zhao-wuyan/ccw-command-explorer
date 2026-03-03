@@ -156,9 +156,19 @@ function buildCommandName(name, category, subcategory, cli) {
     return `/${name}`;
   }
 
-  // Subcategory exists
+  // Subcategory exists - normalize path separators to colons
   if (subcategory && subcategory !== '_root') {
-    return `/${category}:${subcategory}:${name}`;
+    // Convert "workflow/ui-design" to "ui-design" (remove category prefix if present)
+    let normalizedSub = subcategory;
+    if (normalizedSub.startsWith(category + '/')) {
+      normalizedSub = normalizedSub.slice(category.length + 1);
+    }
+    // Convert remaining slashes to colons for nested subcategories
+    normalizedSub = normalizedSub.replace(/\//g, ':');
+
+    if (normalizedSub) {
+      return `/${category}:${normalizedSub}:${name}`;
+    }
   }
 
   return `/${category}:${name}`;

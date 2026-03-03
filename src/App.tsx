@@ -2216,16 +2216,23 @@ const RecommenderSection = ({
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Cpu size={20} style={{ color: llmConfig.enabled ? COLORS.accent2 : COLORS.textDim }} />
-            <span style={{ fontSize: 15, color: COLORS.text }}>LLM 智能分析</span>
-            <span style={{
-              fontSize: 11,
-              padding: '2px 8px',
-              borderRadius: 4,
-              background: llmConfig.enabled ? COLORS.accent2 + '20' : 'rgba(255,255,255,0.1)',
-              color: llmConfig.enabled ? COLORS.accent2 : COLORS.textMuted,
-            }}>
-              {llmConfig.enabled ? '已启用' : '未启用'}
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 15, color: COLORS.text }}>LLM 智能分析</span>
+                <span style={{
+                  fontSize: 11,
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  background: llmConfig.enabled ? COLORS.accent2 + '20' : 'rgba(255,255,255,0.1)',
+                  color: llmConfig.enabled ? COLORS.accent2 : COLORS.textMuted,
+                }}>
+                  {llmConfig.enabled ? '已启用' : '未启用'}
+                </span>
+              </div>
+              <span style={{ fontSize: 11, color: COLORS.textMuted }}>
+                提示词上下文约 13k tokens
+              </span>
+            </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {/* 开关 */}

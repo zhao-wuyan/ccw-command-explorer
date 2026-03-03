@@ -1,7 +1,7 @@
 {
   "_metadata": {
     "version": "4.0.0",
-    "generated": "2026-03-03T09:51:23.204Z",
+    "generated": "2026-03-03T10:25:35.889Z",
     "total_commands": 105,
     "sources": {
       "claude_commands": 47,
@@ -55,7 +55,7 @@
     },
     {
       "name": "animation-extract",
-      "command": "/workflow:workflow/ui-design:animation-extract",
+      "command": "/workflow:ui-design:animation-extract",
       "description": "Extract animation and transition patterns from prompt inference and image references for design system documentation",
       "h1_description": "",
       "arguments": "[-y|--yes] [--design-id <id>] [--session <id>] [--images \"<glob>\"] [--focus \"<types>\"] [--interactive] [--refine]",
@@ -265,7 +265,7 @@
     },
     {
       "name": "complete",
-      "command": "/workflow:workflow/session:complete",
+      "command": "/workflow:session:complete",
       "description": "Mark active workflow session as complete, archive with lessons learned, update manifest, remove active flag",
       "h1_description": "Mark the currently active workflow session as complete, archive it, and update manifests.",
       "arguments": "[-y|--yes] [--detailed]",
@@ -335,7 +335,7 @@
     },
     {
       "name": "design-sync",
-      "command": "/workflow:workflow/ui-design:design-sync",
+      "command": "/workflow:ui-design:design-sync",
       "description": "Synchronize finalized design system references to brainstorming artifacts, preparing them for /workflow-plan consumption",
       "h1_description": "",
       "arguments": "--session <session_id> [--selected-prototypes \"<list>\"]",
@@ -363,7 +363,7 @@
     },
     {
       "name": "explore-auto",
-      "command": "/workflow:workflow/ui-design:explore-auto",
+      "command": "/workflow:ui-design:explore-auto",
       "description": "Interactive exploratory UI design workflow with style-centric batch generation, creates design variants from prompts/images with parallel execution and user selection",
       "h1_description": "",
       "arguments": "[--input \"<value>\"] [--targets \"<list>\"] [--target-type \"page|component\"] [--session <id>] [--style-variants <count>] [--layout-variants <count>]",
@@ -391,7 +391,7 @@
     },
     {
       "name": "generate",
-      "command": "/workflow:workflow/ui-design:generate",
+      "command": "/workflow:ui-design:generate",
       "description": "Assemble UI prototypes by combining layout templates with design tokens (default animation support), pure assembler without new content generation",
       "h1_description": "",
       "arguments": "[--design-id <id>] [--session <id>]",
@@ -405,7 +405,7 @@
     },
     {
       "name": "imitate-auto",
-      "command": "/workflow:workflow/ui-design:imitate-auto",
+      "command": "/workflow:ui-design:imitate-auto",
       "description": "UI design workflow with direct code/image input for design token extraction and prototype generation",
       "h1_description": "",
       "arguments": "[--input \"<value>\"] [--session <id>]",
@@ -531,7 +531,7 @@
     },
     {
       "name": "layout-extract",
-      "command": "/workflow:workflow/ui-design:layout-extract",
+      "command": "/workflow:ui-design:layout-extract",
       "description": "Extract structural layout information from reference images or text prompts using Claude analysis with variant generation or refinement mode",
       "h1_description": "",
       "arguments": "[-y|--yes] [--design-id <id>] [--session <id>] [--images \"<glob>\"] [--prompt \"<desc>\"] [--targets \"<list>\"] [--variants <count>] [--device-type <desktop|mobile|tablet|responsive>] [--interactive] [--refine]",
@@ -545,7 +545,7 @@
     },
     {
       "name": "list",
-      "command": "/workflow:workflow/session:list",
+      "command": "/workflow:session:list",
       "description": "List all workflow sessions with status filtering, shows session metadata and progress information",
       "h1_description": "",
       "arguments": "",
@@ -713,7 +713,7 @@
     },
     {
       "name": "resume",
-      "command": "/workflow:workflow/session:resume",
+      "command": "/workflow:session:resume",
       "description": "Resume the most recently paused workflow session with automatic session discovery and status update",
       "h1_description": "",
       "arguments": "",
@@ -853,7 +853,7 @@
     },
     {
       "name": "solidify",
-      "command": "/workflow:workflow/session:solidify",
+      "command": "/workflow:session:solidify",
       "description": "Crystallize session learnings and user-defined constraints into permanent project guidelines, or compress recent memories",
       "h1_description": "",
       "arguments": "[-y|--yes] [--type <convention|constraint|learning|compress>] [--category <category>] [--limit <N>] \\\"rule or insight\\\"",
@@ -881,7 +881,7 @@
     },
     {
       "name": "start",
-      "command": "/workflow:workflow/session:start",
+      "command": "/workflow:session:start",
       "description": "Discover existing sessions or start new workflow session with intelligent session management and conflict detection",
       "h1_description": "",
       "arguments": "[--type <workflow|review|tdd|test|docs>] [--auto|--new] [optional: task description for new session]",
@@ -909,7 +909,7 @@
     },
     {
       "name": "style-extract",
-      "command": "/workflow:workflow/ui-design:style-extract",
+      "command": "/workflow:ui-design:style-extract",
       "description": "Extract design style from reference images or text prompts using Claude analysis with variant generation or refinement mode",
       "h1_description": "",
       "arguments": "[-y|--yes] [--design-id <id>] [--session <id>] [--images \"<glob>\"] [--prompt \"<desc>\"] [--variants <count>] [--interactive] [--refine]",
@@ -937,7 +937,7 @@
     },
     {
       "name": "sync",
-      "command": "/workflow:workflow/session:sync",
+      "command": "/workflow:session:sync",
       "description": "Quick-sync session work to specs/*.md and project-tech",
       "h1_description": "One-shot update `specs/*.md` + `project-tech.json` from current session context.",
       "arguments": "[-y|--yes] [\\\"what was done\\\"]",

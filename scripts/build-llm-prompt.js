@@ -130,8 +130,13 @@ function buildPrompt() {
   if (scannedData) {
     const { commands, clis } = scannedData;
 
-    // Group by CLI then category
-    const cmdLines = ['#CMD'];
+    // Field abbreviation mapping for compact format
+    const FIELD_LEGEND = `#CMD
+Format: cmd|desc|h1|args|cat|subcat|use|diff|cli|tools
+Legend: h1=h1_description, args=arguments, cat=category, subcat=subcategory, use=usage_scenario, diff=difficulty
+CLI: c=claude, x=codex`;
+
+    const cmdLines = [FIELD_LEGEND];
 
     clis.forEach(cli => {
       const cliCmds = commands.filter(cmd => cmd.cli === cli);
@@ -150,15 +155,19 @@ function buildPrompt() {
       Object.keys(byCat).sort().forEach(cat => {
         cmdLines.push(`${cat}:`);
         byCat[cat].forEach(cmd => {
-          // Compact format: cmd|desc|h1|args|use
-          // Include h1_description if it exists and differs from description
-          let desc = cmd.description || '';
-          if (cmd.h1_description && cmd.h1_description !== desc) {
-            desc = `${desc} [${cmd.h1_description}]`;
-          }
-          const args = cmd.arguments ? `|${cmd.arguments}` : '';
-          const use = cmd.usage_scenario ? `|${cmd.usage_scenario[0]}` : '';
-          cmdLines.push(`  ${cmd.command}|${desc}${args}${use}`);
+          // Full format: cmd|desc|h1|args|cat|subcat|use|diff|cli|tools
+          const desc = cmd.description || '';
+          const h1 = cmd.h1_description || '';
+          const args = cmd.arguments || '';
+          const category = cmd.category || '';
+          const subcategory = cmd.subcategory || '';
+          const usage = cmd.usage_scenario || '';
+          const difficulty = cmd.difficulty || '';
+          const cmdCli = cmd.cli === 'claude' ? 'c' : (cmd.cli === 'codex' ? 'x' : cmd.cli);
+
+          const tools = cmd.allowed_tools || '';
+
+          cmdLines.push(`  ${cmd.command}|${desc}|${h1}|${args}|${category}|${subcategory}|${usage}|${difficulty}|${cmdCli}|${tools}`);
         });
       });
     });
@@ -217,7 +226,7 @@ Rules:
   fs.writeFileSync(OUTPUT_FILE, fullPrompt, 'utf-8');
 
   const sizeKB = (fs.statSync(OUTPUT_FILE).size / 1024).toFixed(2);
-  const estTokens = Math.floor(fs.statSync(OUTPUT_FILE).size / 4);
+  const estTokens = Math.floor(fullPrompt.length / 4);
 
   console.log(`\n=== Done ===`);
   console.log(`Size: ${sizeKB} KB`);

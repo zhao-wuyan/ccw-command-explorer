@@ -686,9 +686,21 @@ export const COMMANDS: Command[] = [
     detail: '6角色闭环：侦察兵扫描问题→策略师定测试方案→生成器写测试→执行器跑测试→分析师出报告。覆盖率不够自动补测试',
     usage: '功能开发完成后，需要全面的质量验证和测试覆盖'
   },
+  { cmd: '/team-arch-opt', desc: '团队架构优化 - 依赖循环、结构分析', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.0',
+    detail: '5角色协作：分析员(架构问题)→设计师(策略)→重构工程师(实施)→验证者(测试)→审查员(报告)。 发现依赖循环、模块违规、死代码',
+    usage: '项目架构混乱、依赖循环复杂，模块耦合过紧，需要系统性重构'
+  },
+  { cmd: '/team-perf-opt', desc: '团队性能优化 - 分析瓶颈、设计策略', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.0',
+    detail: '5角色协作：分析员(性能分析)→策略师(优化策略)→优化工程师(实施)→基准测试员(基准)→验证者(验证)→审查员(报告)。 发现性能瓶颈，设计优化方案，实施改进，验证效果',
+    usage: '应用性能下降，响应变慢，需要系统性性能优化'
+  },
   { cmd: '/team-tech-debt', desc: '团队技术债务 - 债务管理协作', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
     detail: '6角色治理：扫描器找问题→评估师算成本→规划师排优先级→执行者修代码→验证者测回归。独立工作分支，修完自动创建PR',
     usage: '项目代码质量下降，需要系统性清理技术债务'
+  },
+  { cmd: '/workflow-lite-planex', desc: '轻量规划执行 - 规划+执行一体化', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.0',
+    detail: '2阶段快速流程：Phase 1 轻量规划生成 IMPL_PLAN.md；Phase 2 使用 Task tool执行任务。自动确认完成',
+    usage: '中小型功能，想快速规划后立即执行，无需复杂流程'
   },
   { cmd: '/team-testing', desc: '团队测试 - 多角色测试协作', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
     detail: '测试团队协作，测试计划和执行',
@@ -736,9 +748,9 @@ export const COMMANDS: Command[] = [
     detail: 'CSV Wave流程：①分解需求生成 explore.csv；②波浪式探索代码；③综合发现生成 tasks.csv；④波浪式执行任务。支持上下文传播',
     usage: '需要批量探索和执行任务，保持上下文连贯'
   },
-  { cmd: '/wave-plan-pipeline', desc: '先勘探再施工 - 探索>计划>执行一条龙流水线', status: 'new', category: 'skill', cli: 'codex', addedInVersion: 'v7.0',
-    detail: '三阶段流水线：①并发探索（架构入口、集成点、测试命令、约束）生成 explore.csv；②综合探索结果生成 tasks.csv；③按依赖分 Wave 执行。探索结果自动喂给后续任务（E*→T*上下文链接）',
-    usage: '代码库不熟、怕改错地方，想先探索再动手；需要多角度并发探索后再实施'
+  { cmd: '/workflow-lite-planex', desc: '轻量规划执行 - 规划+执行一体化', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.0',
+    detail: '2阶段快速流程：Phase 1 轻量规划生成 IMPL_PLAN.md；Phase 2 使用 Task tool 执行任务。自动确认完成',
+    usage: '中小型功能，想快速规划后立即执行，无需复杂流程'
   },
   { cmd: '/workflow-tdd-plan', desc: 'TDD 规划技能 - 6阶段规划+Red-Green-Refactor任务链', status: 'stable', category: 'tdd', cli: 'claude', addedInVersion: 'v7.0',
     detail: '统一 TDD 工作流：6阶段 TDD 规划 + Red-Green-Refactor 任务链生成 + 4阶段验证。触发词：workflow-tdd-plan、workflow-tdd-verify',

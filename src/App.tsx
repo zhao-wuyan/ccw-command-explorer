@@ -2739,8 +2739,8 @@ const RecommenderSection = ({
         <div>
           <h5 style={{ fontSize: 14, color: COLORS.text, marginBottom: 6 }}>匹配原理</h5>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
-            <li style={{ color: COLORS.textMuted, marginBottom: 4, fontSize: 13 }}>系统通过正则表达式匹配关键词来识别任务类型</li>
-            <li style={{ color: COLORS.textMuted, marginBottom: 4, fontSize: 13 }}>支持中英文关键词，如 "修复"、"refactor"、"紧急" 等</li>
+            <li style={{ color: COLORS.textMuted, marginBottom: 4, fontSize: 13 }}><b>LLM 模式</b>：启用后通过 AI 分析任务需求，智能推荐命令链（上下文约 13k tokens）</li>
+            <li style={{ color: COLORS.textMuted, marginBottom: 4, fontSize: 13 }}><b>正则模式</b>：通过关键词匹配识别任务类型，支持中英文如 "修复"、"refactor"、"紧急"</li>
             <li style={{ color: COLORS.textMuted, marginBottom: 4, fontSize: 13 }}>点击命令节点可查看命令详情</li>
             <li style={{ color: COLORS.textMuted, fontSize: 13 }}>复制 /ccw 命令可在 Claude Code 中直接执行</li>
           </ul>

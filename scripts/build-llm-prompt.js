@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.join(__dirname, '..');
 const SCANNED_FILE = path.join(PROJECT_ROOT, 'public', 'commands-scanned.json');
 const CCW_HELP_DIR = path.join(PROJECT_ROOT, '.claude', 'skills', 'ccw-help');
-const CUSTOM_PROMPT_FILE = path.join(PROJECT_ROOT, '.claude', 'prompt-custom.md');
+const CUSTOM_PROMPT_FILE = path.join(PROJECT_ROOT, 'public', 'prompt-custom.md');
 const OUTPUT_DIR = path.join(PROJECT_ROOT, 'public');
 const OUTPUT_FILE = path.join(OUTPUT_DIR, 'llm-prompt.txt');
 

@@ -29,6 +29,8 @@
 }
 ```
 
+- `commands` 的 `cmd` 是存粹的命令，不要拼接任何参数，参数可以放在 `desc` 里面 说明文本前面，比如 `/team-lifecycle-v5` 不要拼接 `--role=coordinator` 在 `cmd` 字段里面
+
 ## 当前项目上下文
 
 - 项目类型：React + TypeScript 前端项目

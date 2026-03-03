@@ -33,6 +33,51 @@ function parseFrontmatter(content) {
   return frontmatter;
 }
 
+// Extract H1 description - the content after # Title until next heading or blank line
+function extractH1Description(content) {
+  // Remove frontmatter if exists
+  let body = content;
+  if (content.startsWith('---')) {
+    const endIdx = content.indexOf('---', 3);
+    if (endIdx !== -1) {
+      body = content.slice(endIdx + 3).trim();
+    }
+  }
+
+  const lines = body.split('\n');
+  let foundH1 = false;
+  const descriptionParts = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+
+    // Found H1 line
+    if (!foundH1 && trimmed.startsWith('# ') && trimmed.length > 2) {
+      foundH1 = true;
+      continue;
+    }
+
+    // Collect content after H1 until we hit another heading or blank line
+    if (foundH1) {
+      // Stop at next heading, separator, or empty line after content
+      if (trimmed.startsWith('#') || trimmed.startsWith('---') || trimmed.startsWith('```')) {
+        break;
+      }
+
+      if (trimmed === '') {
+        // If we already have content, stop at empty line
+        if (descriptionParts.length > 0) break;
+        // Otherwise skip leading empty lines
+        continue;
+      }
+
+      descriptionParts.push(trimmed);
+    }
+  }
+
+  return descriptionParts.join(' ').trim();
+}
+
 // Scan directory for markdown files
 function scanDirectory(dir, pattern = '**/*.md') {
   const results = [];
@@ -135,11 +180,13 @@ function scanClaudeCommands() {
     const relativePath = path.relative(path.join(PROJECT_ROOT, '.claude'), file);
     const rawSubcategory = path.dirname(relativePath).split(path.sep).slice(1).join('/') || null;
     const subcategory = rawSubcategory !== category ? rawSubcategory : null;
+    const h1Desc = extractH1Description(content);
 
     commands.push({
       name: frontmatter.name,
       command: buildCommandName(frontmatter.name, category, subcategory, 'claude'),
       description: frontmatter.description || '',
+      h1_description: h1Desc,
       arguments: frontmatter['argument-hint'] || frontmatter.arguments || '',
       category,
       subcategory,
@@ -174,10 +221,13 @@ function scanClaudeSkills() {
 
     if (!frontmatter.name) continue;
 
+    const h1Desc = extractH1Description(content);
+
     commands.push({
       name: frontmatter.name,
       command: `/${frontmatter.name}`,
       description: frontmatter.description || '',
+      h1_description: h1Desc,
       arguments: frontmatter['argument-hint'] || frontmatter.arguments || '',
       category: 'skill',
       subcategory: null,
@@ -208,11 +258,13 @@ function scanCodexPrompts() {
     const frontmatter = parseFrontmatter(content);
 
     const name = path.basename(file, '.md');
+    const h1Desc = extractH1Description(content);
 
     commands.push({
       name,
       command: `/codex:${name}`,
       description: frontmatter.description || '',
+      h1_description: h1Desc,
       arguments: frontmatter['argument-hint'] || frontmatter.arguments || '',
       category: 'prompt',
       subcategory: null,
@@ -246,11 +298,13 @@ function scanCodexSkills() {
     const frontmatter = parseFrontmatter(content);
 
     const name = frontmatter.name || entry.name;
+    const h1Desc = extractH1Description(content);
 
     commands.push({
       name,
       command: `/${name}`,
       description: frontmatter.description || '',
+      h1_description: h1Desc,
       arguments: frontmatter['argument-hint'] || frontmatter.arguments || '',
       category: 'skill',
       subcategory: 'codex',

@@ -110,10 +110,15 @@ function buildPrompt() {
       Object.keys(byCat).sort().forEach(cat => {
         cmdLines.push(`${cat}:`);
         byCat[cat].forEach(cmd => {
-          // Compact format: cmd|desc|args|use
+          // Compact format: cmd|desc|h1|args|use
+          // Include h1_description if it exists and differs from description
+          let desc = cmd.description || '';
+          if (cmd.h1_description && cmd.h1_description !== desc) {
+            desc = `${desc} [${cmd.h1_description}]`;
+          }
           const args = cmd.arguments ? `|${cmd.arguments}` : '';
           const use = cmd.usage_scenario ? `|${cmd.usage_scenario[0]}` : '';
-          cmdLines.push(`  ${cmd.command}|${cmd.description}${args}${use}`);
+          cmdLines.push(`  ${cmd.command}|${desc}${args}${use}`);
         });
       });
     });

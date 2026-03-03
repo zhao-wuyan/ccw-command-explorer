@@ -5,12 +5,14 @@ import {
   Lightbulb, TestTube, FlaskConical, Search as SearchIcon, Palette,
   Wrench, X, Clock, Target, Sparkles, BookOpen, Info, Bot, Play,
   ChevronRight, Terminal, MessageSquare, CheckCircle, AlertTriangle,
-  Lightbulb as TipIcon
+  Lightbulb as TipIcon, Cpu, Settings as SettingsIcon, Zap
 } from 'lucide-react';
 import {
   COMMANDS, CATEGORIES, TIMELINE, WORKFLOW_LEVELS, GRANDMA_COMMANDS,
-  DEPRECATED_COMMANDS, STATS, COLORS, CLI_CONFIG, EXPERIENCE_GUIDE
+  DEPRECATED_COMMANDS, STATS, COLORS, CLI_CONFIG, EXPERIENCE_GUIDE,
+  analyzeIntent, TASK_PATTERNS, COMMAND_CHAINS
 } from './data/commands';
+import type { IntentAnalysis } from './data/commands';
 import type { Command, CommandCategory, TimelineItem, CLIType, ExperienceTip, ExperienceCategory } from './data/commands';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -826,7 +828,7 @@ const GrandmaGuide = () => (
       老奶奶也能看懂的命令指南
     </h2>
     <p style={{ color: COLORS.textMuted, marginBottom: 24, fontSize: 16 }}>
-      只需要记住这5个命令就够了！其他的让 /ccw ���你选！
+      只需要记住这5个命令就够了！其他的让 /ccw 帮你选！
     </p>
 
     <div style={{ display: 'grid', gap: 12 }}>
@@ -1537,6 +1539,166 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
           </div>
         </div>
 
+        {/* 命令链可视化 */}
+        {caseItem.commands.length > 1 && (
+          <div
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.3)',
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 20,
+            }}
+          >
+            <h4 style={{ color: COLORS.text, marginBottom: 16, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <GitBranch size={16} style={{ color: levelConfig.color }} />
+              命令链流程
+            </h4>
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              {caseItem.commands.map((cmd, i) => (
+                <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.1 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onCommandClick) {
+                        onCommandClick(cmd.cmd);
+                      }
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '8px 14px',
+                      backgroundColor: levelConfig.color + '15',
+                      border: `1px solid ${levelConfig.color}40`,
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                    whileHover={{ scale: 1.05, backgroundColor: levelConfig.color + '25' }}
+                  >
+                    <span style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      backgroundColor: levelConfig.color,
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                    }}>
+                      {i + 1}
+                    </span>
+                    <code style={{ fontSize: 13, color: levelConfig.color }}>{cmd.cmd}</code>
+                  </motion.div>
+                  {i < caseItem.commands.length - 1 && (
+                    <ChevronRight size={18} style={{ color: COLORS.textDim }} />
+                  )}
+                </span>
+              ))}
+            </div>
+            <p style={{ fontSize: 12, color: COLORS.textDim, marginTop: 12, marginBottom: 0 }}>
+              💡 命令按顺序执行，点击节点查看命令详情
+            </p>
+          </div>
+        )}
+
+        {/* 增强信息：前置条件、成功标准 */}
+        {(caseItem.prerequisites || caseItem.successCriteria) && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 20 }}>
+            {caseItem.prerequisites && caseItem.prerequisites.length > 0 && (
+              <div
+                style={{
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  borderRadius: 12,
+                  padding: 16,
+                }}
+              >
+                <h4 style={{ color: COLORS.text, marginBottom: 12, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <AlertCircle size={16} style={{ color: COLORS.warning }} />
+                  前置条件
+                </h4>
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {caseItem.prerequisites.map((p, i) => (
+                    <li key={i} style={{ color: COLORS.textMuted, marginBottom: 4, fontSize: 13 }}>{p}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {caseItem.successCriteria && caseItem.successCriteria.length > 0 && (
+              <div
+                style={{
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  borderRadius: 12,
+                  padding: 16,
+                }}
+              >
+                <h4 style={{ color: COLORS.text, marginBottom: 12, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <CheckCircle size={16} style={{ color: COLORS.secondary }} />
+                  成功标准
+                </h4>
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {caseItem.successCriteria.map((s, i) => (
+                    <li key={i} style={{ color: COLORS.textMuted, marginBottom: 4, fontSize: 13 }}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 复杂度信息 */}
+        {(caseItem.estimatedTime || caseItem.difficulty) && (
+          <div
+            style={{
+              display: 'flex',
+              gap: 16,
+              marginBottom: 20,
+            }}
+          >
+            {caseItem.estimatedTime && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 16px',
+                backgroundColor: 'rgba(0,0,0,0.3)',
+                borderRadius: 8,
+              }}>
+                <Clock size={16} style={{ color: COLORS.textDim }} />
+                <span style={{ fontSize: 13, color: COLORS.textMuted }}>预估时间:</span>
+                <span style={{ fontSize: 13, color: COLORS.text, fontWeight: 600 }}>{caseItem.estimatedTime}</span>
+              </div>
+            )}
+            {caseItem.difficulty && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 16px',
+                backgroundColor: 'rgba(0,0,0,0.3)',
+                borderRadius: 8,
+              }}>
+                <Target size={16} style={{ color: COLORS.textDim }} />
+                <span style={{ fontSize: 13, color: COLORS.textMuted }}>难度:</span>
+                <span style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: caseItem.difficulty === 'easy' ? COLORS.secondary
+                    : caseItem.difficulty === 'medium' ? COLORS.warning
+                    : COLORS.danger
+                }}>
+                  {caseItem.difficulty === 'easy' ? '简单' : caseItem.difficulty === 'medium' ? '中等' : '困难'}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 交互步骤 */}
         <div
           style={{
@@ -1581,6 +1743,894 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
           </div>
         )}
       </motion.div>
+    </motion.div>
+  );
+};
+
+// LLM 配置类型
+interface LLMConfig {
+  baseUrl: string;
+  apiKey: string;
+  modelId: string;
+  enabled: boolean;
+}
+
+// LLM 分析结果类型
+// 简单加密/解密（使用 Base64 + 简单混淆）
+const encryptKey = (text: string): string => {
+  if (!text) return '';
+  const reversed = text.split('').reverse().join('');
+  return btoa(reversed);
+};
+
+const decryptKey = (encrypted: string): string => {
+  if (!encrypted) return '';
+  try {
+    const decoded = atob(encrypted);
+    return decoded.split('').reverse().join('');
+  } catch {
+    return '';
+  }
+};
+
+// LLM 配置存储
+const LLM_CONFIG_KEY = 'ccw-llm-config';
+
+const loadLLMConfig = (): LLMConfig => {
+  try {
+    const stored = localStorage.getItem(LLM_CONFIG_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return {
+        ...parsed,
+        apiKey: decryptKey(parsed.apiKey),
+      };
+    }
+  } catch (e) {
+    console.error('Failed to load LLM config:', e);
+  }
+  return {
+    baseUrl: '',
+    apiKey: '',
+    modelId: '',
+    enabled: false,
+  };
+};
+
+const saveLLMConfig = (config: LLMConfig) => {
+  try {
+    const toSave = {
+      ...config,
+      apiKey: encryptKey(config.apiKey),
+    };
+    localStorage.setItem(LLM_CONFIG_KEY, JSON.stringify(toSave));
+  } catch (e) {
+    console.error('Failed to save LLM config:', e);
+  }
+};
+
+// 构建 CCW-Help 上下文用于 LLM 分析
+const buildCCWHelpContext = (): string => {
+  const taskTypes = TASK_PATTERNS.map(p =>
+    `- ${p.type} (Level ${p.level}, flow: ${p.flow}): ${p.desc} ${p.emoji}`
+  ).join('\n');
+
+  const flows = Object.entries(COMMAND_CHAINS).map(([key, chain]) =>
+    `- ${key}: [${chain.commands.map(c => c.cmd).join(' → ')}] (${chain.tips.join(', ')})`
+  ).join('\n');
+
+  return `
+## CCW-Help 命令推荐系统
+
+### 工作流级别说明
+- **Level 1**: 超简单任务，一步完成
+- **Level 2**: 简单任务，规划+执行
+- **Level 3**: 中等复杂度，规划+执行+验证
+- **Level 4**: 复杂任务，探索+规划+执行+验证
+
+### 任务类型列表
+${taskTypes}
+
+### 命令链定义
+${flows}
+`;
+};
+
+// LLM 分析函数 - 返回与关键词匹配相同的 IntentAnalysis 结构
+const analyzeWithLLM = async (config: LLMConfig, input: string): Promise<IntentAnalysis | null> => {
+  if (!config.baseUrl || !config.apiKey || !config.modelId) {
+    return null;
+  }
+
+  const ccwContext = buildCCWHelpContext();
+
+  const systemPrompt = `你是一个 CCW 命令推荐专家。根据用户的任务描述，分析并推荐最合适的工作流程。
+
+${ccwContext}
+
+## 分析要求
+
+1. 根据用户输入判断任务类型
+2. 选择合适的 workflow flow
+3. 推荐对应的命令链
+4. 给出置信度（0-1）
+
+## 返回格式（严格 JSON）
+
+返回一个 JSON 对象，包含以下字段：
+- taskType: 任务类型标识（如 bugfix, feature, complex-feature 等）
+- level: 复杂度级别（1-4）
+- flow: 工作流标识（如 rapid, bugfix.standard, collaborative-plan 等）
+- confidence: 置信度（0-1）
+- reason: 选择这个工作流的原因（简短说明）
+- commands: 推荐的命令数组，每项包含 {cmd, desc}
+
+示例返回：
+{
+  "taskType": "complex-feature",
+  "level": 3,
+  "flow": "collaborative-plan",
+  "confidence": 0.85,
+  "reason": "任务涉及架构扩展和性能优化，需要多人协作规划",
+  "commands": [
+    {"cmd": "/workflow:collaborative-plan-with-file", "desc": "协作规划"},
+    {"cmd": "/workflow:unified-execute-with-file", "desc": "统一执行"}
+  ]
+}
+
+请只返回 JSON，不要有其他内容。`;
+
+  // 处理 baseUrl，确保正确的 URL 格式
+  let baseUrl = config.baseUrl.trim();
+  // 移除末尾斜杠
+  if (baseUrl.endsWith('/')) {
+    baseUrl = baseUrl.slice(0, -1);
+  }
+  // 确保有 /v1 前缀
+  if (!baseUrl.endsWith('/v1')) {
+    baseUrl = baseUrl + '/v1';
+  }
+
+  try {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.modelId,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: input },
+        ],
+        temperature: 0.3,
+        max_tokens: 1000,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API error ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+
+    if (content) {
+      // 提取 JSON
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+
+        // 从 COMMAND_CHAINS 获取完整的 chain 信息
+        const chain = COMMAND_CHAINS[parsed.flow] || COMMAND_CHAINS['rapid'];
+
+        // 构建匹配的 pattern
+        const pattern = TASK_PATTERNS.find(p => p.type === parsed.taskType) || TASK_PATTERNS[TASK_PATTERNS.length - 1];
+
+        // 构建 IntentAnalysis 结构
+        return {
+          goal: input,
+          taskType: parsed.taskType,
+          level: parsed.level,
+          flow: parsed.flow,
+          chain: {
+            ...chain,
+            // 如果 LLM 返回了自定义命令，使用 LLM 的
+            commands: parsed.commands || chain.commands,
+          },
+          pattern,
+          confidence: parsed.confidence || 0.8,
+          matchedKeyword: parsed.reason?.substring(0, 50), // 用 reason 作为 matchedKeyword 显示
+          isDefaultFallback: false,
+          allMatches: [],
+        };
+      }
+    }
+    return null;
+  } catch (e: any) {
+    console.error('LLM analysis failed:', e);
+    throw new Error(e.message || 'LLM 调用失败');
+  }
+};
+
+// 智能推荐器组件
+const RecommenderSection = ({
+  onCommandClick
+}: {
+  onCommandClick: (cmd: Command) => void;
+}) => {
+  const [input, setInput] = useState('');
+  const [analysisResult, setAnalysisResult] = useState<IntentAnalysis | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // LLM 配置状态
+  const [llmConfig, setLLMConfig] = useState<LLMConfig>(loadLLMConfig);
+  const [showLLMConfig, setShowLLMConfig] = useState(false);
+  const [llmError, setLLMError] = useState<string | null>(null);
+
+  // 保存配置
+  const handleSaveConfig = () => {
+    saveLLMConfig(llmConfig);
+    setShowLLMConfig(false);
+  };
+
+  // 分析处理
+  const handleAnalyze = async () => {
+    if (!input.trim()) return;
+
+    setIsAnalyzing(true);
+    setLLMError(null);
+    setAnalysisResult(null);
+
+    // 如果启用了 LLM，优先使用 LLM 分析
+    if (llmConfig.enabled && llmConfig.baseUrl && llmConfig.apiKey && llmConfig.modelId) {
+      try {
+        const result = await analyzeWithLLM(llmConfig, input);
+        if (result) {
+          setAnalysisResult(result); // LLM 结果也用 analysisResult，复用渲染
+          setIsAnalyzing(false);
+          return; // LLM 成功，不再执行关键词匹配
+        }
+      } catch (e: any) {
+        setLLMError(e.message || 'LLM 调用失败');
+        // LLM 失败，回退到关键词匹配
+      }
+    }
+
+    // LLM 未启用或失败时，使用关键词匹配
+    const keywordResult = analyzeIntent(input);
+    setAnalysisResult(keywordResult);
+    setIsAnalyzing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleAnalyze();
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.2 }}
+      style={{ marginBottom: 40 }}
+    >
+      <h2 style={{ fontSize: 28, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <SearchIcon size={28} style={{ color: llmConfig.enabled ? COLORS.accent2 : COLORS.accent3 }} />
+        {llmConfig.enabled ? 'LLM 智能推荐' : '命令匹配推荐'}
+      </h2>
+      <p style={{ color: COLORS.textMuted, marginBottom: 24, fontSize: 15 }}>
+        {llmConfig.enabled
+          ? '输入任务描述，LLM 会分析并推荐最合适的命令链'
+          : '输入任务描述，系统会匹配关键词并推荐最合适的命令链'
+        }
+      </p>
+
+      {/* 输入区域 */}
+      <div style={{
+        background: COLORS.cardBg,
+        borderRadius: 16,
+        padding: 24,
+        marginBottom: 24,
+        border: `1px solid ${COLORS.cardBorder}`,
+      }}>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="例如：修复登录超时问题、添加用户认证功能、重构支付模块..."
+            style={{
+              flex: 1,
+              background: 'rgba(0,0,0,0.3)',
+              border: `1px solid ${COLORS.cardBorder}`,
+              borderRadius: 12,
+              padding: '14px 18px',
+              color: COLORS.text,
+              fontSize: 15,
+              outline: 'none',
+            }}
+          />
+          <motion.button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing || !input.trim()}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            style={{
+              background: llmConfig.enabled
+                ? `linear-gradient(135deg, ${COLORS.accent2}, ${COLORS.primary})`
+                : `linear-gradient(135deg, ${COLORS.accent3}, ${COLORS.primary})`,
+              border: 'none',
+              borderRadius: 12,
+              padding: '14px 24px',
+              color: '#fff',
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: isAnalyzing || !input.trim() ? 'not-allowed' : 'pointer',
+              opacity: isAnalyzing || !input.trim() ? 0.6 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            {isAnalyzing ? (
+              <>
+                <span style={{ animation: 'spin 1s linear infinite' }}>⏳</span>
+                {llmConfig.enabled ? 'LLM 分析中...' : '匹配中...'}
+              </>
+            ) : (
+              <>
+                {llmConfig.enabled ? <Cpu size={18} /> : <SearchIcon size={18} />}
+                {llmConfig.enabled ? '智能分析' : '匹配'}
+              </>
+            )}
+          </motion.button>
+        </div>
+
+        {/* 快捷示例 */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <span style={{ fontSize: 13, color: COLORS.textDim }}>试试:</span>
+          {[
+            '修复登录超时问题',
+            '添加用户认证系统',
+            '重构支付模块',
+            '写单元测试',
+          ].map((example, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                setInput(example);
+                setTimeout(handleAnalyze, 100);
+              }}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${COLORS.cardBorder}`,
+                borderRadius: 20,
+                padding: '6px 12px',
+                color: COLORS.textMuted,
+                fontSize: 12,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = COLORS.primary;
+                e.currentTarget.style.color = COLORS.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = COLORS.cardBorder;
+                e.currentTarget.style.color = COLORS.textMuted;
+              }}
+            >
+              {example}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* LLM 配置区域 */}
+      <div style={{
+        background: COLORS.cardBg,
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 24,
+        border: `1px solid ${COLORS.cardBorder}`,
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: showLLMConfig ? 16 : 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Cpu size={20} style={{ color: llmConfig.enabled ? COLORS.accent2 : COLORS.textDim }} />
+            <span style={{ fontSize: 15, color: COLORS.text }}>LLM 智能分析</span>
+            <span style={{
+              fontSize: 11,
+              padding: '2px 8px',
+              borderRadius: 4,
+              background: llmConfig.enabled ? COLORS.accent2 + '20' : 'rgba(255,255,255,0.1)',
+              color: llmConfig.enabled ? COLORS.accent2 : COLORS.textMuted,
+            }}>
+              {llmConfig.enabled ? '已启用' : '未启用'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* 开关 */}
+            <button
+              onClick={() => {
+                const newConfig = { ...llmConfig, enabled: !llmConfig.enabled };
+                setLLMConfig(newConfig);
+                saveLLMConfig(newConfig);
+              }}
+              style={{
+                width: 48,
+                height: 26,
+                borderRadius: 13,
+                border: 'none',
+                background: llmConfig.enabled ? COLORS.accent2 : 'rgba(255,255,255,0.2)',
+                cursor: 'pointer',
+                position: 'relative',
+                transition: 'background 0.2s',
+              }}
+            >
+              <div style={{
+                width: 22,
+                height: 22,
+                borderRadius: '50%',
+                background: '#fff',
+                position: 'absolute',
+                top: 2,
+                left: llmConfig.enabled ? 24 : 2,
+                transition: 'left 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              }} />
+            </button>
+            {/* 配置按钮 */}
+            <motion.button
+              onClick={() => setShowLLMConfig(!showLLMConfig)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${COLORS.cardBorder}`,
+                borderRadius: 8,
+                padding: '6px 12px',
+                color: COLORS.textMuted,
+                fontSize: 13,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <SettingsIcon size={14} />
+              配置
+            </motion.button>
+          </div>
+        </div>
+
+        {/* 配置表单 */}
+        <AnimatePresence>
+          {showLLMConfig && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              style={{ overflow: 'hidden' }}
+            >
+              <div style={{
+                marginTop: 16,
+                padding: 16,
+                background: 'rgba(0,0,0,0.2)',
+                borderRadius: 12,
+              }}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: 13, color: COLORS.textMuted, marginBottom: 6 }}>
+                    Base URL
+                  </label>
+                  <input
+                    type="text"
+                    value={llmConfig.baseUrl}
+                    onChange={(e) => setLLMConfig({ ...llmConfig, baseUrl: e.target.value })}
+                    placeholder="例如: https://api.openai.com/v1"
+                    style={{
+                      width: '100%',
+                      background: 'rgba(0,0,0,0.3)',
+                      border: `1px solid ${COLORS.cardBorder}`,
+                      borderRadius: 8,
+                      padding: '10px 14px',
+                      color: COLORS.text,
+                      fontSize: 14,
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: 13, color: COLORS.textMuted, marginBottom: 6 }}>
+                    API Key
+                  </label>
+                  <input
+                    type="password"
+                    value={llmConfig.apiKey}
+                    onChange={(e) => setLLMConfig({ ...llmConfig, apiKey: e.target.value })}
+                    placeholder="sk-..."
+                    style={{
+                      width: '100%',
+                      background: 'rgba(0,0,0,0.3)',
+                      border: `1px solid ${COLORS.cardBorder}`,
+                      borderRadius: 8,
+                      padding: '10px 14px',
+                      color: COLORS.text,
+                      fontSize: 14,
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <span style={{ fontSize: 11, color: COLORS.textDim, marginTop: 4, display: 'block' }}>
+                    🔒 API Key 会加密存储在浏览器本地
+                  </span>
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: 13, color: COLORS.textMuted, marginBottom: 6 }}>
+                    Model ID
+                  </label>
+                  <input
+                    type="text"
+                    value={llmConfig.modelId}
+                    onChange={(e) => setLLMConfig({ ...llmConfig, modelId: e.target.value })}
+                    placeholder="例如: gpt-4o, claude-3-5-sonnet-latest"
+                    style={{
+                      width: '100%',
+                      background: 'rgba(0,0,0,0.3)',
+                      border: `1px solid ${COLORS.cardBorder}`,
+                      borderRadius: 8,
+                      padding: '10px 14px',
+                      color: COLORS.text,
+                      fontSize: 14,
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={() => {
+                      setLLMConfig(loadLLMConfig());
+                      setShowLLMConfig(false);
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: `1px solid ${COLORS.cardBorder}`,
+                      borderRadius: 8,
+                      padding: '8px 16px',
+                      color: COLORS.textMuted,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    取消
+                  </button>
+                  <motion.button
+                    onClick={handleSaveConfig}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      background: COLORS.primary,
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '8px 16px',
+                      color: '#fff',
+                      fontSize: 13,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    保存配置
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* 分析结果 - 仅在没有 LLM 结果时显示关键词匹配 */}
+      <AnimatePresence mode="wait">
+        {analysisResult && (
+          <motion.div
+            key="result"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            style={{
+              background: COLORS.cardBg,
+              borderRadius: 16,
+              padding: 24,
+              border: `1px solid ${COLORS.cardBorder}`,
+            }}
+          >
+            {/* 匹配摘要 */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 16,
+              marginBottom: 24,
+              padding: '16px 20px',
+              background: 'rgba(0,0,0,0.3)',
+              borderRadius: 12,
+            }}>
+              <span style={{ fontSize: 32 }}>{analysisResult.pattern.emoji}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                  <span style={{ fontSize: 18, fontWeight: 600, color: COLORS.text }}>
+                    {analysisResult.pattern.desc}
+                  </span>
+                  <span style={{
+                    padding: '4px 10px',
+                    borderRadius: 12,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    background: WORKFLOW_LEVELS[analysisResult.level - 1].color + '20',
+                    color: WORKFLOW_LEVELS[analysisResult.level - 1].color,
+                  }}>
+                    Level {analysisResult.level}
+                  </span>
+                </div>
+                {/* 匹配到的关键词 */}
+                {analysisResult.matchedKeyword && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginBottom: 8,
+                    padding: '8px 12px',
+                    background: COLORS.accent3 + '10',
+                    borderRadius: 8,
+                    borderLeft: `3px solid ${COLORS.accent3}`,
+                  }}>
+                    <SearchIcon size={14} style={{ color: COLORS.accent3 }} />
+                    <span style={{ fontSize: 12, color: COLORS.textMuted }}>{llmConfig.enabled ? 'LLM 分析依据:' : '匹配关键词:'}</span>
+                    <code style={{
+                      fontSize: 13,
+                      color: COLORS.accent3,
+                      background: 'rgba(0,0,0,0.3)',
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                    }}>
+                      "{analysisResult.matchedKeyword}"
+                    </code>
+                    {/* 显示置信度 */}
+                    <span style={{
+                      fontSize: 11,
+                      color: COLORS.textDim,
+                      marginLeft: 8,
+                    }}>
+                      置信度: {Math.round(analysisResult.confidence * 100)}%
+                    </span>
+                  </div>
+                )}
+                {/* 改进2: 使用 isDefaultFallback 判断是否为默认兜底 */}
+                {analysisResult.isDefaultFallback && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginBottom: 8,
+                    padding: '8px 12px',
+                    background: COLORS.warning + '10',
+                    borderRadius: 8,
+                    borderLeft: `3px solid ${COLORS.warning}`,
+                  }}>
+                    <AlertTriangle size={14} style={{ color: COLORS.warning }} />
+                    <span style={{ fontSize: 12, color: COLORS.textMuted }}>
+                      未匹配到特定关键词，使用默认推荐
+                    </span>
+                    <span style={{
+                      fontSize: 11,
+                      color: COLORS.textDim,
+                    }}>
+                      (置信度: {Math.round(analysisResult.confidence * 100)}%)
+                    </span>
+                  </div>
+                )}
+                {/* 改进3: 显示备选方案（当有多个匹配时） */}
+                {analysisResult.allMatches && analysisResult.allMatches.length > 1 && (
+                  <div style={{
+                    marginTop: 8,
+                    padding: '8px 12px',
+                    background: 'rgba(0,0,0,0.2)',
+                    borderRadius: 8,
+                  }}>
+                    <div style={{ fontSize: 11, color: COLORS.textDim, marginBottom: 6 }}>
+                      其他可能匹配:
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {analysisResult.allMatches.slice(1, 4).map((m, i) => (
+                        <span key={i} style={{
+                          fontSize: 11,
+                          padding: '4px 8px',
+                          background: 'rgba(0,0,0,0.3)',
+                          borderRadius: 4,
+                          color: COLORS.textMuted,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}>
+                          <span>{m.pattern.emoji}</span>
+                          <span>{m.pattern.desc}</span>
+                          <code style={{ fontSize: 10, color: COLORS.accent2 }}>"{m.matchedKeyword}"</code>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div style={{ fontSize: 13, color: COLORS.textDim }}>
+                  输入内容: {analysisResult.goal}
+                </div>
+              </div>
+            </div>
+
+            {/* 推荐命令链 */}
+            <div style={{ marginBottom: 24 }}>
+              <h4 style={{ fontSize: 16, color: COLORS.text, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <GitBranch size={18} style={{ color: COLORS.primary }} />
+                推荐命令链
+              </h4>
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                {analysisResult.chain.commands.map((cmd, i) => {
+                  const cmdInfo = COMMANDS.find(c => c.cmd === cmd.cmd || c.cmd.includes(cmd.cmd.replace('/', '')));
+                  return (
+                    <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                        onClick={() => {
+                          if (cmdInfo) {
+                            onCommandClick(cmdInfo);
+                          }
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '12px 16px',
+                          background: cmdInfo ? COLORS.primary + '15' : 'rgba(0,0,0,0.2)',
+                          border: `1px solid ${cmdInfo ? COLORS.primary + '40' : COLORS.cardBorder}`,
+                          borderRadius: 10,
+                          cursor: cmdInfo ? 'pointer' : 'default',
+                          transition: 'all 0.2s',
+                        }}
+                        whileHover={cmdInfo ? { scale: 1.03, backgroundColor: COLORS.primary + '25' } : {}}
+                      >
+                        <span style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          background: COLORS.primary,
+                          color: '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                          fontWeight: 'bold',
+                        }}>
+                          {i + 1}
+                        </span>
+                        <code style={{ fontSize: 14, color: cmdInfo ? COLORS.primary : COLORS.textMuted }}>
+                          {cmd.cmd}
+                        </code>
+                        <span style={{ fontSize: 12, color: COLORS.textMuted }}>{cmd.desc}</span>
+                      </motion.div>
+                      {i < analysisResult.chain.commands.length - 1 && (
+                        <ChevronRight size={20} style={{ color: COLORS.textDim }} />
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 使用提示 */}
+            {analysisResult.chain.tips.length > 0 && (
+              <div style={{
+                padding: '16px 20px',
+                background: COLORS.secondary + '10',
+                borderRadius: 12,
+                borderLeft: `4px solid ${COLORS.secondary}`,
+              }}>
+                <h5 style={{ fontSize: 14, color: COLORS.text, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <TipIcon size={16} style={{ color: COLORS.secondary }} />
+                  使用提示
+                </h5>
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {analysisResult.chain.tips.map((tip, i) => (
+                    <li key={i} style={{ color: COLORS.textMuted, marginBottom: 4, fontSize: 13 }}>{tip}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 一键执行 */}
+            <div style={{ marginTop: 20, display: 'flex', gap: 12 }}>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  // 复制命令到剪贴板
+                  const ccwCmd = `/ccw "${analysisResult.goal}"`;
+                  navigator.clipboard.writeText(ccwCmd);
+                  alert(`已复制命令: ${ccwCmd}`);
+                }}
+                style={{
+                  flex: 1,
+                  background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent2})`,
+                  border: 'none',
+                  borderRadius: 12,
+                  padding: '14px 20px',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                <Terminal size={18} />
+                复制 /ccw 命令
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* LLM 错误提示 */}
+      {llmError && (
+        <div style={{
+          padding: '12px 16px',
+          background: COLORS.warning + '10',
+          borderRadius: 10,
+          marginBottom: 24,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          borderLeft: `3px solid ${COLORS.warning}`,
+        }}>
+          <AlertTriangle size={16} style={{ color: COLORS.warning }} />
+          <span style={{ fontSize: 13, color: COLORS.textMuted }}>
+            LLM 调用失败: {llmError}
+          </span>
+        </div>
+      )}
+
+      {/* 匹配原理说明 */}
+      <div style={{
+        marginTop: 24,
+        padding: '16px 20px',
+        background: 'rgba(0,0,0,0.2)',
+        borderRadius: 12,
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 12,
+      }}>
+        <Info size={20} style={{ color: COLORS.textDim, flexShrink: 0, marginTop: 2 }} />
+        <div>
+          <h5 style={{ fontSize: 14, color: COLORS.text, marginBottom: 6 }}>匹配原理</h5>
+          <ul style={{ margin: 0, paddingLeft: 20 }}>
+            <li style={{ color: COLORS.textMuted, marginBottom: 4, fontSize: 13 }}>系统通过正则表达式匹配关键词来识别任务类型</li>
+            <li style={{ color: COLORS.textMuted, marginBottom: 4, fontSize: 13 }}>支持中英文关键词，如 "修复"、"refactor"、"紧急" 等</li>
+            <li style={{ color: COLORS.textMuted, marginBottom: 4, fontSize: 13 }}>点击命令节点可查看命令详情</li>
+            <li style={{ color: COLORS.textMuted, fontSize: 13 }}>复制 /ccw 命令可在 Claude Code 中直接执行</li>
+          </ul>
+        </div>
+      </div>
     </motion.div>
   );
 };
@@ -1998,11 +3048,12 @@ const VersionDetailModal = ({ version, onClose }: { version: TimelineItem; onClo
 };
 
 // Tab 类型定义
-type TabType = 'overview' | 'commands' | 'cases' | 'install' | 'experience';
+type TabType = 'overview' | 'commands' | 'cases' | 'install' | 'experience' | 'recommender';
 
 // Tab 配置
 const TABS: { key: TabType; label: string; icon: React.ReactNode; desc: string }[] = [
   { key: 'overview', label: '概览', icon: <Home size={18} />, desc: '成长地图、工作流、快速入门' },
+  { key: 'recommender', label: '推荐', icon: <Sparkles size={18} />, desc: '智能命令推荐' },
   { key: 'commands', label: '命令', icon: <Terminal size={18} />, desc: '所有命令列表' },
   { key: 'cases', label: '案例', icon: <Play size={18} />, desc: '使用案例和场景' },
   { key: 'experience', label: '经验', icon: <TipIcon size={18} />, desc: '场景决策指南' },
@@ -2195,6 +3246,11 @@ function App() {
               {/* 老奶奶指南 */}
               <GrandmaGuide />
             </motion.div>
+          )}
+
+          {/* 智能推荐 Tab */}
+          {activeTab === 'recommender' && (
+            <RecommenderSection onCommandClick={setSelectedCommand} />
           )}
 
           {/* 命令 Tab */}

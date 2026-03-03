@@ -25,6 +25,11 @@ export interface Case {
   commands: CaseCommand[];
   steps: CaseStep[];
   tips?: string[];
+  // 增强字段
+  prerequisites?: string[];      // 前置条件
+  successCriteria?: string[];    // 成功标准
+  estimatedTime?: string;        // 预估时间
+  difficulty?: 'easy' | 'medium' | 'hard';  // 难度
 }
 
 // ============================================
@@ -40,6 +45,10 @@ export const LEVEL_1_CASES: Case[] = [
     commands: [
       { cmd: '/ccw', desc: '主入口 - 智能分析意图，自动选择命令执行' },
     ],
+    prerequisites: ['已安装 Claude Code Workflow', '有需要执行的小任务'],
+    successCriteria: ['任务完成', '代码修改符合预期'],
+    estimatedTime: '1-2 分钟',
+    difficulty: 'easy',
     steps: [
       { role: 'user', content: '/ccw "给 src/utils/format.ts 里的函数加 JSDoc 注释"', type: 'command' },
       { role: 'system', content: '┌─ CCW 智能路由 ──────────────────────────────┐\n│ 🧠 分析意图: 代码改动 (简单、单文件)        │\n│ 🎯 选择命令: /review-code                   │\n│ ⚡ 直接执行，无需规划                       │\n└──────────────────────────────────────────────┘', type: 'response' },
@@ -53,10 +62,14 @@ export const LEVEL_1_CASES: Case[] = [
     title: '一键清理项目过时产物',
     level: 1,
     category: '代码清理',
-    scenario: '开发过程中积累了过时的临时文件和废弃代码，一键清理',
+    scenario: '开发过程中积累了过时的临时文件和废弃代码,一键清理',
     commands: [
       { cmd: '/workflow:clean', desc: '智能清理 - 检测过时产物和无用代码' },
     ],
+    prerequisites: ['Git 仓库', '项目有一定的开发历史'],
+    successCriteria: ['过时文件被识别并删除', '项目功能正常'],
+    estimatedTime: '1-2 分钟',
+    difficulty: 'easy',
     steps: [
       { role: 'user', content: '/workflow:clean', type: 'command' },
       { role: 'system', content: '┌─ 智能清理扫描 ──────────────────────────────┐\n│ 🔍 扫描项目...                              │\n│ 📋 检测过时产物和无用代码                   │\n└──────────────────────────────────────────────┘', type: 'response' },

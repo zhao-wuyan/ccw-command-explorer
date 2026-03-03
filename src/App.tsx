@@ -2422,6 +2422,31 @@ const RecommenderSection = ({
               border: `1px solid ${COLORS.cardBorder}`,
             }}
           >
+            {/* LLM 错误提示 - 放在明显位置 */}
+            {llmError && (
+              <div style={{
+                padding: '16px 20px',
+                background: COLORS.warning + '15',
+                borderRadius: 12,
+                marginBottom: 20,
+                border: `1px solid ${COLORS.warning}40`,
+                borderLeft: `4px solid ${COLORS.warning}`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <AlertTriangle size={20} style={{ color: COLORS.warning }} />
+                  <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.warning }}>
+                    LLM 调用失败
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: 13, color: COLORS.textMuted }}>
+                  {llmError}
+                </p>
+                <p style={{ margin: '8px 0 0 0', fontSize: 12, color: COLORS.textDim, fontStyle: 'italic' }}>
+                  已自动回退到关键词匹配模式，以下是关键词匹配推荐结果：
+                </p>
+              </div>
+            )}
+
             {/* 匹配摘要 */}
             <div style={{
               display: 'flex',
@@ -2692,25 +2717,6 @@ const RecommenderSection = ({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* LLM 错误提示 */}
-      {llmError && (
-        <div style={{
-          padding: '12px 16px',
-          background: COLORS.warning + '10',
-          borderRadius: 10,
-          marginBottom: 24,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          borderLeft: `3px solid ${COLORS.warning}`,
-        }}>
-          <AlertTriangle size={16} style={{ color: COLORS.warning }} />
-          <span style={{ fontSize: 13, color: COLORS.textMuted }}>
-            LLM 调用失败: {llmError}
-          </span>
-        </div>
-      )}
 
       {/* 匹配原理说明 */}
       <div style={{

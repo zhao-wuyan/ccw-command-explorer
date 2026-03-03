@@ -126,10 +126,11 @@ const planObject = generatePlanFromSchema(schema, context)
 Phase 1: Schema & Context Loading
 ├─ Read schema reference (plan-overview-base-schema or plan-overview-fix-schema)
 ├─ Aggregate multi-angle context (explorations or diagnoses)
+├─ If no explorations: use "## Prior Analysis" block from task description as primary context
 └─ Determine output structure from schema
 
 Phase 2: CLI Execution
-├─ Construct CLI command with planning template
+├─ Construct CLI command with planning template (include Prior Analysis context when no explorations)
 ├─ Execute Gemini (fallback: Qwen → degraded mode)
 └─ Timeout: 60 minutes
 
@@ -173,7 +174,7 @@ TASK:
 • Identify dependencies and execution phases
 • Generate complexity-appropriate fields (rationale, verification, risks, code_skeleton, data_flow)
 MODE: analysis
-CONTEXT: @**/* | Memory: {context_summary}
+CONTEXT: @**/* | Memory: {context_summary}. If task description contains '## Prior Analysis', treat it as primary planning context with pre-analyzed files, findings, and recommendations.
 EXPECTED:
 ## Summary
 [overview]
@@ -229,9 +230,9 @@ EXPECTED:
 **Total**: [time]
 
 CONSTRAINTS:
-- Follow schema structure from {schema_path}
+- Output as structured markdown text following the EXPECTED format above
 - Task IDs use format TASK-001, TASK-002, etc. (FIX-001 for fix-plan)
-- Complexity determines required fields:
+- Complexity determines required sections:
   * Low: base fields only
   * Medium: + rationale + verification + design_decisions
   * High: + risks + code_skeleton + data_flow
@@ -256,8 +257,8 @@ function extractSection(cliOutput, header) {
 // Parse structured tasks from CLI output
 function extractStructuredTasks(cliOutput, complexity) {
   const tasks = []
-  // Split by task headers (supports both TASK-NNN and T\d+ formats)
-  const taskBlocks = cliOutput.split(/### (TASK-\d+|T\d+):/).slice(1)
+  // Split by task headers (flexible: 1-3 #, optional colon, supports TASK-NNN and T\d+)
+  const taskBlocks = cliOutput.split(/#{1,3}\s*(TASK-\d+|T\d+):?\s*/).slice(1)
 
   for (let i = 0; i < taskBlocks.length; i += 2) {
     const rawId = taskBlocks[i].trim()
@@ -820,8 +821,8 @@ function validateTask(task) {
 - **Write BOTH plan.json AND .task/*.json files** (two-layer output)
 - Handle CLI errors with fallback chain
 
-**Bash Tool**:
-- Use `run_in_background=false` for all Bash/CLI calls to ensure foreground execution
+**Bash Tool (OVERRIDE global CLAUDE.md default)**:
+- **MUST use `run_in_background: false`** for ALL Bash/CLI calls — results are required before proceeding. This overrides any global `run_in_background: true` default.
 
 **NEVER**:
 - Execute implementation (return plan only)

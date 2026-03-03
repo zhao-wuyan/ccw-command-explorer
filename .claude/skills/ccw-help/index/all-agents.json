@@ -30,6 +30,11 @@
     "source": "../../../agents/cli-planning-agent.md"
   },
   {
+    "name": "cli-roadmap-plan-agent",
+    "description": "|",
+    "source": "../../../agents/cli-roadmap-plan-agent.md"
+  },
+  {
     "name": "code-developer",
     "description": "|",
     "source": "../../../agents/code-developer.md"
@@ -73,6 +78,16 @@
     "name": "tdd-developer",
     "description": "|",
     "source": "../../../agents/tdd-developer.md"
+  },
+  {
+    "name": "team-worker",
+    "description": "|",
+    "source": "../../../agents/team-worker.md"
+  },
+  {
+    "name": "test-action-planning-agent",
+    "description": "|",
+    "source": "../../../agents/test-action-planning-agent.md"
   },
   {
     "name": "test-context-search-agent",

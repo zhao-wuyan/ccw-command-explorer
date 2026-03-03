@@ -769,7 +769,7 @@ See full markdown template in original file (lines 955-1161).
 - Want shared collaborative planning document
 - Need structured task breakdown with agent coordination
 
-**Use `Skill(skill="workflow-lite-plan", args="\"task description\"")` when:**
+**Use `Skill(skill="workflow-lite-planex", args="\"task description\"")` when:**
 - Direction is already clear
 - Ready to move from ideas to execution
 - Need simple implementation breakdown

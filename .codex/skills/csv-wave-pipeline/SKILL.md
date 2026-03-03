@@ -903,4 +903,4 @@ Wave 3 agents:
 | Linear pipeline (A→B→C) | `$csv-wave-pipeline -c 1` — 3 waves, serial, full context |
 | Diamond dependency (A→B,C→D) | `$csv-wave-pipeline` — 3 waves, B+C concurrent in wave 2 |
 | Complex requirement, unclear tasks | Use `$roadmap-with-file` first for planning, then feed issues here |
-| Single complex task | Use `$lite-execute` instead |
+| Single complex task | Use `$workflow-lite-planex` instead |

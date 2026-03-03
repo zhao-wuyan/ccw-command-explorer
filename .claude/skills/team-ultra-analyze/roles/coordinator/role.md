@@ -332,7 +332,7 @@ EXPLORE-001 → ANALYZE-001 → SYNTH-001
 | Option | Description |
 |--------|-------------|
 | 创建Issue | 基于结论创建 Issue |
-| 生成任务 | 启动 workflow-lite-plan 规划实施 |
+| 生成任务 | 启动 workflow-lite-planex 规划实施 |
 | 导出报告 | 生成独立分析报告 |
 | 关闭团队 | 关闭所有 teammate 并清理 |
 

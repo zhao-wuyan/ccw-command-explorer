@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Analyze all command/agent files and generate index files for ccw-help skill.
+Analyze all command/agent/skill files and generate index files for ccw-help skill.
 Outputs relative paths pointing to source files (no reference folder duplication).
 """
 
 import os
-import re
 import json
 from pathlib import Path
 from collections import defaultdict
@@ -15,8 +14,12 @@ from typing import Dict, List, Any
 BASE_DIR = Path("D:/Claude_dms3/.claude")
 COMMANDS_DIR = BASE_DIR / "commands"
 AGENTS_DIR = BASE_DIR / "agents"
+SKILLS_DIR = BASE_DIR / "skills"
 SKILL_DIR = BASE_DIR / "skills" / "ccw-help"
 INDEX_DIR = SKILL_DIR / "index"
+
+# Skills to skip (internal/shared, not user-facing)
+SKIP_SKILLS = {"_shared", "ccw-help"}
 
 def parse_frontmatter(content: str) -> Dict[str, Any]:
     """Extract YAML frontmatter from markdown content."""
@@ -139,6 +142,66 @@ def analyze_agent_file(file_path: Path) -> Dict[str, Any]:
         "source": rel_path  # Relative from index/ dir (e.g., "../../../agents/...")
     }
 
+def categorize_skill(name: str, description: str) -> str:
+    """Determine skill category from name and description."""
+    if name.startswith('team-'):
+        return "team"
+    if name.startswith('workflow-'):
+        return "workflow"
+    if name.startswith('review-'):
+        return "review"
+    if name.startswith('spec-') or name.startswith('command-') or name.startswith('skill-'):
+        return "meta"
+    if name.startswith('memory-') or name.startswith('issue-'):
+        return "utility"
+    return "standalone"
+
+
+def analyze_skill_dir(skill_path: Path) -> Dict[str, Any] | None:
+    """Analyze a skill directory and extract metadata from SKILL.md."""
+    skill_md = skill_path / "SKILL.md"
+    if not skill_md.exists():
+        return None
+
+    with open(skill_md, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    frontmatter = parse_frontmatter(content)
+
+    name = frontmatter.get('name', skill_path.name)
+    description = frontmatter.get('description', '')
+    allowed_tools = frontmatter.get('allowed-tools', '')
+    version = frontmatter.get('version', '')
+
+    category = categorize_skill(name, description)
+
+    # Detect if it's a team skill (uses TeamCreate + SendMessage together)
+    is_team = 'TeamCreate' in allowed_tools and 'SendMessage' in allowed_tools
+
+    # Detect if it has phases
+    phases_dir = skill_path / "phases"
+    has_phases = phases_dir.exists() and any(phases_dir.iterdir()) if phases_dir.exists() else False
+
+    # Detect if it has role-specs
+    role_specs_dir = skill_path / "role-specs"
+    has_role_specs = role_specs_dir.exists() and any(role_specs_dir.iterdir()) if role_specs_dir.exists() else False
+
+    # Build relative path from INDEX_DIR
+    rel_from_base = skill_path.relative_to(BASE_DIR)
+    rel_path = "../../../" + str(rel_from_base).replace('\\', '/') + "/SKILL.md"
+
+    return {
+        "name": name,
+        "description": description,
+        "category": category,
+        "is_team": is_team,
+        "has_phases": has_phases,
+        "has_role_specs": has_role_specs,
+        "version": version,
+        "source": rel_path
+    }
+
+
 def build_command_relationships() -> Dict[str, Any]:
     """Build command relationship mappings."""
     return {
@@ -176,20 +239,16 @@ def build_command_relationships() -> Dict[str, Any]:
             "alternatives": ["workflow:resume"],
             "related": ["workflow:session:list", "workflow:status"]
         },
-        "workflow-lite-plan": {
-            "calls_internally": ["workflow:lite-execute"],
-            "next_steps": ["workflow:lite-execute", "workflow:status"],
+        "workflow-lite-planex": {
+            "calls_internally": [],
+            "next_steps": ["workflow:status"],
             "alternatives": ["workflow-plan"],
             "prerequisites": []
         },
         "workflow:lite-fix": {
-            "next_steps": ["workflow:lite-execute", "workflow:status"],
-            "alternatives": ["workflow-lite-plan"],
+            "next_steps": ["workflow:status"],
+            "alternatives": ["workflow-lite-planex"],
             "related": ["workflow-test-fix"]
-        },
-        "workflow:lite-execute": {
-            "prerequisites": ["workflow-lite-plan", "workflow:lite-fix"],
-            "related": ["workflow-execute", "workflow:status"]
         },
         "workflow:review-session-cycle": {
             "prerequisites": ["workflow-execute"],
@@ -213,7 +272,7 @@ def build_command_relationships() -> Dict[str, Any]:
 def identify_essential_commands(all_commands: List[Dict]) -> List[Dict]:
     """Identify the most essential commands for beginners."""
     essential_names = [
-        "workflow-lite-plan", "workflow:lite-fix", "workflow-plan",
+        "workflow-lite-planex", "workflow:lite-fix", "workflow-plan",
         "workflow-execute", "workflow:status", "workflow:session:start",
         "workflow:review-session-cycle", "cli:analyze", "cli:chat",
         "memory:docs", "workflow:brainstorm:artifacts",
@@ -267,7 +326,24 @@ def main():
         except Exception as e:
             print(f"  ERROR analyzing {agent_file}: {e}")
 
-    print(f"\nAnalyzed {len(all_commands)} commands, {len(all_agents)} agents")
+    # Analyze skill directories
+    print("\n=== Analyzing Skill Files ===")
+    skill_dirs = [d for d in SKILLS_DIR.iterdir() if d.is_dir() and d.name not in SKIP_SKILLS]
+    print(f"Found {len(skill_dirs)} skill directories")
+
+    all_skills = []
+    for skill_dir in sorted(skill_dirs):
+        try:
+            metadata = analyze_skill_dir(skill_dir)
+            if metadata:
+                all_skills.append(metadata)
+                print(f"  OK {metadata['name']} [{metadata['category']}]")
+            else:
+                print(f"  SKIP {skill_dir.name} (no SKILL.md)")
+        except Exception as e:
+            print(f"  ERROR analyzing {skill_dir}: {e}")
+
+    print(f"\nAnalyzed {len(all_commands)} commands, {len(all_agents)} agents, {len(all_skills)} skills")
 
     # Generate index files
     INDEX_DIR.mkdir(parents=True, exist_ok=True)
@@ -320,15 +396,62 @@ def main():
         json.dump(relationships, f, indent=2, ensure_ascii=False)
     print(f"OK Generated {relationships_path.name} ({os.path.getsize(relationships_path)} bytes)")
 
+    # 7. all-skills.json
+    all_skills_path = INDEX_DIR / "all-skills.json"
+    with open(all_skills_path, 'w', encoding='utf-8') as f:
+        json.dump(all_skills, f, indent=2, ensure_ascii=False)
+    print(f"OK Generated {all_skills_path.name} ({os.path.getsize(all_skills_path)} bytes)")
+
+    # 8. skills-by-category.json
+    skills_by_cat = defaultdict(list)
+    for skill in all_skills:
+        skills_by_cat[skill['category']].append(skill)
+
+    skills_by_cat_path = INDEX_DIR / "skills-by-category.json"
+    with open(skills_by_cat_path, 'w', encoding='utf-8') as f:
+        json.dump(dict(skills_by_cat), f, indent=2, ensure_ascii=False)
+    print(f"OK Generated {skills_by_cat_path.name} ({os.path.getsize(skills_by_cat_path)} bytes)")
+
+    # Generate master command.json (includes commands, agents, skills)
+    master = {
+        "_metadata": {
+            "version": "4.0.0",
+            "total_commands": len(all_commands),
+            "total_agents": len(all_agents),
+            "total_skills": len(all_skills),
+            "description": "Auto-generated CCW-Help command index from analyze_commands.py",
+            "generated": "Auto-updated - all commands, agents, skills synced from file system",
+            "last_sync": "command.json now stays in sync with CLI definitions"
+        },
+        "essential_commands": [cmd['name'] for cmd in essential],
+        "commands": all_commands,
+        "agents": all_agents,
+        "skills": all_skills,
+        "categories": sorted(set(cmd['category'] for cmd in all_commands)),
+        "skill_categories": sorted(skills_by_cat.keys())
+    }
+
+    master_path = SKILL_DIR / "command.json"
+    with open(master_path, 'w', encoding='utf-8') as f:
+        json.dump(master, f, indent=2, ensure_ascii=False)
+    print(f"\nOK Generated command.json ({os.path.getsize(master_path)} bytes)")
+
     # Print summary
     print("\n=== Summary ===")
     print(f"Commands: {len(all_commands)}")
     print(f"Agents: {len(all_agents)}")
+    print(f"Skills: {len(all_skills)}")
     print(f"Essential: {len(essential)}")
-    print(f"\nBy category:")
+    print(f"\nCommands by category:")
     for cat in sorted(by_category.keys()):
         total = sum(len(cmds) for cmds in by_category[cat].values())
         print(f"  {cat}: {total}")
+    print(f"\nSkills by category:")
+    for cat in sorted(skills_by_cat.keys()):
+        print(f"  {cat}: {len(skills_by_cat[cat])}")
+        for skill in skills_by_cat[cat]:
+            team_tag = " [team]" if skill['is_team'] else ""
+            print(f"    - {skill['name']}{team_tag}")
 
     print(f"\nIndex: {INDEX_DIR}")
     print("=== Complete ===")

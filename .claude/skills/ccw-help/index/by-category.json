@@ -22,6 +22,17 @@
         "usage_scenario": "general",
         "difficulty": "Intermediate",
         "source": "../../../commands/ccw.md"
+      },
+      {
+        "name": "flow-create",
+        "command": "/flow-create",
+        "description": "",
+        "arguments": "",
+        "category": "general",
+        "subcategory": null,
+        "usage_scenario": "implementation",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/flow-create.md"
       }
     ]
   },
@@ -48,6 +59,65 @@
         "usage_scenario": "analysis",
         "difficulty": "Intermediate",
         "source": "../../../commands/cli/codex-review.md"
+      }
+    ]
+  },
+  "idaw": {
+    "_root": [
+      {
+        "name": "add",
+        "command": "/idaw:add",
+        "description": "Add IDAW tasks - manual creation or import from ccw issue",
+        "arguments": "[-y|--yes] [--from-issue <id>[,<id>,...]] \\\"description\\\" [--type <task_type>] [--priority <1-5>]",
+        "category": "idaw",
+        "subcategory": null,
+        "usage_scenario": "general",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/idaw/add.md"
+      },
+      {
+        "name": "resume",
+        "command": "/idaw:resume",
+        "description": "Resume interrupted IDAW session from last checkpoint",
+        "arguments": "[-y|--yes] [session-id]",
+        "category": "idaw",
+        "subcategory": null,
+        "usage_scenario": "session-management",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/idaw/resume.md"
+      },
+      {
+        "name": "run-coordinate",
+        "command": "/idaw:run-coordinate",
+        "description": "IDAW coordinator - execute task skill chains via external CLI with hook callbacks and git checkpoints",
+        "arguments": "[-y|--yes] [--task <id>[,<id>,...]] [--dry-run] [--tool <tool>]",
+        "category": "idaw",
+        "subcategory": null,
+        "usage_scenario": "general",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/idaw/run-coordinate.md"
+      },
+      {
+        "name": "run",
+        "command": "/idaw:run",
+        "description": "IDAW orchestrator - execute task skill chains serially with git checkpoints",
+        "arguments": "[-y|--yes] [--task <id>[,<id>,...]] [--dry-run]",
+        "category": "idaw",
+        "subcategory": null,
+        "usage_scenario": "general",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/idaw/run.md"
+      },
+      {
+        "name": "status",
+        "command": "/idaw:status",
+        "description": "View IDAW task and session progress",
+        "arguments": "[session-id]",
+        "category": "idaw",
+        "subcategory": null,
+        "usage_scenario": "session-management",
+        "difficulty": "Beginner",
+        "source": "../../../commands/idaw/status.md"
       }
     ]
   },
@@ -146,6 +216,17 @@
   "memory": {
     "_root": [
       {
+        "name": "prepare",
+        "command": "/memory:prepare",
+        "description": "Delegate to universal-executor agent to analyze project via Gemini/Qwen CLI and return JSON core content package for task context",
+        "arguments": "[--tool gemini|qwen] \\\"task context description\\",
+        "category": "memory",
+        "subcategory": null,
+        "usage_scenario": "general",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/memory/prepare.md"
+      },
+      {
         "name": "style-skill-memory",
         "command": "/memory:style-skill-memory",
         "description": "Generate SKILL memory package from style reference for easy loading and consistent design system usage",
@@ -194,6 +275,17 @@
         "source": "../../../commands/workflow/clean.md"
       },
       {
+        "name": "workflow:collaborative-plan-with-file",
+        "command": "/workflow:collaborative-plan-with-file",
+        "description": "Collaborative planning with Plan Note - Understanding agent creates shared plan-note.md template, parallel agents fill pre-allocated sections, conflict detection without merge. Outputs executable plan-note.md.",
+        "arguments": "[-y|--yes] <task description> [--max-agents=5]",
+        "category": "workflow",
+        "subcategory": null,
+        "usage_scenario": "planning",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/workflow/collaborative-plan-with-file.md"
+      },
+      {
         "name": "debug-with-file",
         "command": "/workflow:debug-with-file",
         "description": "Interactive hypothesis-driven debugging with documented exploration, understanding evolution, and Gemini-assisted correction",
@@ -205,10 +297,32 @@
         "source": "../../../commands/workflow/debug-with-file.md"
       },
       {
+        "name": "init-guidelines",
+        "command": "/workflow:init-guidelines",
+        "description": "Interactive wizard to fill specs/*.md based on project analysis",
+        "arguments": "[--reset]",
+        "category": "workflow",
+        "subcategory": null,
+        "usage_scenario": "general",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/workflow/init-guidelines.md"
+      },
+      {
+        "name": "init-specs",
+        "command": "/workflow:init-specs",
+        "description": "Interactive wizard to create individual specs or personal constraints with scope selection",
+        "arguments": "[--scope <global|project>] [--dimension <specs|personal>] [--category <general|exploration|planning|execution>]",
+        "category": "workflow",
+        "subcategory": null,
+        "usage_scenario": "general",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/workflow/init-specs.md"
+      },
+      {
         "name": "init",
         "command": "/workflow:init",
         "description": "Initialize project-level state with intelligent project analysis using cli-explore-agent",
-        "arguments": "[--regenerate]",
+        "arguments": "[--regenerate] [--skip-specs]",
         "category": "workflow",
         "subcategory": null,
         "usage_scenario": "general",
@@ -216,10 +330,43 @@
         "source": "../../../commands/workflow/init.md"
       },
       {
+        "name": "integration-test-cycle",
+        "command": "/workflow:integration-test-cycle",
+        "description": "Self-iterating integration test workflow with codebase exploration, test development, autonomous test-fix cycles, and reflection-driven strategy adjustment",
+        "arguments": "[-y|--yes] [-c|--continue] [--max-iterations=N] \\\"module or feature description\\",
+        "category": "workflow",
+        "subcategory": null,
+        "usage_scenario": "testing",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/workflow/integration-test-cycle.md"
+      },
+      {
+        "name": "refactor-cycle",
+        "command": "/workflow:refactor-cycle",
+        "description": "Tech debt discovery and self-iterating refactoring with multi-dimensional analysis, prioritized execution, regression validation, and reflection-driven adjustment",
+        "arguments": "[-y|--yes] [-c|--continue] [--scope=module|project] \\\"module or refactoring goal\\",
+        "category": "workflow",
+        "subcategory": null,
+        "usage_scenario": "general",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/workflow/refactor-cycle.md"
+      },
+      {
+        "name": "roadmap-with-file",
+        "command": "/workflow:roadmap-with-file",
+        "description": "Strategic requirement roadmap with iterative decomposition and issue creation. Outputs roadmap.md (human-readable, single source) + issues.jsonl (machine-executable). Handoff to team-planex.",
+        "arguments": "[-y|--yes] [-c|--continue] [-m progressive|direct|auto] \\\"requirement description\\",
+        "category": "workflow",
+        "subcategory": null,
+        "usage_scenario": "general",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/workflow/roadmap-with-file.md"
+      },
+      {
         "name": "unified-execute-with-file",
         "command": "/workflow:unified-execute-with-file",
         "description": "Universal execution engine for consuming any planning/brainstorm/analysis output with minimal progress tracking, multi-agent coordination, and incremental execution",
-        "arguments": "[-y|--yes] [-p|--plan <path>] [-m|--mode sequential|parallel] [\\\"execution context or task name\\\"]",
+        "arguments": "[-y|--yes] [<path>[,<path2>] | -p|--plan <path>[,<path2>]] [--auto-commit] [--commit-prefix \\\"prefix\\\"] [\\\"execution context or task name\\\"]",
         "category": "workflow",
         "subcategory": null,
         "usage_scenario": "implementation",
@@ -264,8 +411,8 @@
       {
         "name": "solidify",
         "command": "/workflow:session:solidify",
-        "description": "Crystallize session learnings and user-defined constraints into permanent project guidelines",
-        "arguments": "[-y|--yes] [--type <convention|constraint|learning>] [--category <category>] \\\"rule or insight\\",
+        "description": "Crystallize session learnings and user-defined constraints into permanent project guidelines, or compress recent memories",
+        "arguments": "[-y|--yes] [--type <convention|constraint|learning|compress>] [--category <category>] [--limit <N>] \\\"rule or insight\\",
         "category": "workflow",
         "subcategory": "session",
         "usage_scenario": "general",
@@ -282,6 +429,17 @@
         "usage_scenario": "general",
         "difficulty": "Intermediate",
         "source": "../../../commands/workflow/session/start.md"
+      },
+      {
+        "name": "sync",
+        "command": "/workflow:session:sync",
+        "description": "Quick-sync session work to specs/*.md and project-tech",
+        "arguments": "[-y|--yes] [\\\"what was done\\\"]",
+        "category": "workflow",
+        "subcategory": "session",
+        "usage_scenario": "general",
+        "difficulty": "Intermediate",
+        "source": "../../../commands/workflow/session/sync.md"
       }
     ],
     "ui-design": [

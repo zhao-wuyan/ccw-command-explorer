@@ -15,7 +15,7 @@ Main process orchestrator: intent analysis → workflow selection → command ch
 
 | Skill | 内部流水线 |
 |-------|-----------|
-| `workflow-lite-plan` | explore → plan → confirm → execute |
+| `workflow-lite-planex` | explore → plan → confirm → execute |
 | `workflow-plan` | session → context → convention → gen → verify/replan |
 | `workflow-execute` | session discovery → task processing → commit |
 | `workflow-tdd-plan` | 6-phase TDD plan → verify |
@@ -43,14 +43,14 @@ Main process orchestrator: intent analysis → workflow selection → command ch
 
 | 单元类型 | Skill | 说明 |
 |---------|-------|------|
-| 轻量 Plan+Execute | `workflow-lite-plan` | 内部完成 plan→execute |
+| 轻量 Plan+Execute | `workflow-lite-planex` | 内部完成 plan→execute |
 | 标准 Planning | `workflow-plan` → `workflow-execute` | plan 和 execute 是独立 Skill |
 | TDD Planning | `workflow-tdd-plan` → `workflow-execute` | tdd-plan 和 execute 是独立 Skill |
 | 规格驱动 | `spec-generator` → `workflow-plan` → `workflow-execute` | 规格文档驱动完整开发 |
 | 测试流水线 | `workflow-test-fix` | 内部完成 gen→cycle |
 | 代码审查 | `review-cycle` | 内部完成 review→fix |
 | 多CLI协作 | `workflow-multi-cli-plan` | ACE context → CLI discussion → plan → execute |
-| 分析→规划 | `workflow:analyze-with-file` → `workflow-lite-plan` | 协作分析产物自动传递给 lite-plan |
+| 分析→规划 | `workflow:analyze-with-file` → `workflow-lite-planex` | 协作分析产物自动传递给 lite-plan |
 | 头脑风暴→规划 | `workflow:brainstorm-with-file` → `workflow-plan` → `workflow-execute` | 头脑风暴产物自动传递给正式规划 |
 | 0→1 开发(小) | `workflow:brainstorm-with-file` → `workflow-plan` → `workflow-execute` | 小规模从零开始，探索+正式规划+实现 |
 | 0→1 开发(中/大) | `workflow:brainstorm-with-file` → `workflow-plan` → `workflow-execute` | 探索后正式规划+执行 |
@@ -231,7 +231,7 @@ function buildCommandChain(workflow, analysis) {
   const chains = {
     // Level 2 - Lightweight
     'rapid': [
-      { cmd: 'workflow-lite-plan', args: `"${analysis.goal}"` },
+      { cmd: 'workflow-lite-planex', args: `"${analysis.goal}"` },
       ...(analysis.constraints?.includes('skip-tests') ? [] : [
         { cmd: 'workflow-test-fix', args: '' }
       ])
@@ -239,21 +239,21 @@ function buildCommandChain(workflow, analysis) {
 
     // Level 2 Bridge - Lightweight to Issue Workflow
     'rapid-to-issue': [
-      { cmd: 'workflow-lite-plan', args: `"${analysis.goal}" --plan-only` },
+      { cmd: 'workflow-lite-planex', args: `"${analysis.goal}" --plan-only` },
       { cmd: 'issue:convert-to-plan', args: '--latest-lite-plan -y' },
       { cmd: 'issue:queue', args: '' },
       { cmd: 'issue:execute', args: '--queue auto' }
     ],
 
     'bugfix.standard': [
-      { cmd: 'workflow-lite-plan', args: `--bugfix "${analysis.goal}"` },
+      { cmd: 'workflow-lite-planex', args: `--bugfix "${analysis.goal}"` },
       ...(analysis.constraints?.includes('skip-tests') ? [] : [
         { cmd: 'workflow-test-fix', args: '' }
       ])
     ],
 
     'bugfix.hotfix': [
-      { cmd: 'workflow-lite-plan', args: `--hotfix "${analysis.goal}"` }
+      { cmd: 'workflow-lite-planex', args: `--hotfix "${analysis.goal}"` }
     ],
 
     'multi-cli-plan': [
@@ -264,13 +264,13 @@ function buildCommandChain(workflow, analysis) {
     ],
 
     'docs': [
-      { cmd: 'workflow-lite-plan', args: `"${analysis.goal}"` }
+      { cmd: 'workflow-lite-planex', args: `"${analysis.goal}"` }
     ],
 
     // With-File → Auto Chain to lite-plan
     'analyze-to-plan': [
       { cmd: 'workflow:analyze-with-file', args: `"${analysis.goal}"` },
-      { cmd: 'workflow-lite-plan', args: '' }  // auto receives analysis artifacts (discussion.md)
+      { cmd: 'workflow-lite-planex', args: '' }  // auto receives analysis artifacts (discussion.md)
     ],
 
     'brainstorm-to-plan': [
@@ -476,7 +476,7 @@ function setupTodoTracking(chain, workflow, analysis) {
 ```
 
 **Output**:
-- TODO: `-> CCW:rapid: [1/2] workflow-lite-plan | CCW:rapid: [2/2] workflow-test-fix | ...`
+- TODO: `-> CCW:rapid: [1/2] workflow-lite-planex | CCW:rapid: [2/2] workflow-test-fix | ...`
 - Status File: `.workflow/.ccw/{session_id}/status.json`
 
 ---
@@ -628,10 +628,10 @@ Phase 5: Execute Command Chain
 
 | Input | Type | Level | Pipeline |
 |-------|------|-------|----------|
-| "Add API endpoint" | feature (low) | 2 | workflow-lite-plan → workflow-test-fix |
-| "Fix login timeout" | bugfix | 2 | workflow-lite-plan → workflow-test-fix |
-| "Use issue workflow" | issue-transition | 2.5 | workflow-lite-plan(plan-only) → convert-to-plan → queue → execute |
-| "协作分析: 认证架构" | analyze-file | 3 | analyze-with-file → workflow-lite-plan |
+| "Add API endpoint" | feature (low) | 2 | workflow-lite-planex → workflow-test-fix |
+| "Fix login timeout" | bugfix | 2 | workflow-lite-planex → workflow-test-fix |
+| "Use issue workflow" | issue-transition | 2.5 | workflow-lite-planex(plan-only) → convert-to-plan → queue → execute |
+| "协作分析: 认证架构" | analyze-file | 3 | analyze-with-file → workflow-lite-planex |
 | "深度调试 WebSocket" | debug-file | 3 | workflow:debug-with-file |
 | "从零开始: 用户系统" | greenfield (medium) | 3 | brainstorm-with-file → workflow-plan → workflow-execute → workflow-test-fix |
 | "greenfield: 大型平台" | greenfield (high) | 4 | brainstorm-with-file → workflow-plan → workflow-execute → review-cycle → workflow-test-fix |
@@ -673,13 +673,13 @@ Phase 5: Execute Command Chain
 ```javascript
 // Initial state (rapid workflow: 2 steps)
 todos = [
-  { content: "CCW:rapid: [1/2] workflow-lite-plan", status: "in_progress" },
+  { content: "CCW:rapid: [1/2] workflow-lite-planex", status: "in_progress" },
   { content: "CCW:rapid: [2/2] workflow-test-fix", status: "pending" }
 ];
 
 // After step 1 completes
 todos = [
-  { content: "CCW:rapid: [1/2] workflow-lite-plan", status: "completed" },
+  { content: "CCW:rapid: [1/2] workflow-lite-planex", status: "completed" },
   { content: "CCW:rapid: [2/2] workflow-test-fix", status: "in_progress" }
 ];
 ```
@@ -704,7 +704,7 @@ todos = [
     "complexity": "medium"
   },
   "command_chain": [
-    { "index": 0, "command": "workflow-lite-plan", "status": "completed" },
+    { "index": 0, "command": "workflow-lite-planex", "status": "completed" },
     { "index": 1, "command": "workflow-test-fix", "status": "running" }
   ],
   "current_index": 1
@@ -724,11 +724,11 @@ todos = [
 |----------|---------|------------|---------------|
 | **brainstorm-with-file** | Multi-perspective ideation | → workflow-plan → workflow-execute (auto) | `.workflow/.brainstorm/` |
 | **debug-with-file** | Hypothesis-driven debugging | Standalone (self-contained) | `.workflow/.debug/` |
-| **analyze-with-file** | Collaborative analysis | → workflow-lite-plan (auto) | `.workflow/.analysis/` |
+| **analyze-with-file** | Collaborative analysis | → workflow-lite-planex (auto) | `.workflow/.analysis/` |
 | **collaborative-plan-with-file** | Multi-agent collaborative planning | → unified-execute-with-file | `.workflow/.planning/` |
 | **roadmap-with-file** | Strategic requirement roadmap | → team-planex | `.workflow/.planning/` |
 
-**Auto Chain Mechanism**: When `analyze-with-file` completes, its artifacts (discussion.md) are automatically passed to `workflow-lite-plan`. When `brainstorm-with-file` completes, its artifacts (brainstorm.md) are passed to `workflow-plan` for formal planning. No user intervention needed.
+**Auto Chain Mechanism**: When `analyze-with-file` completes, its artifacts (discussion.md) are automatically passed to `workflow-lite-planex`. When `brainstorm-with-file` completes, its artifacts (brainstorm.md) are passed to `workflow-plan` for formal planning. No user intervention needed.
 
 **Detection Keywords**:
 - **brainstorm**: 头脑风暴, 创意, 发散思维, multi-perspective, compare perspectives
@@ -793,7 +793,7 @@ todos = [
 /ccw "全新开发: 实时通知系统"                   # → brainstorm-with-file → workflow-plan → workflow-execute → review-cycle → workflow-test-fix
 
 # With-File workflows → auto chain
-/ccw "协作分析: 理解现有认证架构的设计决策"     # → analyze-with-file → workflow-lite-plan
+/ccw "协作分析: 理解现有认证架构的设计决策"     # → analyze-with-file → workflow-lite-planex
 /ccw "头脑风暴: 用户通知系统重新设计"           # → brainstorm-with-file → workflow-plan → workflow-execute → workflow-test-fix
 /ccw "深度调试: 系统随机崩溃问题"              # → debug-with-file (standalone)
 /ccw "从头脑风暴 BS-通知系统-2025-01-28 创建 issue"  # → brainstorm-to-issue (bridge)

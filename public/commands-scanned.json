@@ -1,13 +1,13 @@
 {
   "_metadata": {
     "version": "4.0.0",
-    "generated": "2026-03-03T10:25:35.889Z",
-    "total_commands": 105,
+    "generated": "2026-03-03T11:05:46.441Z",
+    "total_commands": 106,
     "sources": {
       "claude_commands": 47,
-      "claude_skills": 39,
+      "claude_skills": 37,
       "codex_prompts": 2,
-      "codex_skills": 17
+      "codex_skills": 20
     }
   },
   "commands": [
@@ -82,6 +82,20 @@
       "allowed_tools": "Skill(*), Task(conceptual-planning-agent, context-search-agent), AskUserQuestion(*), TodoWrite(*), Read(*), Write(*), Edit(*), Glob(*), Bash(*)"
     },
     {
+      "name": "brainstorm",
+      "command": "/brainstorm",
+      "description": "|",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [--count N] [--session ID] [--skip-questions] [--style-skill PKG] \\\"topic\\\" | <role-name> [--session ID]",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/brainstorm/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep"
+    },
+    {
       "name": "brainstorm-with-file",
       "command": "/workflow:brainstorm-with-file",
       "description": "Interactive brainstorming with multi-CLI collaboration, idea expansion, and documented thought evolution",
@@ -154,8 +168,8 @@
     {
       "name": "ccw-help",
       "command": "/ccw-help",
-      "description": "CCW command help system. Search, browse, recommend commands. Triggers \"ccw-help\", \"ccw-issue\".",
-      "h1_description": "CCW 命令帮助系统，提供命令搜索、推荐、文档查看功能。",
+      "description": "CCW command help system. Search, browse, recommend commands, skills, teams. Triggers \"ccw-help\", \"ccw-issue\".",
+      "h1_description": "CCW 命令帮助系统，提供命令搜索、推荐、文档查看、Skill/Team 浏览功能。",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
@@ -950,6 +964,20 @@
       "allowed_tools": "Bash(*), Read(*), Write(*), Edit(*)"
     },
     {
+      "name": "team-arch-opt",
+      "command": "/team-arch-opt",
+      "description": "Unified team skill for architecture optimization. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team arch-opt\".",
+      "h1_description": "Unified team skill: Analyze codebase architecture, identify structural issues (dependency cycles, coupling/cohesion, layering violations, God Classes, dead code), design refactoring strategies, implement changes, validate improvements, and review code quality. Built on **team-worker agent architecture** -- all worker roles share a single agent definition with role-specific Phase 2-4 loaded from markdown specs.",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": null,
+      "usage_scenario": "general",
+      "difficulty": "Advanced",
+      "cli": "claude",
+      "source": ".claude/skills/team-arch-opt/SKILL.md",
+      "allowed_tools": "Task, TaskCreate, TaskList, TaskGet, TaskUpdate, TeamCreate, TeamDelete, SendMessage, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context"
+    },
+    {
       "name": "team-brainstorm",
       "command": "/team-brainstorm",
       "description": "Unified team skill for brainstorming team. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team brainstorm\".",
@@ -964,20 +992,6 @@
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
-      "name": "team-coordinate",
-      "command": "/team-coordinate",
-      "description": "Universal team coordination skill with dynamic role generation. Only coordinator is built-in -- all worker roles are generated at runtime based on task analysis. Beat/cadence model for orchestration. Triggers on \"team coordinate\".",
-      "h1_description": "Universal team coordination skill: analyze task -> generate roles -> dispatch -> execute -> deliver. Only the **coordinator** is built-in. All worker roles are **dynamically generated** based on task analysis.",
-      "arguments": "",
-      "category": "skill",
-      "subcategory": null,
-      "usage_scenario": "implementation",
-      "difficulty": "Intermediate",
-      "cli": "claude",
-      "source": ".claude/skills/team-coordinate/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
-    },
-    {
       "name": "team-coordinate-v2",
       "command": "/team-coordinate-v2",
       "description": "Universal team coordination skill with dynamic role generation. Uses team-worker agent architecture with role-spec files. Only coordinator is built-in -- all worker roles are generated at runtime as role-specs and spawned via team-worker agent. Beat/cadence model for orchestration. Triggers on \"team coordinate v2\".",
@@ -989,20 +1003,6 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/team-coordinate-v2/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
-    },
-    {
-      "name": "team-executor",
-      "command": "/team-executor",
-      "description": "Lightweight session execution skill. Resumes existing team-coordinate sessions for pure execution. No analysis, no role generation -- only loads and executes. Session path required. Triggers on \"team executor\".",
-      "h1_description": "Lightweight session execution skill: load session -> reconcile state -> spawn workers -> execute -> deliver. **No analysis, no role generation** -- only executes existing team-coordinate sessions.",
-      "arguments": "",
-      "category": "skill",
-      "subcategory": null,
-      "usage_scenario": "implementation",
-      "difficulty": "Intermediate",
-      "cli": "claude",
-      "source": ".claude/skills/team-executor/SKILL.md",
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
@@ -1076,34 +1076,6 @@
       "allowed_tools": ""
     },
     {
-      "name": "team-lifecycle-v3",
-      "command": "/team-lifecycle-v3",
-      "description": "Unified team skill for full lifecycle - spec/impl/test. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team lifecycle\".",
-      "h1_description": "Unified team skill: specification → implementation → testing → review. All team members invoke with `--role=xxx` to route to role-specific execution.",
-      "arguments": "",
-      "category": "skill",
-      "subcategory": null,
-      "usage_scenario": "testing",
-      "difficulty": "Intermediate",
-      "cli": "claude",
-      "source": ".claude/skills/team-lifecycle-v3/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), TodoWrite(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
-    },
-    {
-      "name": "team-lifecycle-v4",
-      "command": "/team-lifecycle-v4",
-      "description": "Unified team skill for full lifecycle - spec/impl/test. Optimized cadence with inline discuss subagent and shared explore. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team lifecycle\".",
-      "h1_description": "Unified team skill: specification -> implementation -> testing -> review. Optimized from v3 with **inline discuss subagent** and **shared explore utility**, halving spec pipeline beats from 12 to 6.",
-      "arguments": "",
-      "category": "skill",
-      "subcategory": null,
-      "usage_scenario": "testing",
-      "difficulty": "Advanced",
-      "cli": "claude",
-      "source": ".claude/skills/team-lifecycle-v4/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), TodoWrite(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
-    },
-    {
       "name": "team-lifecycle-v5",
       "command": "/team-lifecycle-v5",
       "description": "Unified team skill for full lifecycle - spec/impl/test. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents loaded with role-specific Phase 2-4 specs. Triggers on \"team lifecycle\".",
@@ -1116,6 +1088,20 @@
       "cli": "claude",
       "source": ".claude/skills/team-lifecycle-v5/SKILL.md",
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), TodoWrite(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "team-perf-opt",
+      "command": "/team-perf-opt",
+      "description": "Unified team skill for performance optimization. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team perf-opt\".",
+      "h1_description": "Unified team skill: Profile application performance, identify bottlenecks, design optimization strategies, implement changes, benchmark improvements, and review code quality. Built on **team-worker agent architecture** -- all worker roles share a single agent definition with role-specific Phase 2-4 loaded from markdown specs.",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": null,
+      "usage_scenario": "general",
+      "difficulty": "Advanced",
+      "cli": "claude",
+      "source": ".claude/skills/team-perf-opt/SKILL.md",
+      "allowed_tools": "Task, TaskCreate, TaskList, TaskGet, TaskUpdate, TeamCreate, TeamDelete, SendMessage, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context"
     },
     {
       "name": "team-planex",
@@ -1272,20 +1258,6 @@
       "allowed_tools": ""
     },
     {
-      "name": "wave-plan-pipeline",
-      "command": "/wave-plan-pipeline",
-      "description": "Explore-first wave pipeline. Decomposes requirement into exploration angles, runs wave exploration via spawn_agents_on_csv, synthesizes findings into execution tasks with cross-phase context linking (E*→T*), then wave-executes via spawn_agents_on_csv.",
-      "h1_description": "",
-      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"requirement description\\\"",
-      "category": "skill",
-      "subcategory": "codex",
-      "usage_scenario": "planning",
-      "difficulty": "Advanced",
-      "cli": "codex",
-      "source": ".codex/skills/wave-plan-pipeline/SKILL.md",
-      "allowed_tools": "spawn_agents_on_csv, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
-    },
-    {
       "name": "workflow-execute",
       "command": "/workflow-execute",
       "description": "Coordinate agent execution for workflow tasks with automatic session discovery, parallel task processing, and status tracking. Triggers on \"workflow-execute\".",
@@ -1300,24 +1272,52 @@
       "allowed_tools": "Skill, Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
-      "name": "workflow-lite-plan",
-      "command": "/workflow-lite-plan",
-      "description": "Lightweight planning and execution skill - route to lite-plan or lite-execute with prompt enhancement. Triggers on \"workflow-lite-plan\", \"workflow:lite-execute\".",
-      "h1_description": "Unified lightweight planning and execution skill. Routes to lite-plan (planning pipeline) or lite-execute (execution engine) based on trigger, with prompt enhancement for both modes.",
+      "name": "workflow-execute",
+      "command": "/workflow-execute",
+      "description": "|",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--resume-session=ID] [--with-commit]",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "implementation",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/workflow-execute/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep"
+    },
+    {
+      "name": "workflow-lite-planex",
+      "command": "/workflow-lite-planex",
+      "description": "Lightweight planning and execution skill (Phase 1: plan, Phase 2: execute). Triggers on \"workflow-lite-planex\".",
+      "h1_description": "Unified lightweight planning and execution skill (planex = plan + execute). Phase 1 handles planning pipeline, Phase 2 handles execution.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
       "usage_scenario": "planning",
       "difficulty": "Intermediate",
       "cli": "claude",
-      "source": ".claude/skills/workflow-lite-plan/SKILL.md",
+      "source": ".claude/skills/workflow-lite-planex/SKILL.md",
       "allowed_tools": "Skill, Task, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep"
+    },
+    {
+      "name": "workflow-lite-planex",
+      "command": "/workflow-lite-planex",
+      "description": "Explore-first wave pipeline. Decomposes requirement into exploration angles, runs wave exploration via spawn_agents_on_csv, synthesizes findings into execution tasks with cross-phase context linking (E*→T*), then wave-executes via spawn_agents_on_csv.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"requirement description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Advanced",
+      "cli": "codex",
+      "source": ".codex/skills/workflow-lite-planex/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
     },
     {
       "name": "workflow-multi-cli-plan",
       "command": "/workflow-multi-cli-plan",
-      "description": "Multi-CLI collaborative planning and execution skill - route to multi-cli-plan or lite-execute with prompt enhancement. Triggers on \"workflow-multi-cli-plan\", \"workflow:lite-execute\".",
-      "h1_description": "Unified multi-CLI collaborative planning and execution skill. Routes to multi-cli-plan (ACE context + multi-CLI discussion + plan generation) or lite-execute (execution engine) based on trigger, with prompt enhancement for both modes.",
+      "description": "Multi-CLI collaborative planning and execution skill with integrated execution phase. Triggers on \"workflow-multi-cli-plan\".",
+      "h1_description": "Unified multi-CLI collaborative planning and execution skill. Routes to multi-cli-plan (ACE context + multi-CLI discussion + plan generation) which then hands off to lite-execute (Phase 2) internally for execution.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
@@ -1340,6 +1340,20 @@
       "cli": "claude",
       "source": ".claude/skills/workflow-plan/SKILL.md",
       "allowed_tools": "Skill, Task, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep"
+    },
+    {
+      "name": "workflow-plan",
+      "command": "/workflow-plan",
+      "description": "|",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [--session ID] \\\"task description\\\" | verify [--session ID] | replan [--session ID] [IMPL-N] \\\"changes\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/workflow-plan/SKILL.md",
+      "allowed_tools": "spawn_agent, wait, send_input, close_agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-skill-designer",

@@ -26,16 +26,16 @@ Coordinator variant of `/idaw:run`: external CLI execution with background tasks
 
 ```javascript
 const SKILL_CHAIN_MAP = {
-  'bugfix':          ['workflow-lite-plan', 'workflow-test-fix'],
-  'bugfix-hotfix':   ['workflow-lite-plan'],
-  'feature':         ['workflow-lite-plan', 'workflow-test-fix'],
+  'bugfix':          ['workflow-lite-planex', 'workflow-test-fix'],
+  'bugfix-hotfix':   ['workflow-lite-planex'],
+  'feature':         ['workflow-lite-planex', 'workflow-test-fix'],
   'feature-complex': ['workflow-plan', 'workflow-execute', 'workflow-test-fix'],
   'refactor':        ['workflow:refactor-cycle'],
   'tdd':             ['workflow-tdd-plan', 'workflow-execute'],
   'test':            ['workflow-test-fix'],
   'test-fix':        ['workflow-test-fix'],
   'review':          ['review-cycle'],
-  'docs':            ['workflow-lite-plan']
+  'docs':            ['workflow-lite-planex']
 };
 ```
 
@@ -472,11 +472,11 @@ function assembleCliPrompt(skillName, task, previousResult, autoYes) {
   const yFlag = autoYes ? ' -y' : '';
 
   // Map skill to command invocation
-  if (skillName === 'workflow-lite-plan') {
+  if (skillName === 'workflow-lite-planex') {
     const goal = sanitize(`${task.title}\n${task.description}`);
-    prompt = `/workflow-lite-plan${yFlag} "${goal}"`;
-    if (task.task_type === 'bugfix') prompt = `/workflow-lite-plan${yFlag} --bugfix "${goal}"`;
-    if (task.task_type === 'bugfix-hotfix') prompt = `/workflow-lite-plan${yFlag} --hotfix "${goal}"`;
+    prompt = `/workflow-lite-planex${yFlag} "${goal}"`;
+    if (task.task_type === 'bugfix') prompt = `/workflow-lite-planex${yFlag} --bugfix "${goal}"`;
+    if (task.task_type === 'bugfix-hotfix') prompt = `/workflow-lite-planex${yFlag} --hotfix "${goal}"`;
 
   } else if (skillName === 'workflow-plan') {
     prompt = `/workflow-plan${yFlag} "${sanitize(task.title)}"`;
@@ -608,8 +608,8 @@ Phase 5: handleStepCompletion()
     {
       "task_id": "IDAW-001",
       "skill_index": 0,
-      "skill": "workflow-lite-plan",
-      "prompt": "/workflow-lite-plan -y \"Fix login timeout\"",
+      "skill": "workflow-lite-planex",
+      "prompt": "/workflow-lite-planex -y \"Fix login timeout\"",
       "timestamp": "ISO"
     }
   ]

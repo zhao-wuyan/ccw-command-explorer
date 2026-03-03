@@ -26,22 +26,13 @@ Flexible task execution command supporting three input modes: in-memory plan (fr
 
 ## Usage
 
-### Command Syntax
-```bash
-/workflow:lite-execute [FLAGS] <INPUT>
-
-# Flags
---in-memory                Use plan from memory (called by lite-plan)
-
-# Arguments
-<input>                    Task description string, or path to file (required)
-```
+> **Note**: This is an internal phase, not a standalone command. It is called by Phase 1 (multi-cli-plan) after plan approval, or by lite-plan after Phase 4 approval.
 
 ## Input Modes
 
 ### Mode 1: In-Memory Plan
 
-**Trigger**: Called by lite-plan after Phase 4 approval with `--in-memory` flag
+**Trigger**: Called by multi-cli-plan Phase 5 after plan approval, or by lite-plan after Phase 4 approval
 
 **Input Source**: `executionContext` global variable set by lite-plan
 

@@ -86,7 +86,7 @@ async function selectCommandCategory() {
       header: "Category",
       options: [
         { label: "Planning", description: "lite-plan, plan, multi-cli-plan, tdd-plan, quick-plan-with-file" },
-        { label: "Execution", description: "lite-execute, execute, unified-execute-with-file" },
+        { label: "Execution", description: "execute, unified-execute-with-file" },
         { label: "Testing", description: "test-fix-gen, test-cycle-execute, test-gen, tdd-verify" },
         { label: "Review", description: "review-session-cycle, review-module-cycle, review-cycle-fix" },
         { label: "Bug Fix", description: "lite-plan --bugfix, debug-with-file" },
@@ -107,7 +107,7 @@ async function selectCommandCategory() {
 async function selectCommand(category) {
   const commandOptions = {
     'Planning': [
-      { label: "/workflow-lite-plan", description: "Lightweight merged-mode planning" },
+      { label: "/workflow-lite-planex", description: "Lightweight merged-mode planning" },
       { label: "/workflow-plan", description: "Full planning with architecture design" },
       { label: "/workflow-multi-cli-plan", description: "Multi-CLI collaborative planning (Gemini+Codex+Claude)" },
       { label: "/workflow-tdd-plan", description: "TDD workflow planning with Red-Green-Refactor" },
@@ -116,7 +116,6 @@ async function selectCommand(category) {
       { label: "/workflow:replan", description: "Update plan and execute changes" }
     ],
     'Execution': [
-      { label: "/workflow:lite-execute", description: "Execute from in-memory plan" },
       { label: "/workflow-execute", description: "Execute from planning session" },
       { label: "/workflow:unified-execute-with-file", description: "Universal execution engine" }
     ],
@@ -133,7 +132,7 @@ async function selectCommand(category) {
       { label: "/workflow:review", description: "Post-implementation review" }
     ],
     'Bug Fix': [
-      { label: "/workflow-lite-plan", description: "Lightweight bug diagnosis and fix (with --bugfix flag)" },
+      { label: "/workflow-lite-planex", description: "Lightweight bug diagnosis and fix (with --bugfix flag)" },
       { label: "/workflow:debug-with-file", description: "Hypothesis-driven debugging with documentation" }
     ],
     'Brainstorm': [
@@ -181,8 +180,8 @@ async function selectExecutionUnit() {
       header: "Unit",
       options: [
         // Planning + Execution Units
-        { label: "quick-implementation", description: "【lite-plan → lite-execute】" },
-        { label: "multi-cli-planning", description: "【multi-cli-plan → lite-execute】" },
+        { label: "quick-implementation", description: "【lite-plan】" },
+        { label: "multi-cli-planning", description: "【multi-cli-plan】" },
         { label: "full-planning-execution", description: "【plan → execute】" },
         { label: "verified-planning-execution", description: "【plan → plan-verify → execute】" },
         { label: "replanning-execution", description: "【replan → execute】" },
@@ -193,7 +192,7 @@ async function selectExecutionUnit() {
         // Review Units
         { label: "code-review", description: "【review-*-cycle → review-cycle-fix】" },
         // Bug Fix Units
-        { label: "bug-fix", description: "【lite-plan --bugfix → lite-execute】" },
+        { label: "bug-fix", description: "【lite-plan --bugfix】" },
         // Issue Units
         { label: "issue-workflow", description: "【discover → plan → queue → execute】" },
         { label: "rapid-to-issue", description: "【lite-plan → convert-to-plan → queue → execute】" },
@@ -303,8 +302,7 @@ async function defineSteps(templateDesign) {
   "description": "Quick implementation with testing",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow-lite-plan", "args": "\"{{goal}}\"", "unit": "quick-implementation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create lightweight implementation plan" },
-    { "cmd": "/workflow:lite-execute", "args": "--in-memory", "unit": "quick-implementation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Execute implementation based on plan" },
+    { "cmd": "/workflow-lite-planex", "args": "\"{{goal}}\"", "unit": "quick-implementation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create lightweight implementation plan (includes execution)" },
     { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate test tasks" },
     { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test-fix cycle until pass rate >= 95%" }
   ]
@@ -336,8 +334,7 @@ async function defineSteps(templateDesign) {
   "description": "Bug diagnosis and fix with testing",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow-lite-plan", "args": "--bugfix \"{{goal}}\"", "unit": "bug-fix", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Diagnose and plan bug fix" },
-    { "cmd": "/workflow:lite-execute", "args": "--in-memory", "unit": "bug-fix", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Execute bug fix" },
+    { "cmd": "/workflow-lite-planex", "args": "--bugfix \"{{goal}}\"", "unit": "bug-fix", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Diagnose, plan, and execute bug fix" },
     { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate regression tests" },
     { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Verify fix with tests" }
   ]
@@ -351,7 +348,7 @@ async function defineSteps(templateDesign) {
   "description": "Urgent production bug fix (no tests)",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow-lite-plan", "args": "--hotfix \"{{goal}}\"", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Emergency hotfix mode" }
+    { "cmd": "/workflow-lite-planex", "args": "--hotfix \"{{goal}}\"", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Emergency hotfix mode" }
   ]
 }
 ```
@@ -420,7 +417,7 @@ async function defineSteps(templateDesign) {
   "description": "Bridge lightweight planning to issue workflow",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow-lite-plan", "args": "\"{{goal}}\"", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create lightweight plan" },
+    { "cmd": "/workflow-lite-planex", "args": "\"{{goal}}\"", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create lightweight plan" },
     { "cmd": "/issue:convert-to-plan", "args": "--latest-lite-plan -y", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Convert to issue plan" },
     { "cmd": "/issue:queue", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Form execution queue" },
     { "cmd": "/issue:execute", "args": "--queue auto", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute issue queue" }
@@ -503,7 +500,7 @@ async function defineSteps(templateDesign) {
   "level": 3,
   "steps": [
     { "cmd": "/workflow-multi-cli-plan", "args": "\"{{goal}}\"", "unit": "multi-cli-planning", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Gemini+Codex+Claude collaborative planning" },
-    { "cmd": "/workflow:lite-execute", "args": "--in-memory", "unit": "multi-cli-planning", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Execute converged plan" },
+    // lite-execute is now an internal phase of multi-cli-plan (not invoked separately)
     { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate tests" },
     { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test cycle" }
   ]
@@ -530,7 +527,7 @@ Each command has input/output ports for pipeline composition:
 | tdd-plan | requirement | tdd-tasks | tdd-planning-execution |
 | replan | session, feedback | replan | replanning-execution |
 | **Execution** |
-| lite-execute | plan, multi-cli-plan | code | (multiple) |
+| ~~lite-execute~~ | _(internal phase of lite-plan/multi-cli-plan, not standalone)_ | code | — |
 | execute | detailed-plan, verified-plan, replan, tdd-tasks | code | (multiple) |
 | **Testing** |
 | test-fix-gen | failing-tests, session | test-tasks | test-validation |
@@ -563,9 +560,9 @@ Each command has input/output ports for pipeline composition:
 
 | Unit Name | Commands | Purpose |
 |-----------|----------|---------|
-| **quick-implementation** | lite-plan → lite-execute | Lightweight plan and execution |
-| **multi-cli-planning** | multi-cli-plan → lite-execute | Multi-perspective planning and execution |
-| **bug-fix** | lite-plan --bugfix → lite-execute | Bug diagnosis and fix |
+| **quick-implementation** | lite-plan (Phase 1: plan → Phase 2: execute) | Lightweight plan and execution |
+| **multi-cli-planning** | multi-cli-plan (Phase 1: plan → Phase 2: execute) | Multi-perspective planning and execution |
+| **bug-fix** | lite-plan --bugfix (Phase 1: plan → Phase 2: execute) | Bug diagnosis and fix |
 | **full-planning-execution** | plan → execute | Detailed planning and execution |
 | **verified-planning-execution** | plan → plan-verify → execute | Planning with verification |
 | **replanning-execution** | replan → execute | Update plan and execute |

@@ -15,16 +15,16 @@ When `--yes` or `-y`: Skip all confirmations, auto-skip on failure, proceed with
 
 ```javascript
 const SKILL_CHAIN_MAP = {
-  'bugfix':          ['workflow-lite-plan', 'workflow-test-fix'],
-  'bugfix-hotfix':   ['workflow-lite-plan'],
-  'feature':         ['workflow-lite-plan', 'workflow-test-fix'],
+  'bugfix':          ['workflow-lite-planex', 'workflow-test-fix'],
+  'bugfix-hotfix':   ['workflow-lite-planex'],
+  'feature':         ['workflow-lite-planex', 'workflow-test-fix'],
   'feature-complex': ['workflow-plan', 'workflow-execute', 'workflow-test-fix'],
   'refactor':        ['workflow:refactor-cycle'],
   'tdd':             ['workflow-tdd-plan', 'workflow-execute'],
   'test':            ['workflow-test-fix'],
   'test-fix':        ['workflow-test-fix'],
   'review':          ['review-cycle'],
-  'docs':            ['workflow-lite-plan']
+  'docs':            ['workflow-lite-planex']
 };
 ```
 

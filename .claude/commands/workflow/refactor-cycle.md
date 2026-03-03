@@ -827,7 +827,7 @@ AskUserQuestion({
 - Need regression-safe iterative refactoring with rollback
 - Want documented reasoning for each refactoring decision
 
-**Use `workflow-lite-plan` skill when:**
+**Use `workflow-lite-planex` skill when:**
 - Single specific bug or issue to fix
 - No systematic debt analysis needed
 

@@ -1,15 +1,146 @@
 {
+  "workflow-plan": {
+    "calls_internally": [
+      "workflow:session:start",
+      "workflow:tools:context-gather",
+      "workflow:tools:conflict-resolution",
+      "workflow:tools:task-generate-agent"
+    ],
+    "next_steps": [
+      "workflow-plan-verify",
+      "workflow:status",
+      "workflow-execute"
+    ],
+    "alternatives": [
+      "workflow-tdd-plan"
+    ],
+    "prerequisites": []
+  },
+  "workflow-tdd-plan": {
+    "calls_internally": [
+      "workflow:session:start",
+      "workflow:tools:context-gather",
+      "workflow:tools:task-generate-tdd"
+    ],
+    "next_steps": [
+      "workflow-tdd-verify",
+      "workflow:status",
+      "workflow-execute"
+    ],
+    "alternatives": [
+      "workflow-plan"
+    ],
+    "prerequisites": []
+  },
+  "workflow-execute": {
+    "prerequisites": [
+      "workflow-plan",
+      "workflow-tdd-plan"
+    ],
+    "related": [
+      "workflow:status",
+      "workflow:resume"
+    ],
+    "next_steps": [
+      "workflow:review",
+      "workflow-tdd-verify"
+    ]
+  },
+  "workflow-plan-verify": {
+    "prerequisites": [
+      "workflow-plan"
+    ],
+    "next_steps": [
+      "workflow-execute"
+    ],
+    "related": [
+      "workflow:status"
+    ]
+  },
+  "workflow-tdd-verify": {
+    "prerequisites": [
+      "workflow-execute"
+    ],
+    "related": [
+      "workflow:tools:tdd-coverage-analysis"
+    ]
+  },
   "workflow:session:start": {
-    "next_steps": [],
+    "next_steps": [
+      "workflow-plan",
+      "workflow-execute"
+    ],
     "related": [
       "workflow:session:list",
       "workflow:session:resume"
     ]
   },
   "workflow:session:resume": {
-    "alternatives": [],
+    "alternatives": [
+      "workflow:resume"
+    ],
     "related": [
-      "workflow:session:list"
+      "workflow:session:list",
+      "workflow:status"
+    ]
+  },
+  "workflow-lite-planex": {
+    "calls_internally": [],
+    "next_steps": [
+      "workflow:status"
+    ],
+    "alternatives": [
+      "workflow-plan"
+    ],
+    "prerequisites": []
+  },
+  "workflow:lite-fix": {
+    "next_steps": [
+      "workflow:status"
+    ],
+    "alternatives": [
+      "workflow-lite-planex"
+    ],
+    "related": [
+      "workflow-test-fix"
+    ]
+  },
+  "workflow:review-session-cycle": {
+    "prerequisites": [
+      "workflow-execute"
+    ],
+    "next_steps": [
+      "workflow:review-fix"
+    ],
+    "related": [
+      "workflow:review-module-cycle"
+    ]
+  },
+  "workflow:review-fix": {
+    "prerequisites": [
+      "workflow:review-module-cycle",
+      "workflow:review-session-cycle"
+    ],
+    "related": [
+      "workflow-test-fix"
+    ]
+  },
+  "memory:docs": {
+    "calls_internally": [
+      "workflow:session:start",
+      "workflow:tools:context-gather"
+    ],
+    "next_steps": [
+      "workflow-execute"
+    ]
+  },
+  "memory:skill-memory": {
+    "next_steps": [
+      "workflow-plan",
+      "cli:analyze"
+    ],
+    "related": [
+      "memory:load-skill-memory"
     ]
   }
 }

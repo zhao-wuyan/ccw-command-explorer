@@ -24,7 +24,7 @@ When `workflowPreferences.autoYes` is true: Auto-approve plan, use recommended s
 **Output Directory**: `.workflow/.multi-cli-plan/{session-id}/`
 **Default Max Rounds**: 3 (convergence may complete earlier)
 **CLI Tools**: @cli-discuss-agent (analysis), @cli-lite-planning-agent (plan generation)
-**Execution**: Auto-hands off to `/workflow:lite-execute --in-memory` after plan approval
+**Execution**: Auto-hands off to Phase 2 (lite-execute) after plan approval
 
 ## What & Why
 
@@ -81,7 +81,7 @@ Phase 4: User Decision
 Phase 5: Plan Generation & Execution Handoff
    ├─ Generate plan.json + .task/*.json (via @cli-lite-planning-agent, two-layer output)
    ├─ Build executionContext with user selections and taskFiles
-   └─ Execute to /workflow:lite-execute --in-memory
+   └─ Execute via Phase 2 (lite-execute)
 ```
 
 ### Agent Roles
@@ -598,7 +598,7 @@ TodoWrite({ todos: [
 
 ```bash
 # Simpler single-round planning
-/workflow-lite-plan "task description"
+/workflow-lite-planex "task description"
 
 # Issue-driven discovery
 /issue:discover-by-prompt "find issues"
@@ -609,7 +609,7 @@ cat .workflow/.multi-cli-plan/{session-id}/rounds/1/synthesis.json
 cat .workflow/.multi-cli-plan/{session-id}/context-package.json
 
 # Direct execution (if you have plan.json)
-/workflow:lite-execute plan.json
+# Use workflow-lite-planex or workflow-multi-cli-plan (execution is integrated)
 ```
 
 ## Next Phase

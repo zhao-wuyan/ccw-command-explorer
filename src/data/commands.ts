@@ -573,11 +573,6 @@ export const COMMANDS: Command[] = [
     usage: '重要决策需要多人、多角度碰撞想法时'
   },
 
-  // 帮助系统
-  { cmd: '/ccw-help', desc: 'CCW 命令帮助系统 - 搜索、浏览、推荐', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
-    detail: '交互式命令浏览器：按分类浏览、搜索命令名、查看使用场景，还会根据你的需求智能推荐命令',
-    usage: '不知道有什么命令、忘了命令名字、想找适合当前任务的命令'
-  },
 
   // Issue 管理
   { cmd: '/issue-manage', desc: '交互式 Issue 管理 - CRUD 操作', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
@@ -747,10 +742,6 @@ export const COMMANDS: Command[] = [
   { cmd: '/workflow-wave-plan', desc: 'CSV Wave 规划执行 - 分批探索和执行', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
     detail: 'CSV Wave流程：①分解需求生成 explore.csv；②波浪式探索代码；③综合发现生成 tasks.csv；④波浪式执行任务。支持上下文传播',
     usage: '需要批量探索和执行任务，保持上下文连贯'
-  },
-  { cmd: '/workflow-lite-planex', desc: '轻量规划执行 - 规划+执行一体化', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.0',
-    detail: '2阶段快速流程：Phase 1 轻量规划生成 IMPL_PLAN.md；Phase 2 使用 Task tool 执行任务。自动确认完成',
-    usage: '中小型功能，想快速规划后立即执行，无需复杂流程'
   },
   { cmd: '/workflow-tdd-plan', desc: 'TDD 规划技能 - 6阶段规划+Red-Green-Refactor任务链', status: 'stable', category: 'tdd', cli: 'claude', addedInVersion: 'v7.0',
     detail: '统一 TDD 工作流：6阶段 TDD 规划 + Red-Green-Refactor 任务链生成 + 4阶段验证。触发词：workflow-tdd-plan、workflow-tdd-verify',

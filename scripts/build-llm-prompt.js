@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.join(__dirname, '..');
 const SCANNED_FILE = path.join(PROJECT_ROOT, 'public', 'commands-scanned.json');
 const CCW_HELP_DIR = path.join(PROJECT_ROOT, '.claude', 'skills', 'ccw-help');
+const CUSTOM_PROMPT_FILE = path.join(PROJECT_ROOT, '.claude', 'prompt-custom.md');
 const OUTPUT_DIR = path.join(PROJECT_ROOT, 'public');
 const OUTPUT_FILE = path.join(OUTPUT_DIR, 'llm-prompt.txt');
 
@@ -74,6 +75,45 @@ function buildPrompt() {
 
   const sections = [];
   let totalTokens = 0;
+
+  // 0. Custom user prompt (highest priority)
+  const customPrompt = readFile(CUSTOM_PROMPT_FILE);
+  if (customPrompt) {
+    // Extract content after "---" and skip the "# 实际提示词内容" line
+    let actualContent = customPrompt;
+
+    // Find the last --- separator (end of template instructions)
+    const lastSeparator = customPrompt.lastIndexOf('---');
+    if (lastSeparator !== -1) {
+      actualContent = customPrompt.slice(lastSeparator + 3);
+    }
+
+    // Skip the "# 实际提示词内容" instruction line if present
+    actualContent = actualContent.trim();
+    if (actualContent.includes('实际提示词内容')) {
+      const lines = actualContent.split('\n');
+      // Find first non-empty, non-instruction line
+      let startIdx = 0;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line && !line.includes('实际提示词') && !line.includes('请编辑下方')) {
+          startIdx = i;
+          break;
+        }
+      }
+      actualContent = lines.slice(startIdx).join('\n').trim();
+    }
+
+    if (actualContent && actualContent.length > 50) {
+      sections.push(`#SYS\n${actualContent}`);
+      totalTokens += actualContent.length / 4;
+      console.log('✓ Custom prompt (highest priority)');
+    } else {
+      console.log('⚠ Custom prompt file too short, using defaults');
+    }
+  } else {
+    console.log('ℹ No custom prompt file found, using defaults');
+  }
 
   // 1. Minimal skill documentation
   const skillMdPath = path.join(CCW_HELP_DIR, 'SKILL.md');

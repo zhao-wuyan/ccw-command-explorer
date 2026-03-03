@@ -2698,8 +2698,30 @@ const RecommenderSection = ({
                 onClick={() => {
                   // 复制命令到剪贴板
                   const ccwCmd = `/ccw "${analysisResult.goal}"`;
-                  navigator.clipboard.writeText(ccwCmd);
-                  alert(`已复制命令: ${ccwCmd}`);
+
+                  // Fallback for non-HTTPS environments
+                  const copyToClipboard = (text: string) => {
+                    if (navigator.clipboard && window.isSecureContext) {
+                      return navigator.clipboard.writeText(text);
+                    } else {
+                      // Fallback using textarea
+                      const textarea = document.createElement('textarea');
+                      textarea.value = text;
+                      textarea.style.position = 'fixed';
+                      textarea.style.left = '-9999px';
+                      document.body.appendChild(textarea);
+                      textarea.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(textarea);
+                      return Promise.resolve();
+                    }
+                  };
+
+                  copyToClipboard(ccwCmd).then(() => {
+                    alert(`已复制命令: ${ccwCmd}`);
+                  }).catch(() => {
+                    alert(`复制失败，请手动复制: ${ccwCmd}`);
+                  });
                 }}
                 style={{
                   flex: 1,

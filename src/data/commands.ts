@@ -746,7 +746,7 @@ export const COMMANDS: Command[] = [
   },
 
   // ==================== Codex 预检清单 (Prompts) ====================
-  { cmd: '/prep-plan', desc: 'workflow:plan 预检清单 - 环境验证、任务质量评估、执行配置', status: 'stable', category: 'prompt', cli: 'codex', addedInVersion: 'v6.2',
+  { cmd: '/prep-plan', desc: 'workflow-plan 预检清单 - 环境验证、任务质量评估、执行配置', status: 'stable', category: 'prompt', cli: 'codex', addedInVersion: 'v6.2',
     detail: '执行前检查5项：①项目环境OK吗；②目标清晰吗；③成功标准明确吗；④范围边界清楚吗；⑤有什么限制。避免执行到一半发现问题',
     usage: '重要任务执行前想确保万无一失'
   },

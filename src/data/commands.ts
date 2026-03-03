@@ -1349,7 +1349,7 @@ export const COMMAND_CHAINS: Record<string, CommandChain> = {
     level: 2,
     pipeline: ['workflow-lite-plan', 'workflow-test-fix'],
     commands: [
-      { cmd: '/workflow-lite-plan --bugfix', desc: 'Bug修复规划' },
+      { cmd: '/workflow-lite-plan', desc: '--bugfix Bug修复规划' },
       { cmd: '/workflow-test-fix', desc: '测试修复' },
     ],
     tips: ['标准bug修复流程', '包含测试验证'],
@@ -1360,7 +1360,7 @@ export const COMMAND_CHAINS: Record<string, CommandChain> = {
     level: 2,
     pipeline: ['workflow-lite-plan'],
     commands: [
-      { cmd: '/workflow-lite-plan --hotfix', desc: '紧急修复' },
+      { cmd: '/workflow-lite-plan', desc: '--hotfix 紧急修复' },
     ],
     tips: ['跳过测试', '快速上线', '仅限紧急情况'],
   },

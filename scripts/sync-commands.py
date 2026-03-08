@@ -53,8 +53,16 @@ def get_claude_commands() -> Set[str]:
 
     return commands
 
+# 排除列表：这些技能是同步工具本身，不应被检测
+EXCLUDED_SKILLS = {
+    'ccw-wiki-sync',  # 百科同步技能，不应出现在百科数据中
+}
+
 def get_claude_skills() -> Set[str]:
-    """扫描 .claude/skills 目录"""
+    """扫描 .claude/skills 目录
+
+    注意：排除 EXCLUDED_SKILLS 中的技能（同步工具自身）
+    """
     skills = set()
     skills_dir = ROOT_DIR / '.claude' / 'skills'
 
@@ -63,7 +71,8 @@ def get_claude_skills() -> Set[str]:
 
     for item in os.listdir(skills_dir):
         item_path = skills_dir / item
-        if item_path.is_dir() and not item.startswith('_'):
+        # 排除 _ 开头的目录和 EXCLUDED_SKILLS 中的技能
+        if item_path.is_dir() and not item.startswith('_') and item not in EXCLUDED_SKILLS:
             skills.add('/' + item)
 
     return skills

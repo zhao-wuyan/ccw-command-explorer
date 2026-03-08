@@ -24,23 +24,23 @@ export const COMMANDS: Command[] = [
   },
 
   // ==================== IDAW 任务管理 ====================
-  { cmd: '/idaw:add', desc: '任务队列入口 - 手动描述或从 issue 批量导入，攒好再统一执行', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+  { cmd: '/idaw:add', desc: '任务队列入口 - 手动描述或从 issue 批量导入，攒好再统一执行', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.1.0',
     detail: 'IDAW（Iterative Development Automated Workflow）的任务入口。支持两种创建方式：① 直接描述需求（手动创建）；② 从 ccw issue 系统导入（--from-issue）。任务类型（bugfix/feature/refactor/tdd 等）可手动指定，也可在执行时自动推断。创建的任务以 IDAW-001.json 格式保存到 .workflow/.idaw/tasks/，等待 /idaw:run 串行执行。',
     usage: '攒好一批待处理任务（bugfix、feature、重构等），先 add 进队列，再统一交给 /idaw:run 批量执行。也适合将 issue 系统里的问题单批量转为可执行任务。'
   },
-  { cmd: '/idaw:run', desc: '批量执行任务队列 - 自动 Skill 链映射 + 失败 CLI 诊断 + 每任务 git 检查点', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+  { cmd: '/idaw:run', desc: '批量执行任务队列 - 自动 Skill 链映射 + 失败 CLI 诊断 + 每任务 git 检查点', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.1.0',
     detail: 'IDAW 的核心执行命令。按优先级串行处理所有 pending 任务，每个任务完整流程：① 根据任务类型自动映射 Skill 链（bugfix → workflow-lite-plan + workflow-test-fix；feature-complex → workflow-plan + workflow-execute + workflow-test-fix 等 10 种类型）；② 对 bugfix/complex 任务先触发 Gemini CLI 预分析获取上下文；③ 串行执行链中每个 Skill；④ Skill 失败时自动触发 CLI 诊断 + 重试一次；⑤ 任务完成后自动 git commit 打检查点。支持 --dry-run 预览执行计划，-y 全自动无人值守模式。',
     usage: '已用 /idaw:add 积累了一批任务，现在要统一执行。特别适合「下班前挂着跑」或「一次性清掉积压任务」的场景——每个任务完成都有 git 检查点，失败了可以用 /idaw:resume 续跑，不怕中途中断。'
   },
-  { cmd: '/idaw:run-coordinate', desc: '后台 CLI 协调执行 - 上下文隔离，hook 驱动，适合长链或大量任务', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+  { cmd: '/idaw:run-coordinate', desc: '后台 CLI 协调执行 - 上下文隔离，hook 驱动，适合长链或大量任务', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.1.0',
     detail: '/idaw:run 的外部 CLI 变体，执行模型改为后台 hook 驱动：通过 ccw cli 在后台启动每个 Skill，等待 hook 回调后再推进下一步，而非在主进程阻塞。核心优势：每个 CLI 调用获得独立的上下文窗口，任务再多也不会膨胀主进程上下文；支持指定 --tool（claude/gemini/qwen）；状态文件额外记录 prompts_used 便于追溯。错误恢复同样支持 CLI 诊断 + 重试，任务完成后 git checkpoint。',
     usage: '任务链较长（如 feature-complex: plan + execute + test-fix）、或同时积压多个上下文重的任务时，用 coordinate 模式避免主进程上下文压力。也适合需要用 Gemini 等特定 CLI 工具执行任务的场景。'
   },
-  { cmd: '/idaw:resume', desc: '续跑中断会话 - 从断点恢复，跳过或重试中断任务，无需重跑已完成部分', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+  { cmd: '/idaw:resume', desc: '续跑中断会话 - 从断点恢复，跳过或重试中断任务，无需重跑已完成部分', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.1.0',
     detail: '恢复 status 为 running 的 IDAW 会话（默认找最近一个，也可指定 session-id）。对中断时处于 in_progress 状态的任务，提供 Retry（重置为 pending 重跑）或 Skip（标记跳过继续）两种处理方式；-y 模式下自动 Skip。找到剩余 pending 任务后，复用 /idaw:run 完整执行逻辑（Skill 链 + CLI 诊断 + git checkpoint）继续推进，会话进度文件中追加 Resumed 标记。',
     usage: 'IDAW 执行中途因网络/系统原因中断、或手动 Ctrl+C 打断后，用此命令从断点继续，无需重跑已完成的任务。'
   },
-  { cmd: '/idaw:status', desc: '查看任务队列和会话执行进度（只读）', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.0',
+  { cmd: '/idaw:status', desc: '查看任务队列和会话执行进度（只读）', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.1.0',
     detail: '只读命令，不触发任何执行。无参数时显示：全部任务的状态表（ID、标题、类型、优先级、状态）+ 最新会话的概要统计。传入 session-id 时显示该会话详情：每个任务的状态、git commit hash、以及 progress.md 的完整执行日志。',
     usage: '/idaw:run 跑完后查看哪些任务成功/失败；或在执行过程中另开终端随时检查进度；也可在用 /idaw:resume 前先确认哪些任务还剩余。'
   },
@@ -383,11 +383,11 @@ export const COMMANDS: Command[] = [
     detail: '6角色闭环：侦察兵扫描问题→策略师定测试方案→生成器写测试→执行器跑测试→分析师出报告。覆盖率不够自动补测试',
     usage: '功能开发完成后，需要全面的质量验证和测试覆盖'
   },
-  { cmd: '/team-arch-opt', desc: '团队架构优化 - 依赖循环、结构分析', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.0',
+  { cmd: '/team-arch-opt', desc: '团队架构优化 - 依赖循环、结构分析', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
     detail: '5角色协作：分析员(架构问题)→设计师(策略)→重构工程师(实施)→验证者(测试)→审查员(报告)。 发现依赖循环、模块违规、死代码',
     usage: '项目架构混乱、依赖循环复杂，模块耦合过紧，需要系统性重构'
   },
-  { cmd: '/team-perf-opt', desc: '团队性能优化 - 分析瓶颈、设计策略', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.0',
+  { cmd: '/team-perf-opt', desc: '团队性能优化 - 分析瓶颈、设计策略', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
     detail: '5角色协作：分析员(性能分析)→策略师(优化策略)→优化工程师(实施)→基准测试员(基准)→验证者(验证)→审查员(报告)。 发现性能瓶颈，设计优化方案，实施改进，验证效果',
     usage: '应用性能下降，响应变慢，需要系统性性能优化'
   },
@@ -395,7 +395,7 @@ export const COMMANDS: Command[] = [
     detail: '6角色治理：扫描器找问题→评估师算成本→规划师排优先级→执行者修代码→验证者测回归。独立工作分支，修完自动创建PR',
     usage: '项目代码质量下降，需要系统性清理技术债务'
   },
-  { cmd: '/workflow-lite-planex', desc: '轻量规划执行 - 规划+执行一体化', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.0',
+  { cmd: '/workflow-lite-planex', desc: '轻量规划执行 - 规划+执行一体化', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.0',
     detail: '2阶段快速流程：Phase 1 轻量规划生成 IMPL_PLAN.md；Phase 2 使用 Task tool执行任务。自动确认完成',
     usage: '中小型功能，想快速规划后立即执行，无需复杂流程'
   },
@@ -465,7 +465,7 @@ export const COMMANDS: Command[] = [
     detail: 'CSV Wave流程：①分解需求生成 explore.csv；②波浪式探索代码；③综合发现生成 tasks.csv；④波浪式执行任务。支持上下文传播',
     usage: '需要批量探索和执行任务，保持上下文连贯'
   },
-  { cmd: '/workflow-tdd-plan', desc: 'TDD 规划技能 - 6阶段规划+Red-Green-Refactor任务链', status: 'stable', category: 'tdd', cli: 'claude', addedInVersion: 'v7.0',
+  { cmd: '/workflow-tdd-plan', desc: 'TDD 规划技能 - 6阶段规划+Red-Green-Refactor任务链', status: 'stable', category: 'tdd', cli: 'claude', addedInVersion: 'v7.0.8',
     detail: '统一 TDD 工作流：6阶段 TDD 规划 + Red-Green-Refactor 任务链生成 + 4阶段验证。触发词：workflow-tdd-plan、workflow-tdd-verify',
     usage: 'TDD 开发前规划测试用例，生成完整的 Red→Green→Refactor 执行任务链'
   },

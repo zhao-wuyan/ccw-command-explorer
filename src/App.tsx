@@ -103,10 +103,20 @@ const VersionBadge = ({ version }: { version: string }) => (
   </span>
 );
 
+// 判断版本号是否 >= v7.0（只显示 v7.0 及以上版本）
+const shouldShowVersion = (version: string | undefined): boolean => {
+  if (!version) return false;
+  const match = version.match(/v(\d+)/);
+  if (!match) return false;
+  const major = parseInt(match[1], 10);
+  return major >= 7;
+};
+
 // 命令卡片组件
 const CommandCard = ({ command, onClick }: { command: Command; onClick: () => void }) => {
   const category = CATEGORIES[command.category];
   const [isHovered, setIsHovered] = useState(false);
+  const showVersion = shouldShowVersion(command.addedInVersion);
 
   return (
     <motion.div
@@ -126,13 +136,13 @@ const CommandCard = ({ command, onClick }: { command: Command; onClick: () => vo
         position: 'relative',
       }}
     >
-      {/* 右上角版本号 */}
-      {command.addedInVersion && (
+      {/* 右上角版本号（仅显示 v7.0+）*/}
+      {showVersion && (
         <div style={{ position: 'absolute', top: 12, right: 12 }}>
-          <VersionBadge version={command.addedInVersion} />
+          <VersionBadge version={command.addedInVersion!} />
         </div>
       )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap', paddingRight: command.addedInVersion ? 55 : 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap', paddingRight: showVersion ? 55 : 0 }}>
         <CLIBadge cli={command.cli} />
         <code
           style={{
@@ -161,7 +171,7 @@ const CommandCard = ({ command, onClick }: { command: Command; onClick: () => vo
           </span>
         )}
       </div>
-      <p style={{ fontSize: 14, color: COLORS.textMuted, margin: 0, paddingRight: command.addedInVersion ? 55 : 0 }}>
+      <p style={{ fontSize: 14, color: COLORS.textMuted, margin: 0, paddingRight: showVersion ? 55 : 0 }}>
         {command.desc}
       </p>
     </motion.div>

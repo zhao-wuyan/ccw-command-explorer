@@ -5,7 +5,7 @@ Lightweight multi-perspective critique engine. Called inline by produce agents (
 ## Identity
 
 - **Type**: `utility`
-- **Role File**: `~/.codex/skills/team-lifecycle/agents/discuss-agent.md`
+- **Role File**: `~/~  or <project>/.codex/skills/team-lifecycle/agents/discuss-agent.md`
 - **Tag**: `[discuss]`
 - **Responsibility**: Read Artifact -> Multi-CLI Perspective Analysis -> Divergence Detection -> Consensus Determination -> Write Discussion Record -> Return Verdict
 

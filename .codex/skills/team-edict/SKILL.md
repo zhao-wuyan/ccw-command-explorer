@@ -217,8 +217,8 @@ Each wave generates a temporary `wave-{N}.csv` with extra `prev_context` column 
 4. Create subdirectories: plan/, review/, artifacts/, interactive/, agents/
 5. Initialize registry.json: { "active": [], "closed": [] }
 6. Initialize discoveries.ndjson (empty file)
-7. Read specs: .codex/skills/team-edict/specs/team-config.json
-8. Read quality gates: .codex/skills/team-edict/specs/quality-gates.md
+7. Read specs: ~  or <project>/.codex/skills/team-edict/specs/team-config.json
+8. Read quality gates: ~  or <project>/.codex/skills/team-edict/specs/quality-gates.md
 9. Log session start to context.md
 ```
 
@@ -236,9 +236,9 @@ const zhongshu = spawn_agent({
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: .codex/skills/team-edict/agents/zhongshu-planner.md (MUST read first)
+1. **Read role definition**: ~  or <project>/.codex/skills/team-edict/agents/zhongshu-planner.md (MUST read first)
 2. Read: ${sessionDir}/discoveries.ndjson (shared discoveries, skip if not exists)
-3. Read: .codex/skills/team-edict/specs/team-config.json (routing rules)
+3. Read: ~  or <project>/.codex/skills/team-edict/specs/team-config.json (routing rules)
 
 ---
 
@@ -285,7 +285,7 @@ while (!approved && reviewRound < 3) {
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: .codex/skills/team-edict/agents/menxia-reviewer.md (MUST read first)
+1. **Read role definition**: ~  or <project>/.codex/skills/team-edict/agents/menxia-reviewer.md (MUST read first)
 2. Read: ${sessionDir}/plan/zhongshu-plan.md (plan to review)
 3. Read: ${sessionDir}/discoveries.ndjson (shared discoveries)
 
@@ -336,10 +336,10 @@ const shangshu = spawn_agent({
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: .codex/skills/team-edict/agents/shangshu-dispatcher.md (MUST read first)
+1. **Read role definition**: ~  or <project>/.codex/skills/team-edict/agents/shangshu-dispatcher.md (MUST read first)
 2. Read: ${sessionDir}/plan/zhongshu-plan.md (approved plan)
 3. Read: ${sessionDir}/review/menxia-review.md (review conditions)
-4. Read: .codex/skills/team-edict/specs/team-config.json (routing rules)
+4. Read: ~  or <project>/.codex/skills/team-edict/specs/team-config.json (routing rules)
 
 ---
 
@@ -416,8 +416,8 @@ For each wave W in 1..max_wave:
   5. EXECUTE csv-wave tasks:
      spawn_agents_on_csv({
        task_csv_path: "${sessionDir}/wave-{W}.csv",
-       instruction_path: ".codex/skills/team-edict/instructions/agent-instruction.md",
-       schema_path: ".codex/skills/team-edict/schemas/tasks-schema.md",
+       instruction_path: "~  or <project>/.codex/skills/team-edict/instructions/agent-instruction.md",
+       schema_path: "~  or <project>/.codex/skills/team-edict/schemas/tasks-schema.md",
        additional_instructions: "Session directory: ${sessionDir}. Department: {department}. Priority: {priority}.",
        concurrency: CONCURRENCY
      })
@@ -457,10 +457,10 @@ const aggregator = spawn_agent({
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: .codex/skills/team-edict/agents/aggregator.md (MUST read first)
+1. **Read role definition**: ~  or <project>/.codex/skills/team-edict/agents/aggregator.md (MUST read first)
 2. Read: ${sessionDir}/tasks.csv (master state)
 3. Read: ${sessionDir}/discoveries.ndjson (all discoveries)
-4. Read: .codex/skills/team-edict/specs/quality-gates.md (quality standards)
+4. Read: ~  or <project>/.codex/skills/team-edict/specs/quality-gates.md (quality standards)
 
 ---
 
@@ -472,7 +472,7 @@ Deliverables: ${sessionDir}/context.md (final report)
 ${listAllArtifacts()}
 
 ### Quality Gate Standards
-Read from: .codex/skills/team-edict/specs/quality-gates.md
+Read from: ~  or <project>/.codex/skills/team-edict/specs/quality-gates.md
 `
 })
 
@@ -609,9 +609,9 @@ const agent = spawn_agent({
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: .codex/skills/team-edict/agents/qa-verifier.md (MUST read first)
+1. **Read role definition**: ~  or <project>/.codex/skills/team-edict/agents/qa-verifier.md (MUST read first)
 2. Read: ${sessionDir}/discoveries.ndjson (shared discoveries)
-3. Read: .codex/skills/team-edict/specs/quality-gates.md (quality standards)
+3. Read: ~  or <project>/.codex/skills/team-edict/specs/quality-gates.md (quality standards)
 
 ---
 
@@ -740,3 +740,42 @@ spawn_agent({
 12. **Rejection Loop Max 3**: Menxia can reject max 3 times before escalating to user
 13. **Kanban is Mandatory**: All agents must report state transitions via discoveries.ndjson
 14. **Quality Gates Apply**: Phase 3 aggregator validates all outputs against specs/quality-gates.md
+
+---
+
+## Coordinator Role Constraints (Crown Prince / Main Agent)
+
+**CRITICAL**: The coordinator (main agent executing this skill) is responsible for **orchestration only**, NOT implementation.
+
+15. **Coordinator Does NOT Execute Code**: The main agent MUST NOT write, modify, or implement any code directly. All implementation work is delegated to spawned agents (Three Departments and Six Ministries). The coordinator only:
+    - Spawns agents with task assignments
+    - Waits for agent callbacks
+    - Merges results into master CSV
+    - Coordinates workflow transitions between phases
+
+16. **Patient Waiting is Mandatory**: Agent execution takes significant time (typically 10-30 minutes per phase, sometimes longer). The coordinator MUST:
+    - Wait patiently for `wait()` calls to complete
+    - NOT skip workflow steps due to perceived delays
+    - NOT assume agents have failed just because they're taking time
+    - Trust the timeout mechanisms (600s for planning, 300s for execution)
+
+17. **Use send_input for Clarification**: When agents need guidance or appear stuck, the coordinator MUST:
+    - Use `send_input()` to ask questions or provide clarification
+    - NOT skip the agent or move to next phase prematurely
+    - Give agents opportunity to respond before escalating
+    - Example: `send_input({ id: agent_id, message: "Please provide status update or clarify blockers" })`
+
+18. **No Workflow Shortcuts**: The coordinator MUST NOT:
+    - Skip phases or stages (e.g., jumping from Zhongshu directly to Shangshu)
+    - Bypass the Three Departments serial pipeline
+    - Execute wave N before wave N-1 completes
+    - Assume task completion without explicit agent callback
+    - Make up or fabricate agent results
+
+19. **Respect Long-Running Processes**: This is a complex multi-agent workflow that requires patience:
+    - Total execution time: 30-90 minutes for typical edicts
+    - Phase 0 (Three Departments): 15-30 minutes
+    - Phase 2 (Wave Execution): 10-20 minutes per wave
+    - Phase 3 (Aggregation): 5-10 minutes
+    - The coordinator must remain active and attentive throughout the entire process
+

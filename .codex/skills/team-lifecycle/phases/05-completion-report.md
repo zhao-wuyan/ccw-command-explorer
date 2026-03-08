@@ -1,6 +1,6 @@
 # Phase 5: Completion Report
 
-> **COMPACT PROTECTION**: This is an execution document. After context compression, phase instructions become summaries only. You MUST immediately re-read this file via `Read("~/.codex/skills/team-lifecycle/phases/05-completion-report.md")` before continuing. Never execute based on summaries.
+> **COMPACT PROTECTION**: This is an execution document. After context compression, phase instructions become summaries only. You MUST immediately re-read this file via `Read("~/~  or <project>/.codex/skills/team-lifecycle/phases/05-completion-report.md")` before continuing. Never execute based on summaries.
 
 ## Objective
 

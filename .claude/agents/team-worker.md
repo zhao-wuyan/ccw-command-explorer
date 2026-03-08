@@ -8,12 +8,12 @@ description: |
 
   Examples:
   - Context: Coordinator spawns analyst worker
-    user: "role: analyst\nrole_spec: .claude/skills/team-lifecycle/role-specs/analyst.md\nsession: .workflow/.team/TLS-xxx"
+    user: "role: analyst\nrole_spec: ~  or <project>/.claude/skills/team-lifecycle/role-specs/analyst.md\nsession: .workflow/.team/TLS-xxx"
     assistant: "Loading role spec, discovering RESEARCH-* tasks, executing Phase 2-4 domain logic"
     commentary: Agent parses prompt, loads role spec, runs built-in Phase 1 then role-specific Phase 2-4 then built-in Phase 5
 
   - Context: Coordinator spawns writer worker with inner loop
-    user: "role: writer\nrole_spec: .claude/skills/team-lifecycle/role-specs/writer.md\ninner_loop: true"
+    user: "role: writer\nrole_spec: ~  or <project>/.claude/skills/team-lifecycle/role-specs/writer.md\ninner_loop: true"
     assistant: "Loading role spec, processing all DRAFT-* tasks in inner loop"
     commentary: Agent detects inner_loop=true, loops Phase 1-5 for each same-prefix task
 color: green

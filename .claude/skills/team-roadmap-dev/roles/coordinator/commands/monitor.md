@@ -15,9 +15,9 @@ Handle all coordinator monitoring events for the roadmap-dev pipeline using the 
 
 | Prefix | Role | Role Spec | inner_loop |
 |--------|------|-----------|------------|
-| PLAN | planner | `.claude/skills/team-roadmap-dev/roles/planner/role.md` | true (cli_tools: gemini --mode analysis) |
-| EXEC | executor | `.claude/skills/team-roadmap-dev/roles/executor/role.md` | true (cli_tools: gemini --mode write) |
-| VERIFY | verifier | `.claude/skills/team-roadmap-dev/roles/verifier/role.md` | true |
+| PLAN | planner | `~  or <project>/.claude/skills/team-roadmap-dev/roles/planner/role.md` | true (cli_tools: gemini --mode analysis) |
+| EXEC | executor | `~  or <project>/.claude/skills/team-roadmap-dev/roles/executor/role.md` | true (cli_tools: gemini --mode write) |
+| VERIFY | verifier | `~  or <project>/.claude/skills/team-roadmap-dev/roles/verifier/role.md` | true |
 
 ### Pipeline Structure
 
@@ -247,7 +247,7 @@ Agent({
   run_in_background: true,
   prompt: `## Role Assignment
 role: <role>
-role_spec: .claude/skills/team-roadmap-dev/roles/<role>/role.md
+role_spec: ~  or <project>/.claude/skills/team-roadmap-dev/roles/<role>/role.md
 session: <session-folder>
 session_id: <session-id>
 team_name: roadmap-dev

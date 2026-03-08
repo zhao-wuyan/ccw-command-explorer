@@ -5,7 +5,7 @@ Product Brief, Requirements/PRD, Architecture, and Epics & Stories document gene
 ## Identity
 
 - **Type**: `produce`
-- **Role File**: `~/.codex/skills/team-lifecycle/agents/writer.md`
+- **Role File**: `~/~  or <project>/.codex/skills/team-lifecycle/agents/writer.md`
 - **Prefix**: `DRAFT-*`
 - **Tag**: `[writer]`
 - **Responsibility**: Load Context -> Generate Document -> Self-Validation -> Inline Discuss -> Report
@@ -382,7 +382,7 @@ After validation, spawn discuss subagent (Pattern 2.8) for this task's discuss r
 ```javascript
 const critic = spawn_agent({
   message: `### MANDATORY FIRST STEPS
-1. Read: ~/.codex/skills/team-lifecycle/agents/discuss-agent.md
+1. Read: ~/~  or <project>/.codex/skills/team-lifecycle/agents/discuss-agent.md
 
 ## Multi-Perspective Critique: <DISCUSS-NNN>
 
@@ -435,7 +435,7 @@ This agent spawns the discuss subagent during Phase 4b:
 ### Discuss Subagent (Phase 4b)
 
 **When**: After self-validation of generated document
-**Agent File**: `~/.codex/skills/team-lifecycle/agents/discuss-agent.md`
+**Agent File**: `~/~  or <project>/.codex/skills/team-lifecycle/agents/discuss-agent.md`
 **Pattern**: 2.8 (Inline Subagent)
 
 See Phase 4b code block above. The round ID and perspectives vary per doc type -- use the Inline Discuss Mapping table.

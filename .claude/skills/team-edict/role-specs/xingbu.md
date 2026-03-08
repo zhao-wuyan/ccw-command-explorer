@@ -24,7 +24,7 @@ team_msg(operation="log", session_id=<session_id>, from="xingbu",
 
 1. 读取当前任务（QA-* task description）
 2. 读取 `<session_path>/plan/dispatch-plan.md` 获取验收标准
-3. 读取 `.claude/skills/team-edict/specs/quality-gates.md` 获取质量门标准
+3. 读取 `~  or <project>/.claude/skills/team-edict/specs/quality-gates.md` 获取质量门标准
 4. 读取被测部门（通常为工部）的产出报告
 
 ## Phase 3: 质量审查

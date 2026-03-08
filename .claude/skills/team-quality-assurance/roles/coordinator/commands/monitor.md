@@ -59,7 +59,7 @@ EXPECTED: Fixed test files | Improved coverage
 CONSTRAINTS: Only modify test files | No source changes
 ---
 InnerLoop: false
-RoleSpec: .claude/skills/team-quality-assurance/roles/generator/role.md"
+RoleSpec: ~  or <project>/.claude/skills/team-quality-assurance/roles/generator/role.md"
 })
 TaskCreate({
   subject: "QARUN-gc-<round>: Re-execute <layer> (GC #<round>)",
@@ -72,7 +72,7 @@ EXPECTED: <session>/results/run-<layer>-gc-<round>.json
 CONSTRAINTS: Read-only execution
 ---
 InnerLoop: false
-RoleSpec: .claude/skills/team-quality-assurance/roles/executor/role.md",
+RoleSpec: ~  or <project>/.claude/skills/team-quality-assurance/roles/executor/role.md",
   blockedBy: ["QAGEN-fix-<round>"]
 })
 ```
@@ -149,7 +149,7 @@ Agent({
   run_in_background: true,
   prompt: `## Role Assignment
 role: <role>
-role_spec: .claude/skills/team-quality-assurance/roles/<role>/role.md
+role_spec: ~  or <project>/.claude/skills/team-quality-assurance/roles/<role>/role.md
 session: <session-folder>
 session_id: <session-id>
 team_name: quality-assurance

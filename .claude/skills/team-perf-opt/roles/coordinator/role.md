@@ -112,7 +112,7 @@ Execute `commands/dispatch.md` inline (Command Execution Protocol).
 ### Initial Spawn
 
 Find first unblocked task and spawn its worker using SKILL.md Worker Spawn Template with:
-- `role_spec: .claude/skills/team-perf-opt/roles/<role>/role.md`
+- `role_spec: ~  or <project>/.claude/skills/team-perf-opt/roles/<role>/role.md`
 - `team_name: perf-opt`
 
 **STOP** after spawning. Wait for worker callback.

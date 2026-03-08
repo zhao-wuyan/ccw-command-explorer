@@ -62,7 +62,7 @@ Shangshu (Department of State Affairs / Dispatch) -- parses the approved plan, r
 
 1. Read `<session>/plan/zhongshu-plan.md`
 2. Read `<session>/review/menxia-review.md`
-3. Read `.codex/skills/team-edict/specs/team-config.json`
+3. Read `~  or <project>/.codex/skills/team-edict/specs/team-config.json`
 4. Extract subtask list from plan
 5. Extract conditions from review
 6. Report state "Doing":

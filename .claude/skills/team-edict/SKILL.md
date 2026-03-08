@@ -193,7 +193,7 @@ Agent({
   name: "<role>",
   team_name: "<team_name>",
   prompt: `role: <role>
-role_spec: .claude/skills/team-edict/role-specs/<role>.md
+role_spec: ~  or <project>/.claude/skills/team-edict/role-specs/<role>.md
 session: <session_path>
 session_id: <session_id>
 team_name: <team_name>

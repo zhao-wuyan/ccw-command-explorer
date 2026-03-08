@@ -211,10 +211,10 @@ Find and spawn the next ready tasks.
 
 | Task Prefix | Role | Role Spec |
 |-------------|------|-----------|
-| `EXPLORE-*` | explorer | `.claude/skills/team-ultra-analyze/role-specs/explorer.md` |
-| `ANALYZE-*` | analyst | `.claude/skills/team-ultra-analyze/role-specs/analyst.md` |
-| `DISCUSS-*` | discussant | `.claude/skills/team-ultra-analyze/role-specs/discussant.md` |
-| `SYNTH-*` | synthesizer | `.claude/skills/team-ultra-analyze/role-specs/synthesizer.md` |
+| `EXPLORE-*` | explorer | `~  or <project>/.claude/skills/team-ultra-analyze/role-specs/explorer.md` |
+| `ANALYZE-*` | analyst | `~  or <project>/.claude/skills/team-ultra-analyze/role-specs/analyst.md` |
+| `DISCUSS-*` | discussant | `~  or <project>/.claude/skills/team-ultra-analyze/role-specs/discussant.md` |
+| `SYNTH-*` | synthesizer | `~  or <project>/.claude/skills/team-ultra-analyze/role-specs/synthesizer.md` |
 
 3. Spawn team-worker for each ready task:
 
@@ -227,7 +227,7 @@ Agent({
   run_in_background: true,
   prompt: `## Role Assignment
 role: <role>
-role_spec: .claude/skills/team-ultra-analyze/role-specs/<role>.md
+role_spec: ~  or <project>/.claude/skills/team-ultra-analyze/role-specs/<role>.md
 session: <session-folder>
 session_id: <session-id>
 team_name: ultra-analyze

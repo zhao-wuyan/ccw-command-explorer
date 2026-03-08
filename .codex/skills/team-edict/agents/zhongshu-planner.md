@@ -64,7 +64,7 @@ Zhongshu (Central Secretariat) -- analyzes the edict, explores the codebase, and
 **Steps**:
 
 1. Parse the edict text from the spawn message
-2. Read `.codex/skills/team-edict/specs/team-config.json` for routing rules
+2. Read `~  or <project>/.codex/skills/team-edict/specs/team-config.json` for routing rules
 3. If revision round: Read `<session>/review/menxia-review.md` for rejection feedback
 4. Read `<session>/discoveries.ndjson` if it exists
 

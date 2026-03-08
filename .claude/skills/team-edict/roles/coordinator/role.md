@@ -18,7 +18,7 @@
 
 ```javascript
 // Phase 0/1 启动时执行
-Read(".claude/skills/team-edict/specs/team-config.json")  // 加载路由规则和artifact路径
+Read("~  or <project>/.claude/skills/team-edict/specs/team-config.json")  // 加载路由规则和artifact路径
 ```
 
 ---
@@ -106,7 +106,7 @@ Read(".claude/skills/team-edict/specs/team-config.json")  // 加载路由规则�
      name: "zhongshu",
      team_name: <team_name>,
      prompt: `role: zhongshu
-role_spec: .claude/skills/team-edict/role-specs/zhongshu.md
+role_spec: ~  or <project>/.claude/skills/team-edict/role-specs/zhongshu.md
 session: <session_path>
 session_id: <session_id>
 team_name: <team_name>
@@ -138,7 +138,7 @@ inner_loop: false`,
      name: "menxia",
      team_name: <team_name>,
      prompt: `role: menxia
-role_spec: .claude/skills/team-edict/role-specs/menxia.md
+role_spec: ~  or <project>/.claude/skills/team-edict/role-specs/menxia.md
 session: <session_path>
 session_id: <session_id>
 team_name: <team_name>
@@ -177,7 +177,7 @@ inner_loop: false`,
      name: "shangshu",
      team_name: <team_name>,
      prompt: `role: shangshu
-role_spec: .claude/skills/team-edict/role-specs/shangshu.md
+role_spec: ~  or <project>/.claude/skills/team-edict/role-specs/shangshu.md
 session: <session_path>
 session_id: <session_id>
 team_name: <team_name>

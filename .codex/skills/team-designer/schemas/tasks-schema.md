@@ -78,8 +78,8 @@ Interactive tasks appear in master CSV for dependency tracking but are NOT inclu
 
 ```csv
 id,title,description,role,file_target,gen_type,deps,context_from,exec_mode,wave,status,findings,files_produced,error
-"SCAFFOLD-001","Create directory structure","Create complete directory structure for team-code-review skill:\n- .codex/skills/team-code-review/\n- roles/coordinator/ + commands/\n- roles/analyst/\n- roles/reviewer/\n- specs/\n- templates/","scaffolder","skill-dir","directory","","","csv-wave","1","pending","","",""
-"ROUTER-001","Generate SKILL.md","Generate .codex/skills/team-code-review/SKILL.md with:\n- Frontmatter (name, description, allowed-tools)\n- Architecture diagram\n- Role registry table\n- CSV schema reference\n- Session structure\n- Wave execution engine\nUse teamConfig.json for role list and pipeline definitions","router-writer","SKILL.md","router","SCAFFOLD-001","SCAFFOLD-001","csv-wave","2","pending","","",""
+"SCAFFOLD-001","Create directory structure","Create complete directory structure for team-code-review skill:\n- ~  or <project>/.codex/skills/team-code-review/\n- roles/coordinator/ + commands/\n- roles/analyst/\n- roles/reviewer/\n- specs/\n- templates/","scaffolder","skill-dir","directory","","","csv-wave","1","pending","","",""
+"ROUTER-001","Generate SKILL.md","Generate ~  or <project>/.codex/skills/team-code-review/SKILL.md with:\n- Frontmatter (name, description, allowed-tools)\n- Architecture diagram\n- Role registry table\n- CSV schema reference\n- Session structure\n- Wave execution engine\nUse teamConfig.json for role list and pipeline definitions","router-writer","SKILL.md","router","SCAFFOLD-001","SCAFFOLD-001","csv-wave","2","pending","","",""
 "SPEC-001","Generate pipelines spec","Generate specs/pipelines.md with:\n- Pipeline definitions from teamConfig\n- Task registry with PREFIX-NNN format\n- Conditional routing rules\n- Dynamic specialist injection\nRoles: analyst(ANALYSIS-*), reviewer(REVIEW-*)","spec-writer","specs/pipelines.md","spec","SCAFFOLD-001","SCAFFOLD-001","csv-wave","2","pending","","",""
 "ROLE-001","Generate coordinator","Generate roles/coordinator/role.md with entry router and commands/analyze.md, commands/dispatch.md, commands/monitor.md. Coordinator orchestrates the analysis pipeline","role-writer","roles/coordinator/","role-bundle","SCAFFOLD-001;SPEC-001","SPEC-001","csv-wave","3","pending","","",""
 "ROLE-002","Generate analyst role","Generate roles/analyst/role.md with Phase 2 (context loading), Phase 3 (analysis execution), Phase 4 (output). Prefix: ANALYSIS, inner_loop: false","role-writer","roles/analyst/role.md","role-inline","SCAFFOLD-001;SPEC-001","SPEC-001","csv-wave","3","pending","","",""
@@ -144,7 +144,7 @@ Interactive tasks output via structured text or JSON written to `interactive/{id
 ### Discovery NDJSON Format
 
 ```jsonl
-{"ts":"2026-03-08T10:00:00Z","worker":"SCAFFOLD-001","type":"dir_created","data":{"path":".codex/skills/team-code-review/roles/","description":"Created roles directory with coordinator, analyst, reviewer subdirs"}}
+{"ts":"2026-03-08T10:00:00Z","worker":"SCAFFOLD-001","type":"dir_created","data":{"path":"~  or <project>/.codex/skills/team-code-review/roles/","description":"Created roles directory with coordinator, analyst, reviewer subdirs"}}
 {"ts":"2026-03-08T10:05:00Z","worker":"ROLE-001","type":"file_generated","data":{"file":"roles/coordinator/role.md","gen_type":"role-bundle","sections":["entry-router","phase-0","phase-1","phase-2","phase-3"]}}
 {"ts":"2026-03-08T10:10:00Z","worker":"SPEC-001","type":"config_decision","data":{"decision":"full-lifecycle pipeline","rationale":"Both analyst and reviewer roles present","impact":"4-tier dependency graph"}}
 ```

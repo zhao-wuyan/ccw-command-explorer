@@ -5,7 +5,7 @@ Seed analysis, codebase exploration (via shared explore subagent), and multi-dim
 ## Identity
 
 - **Type**: `produce`
-- **Role File**: `~/.codex/skills/team-lifecycle/agents/analyst.md`
+- **Role File**: `~/~  or <project>/.codex/skills/team-lifecycle/agents/analyst.md`
 - **Prefix**: `RESEARCH-*`
 - **Tag**: `[analyst]`
 - **Responsibility**: Seed Analysis -> Codebase Exploration -> Context Packaging -> Inline Discuss -> Report
@@ -168,7 +168,7 @@ if (cached) {
   // Cache MISS - spawn explore subagent
   const explorer = spawn_agent({
     message: `### MANDATORY FIRST STEPS
-1. Read: ~/.codex/skills/team-lifecycle/agents/explore-agent.md
+1. Read: ~/~  or <project>/.codex/skills/team-lifecycle/agents/explore-agent.md
 
 ---
 
@@ -253,7 +253,7 @@ After packaging, spawn discuss subagent (Pattern 2.8):
 ```javascript
 const critic = spawn_agent({
   message: `### MANDATORY FIRST STEPS
-1. Read: ~/.codex/skills/team-lifecycle/agents/discuss-agent.md
+1. Read: ~/~  or <project>/.codex/skills/team-lifecycle/agents/discuss-agent.md
 
 ## Multi-Perspective Critique: DISCUSS-001
 
@@ -297,7 +297,7 @@ This agent spawns two utility subagents during its execution:
 ### Explore Subagent (Phase 3)
 
 **When**: After seed analysis, when project files detected
-**Agent File**: `~/.codex/skills/team-lifecycle/agents/explore-agent.md`
+**Agent File**: `~/~  or <project>/.codex/skills/team-lifecycle/agents/explore-agent.md`
 **Pattern**: 2.9 (Cache-Aware Exploration)
 
 See Phase 3 code block above. Cache is checked before spawning. If cache hit, the spawn is skipped entirely.
@@ -305,7 +305,7 @@ See Phase 3 code block above. Cache is checked before spawning. If cache hit, th
 ### Discuss Subagent (Phase 4b)
 
 **When**: After context packaging (spec-config.json + discovery-context.json written)
-**Agent File**: `~/.codex/skills/team-lifecycle/agents/discuss-agent.md`
+**Agent File**: `~/~  or <project>/.codex/skills/team-lifecycle/agents/discuss-agent.md`
 **Pattern**: 2.8 (Inline Subagent)
 
 See Phase 4b code block above.
@@ -342,7 +342,7 @@ if (cached) {
   // Cache MISS - spawn explore subagent, result cached by explore-agent
   const explorer = spawn_agent({
     message: `### MANDATORY FIRST STEPS
-1. Read: ~/.codex/skills/team-lifecycle/agents/explore-agent.md
+1. Read: ~/~  or <project>/.codex/skills/team-lifecycle/agents/explore-agent.md
 
 ---
 

@@ -64,7 +64,7 @@ Xingbu (Ministry of Justice / Quality Assurance) -- executes quality verificatio
 
 **Steps**:
 
-1. Read `.codex/skills/team-edict/specs/quality-gates.md`
+1. Read `~  or <project>/.codex/skills/team-edict/specs/quality-gates.md`
 2. Read `<session>/plan/dispatch-plan.md` for acceptance criteria
 3. Read implementation artifacts from `<session>/artifacts/`
 4. Read `<session>/discoveries.ndjson` for implementation notes

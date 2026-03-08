@@ -152,7 +152,7 @@ Execute `commands/dispatch.md` inline (Command Execution Protocol):
 ### Initial Spawn
 
 Find first unblocked tasks and spawn their workers. Use SKILL.md Worker Spawn Template with:
-- `role_spec: .claude/skills/team-ultra-analyze/roles/<role>/role.md`
+- `role_spec: ~  or <project>/.claude/skills/team-ultra-analyze/roles/<role>/role.md`
 - `team_name: ultra-analyze`
 - `inner_loop: false`
 

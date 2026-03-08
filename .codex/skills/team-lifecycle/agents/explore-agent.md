@@ -5,7 +5,7 @@ Shared codebase exploration utility with centralized caching. Callable by any ag
 ## Identity
 
 - **Type**: `utility`
-- **Role File**: `~/.codex/skills/team-lifecycle/agents/explore-agent.md`
+- **Role File**: `~/~  or <project>/.codex/skills/team-lifecycle/agents/explore-agent.md`
 - **Tag**: `[explore]`
 - **Responsibility**: Cache Check -> Codebase Exploration -> Cache Update -> Return Structured Results
 
@@ -382,7 +382,7 @@ if (cached && !forceRefresh) {
 // After seed analysis, explore codebase context (Pattern 2.9 in analyst)
 const explorer = spawn_agent({
   message: `### MANDATORY FIRST STEPS
-1. Read: ~/.codex/skills/team-lifecycle/agents/explore-agent.md
+1. Read: ~/~  or <project>/.codex/skills/team-lifecycle/agents/explore-agent.md
 
 ---
 
@@ -405,7 +405,7 @@ for (const angle of angles) {
   // Cache check happens inside explore-agent
   const explorer = spawn_agent({
     message: `### MANDATORY FIRST STEPS
-1. Read: ~/.codex/skills/team-lifecycle/agents/explore-agent.md
+1. Read: ~/~  or <project>/.codex/skills/team-lifecycle/agents/explore-agent.md
 
 ---
 

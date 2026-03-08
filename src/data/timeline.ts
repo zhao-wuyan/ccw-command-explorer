@@ -191,7 +191,7 @@ export const TIMELINE: TimelineItem[] = [
     color: COLORS.primary,
     commands: 127,
     detail: {
-      version: 'v7.2.3',
+      version: 'v7.2.4',
       highlights: [
         '新 Skill: team-planex-v2 混合规划执行管道',
         '新 Skill: team-arch-opt 架构优化',

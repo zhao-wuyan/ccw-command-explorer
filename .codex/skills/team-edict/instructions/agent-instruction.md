@@ -4,8 +4,8 @@
 1. Read shared discoveries: .workflow/.csv-wave/{session-id}/discoveries.ndjson (if exists, skip if not)
 2. Read dispatch plan: .workflow/.csv-wave/{session-id}/plan/dispatch-plan.md (task details and acceptance criteria)
 3. Read approved plan: .workflow/.csv-wave/{session-id}/plan/zhongshu-plan.md (overall strategy and context)
-4. Read quality gates: .codex/skills/team-edict/specs/quality-gates.md (quality standards)
-5. Read team config: .codex/skills/team-edict/specs/team-config.json (routing rules and artifact paths)
+4. Read quality gates: ~  or <project>/.codex/skills/team-edict/specs/quality-gates.md (quality standards)
+5. Read team config: ~  or <project>/.codex/skills/team-edict/specs/team-config.json (routing rules and artifact paths)
 
 > **Note**: The session directory path is provided by the orchestrator in `additional_instructions`. Use it to resolve the paths above.
 

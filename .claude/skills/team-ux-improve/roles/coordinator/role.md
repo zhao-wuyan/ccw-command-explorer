@@ -76,7 +76,7 @@ TEXT-LEVEL ONLY. No source code reading.
    ├── explorations/
    └── wisdom/contributions/
    ```
-3. **Wisdom Initialization**: Copy `.claude/skills/team-ux-improve/wisdom/` to `<session>/wisdom/`
+3. **Wisdom Initialization**: Copy `~  or <project>/.claude/skills/team-ux-improve/wisdom/` to `<session>/wisdom/`
 4. Initialize `.msg/meta.json` via team_msg state_update with pipeline metadata
 5. TeamCreate(team_name="ux-improve")
 6. Do NOT spawn workers yet - deferred to Phase 4
@@ -110,7 +110,7 @@ Delegate to `commands/monitor.md#handleSpawnNext`:
 
 3. **Wisdom Consolidation**: Check `<session>/wisdom/contributions/` for worker contributions
    - If contributions exist -> AskUserQuestion to merge to permanent wisdom
-   - If approved -> copy to `.claude/skills/team-ux-improve/wisdom/`
+   - If approved -> copy to `~  or <project>/.claude/skills/team-ux-improve/wisdom/`
 
 4. Calculate: completed_tasks, total_issues_found, issues_fixed, test_pass_rate
 5. Output pipeline summary with [coordinator] prefix

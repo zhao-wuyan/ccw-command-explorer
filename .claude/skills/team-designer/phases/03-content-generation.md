@@ -12,7 +12,7 @@ Generate all role files, specs, and templates based on `teamConfig` and the gene
 
 ## Golden Sample Reference
 
-Read the golden sample at `.claude/skills/team-lifecycle-v4/` for each file type before generating. This ensures pattern fidelity.
+Read the golden sample at `~  or <project>/.claude/skills/team-lifecycle-v4/` for each file type before generating. This ensures pattern fidelity.
 
 ## Step 3.1: Generate Coordinator
 
@@ -305,7 +305,7 @@ For each additional spec in `teamConfig.specs` (beyond pipelines), generate doma
 
 For each template in `teamConfig.templates`:
 
-1. Check if golden sample has matching template at `.claude/skills/team-lifecycle-v4/templates/`
+1. Check if golden sample has matching template at `~  or <project>/.claude/skills/team-lifecycle-v4/templates/`
 2. If exists: copy and adapt for new domain
 3. If not: generate domain-appropriate template structure
 

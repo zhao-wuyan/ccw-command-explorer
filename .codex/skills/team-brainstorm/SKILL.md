@@ -233,7 +233,7 @@ const clarifier = spawn_agent({
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: .codex/skills/team-brainstorm/agents/topic-clarifier.md (MUST read first)
+1. **Read role definition**: ~  or <project>/.codex/skills/team-brainstorm/agents/topic-clarifier.md (MUST read first)
 2. Read: .workflow/project-tech.json (if exists)
 
 ---
@@ -478,7 +478,7 @@ for (let wave = 1; wave <= maxWave; wave++) {
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: .codex/skills/team-brainstorm/agents/gc-controller.md (MUST read first)
+1. **Read role definition**: ~  or <project>/.codex/skills/team-brainstorm/agents/gc-controller.md (MUST read first)
 2. Read: ${sessionFolder}/discoveries.ndjson (shared discoveries)
 
 ---
@@ -685,3 +685,41 @@ When the challenger returns critique results with severity-graded verdicts:
 8. **Lifecycle Balance**: Every spawn_agent MUST have a matching close_agent
 9. **Cleanup Temp Files**: Remove wave-{N}.csv after results are merged
 10. **DO NOT STOP**: Continuous execution until all waves complete or all remaining tasks are skipped
+
+
+---
+
+## Coordinator Role Constraints (Main Agent)
+
+**CRITICAL**: The coordinator (main agent executing this skill) is responsible for **orchestration only**, NOT implementation.
+
+15. **Coordinator Does NOT Execute Code**: The main agent MUST NOT write, modify, or implement any code directly. All implementation work is delegated to spawned team agents. The coordinator only:
+    - Spawns agents with task assignments
+    - Waits for agent callbacks
+    - Merges results and coordinates workflow
+    - Manages workflow transitions between phases
+
+16. **Patient Waiting is Mandatory**: Agent execution takes significant time (typically 10-30 minutes per phase, sometimes longer). The coordinator MUST:
+    - Wait patiently for `wait()` calls to complete
+    - NOT skip workflow steps due to perceived delays
+    - NOT assume agents have failed just because they're taking time
+    - Trust the timeout mechanisms defined in the skill
+
+17. **Use send_input for Clarification**: When agents need guidance or appear stuck, the coordinator MUST:
+    - Use `send_input()` to ask questions or provide clarification
+    - NOT skip the agent or move to next phase prematurely
+    - Give agents opportunity to respond before escalating
+    - Example: `send_input({ id: agent_id, message: "Please provide status update or clarify blockers" })`
+
+18. **No Workflow Shortcuts**: The coordinator MUST NOT:
+    - Skip phases or stages defined in the workflow
+    - Bypass required approval or review steps
+    - Execute dependent tasks before prerequisites complete
+    - Assume task completion without explicit agent callback
+    - Make up or fabricate agent results
+
+19. **Respect Long-Running Processes**: This is a complex multi-agent workflow that requires patience:
+    - Total execution time may range from 30-90 minutes or longer
+    - Each phase may take 10-30 minutes depending on complexity
+    - The coordinator must remain active and attentive throughout the entire process
+    - Do not terminate or skip steps due to time concerns

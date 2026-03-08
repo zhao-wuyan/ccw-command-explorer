@@ -1,6 +1,6 @@
 # Phase 4: Pipeline Coordination
 
-> **COMPACT PROTECTION**: This is an execution document. After context compression, phase instructions become summaries only. You MUST immediately re-read this file via `Read("~/.codex/skills/team-lifecycle/phases/04-pipeline-coordination.md")` before continuing. Never execute based on summaries.
+> **COMPACT PROTECTION**: This is an execution document. After context compression, phase instructions become summaries only. You MUST immediately re-read this file via `Read("~/~  or <project>/.codex/skills/team-lifecycle/phases/04-pipeline-coordination.md")` before continuing. Never execute based on summaries.
 
 ## Objective
 

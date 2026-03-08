@@ -91,7 +91,7 @@ Find ready tasks, spawn workers, STOP.
         run_in_background: true,
         prompt: `## Role Assignment
       role: <role>
-      role_spec: .claude/skills/team-brainstorm/roles/<role>/role.md
+      role_spec: ~  or <project>/.claude/skills/team-brainstorm/roles/<role>/role.md
       session: <session-folder>
       session_id: <session-id>
       team_name: brainstorm

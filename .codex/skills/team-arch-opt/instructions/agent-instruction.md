@@ -3,7 +3,7 @@
 ### MANDATORY FIRST STEPS
 1. Read shared discoveries: {session_folder}/discoveries.ndjson (if exists, skip if not)
 2. Read project context: .workflow/project-tech.json (if exists)
-3. Read task schema: .codex/skills/team-arch-opt/schemas/tasks-schema.md
+3. Read task schema: ~  or <project>/.codex/skills/team-arch-opt/schemas/tasks-schema.md
 
 ---
 

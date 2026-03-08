@@ -68,7 +68,7 @@ Post-wave aggregation agent -- collects all ministry outputs, validates against 
 4. Use Glob to find all files in `<session>/interactive/`
 5. Read each interactive result file
 6. Read `<session>/discoveries.ndjson` (all entries)
-7. Read `.codex/skills/team-edict/specs/quality-gates.md`
+7. Read `~  or <project>/.codex/skills/team-edict/specs/quality-gates.md`
 
 **Output**: All artifacts and status data collected
 

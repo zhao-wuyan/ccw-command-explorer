@@ -513,5 +513,5 @@ export const STATS = {
   codexCommands: COMMANDS.filter(c => c.cli === 'codex').length,
   newCommands: COMMANDS.filter(c => c.status === 'new').length,
   recommendedCommands: COMMANDS.filter(c => c.status === 'recommended').length,
-  latestVersion: 'v7.0',  // 当前最新版本
+  latestVersion: 'v7.2.1',  // 当前最新版本
 };

@@ -147,4 +147,5 @@ export interface DeprecatedCommand {
   old: string;
   newCmd: string | null;
   reason: string;
+  deprecatedInVersion?: string;  // 废弃版本号
 }

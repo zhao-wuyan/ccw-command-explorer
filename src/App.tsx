@@ -84,6 +84,25 @@ const CLIBadge = ({ cli }: { cli: CLIType }) => {
   );
 };
 
+// 版本徽章组件
+const VersionBadge = ({ version }: { version: string }) => (
+  <span
+    style={{
+      fontSize: 10,
+      padding: '2px 6px',
+      borderRadius: 4,
+      backgroundColor: COLORS.primary + '20',
+      color: COLORS.primaryLight,
+      fontWeight: 600,
+      fontFamily: 'monospace',
+      border: `1px solid ${COLORS.primary}30`,
+    }}
+    title={`Added in ${version}`}
+  >
+    {version}
+  </span>
+);
+
 // 命令卡片组件
 const CommandCard = ({ command, onClick }: { command: Command; onClick: () => void }) => {
   const category = CATEGORIES[command.category];
@@ -104,9 +123,16 @@ const CommandCard = ({ command, onClick }: { command: Command; onClick: () => vo
         border: `1px solid ${isHovered ? category.color + '60' : COLORS.cardBorder}`,
         cursor: 'pointer',
         transition: 'all 0.2s ease',
+        position: 'relative',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+      {/* 右上角版本号 */}
+      {command.addedInVersion && (
+        <div style={{ position: 'absolute', top: 12, right: 12 }}>
+          <VersionBadge version={command.addedInVersion} />
+        </div>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap', paddingRight: command.addedInVersion ? 55 : 0 }}>
         <CLIBadge cli={command.cli} />
         <code
           style={{
@@ -135,7 +161,7 @@ const CommandCard = ({ command, onClick }: { command: Command; onClick: () => vo
           </span>
         )}
       </div>
-      <p style={{ fontSize: 14, color: COLORS.textMuted, margin: 0 }}>
+      <p style={{ fontSize: 14, color: COLORS.textMuted, margin: 0, paddingRight: command.addedInVersion ? 55 : 0 }}>
         {command.desc}
       </p>
     </motion.div>
@@ -980,8 +1006,30 @@ const DeprecatedCommands = ({ searchQuery }: { searchQuery: string }) => {
                     {item.old}
                   </code>
                 </td>
-                <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                  <span style={{ fontSize: 18, color: COLORS.textMuted }}>→</span>
+                <td style={{ padding: '12px 8px', textAlign: 'center', minWidth: 80 }}>
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    {item.deprecatedInVersion && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: -6,
+                          left: '38%',
+                          transform: 'translateX(-50%)',
+                          fontSize: 9,
+                          color: COLORS.textDim,
+                          fontFamily: 'monospace',
+                          whiteSpace: 'nowrap',
+                        }}
+                        title={`Deprecated in ${item.deprecatedInVersion}`}
+                      >
+                        {item.deprecatedInVersion}
+                      </span>
+                    )}
+                    <svg width="50" height="14" viewBox="0 0 50 14" style={{ opacity: 0.6, marginTop: 4 }}>
+                      <line x1="0" y1="7" x2="38" y2="7" stroke={COLORS.textMuted} strokeWidth="1.5" />
+                      <polyline points="34,3 40,7 34,11" fill="none" stroke={COLORS.textMuted} strokeWidth="1.5" strokeLinejoin="round" />
+                    </svg>
+                  </div>
                 </td>
                 <td style={{ padding: '12px 16px' }}>
                   {item.newCmd ? (

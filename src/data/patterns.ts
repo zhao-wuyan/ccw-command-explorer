@@ -46,6 +46,27 @@ export const TASK_PATTERNS: TaskPattern[] = [
   // 需求澄清检测 - 检测需要讨论和补充的需求（提升权重确保优先匹配）
   { type: 'clarify-needed', keywords: /初步方案|方案不足|帮我补|补漏|不足之处|可能有问题|你看一下|有哪些要|需要理解|帮我完善|补充方案/, level: 3, flow: 'analyze-to-plan', desc: '需求需澄清', emoji: '💬', weight: 91 },
 
+  // v7.2.2 新增 - DDD 文档驱动开发
+  { type: 'ddd', keywords: /ddd|文档驱动|doc driven|文档索引|doc index|doc-index|代码文档化|documentation workflow|文档工作流/, level: 3, flow: 'ddd', desc: '文档驱动开发', emoji: '📚', weight: 88 },
+
+  // v7.2.2 新增 - 规格管理
+  { type: 'spec-mgmt', keywords: /规格初始化|spec setup|项目规范|编码规范|架构约束|spec add|添加规范|convention|constraint|learning|经验教训/, level: 2, flow: 'spec-mgmt', desc: '规格管理', emoji: '📐', weight: 85 },
+
+  // v7.2.2 新增 - 三省六部协作
+  { type: 'edict', keywords: /三省六部|edict|级联审批|串行审批|并行执行|六部|中书省|门下省|尚书省|太子接旨|强制审批/, level: 4, flow: 'edict', desc: '三省六部协作', emoji: '🏛️', weight: 90 },
+
+  // v7.2.2 新增 - 前端调试
+  { type: 'frontend-debug', keywords: /前端调试|chrome debug|devtools|前端问题|无响应按钮|状态刷新|交互问题|按钮不工作|UI不响应|前端bug|浏览器调试/, level: 3, flow: 'frontend-debug', desc: '前端调试', emoji: '🐛', weight: 88 },
+
+  // v7.2.2 新增 - UX改进
+  { type: 'ux-improve', keywords: /ux改进|ux improve|用户体验|交互体验|UI问题|UX问题|界面优化|交互优化|发现UX|修复UX/, level: 3, flow: 'ux-improve', desc: 'UX改进', emoji: '✨', weight: 85 },
+
+  // v7.2.2 新增 - SKILL简化
+  { type: 'skill-simplify', keywords: /skill简化|skill simplify|SKILL.md简化|精简SKILL|优化SKILL.md|技能简化/, level: 2, flow: 'skill-simplify', desc: 'SKILL简化', emoji: '✂️', weight: 80 },
+
+  // v7.2.2 新增 - 团队技能设计
+  { type: 'team-designer', keywords: /团队技能设计|team designer|创建团队技能|生成团队技能|新团队技能|v4架构团队/, level: 3, flow: 'team-designer', desc: '团队技能设计', emoji: '🎨', weight: 85 },
+
   // Default - feature (最低权重，作为兜底)
   { type: 'feature', keywords: /.*/, level: 2, flow: 'rapid', desc: '功能开发', emoji: '✨', weight: 1 },
 ];
@@ -293,6 +314,87 @@ export const COMMAND_CHAINS: Record<string, CommandChain> = {
       { cmd: '/workflow-test-fix', desc: '测试' },
     ],
     tips: ['完整探索', '正式规划', '执行验证'],
+  },
+
+  // v7.2.2 新增 - DDD 文档驱动
+  'ddd': {
+    flow: 'ddd',
+    level: 3,
+    pipeline: ['ddd:scan', 'ddd:plan', 'ddd:execute', 'ddd:sync'],
+    commands: [
+      { cmd: '/ddd:scan', desc: '扫描构建索引' },
+      { cmd: '/ddd:plan', desc: '文档驱动规划' },
+      { cmd: '/ddd:execute', desc: '执行任务' },
+      { cmd: '/ddd:sync', desc: '同步更新' },
+    ],
+    tips: ['代码优先', '自动索引', '文档驱动'],
+  },
+
+  // v7.2.2 新增 - 规格管理
+  'spec-mgmt': {
+    flow: 'spec-mgmt',
+    level: 2,
+    pipeline: ['workflow:spec:setup', 'workflow:spec:add'],
+    commands: [
+      { cmd: '/workflow:spec:setup', desc: '初始化规格' },
+      { cmd: '/workflow:spec:add', desc: '添加规范' },
+    ],
+    tips: ['建立规范', '团队统一'],
+  },
+
+  // v7.2.2 新增 - 三省六部
+  'edict': {
+    flow: 'edict',
+    level: 4,
+    pipeline: ['team-edict'],
+    commands: [
+      { cmd: '/team-edict', desc: '三省六部协作' },
+    ],
+    tips: ['级联审批', '并行执行', '看板上报'],
+  },
+
+  // v7.2.2 新增 - 前端调试
+  'frontend-debug': {
+    flow: 'frontend-debug',
+    level: 3,
+    pipeline: ['team-frontend-debug'],
+    commands: [
+      { cmd: '/team-frontend-debug', desc: '前端调试团队' },
+    ],
+    tips: ['Chrome DevTools', '双模式调试', '自动修复'],
+  },
+
+  // v7.2.2 新增 - UX改进
+  'ux-improve': {
+    flow: 'ux-improve',
+    level: 3,
+    pipeline: ['team-ux-improve'],
+    commands: [
+      { cmd: '/team-ux-improve', desc: 'UX改进团队' },
+    ],
+    tips: ['系统发现', '根因分析', '验证闭环'],
+  },
+
+  // v7.2.2 新增 - SKILL简化
+  'skill-simplify': {
+    flow: 'skill-simplify',
+    level: 2,
+    pipeline: ['skill-simplify'],
+    commands: [
+      { cmd: '/skill-simplify', desc: 'SKILL简化' },
+    ],
+    tips: ['功能完整性验证', '精简优化'],
+  },
+
+  // v7.2.2 新增 - 团队技能设计
+  'team-designer': {
+    flow: 'team-designer',
+    level: 3,
+    pipeline: ['team-designer'],
+    commands: [
+      { cmd: '/team-designer', desc: '团队技能设计' },
+    ],
+    tips: ['v4架构', '完整脚手架', '验证可用'],
   },
 };
 

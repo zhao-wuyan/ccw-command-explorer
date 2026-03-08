@@ -6,34 +6,19 @@
 
 ## 项目简介
 
-CCW Command Explorer 是一个交互式的命令文档网站，帮助开发者快速了解和使用 Claude Code Workflow 工作流系统。通过可视化的界面，用户可以：
-
-- 浏览 95+ 个工作流命令
-- 按分类、等级、CLI 类型筛选命令
-- 查看命令的详细说明和使用场景
-- 学习实际使用案例
-- 了解项目的版本演进历史
-
-## v7.0 新版本亮点
-
-### Team 架构全面升级
-
-全新设计的团队协作架构 v2-v5，支持动态角色生成和 team-worker 代理架构：
-
-- **Team Lifecycle v5**：最新生命周期版本，team-worker 架构
-- **Team Coordinate v2**：增强协调能力，team-executor-v2 改进代理编排
-- **12+ 团队技能更新**：所有团队技能迁移到 v3 设计模式
-- **新增团队技能**：team-roadmap-dev、team-tech-debt、team-iterdev、team-frontend、team-uidesign
-
-### 统一工作流引擎
-
-重构的工作流系统，提供更灵活的规划和执行能力：
-
-- **Lightweight Interactive Planning**：内存执行模式，代码探索
-- **Session 管理命令**：智能会话发现、恢复、同步、完成、固化
-- **新工作流命令**：workflow:analyze-with-file、workflow:brainstorm-with-file、workflow:debug-with-file 等
+CCW Command Explorer 是一个交互式的命令文档网站，帮助开发者快速了解和使用 Claude Code Workflow 工作流系统的各类命令。
 
 ## 功能特性
+
+### LLM 智能推荐
+
+接入大语言模型的智能命令推荐系统，让 AI 帮你选择最合适的工作流：
+
+- **LLM 意图分析**：配置 API 后，AI 深度理解任务描述，智能推荐命令组合
+- **支持多模型**：兼容 OpenAI API 格式，支持 Claude、Gemini、DeepSeek、本地模型等
+- **完整上下文**：自动加载 127 个命令的详细说明作为上下文，确保推荐准确性
+- **安全配置**：API Key 本地加密存储，通过 Serverless 代理调用避免 CORS 问题
+- **关键词匹配**：未配置 LLM 时，基于规则的关键词匹配作为兜底推荐方案
 
 ### 命令探索
 
@@ -169,7 +154,7 @@ interface Case {
 
 ## 相关资源
 
-- [GitHub 仓库](https://github.com/catlog22/Claude-Code-Workflow)
+- [CCW GitHub 仓库](https://github.com/catlog22/Claude-Code-Workflow)
 - [安装指南](https://github.com/catlog22/Claude-Code-Workflow/blob/master/INSTALL_CN.md)
 - [快速入门](https://github.com/catlog22/Claude-Code-Workflow/blob/master/GETTING_STARTED_CN.md)
 - [更新日志](https://github.com/catlog22/Claude-Code-Workflow/blob/master/CHANGELOG.md)
@@ -195,7 +180,3 @@ MIT License
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
-
----
-
-**提示**：按 `/ccw` 让 AI 帮你选择最合适的命令

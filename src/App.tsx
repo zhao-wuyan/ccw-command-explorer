@@ -5,15 +5,15 @@ import {
   Lightbulb, TestTube, FlaskConical, Search as SearchIcon, Palette,
   Wrench, X, Clock, Target, Sparkles, BookOpen, Info, Bot, Play,
   ChevronRight, Terminal, MessageSquare, CheckCircle, AlertTriangle,
-  Lightbulb as TipIcon, Cpu, Settings as SettingsIcon
+  Lightbulb as TipIcon, Cpu, Settings as SettingsIcon, Github, Star
 } from 'lucide-react';
 import {
   COMMANDS, CATEGORIES, TIMELINE, WORKFLOW_LEVELS, GRANDMA_COMMANDS,
   DEPRECATED_COMMANDS, STATS, COLORS, CLI_CONFIG, EXPERIENCE_GUIDE,
   analyzeIntent, TASK_PATTERNS, COMMAND_CHAINS
-} from './data/commands';
-import type { IntentAnalysis } from './data/commands';
-import type { Command, CommandCategory, TimelineItem, CLIType, ExperienceTip, ExperienceCategory } from './data/commands';
+} from './data';
+import type { IntentAnalysis } from './data';
+import type { Command, CommandCategory, TimelineItem, CLIType, ExperienceTip, ExperienceCategory } from './data';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { ALL_CASES, CASES_BY_LEVEL, LEVEL_CONFIG } from './data/cases';
@@ -3270,6 +3270,24 @@ function App() {
                 <p className="stat-label">{stat.label}</p>
               </motion.div>
             ))}
+            {/* GitHub Star 按钮 */}
+            <motion.a
+              href="https://github.com/zhao-wuyan/ccw-command-explorer"
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="github-star-btn"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Github size={20} />
+              <span className="github-text">Star</span>
+              <span className="github-star-count">
+                <Star size={14} fill="#f59e0b" color="#f59e0b" />
+              </span>
+            </motion.a>
           </div>
         </div>
       </header>

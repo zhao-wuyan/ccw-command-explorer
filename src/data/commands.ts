@@ -94,7 +94,7 @@ export const COMMANDS: Command[] = [
   },
 
   // ==================== 工作流核心 ====================
-  { cmd: '/team-planex-v2', desc: 'PlanEx 管道 v2 - CSV Wave 规划+执行混合模式', status: 'new', category: 'team', cli: 'codex', addedInVersion: 'v7.2.3',
+  { cmd: '/team-planex-v2', desc: 'PlanEx 管道 v2 - CSV Wave 规划+执行混合模式', status: 'new', category: 'skill', cli: 'codex', addedInVersion: 'v7.2.3',
     detail: '混合团队技能：Planner 分解需求为 Issues + Solutions，Executor 通过 CLI 工具实现。支持 Issue IDs、文本输入、计划文件输入。使用 CSV Wave 并行执行，支持依赖排序和上下文传播',
     usage: '需求规划执行一体化，适合批量 Issue 处理'
   },

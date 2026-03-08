@@ -1,13 +1,13 @@
 {
   "_metadata": {
     "version": "4.0.0",
-    "generated": "2026-03-08T15:25:18.053Z",
-    "total_commands": 123,
+    "generated": "2026-03-08T16:13:26.988Z",
+    "total_commands": 146,
     "sources": {
       "claude_commands": 54,
       "claude_skills": 43,
       "codex_prompts": 2,
-      "codex_skills": 24
+      "codex_skills": 47
     }
   },
   "commands": [
@@ -1020,6 +1020,20 @@
       "allowed_tools": "Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill"
     },
     {
+      "name": "spec-generator",
+      "command": "/spec-generator",
+      "description": "Specification generator - 7 phase document chain producing product brief, PRD, architecture, epics, and issues. Agent-delegated heavy phases (2-5, 6.5) with Codex review gates. Triggers on \"generate spec\", \"create specification\", \"spec generator\", \"workflow:spec\".",
+      "h1_description": "Structured specification document generator producing a complete specification package (Product Brief, PRD, Architecture, Epics, Issues) through 7 sequential phases with multi-CLI analysis, Codex review gates, and interactive refinement. Heavy document phases are delegated to `doc-generator` agents to minimize main context usage. **Document generation only** - execution handoff via issue export to team-planex or existing workflows.",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "implementation",
+      "difficulty": "Advanced",
+      "cli": "codex",
+      "source": ".codex/skills/spec-generator/SKILL.md",
+      "allowed_tools": "Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill"
+    },
+    {
       "name": "spec-setup",
       "command": "/spec-setup",
       "description": "Initialize project-level state and configure specs via interactive questionnaire using cli-explore-agent",
@@ -1132,6 +1146,20 @@
       "allowed_tools": "Agent, TaskCreate, TaskList, TaskGet, TaskUpdate, TeamCreate, TeamDelete, SendMessage, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context"
     },
     {
+      "name": "team-arch-opt",
+      "command": "/team-arch-opt",
+      "description": "Architecture optimization team skill. Analyzes codebase architecture, designs refactoring plans, implements changes, validates improvements, and reviews code quality via CSV wave pipeline with interactive review-fix cycles.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"architecture optimization task description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Beginner",
+      "cli": "codex",
+      "source": ".codex/skills/team-arch-opt/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
+    },
+    {
       "name": "team-brainstorm",
       "command": "/team-brainstorm",
       "description": "Unified team skill for brainstorming team. Uses team-worker agent architecture with role directories for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team brainstorm\".",
@@ -1144,6 +1172,20 @@
       "cli": "claude",
       "source": ".claude/skills/team-brainstorm/SKILL.md",
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "team-brainstorm",
+      "command": "/team-brainstorm",
+      "description": "Multi-agent brainstorming pipeline with Generator-Critic loop. Generates ideas, challenges assumptions, synthesizes themes, and evaluates proposals. Supports Quick, Deep, and Full pipeline modes.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"topic description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Advanced",
+      "cli": "codex",
+      "source": ".codex/skills/team-brainstorm/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
     },
     {
       "name": "team-coordinate",
@@ -1160,6 +1202,20 @@
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
+      "name": "team-coordinate",
+      "command": "/team-coordinate",
+      "description": "Universal team coordination skill with dynamic role generation. Analyzes task, generates worker roles at runtime, decomposes into CSV tasks with dependency waves, dispatches parallel CSV agents per wave. Coordinator is orchestrator; all workers are CSV or interactive agents with dynamically generated instructions.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"task description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "implementation",
+      "difficulty": "Beginner",
+      "cli": "codex",
+      "source": ".codex/skills/team-coordinate/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
+    },
+    {
       "name": "team-designer",
       "command": "/team-designer",
       "description": "Meta-skill for generating team skills following the v4 architecture pattern. Produces complete skill packages with SKILL.md router, coordinator, worker roles, specs, and templates. Triggers on \"team-designer\", \"design team\".",
@@ -1172,6 +1228,20 @@
       "cli": "claude",
       "source": ".claude/skills/team-designer/SKILL.md",
       "allowed_tools": "Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "team-designer",
+      "command": "/team-designer",
+      "description": "Meta-skill for generating team skills. Analyzes requirements, scaffolds directory structure, generates role definitions and specs, validates completeness. Produces complete Codex team skill packages with SKILL.md orchestrator, CSV schemas, agent instructions, and interactive agents.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"skill description with roles and domain\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Beginner",
+      "cli": "codex",
+      "source": ".codex/skills/team-designer/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
     },
     {
       "name": "team-edict",
@@ -1188,6 +1258,20 @@
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
+      "name": "team-edict",
+      "command": "/team-edict",
+      "description": "|",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"task description / edict\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "general",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/team-edict/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
+    },
+    {
       "name": "team-executor",
       "command": "/team-executor",
       "description": "Lightweight session execution skill. Resumes existing team-coordinate sessions for pure execution via team-worker agents. No analysis, no role generation -- only loads and executes. Session path required. Triggers on \"Team Executor\".",
@@ -1200,6 +1284,20 @@
       "cli": "claude",
       "source": ".claude/skills/team-executor/SKILL.md",
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "team-executor",
+      "command": "/team-executor",
+      "description": "Lightweight session execution skill. Resumes existing team-coordinate sessions for pure execution via worker agents. No analysis, no role generation -- only loads and executes. Session path required.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"--session=<path>\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "implementation",
+      "difficulty": "Advanced",
+      "cli": "codex",
+      "source": ".codex/skills/team-executor/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
     },
     {
       "name": "team-frontend",
@@ -1216,6 +1314,20 @@
       "allowed_tools": "Agent(*), TaskCreate(*), TaskList(*), TaskGet(*), TaskUpdate(*), TeamCreate(*), TeamDelete(*), SendMessage(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), WebFetch(*), WebSearch(*), mcp__ace-tool__search_context(*)"
     },
     {
+      "name": "team-frontend",
+      "command": "/team-frontend",
+      "description": "Frontend development team with built-in ui-ux-pro-max design intelligence. Covers requirement analysis, design system generation, frontend implementation, and quality assurance. CSV wave pipeline with interactive QA gates.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"frontend task description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/team-frontend/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
+    },
+    {
       "name": "team-frontend-debug",
       "command": "/team-frontend-debug",
       "description": "Frontend debugging team using Chrome DevTools MCP. Dual-mode — feature-list testing or bug-report debugging. Triggers on \"team-frontend-debug\", \"frontend debug\".",
@@ -1228,6 +1340,20 @@
       "cli": "claude",
       "source": ".claude/skills/team-frontend-debug/SKILL.md",
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__chrome-devtools__*(*)"
+    },
+    {
+      "name": "team-frontend-debug",
+      "command": "/team-frontend-debug",
+      "description": "Frontend debugging team using Chrome DevTools MCP. Dual-mode -- feature-list testing or bug-report debugging. Covers reproduction, root cause analysis, code fixes, and verification. CSV wave pipeline with conditional skip and iteration loops.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"feature list or bug description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "testing",
+      "difficulty": "Beginner",
+      "cli": "codex",
+      "source": ".codex/skills/team-frontend-debug/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
     },
     {
       "name": "team-issue",
@@ -1244,6 +1370,20 @@
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__team_msg(*)"
     },
     {
+      "name": "team-issue",
+      "command": "/team-issue",
+      "description": "Hybrid team skill for issue resolution. CSV wave primary for exploration, planning, integration, and implementation. Interactive agents for review gates with fix cycles. Supports Quick, Full, and Batch pipelines.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] [--mode=quick|full|batch] \\\"issue-ids or --all-pending\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Advanced",
+      "cli": "codex",
+      "source": ".codex/skills/team-issue/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
+    },
+    {
       "name": "team-iterdev",
       "command": "/team-iterdev",
       "description": "Unified team skill for iterative development team. Pure router — all roles read this file. Beat model is coordinator-only in monitor.md. Generator-Critic loops (developer<->reviewer, max 3 rounds). Triggers on \"team iterdev\".",
@@ -1256,6 +1396,20 @@
       "cli": "claude",
       "source": ".claude/skills/team-iterdev/SKILL.md",
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "team-iterdev",
+      "command": "/team-iterdev",
+      "description": "Iterative development team with Generator-Critic loop, dynamic pipeline selection (patch/sprint/multi-sprint), task ledger for progress tracking, and shared wisdom for cross-sprint learning.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"task description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "general",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/team-iterdev/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
     },
     {
       "name": "team-lifecycle",
@@ -1286,6 +1440,20 @@
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
+      "name": "team-lifecycle-v4",
+      "command": "/team-lifecycle-v4",
+      "description": "Full lifecycle team skill — specification, planning, implementation, testing, and review. Supports spec-only, impl-only, full-lifecycle, and frontend pipelines with optional supervisor checkpoints.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"task description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/team-lifecycle-v4/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
+    },
+    {
       "name": "team-perf-opt",
       "command": "/team-perf-opt",
       "description": "Unified team skill for performance optimization. Coordinator orchestrates pipeline, workers are team-worker agents. Supports single/fan-out/independent parallel modes. Triggers on \"team perf-opt\".",
@@ -1298,6 +1466,20 @@
       "cli": "claude",
       "source": ".claude/skills/team-perf-opt/SKILL.md",
       "allowed_tools": "Agent, TaskCreate, TaskList, TaskGet, TaskUpdate, TeamCreate, TeamDelete, SendMessage, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context"
+    },
+    {
+      "name": "team-perf-opt",
+      "command": "/team-perf-opt",
+      "description": "Performance optimization team skill. Profiles application performance, identifies bottlenecks, designs optimization strategies, implements changes, benchmarks improvements, and reviews code quality via CSV wave pipeline with interactive review-fix cycles.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"performance optimization task description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/team-perf-opt/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
     },
     {
       "name": "team-planex",
@@ -1328,6 +1510,20 @@
       "allowed_tools": ""
     },
     {
+      "name": "team-planex-v2",
+      "command": "/team-planex-v2",
+      "description": "Hybrid team skill for plan-and-execute pipeline. CSV wave primary for planning and execution. Planner decomposes requirements into issues and solutions, then executor implements each via CLI tools. Supports issue IDs, text input, and plan file input.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] [--exec=codex|gemini] \\\"issue IDs or --text 'description' or --plan path\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/team-planex-v2/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
+    },
+    {
       "name": "team-quality-assurance",
       "command": "/team-quality-assurance",
       "description": "Unified team skill for quality assurance. Full closed-loop QA combining issue discovery and software testing. Triggers on \"team quality-assurance\", \"team qa\".",
@@ -1340,6 +1536,20 @@
       "cli": "claude",
       "source": ".claude/skills/team-quality-assurance/SKILL.md",
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "team-quality-assurance",
+      "command": "/team-quality-assurance",
+      "description": "Full closed-loop QA combining issue discovery and software testing. Scout -> Strategist -> Generator -> Executor -> Analyst with multi-perspective scanning, progressive test layers, GC loops, and quality scoring. Supports discovery, testing, and full QA modes.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] [--mode=discovery|testing|full] \\\"task description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "testing",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/team-quality-assurance/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
     },
     {
       "name": "team-review",
@@ -1356,6 +1566,20 @@
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)"
     },
     {
+      "name": "team-review",
+      "command": "/team-review",
+      "description": "Multi-agent code review pipeline with scanner, reviewer, and fixer roles. Executes toolchain + LLM scan, deep analysis with root cause enrichment, and automated fixes with rollback-on-failure.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] [--full|--fix|-q] [--dimensions=sec,cor,prf,mnt] \\\"target path or pattern\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "implementation",
+      "difficulty": "Advanced",
+      "cli": "codex",
+      "source": ".codex/skills/team-review/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
+    },
+    {
       "name": "team-roadmap-dev",
       "command": "/team-roadmap-dev",
       "description": "Unified team skill for roadmap-driven development workflow. Coordinator discusses roadmap with user, then dispatches phased execution pipeline (plan -> execute -> verify). All roles invoke this skill with --role arg. Triggers on \"team roadmap-dev\".",
@@ -1368,6 +1592,20 @@
       "cli": "claude",
       "source": ".claude/skills/team-roadmap-dev/SKILL.md",
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "team-roadmap-dev",
+      "command": "/team-roadmap-dev",
+      "description": "Roadmap-driven development with phased execution pipeline. Coordinator discusses roadmap with user, then executes plan->execute->verify cycles per phase using CSV wave execution.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"<task-description>\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/team-roadmap-dev/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
     },
     {
       "name": "team-tech-debt",
@@ -1384,6 +1622,20 @@
       "allowed_tools": "Agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, TaskList, TaskGet, TaskUpdate, TaskCreate, TeamCreate, TeamDelete, SendMessage, mcp__ace-tool__search_context, mcp__ccw-tools__read_file, mcp__ccw-tools__write_file, mcp__ccw-tools__edit_file, mcp__ccw-tools__team_msg"
     },
     {
+      "name": "team-tech-debt",
+      "command": "/team-tech-debt",
+      "description": "Systematic tech debt governance with CSV wave pipeline. Scans codebase for tech debt across 5 dimensions, assesses severity with priority matrix, plans phased remediation, executes fixes in worktree, validates with 4-layer checks. Supports scan/remediate/targeted pipeline modes with fix-verify GC loop.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] [--mode=scan|remediate|targeted] \\\"scope or description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/team-tech-debt/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
+    },
+    {
       "name": "team-testing",
       "command": "/team-testing",
       "description": "Unified team skill for testing team. Progressive test coverage through Generator-Critic loops, shared memory, and dynamic layer selection. Triggers on \"team testing\".",
@@ -1396,6 +1648,20 @@
       "cli": "claude",
       "source": ".claude/skills/team-testing/SKILL.md",
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "team-testing",
+      "command": "/team-testing",
+      "description": "Multi-agent test pipeline with progressive layer coverage (L1/L2/L3), Generator-Critic loops for coverage convergence, and shared defect memory. Strategist -> Generator -> Executor -> Analyst with dynamic pipeline selection.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"task description or scope\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "testing",
+      "difficulty": "Advanced",
+      "cli": "codex",
+      "source": ".codex/skills/team-testing/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
     },
     {
       "name": "team-uidesign",
@@ -1412,6 +1678,20 @@
       "allowed_tools": "Agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, TaskList, TaskGet, TaskUpdate, TaskCreate, TeamCreate, TeamDelete, SendMessage, mcp__ace-tool__search_context, mcp__ccw-tools__read_file, mcp__ccw-tools__write_file, mcp__ccw-tools__edit_file, mcp__ccw-tools__team_msg"
     },
     {
+      "name": "team-uidesign",
+      "command": "/team-uidesign",
+      "description": "UI design team pipeline. Research existing design system, generate design tokens (W3C format), audit quality, and implement code. CSV wave pipeline with GC loop (designer <-> reviewer) and dual-track parallel support.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"UI design task description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/team-uidesign/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
+    },
+    {
       "name": "team-ultra-analyze",
       "command": "/team-ultra-analyze",
       "description": "Deep collaborative analysis team skill. All roles route via this SKILL.md. Beat model is coordinator-only (monitor.md). Structure is roles/ + specs/. Triggers on \"team ultra-analyze\", \"team analyze\".",
@@ -1426,6 +1706,20 @@
       "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
+      "name": "team-ultra-analyze",
+      "command": "/team-ultra-analyze",
+      "description": "Deep collaborative analysis pipeline. Multi-perspective exploration, deep analysis, user-driven discussion loops, and cross-perspective synthesis. Supports Quick, Standard, and Deep pipeline modes.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] [--mode quick|standard|deep] \\\"analysis topic\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "analysis",
+      "difficulty": "Beginner",
+      "cli": "codex",
+      "source": ".codex/skills/team-ultra-analyze/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
+    },
+    {
       "name": "team-ux-improve",
       "command": "/team-ux-improve",
       "description": "Unified team skill for UX improvement. Systematically discovers and fixes UI/UX interaction issues including unresponsive buttons, missing feedback, and state refresh problems. Uses team-worker agent architecture with roles/ for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team ux improve\".",
@@ -1438,6 +1732,20 @@
       "cli": "claude",
       "source": ".claude/skills/team-ux-improve/SKILL.md",
       "allowed_tools": "Agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, TaskList, TaskGet, TaskUpdate, TaskCreate, TeamCreate, TeamDelete, SendMessage, mcp__ace-tool__search_context, mcp__ccw-tools__read_file, mcp__ccw-tools__write_file, mcp__ccw-tools__edit_file, mcp__ccw-tools__team_msg"
+    },
+    {
+      "name": "team-ux-improve",
+      "command": "/team-ux-improve",
+      "description": "Systematic UX improvement pipeline. Discovers and fixes UI/UX interaction issues including unresponsive buttons, missing feedback, and state refresh problems using scan->diagnose->design->implement->test workflow.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"<project-path> [--framework react|vue]\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/team-ux-improve/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
     },
     {
       "name": "unified-execute-with-file",
@@ -1620,6 +1928,20 @@
       "cli": "claude",
       "source": ".claude/skills/workflow-tdd/SKILL.md",
       "allowed_tools": "Skill, Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep"
+    },
+    {
+      "name": "workflow-tdd-plan",
+      "command": "/workflow-tdd-plan",
+      "description": "|",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [--session ID] \\\"task description\\\" | verify [--session ID]",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Advanced",
+      "cli": "codex",
+      "source": ".codex/skills/workflow-tdd-plan/SKILL.md",
+      "allowed_tools": "spawn_agent, wait, send_input, close_agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-tdd-plan-plan",

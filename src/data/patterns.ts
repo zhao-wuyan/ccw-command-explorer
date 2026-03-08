@@ -25,7 +25,7 @@ export const TASK_PATTERNS: TaskPattern[] = [
   { type: 'issue-batch', keywords: /issues|batch fix|批量修复|多个问题|批量处理/, level: 2, flow: 'issue', desc: 'Issue 批量处理', emoji: '🐛', weight: 80 },
 
   // Team workflows
-  { type: 'team-planex', keywords: /team plan exec|team planex|团队规划执行|并行规划执行|wave pipeline|团队协作|多人执行/, level: 4, flow: 'team-planex', desc: 'Team 并行执行', emoji: '🚀', weight: 85 },
+  { type: 'team-planex', keywords: /team plan exec|team planex|planex v2|planex-v2|团队规划执行|并行规划执行|wave pipeline|团队协作|多人执行|csv wave/, level: 4, flow: 'team-planex', desc: 'Team 并行执行', emoji: '🚀', weight: 85 },
 
   // Standard workflows
   { type: 'multi-cli', keywords: /multi cli|多 CLI|多模型协作|multi model collab|多终端|多个 AI|多模型/, level: 3, flow: 'multi-cli-plan', desc: '多CLI协作', emoji: '🤖', weight: 80 },

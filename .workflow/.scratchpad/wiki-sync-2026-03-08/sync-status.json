@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-03-08T16:00:00Z",
+  "localVersion": "v7.2.3",
+  "pageVersion": "v7.2.2",
+  "syncResult": {
+    "total_actual": 124,
+    "total_ts": 124,
+    "missing": [],
+    "extra": [],
+    "synced": true
+  },
+  "changes": {
+    "added": ["/team-planex-v2"],
+    "deprecated": ["/workflow:init"],
+    "modified": []
+  },
+  "filesUpdated": [
+    "src/data/commands.ts",
+    "src/data/deprecated.ts",
+    "src/data/timeline.ts",
+    "src/data/patterns.ts"
+  ]
+}

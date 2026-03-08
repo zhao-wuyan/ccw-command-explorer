@@ -191,8 +191,9 @@ export const TIMELINE: TimelineItem[] = [
     color: COLORS.primary,
     commands: 127,
     detail: {
-      version: 'v7.2.2',
+      version: 'v7.2.3',
       highlights: [
+        '新 Skill: team-planex-v2 混合规划执行管道',
         '新 Skill: team-arch-opt 架构优化',
         '新 Skill: DDD 文档驱动开发流水线 (9 个命令)',
         '新 Skill: team-edict 三省六部协作框架',
@@ -205,6 +206,7 @@ export const TIMELINE: TimelineItem[] = [
         '分层违规、God Class 检测'
       ],
       newCommands: [
+        '/team-planex-v2',
         '/ddd:auto',
         '/ddd:sync',
         '/ddd:update',
@@ -223,7 +225,7 @@ export const TIMELINE: TimelineItem[] = [
         '/skill-simplify',
         '/workflow-lite-execute'
       ],
-      usage: '重大更新！DDD 文档驱动开发流水线上线，用 /ddd:auto 一键完成规划→执行→同步！新增三省六部协作框架、前端调试团队、UX 改进团队等新技能！'
+      usage: '重大更新！DDD 文档驱动开发流水线上线，用 /ddd:auto 一键完成规划→执行→同步！新增三省六部协作框架、前端调试团队、UX 改进团队等新技能！v7.2.3 新增 team-planex-v2 混合规划执行管道！'
     }
   },
 ];

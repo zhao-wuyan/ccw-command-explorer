@@ -94,9 +94,9 @@ export const COMMANDS: Command[] = [
   },
 
   // ==================== 工作流核心 ====================
-  { cmd: '/workflow:init', desc: '初始化项目状态', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v5.0',
-    detail: '首次使用准备：创建.workflow目录、初始化配置文件。在新项目里第一次用CCW要先执行这个',
-    usage: '在新项目中第一次使用CCW'
+  { cmd: '/team-planex-v2', desc: 'PlanEx 管道 v2 - CSV Wave 规划+执行混合模式', status: 'new', category: 'team', cli: 'codex', addedInVersion: 'v7.2.3',
+    detail: '混合团队技能：Planner 分解需求为 Issues + Solutions，Executor 通过 CLI 工具实现。支持 Issue IDs、文本输入、计划文件输入。使用 CSV Wave 并行执行，支持依赖排序和上下文传播',
+    usage: '需求规划执行一体化，适合批量 Issue 处理'
   },
   { cmd: '/workflow:clean', desc: '清理代码和临时文件', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v5.2',
     detail: '智能清理：检测过时的会话目录、临时文件、死代码、无用的依赖。保持项目整洁',
@@ -589,5 +589,5 @@ export const STATS = {
   codexCommands: COMMANDS.filter(c => c.cli === 'codex').length,
   newCommands: COMMANDS.filter(c => c.status === 'new').length,
   recommendedCommands: COMMANDS.filter(c => c.status === 'recommended').length,
-  latestVersion: 'v7.2.2',  // 当前最新版本
+  latestVersion: 'v7.2.3',  // 当前最新版本
 };

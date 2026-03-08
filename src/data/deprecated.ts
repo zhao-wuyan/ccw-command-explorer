@@ -69,4 +69,7 @@ export const DEPRECATED_COMMANDS: DeprecatedCommand[] = [
   { old: '/workflow:init-specs', newCmd: '/workflow:spec:setup', reason: '命令整合到统一规格管理', deprecatedInVersion: 'v7.2.2' },
   { old: '/workflow:init-guidelines', newCmd: '/workflow:spec:setup', reason: '命令整合到统一规格管理', deprecatedInVersion: 'v7.2.2' },
   { old: '/workflow:session:solidify', newCmd: '/workflow:spec:add', reason: '固化经验功能整合到规格添加命令', deprecatedInVersion: 'v7.2.2' },
+
+  // v7.2.3 废弃 - 命令清理
+  { old: '/workflow:init', newCmd: '/workflow:spec:setup', reason: '项目初始化功能整合到规格管理系统', deprecatedInVersion: 'v7.2.3' },
 ];

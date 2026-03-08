@@ -1,0 +1,180 @@
+{
+  "version": "5.0.0",
+  "team_name": "team-edict",
+  "team_display_name": "Team Edict — 三省六部",
+  "description": "完整复刻 Edict 三省六部架构：太子接旨 -> 中书省规划 -> 门下省多CLI审议 -> 尚书省调度 -> 六部并行执行。强制看板状态上报，支持 Blocked 一等公民状态，全流程可观测。",
+  "architecture": "team-worker agent + role-specs + 串行审批链 + 多CLI并行审议",
+  "worker_agent": "team-worker",
+  "session_prefix": "EDT",
+
+  "roles": {
+    "coordinator": {
+      "alias": "太子",
+      "task_prefix": null,
+      "responsibility": "接旨分拣、驱动八阶段流程、封驳循环控制、六部并行调度、最终汇总奏报",
+      "message_types": ["plan_ready", "review_result", "dispatch_ready", "impl_complete", "ops_complete", "data_complete", "doc_complete", "hr_complete", "qa_complete", "error"]
+    },
+    "zhongshu": {
+      "alias": "中书省",
+      "task_prefix": "PLAN",
+      "role_spec": "role-specs/zhongshu.md",
+      "responsibility": "分析旨意、代码库探索（gemini CLI）、起草结构化执行方案",
+      "inner_loop": false,
+      "message_types": ["plan_ready", "error"]
+    },
+    "menxia": {
+      "alias": "门下省",
+      "task_prefix": "REVIEW",
+      "role_spec": "role-specs/menxia.md",
+      "responsibility": "四维并行审议（gemini×2 + qwen + codex）、输出准奏/封驳结论",
+      "inner_loop": false,
+      "multi_cli": {
+        "enabled": true,
+        "dimensions": [
+          {"name": "可行性", "tool": "gemini", "rule": "analysis-review-architecture"},
+          {"name": "完整性", "tool": "qwen"},
+          {"name": "风险评估", "tool": "gemini", "rule": "analysis-assess-security-risks"},
+          {"name": "资源评估", "tool": "codex"}
+        ]
+      },
+      "message_types": ["review_result", "error"]
+    },
+    "shangshu": {
+      "alias": "尚书省",
+      "task_prefix": "DISPATCH",
+      "role_spec": "role-specs/shangshu.md",
+      "responsibility": "解析准奏方案、按六部路由规则拆解子任务、生成调度令清单",
+      "inner_loop": false,
+      "message_types": ["dispatch_ready", "error"]
+    },
+    "gongbu": {
+      "alias": "工部",
+      "task_prefix": "IMPL",
+      "role_spec": "role-specs/gongbu.md",
+      "responsibility": "功能开发、架构设计、代码实现、重构优化",
+      "inner_loop": true,
+      "message_types": ["impl_complete", "impl_progress", "error"]
+    },
+    "bingbu": {
+      "alias": "兵部",
+      "task_prefix": "OPS",
+      "role_spec": "role-specs/bingbu.md",
+      "responsibility": "基础设施运维、部署发布、CI/CD、性能监控、安全防御",
+      "inner_loop": true,
+      "message_types": ["ops_complete", "ops_progress", "error"]
+    },
+    "hubu": {
+      "alias": "户部",
+      "task_prefix": "DATA",
+      "role_spec": "role-specs/hubu.md",
+      "responsibility": "数据分析、统计汇总、成本分析、资源管理、报表生成",
+      "inner_loop": true,
+      "message_types": ["data_complete", "data_progress", "error"]
+    },
+    "libu": {
+      "alias": "礼部",
+      "task_prefix": "DOC",
+      "role_spec": "role-specs/libu.md",
+      "responsibility": "文档撰写、规范制定、UI/UX文案、API文档、对外沟通",
+      "inner_loop": true,
+      "message_types": ["doc_complete", "doc_progress", "error"]
+    },
+    "libu-hr": {
+      "alias": "吏部",
+      "task_prefix": "HR",
+      "role_spec": "role-specs/libu-hr.md",
+      "responsibility": "Agent管理、技能培训与优化、考核评估、协作规范制定",
+      "inner_loop": false,
+      "message_types": ["hr_complete", "error"]
+    },
+    "xingbu": {
+      "alias": "刑部",
+      "task_prefix": "QA",
+      "role_spec": "role-specs/xingbu.md",
+      "responsibility": "代码审查、测试验收、Bug定位修复、合规审计（test-fix循环最多3轮）",
+      "inner_loop": true,
+      "message_types": ["qa_complete", "qa_progress", "fix_required", "error"]
+    }
+  },
+
+  "pipeline": {
+    "type": "cascade_with_parallel_execution",
+    "description": "串行审批链 + 六部按依赖并行执行",
+    "stages": [
+      {
+        "stage": 1,
+        "name": "规划",
+        "roles": ["zhongshu"],
+        "blockedBy": []
+      },
+      {
+        "stage": 2,
+        "name": "审议",
+        "roles": ["menxia"],
+        "blockedBy": ["zhongshu"],
+        "retry": {"max_rounds": 3, "on_reject": "respawn zhongshu with feedback"}
+      },
+      {
+        "stage": 3,
+        "name": "调度",
+        "roles": ["shangshu"],
+        "blockedBy": ["menxia"]
+      },
+      {
+        "stage": 4,
+        "name": "执行",
+        "roles": ["gongbu", "bingbu", "hubu", "libu", "libu-hr", "xingbu"],
+        "blockedBy": ["shangshu"],
+        "parallel": true,
+        "note": "实际并行度由 dispatch-plan.md 中的 blockedBy 决定"
+      }
+    ],
+    "diagram": "PLAN-001 -> REVIEW-001 -> DISPATCH-001 -> [IMPL/OPS/DATA/DOC/HR/QA 按需并行]"
+  },
+
+  "kanban_protocol": {
+    "description": "所有 worker 强制遵守的看板状态上报规范",
+    "state_machine": ["Pending", "Doing", "Blocked", "Done"],
+    "mandatory_events": [
+      {"event": "接任务时", "type": "state_update", "data": "state=Doing + current_step"},
+      {"event": "每个关键步骤", "type": "impl_progress", "data": "current + plan(步骤1✅|步骤2🔄|步骤3)"},
+      {"event": "完成时", "type": "task_handoff", "data": "from_role -> coordinator + remark"},
+      {"event": "阻塞时", "type": "error", "data": "state=Blocked + reason"}
+    ],
+    "implementation": "team_msg(operation='log', session_id=<session_id>, from=<role>, ...)"
+  },
+
+  "routing_rules": {
+    "description": "尚书省六部路由规则",
+    "rules": [
+      {"keywords": ["功能开发", "架构", "代码", "重构", "API", "接口", "实现"], "department": "gongbu"},
+      {"keywords": ["部署", "CI/CD", "基础设施", "容器", "性能监控", "安全防御"], "department": "bingbu"},
+      {"keywords": ["数据分析", "统计", "成本", "报表", "资源管理"], "department": "hubu"},
+      {"keywords": ["文档", "README", "UI文案", "规范", "API文档", "对外沟通"], "department": "libu"},
+      {"keywords": ["测试", "QA", "Bug", "审查", "合规审计"], "department": "xingbu"},
+      {"keywords": ["Agent管理", "培训", "技能优化", "考核"], "department": "libu-hr"}
+    ]
+  },
+
+  "session_dirs": {
+    "base": ".workflow/.team/EDT-{slug}-{YYYY-MM-DD}/",
+    "plan": "plan/",
+    "review": "review/",
+    "artifacts": "artifacts/",
+    "kanban": "kanban/",
+    "wisdom": "wisdom/contributions/",
+    "messages": ".msg/"
+  },
+
+  "artifacts": {
+    "zhongshu": "plan/zhongshu-plan.md",
+    "menxia": "review/menxia-review.md",
+    "shangshu": "plan/dispatch-plan.md",
+    "gongbu": "artifacts/gongbu-output.md",
+    "bingbu": "artifacts/bingbu-output.md",
+    "hubu": "artifacts/hubu-output.md",
+    "libu": "artifacts/libu-output.md",
+    "libu-hr": "artifacts/libu-hr-output.md",
+    "xingbu": "artifacts/xingbu-report.md"
+  }
+}

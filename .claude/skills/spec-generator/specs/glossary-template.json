@@ -1,0 +1,29 @@
+{
+  "$schema": "glossary-v1",
+  "description": "Template for terminology glossary used across spec-generator documents",
+  "session_id": "",
+  "generated_at": "",
+  "version": 1,
+  "terms": [
+    {
+      "term": "",
+      "definition": "",
+      "aliases": [],
+      "first_defined_in": "product-brief.md",
+      "category": "core"
+    }
+  ],
+  "_usage_notes": {
+    "category_values": {
+      "core": "Domain-specific terms central to the product (e.g., 'Workspace', 'Session')",
+      "technical": "Technical terms specific to the architecture (e.g., 'gRPC', 'event bus')",
+      "business": "Business/process terms (e.g., 'Sprint', 'SLA', 'stakeholder')"
+    },
+    "rules": [
+      "Terms MUST be defined before first use in any document",
+      "All documents MUST use the canonical 'term' field consistently",
+      "Aliases are for reference only - prefer canonical term in all documents",
+      "Phase 6 validates glossary compliance across all documents"
+    ]
+  }
+}

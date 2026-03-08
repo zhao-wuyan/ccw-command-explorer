@@ -1,13 +1,13 @@
 {
   "_metadata": {
     "version": "4.0.0",
-    "generated": "2026-03-08T09:40:27.378Z",
-    "total_commands": 106,
+    "generated": "2026-03-08T12:20:22.530Z",
+    "total_commands": 123,
     "sources": {
-      "claude_commands": 47,
-      "claude_skills": 37,
+      "claude_commands": 54,
+      "claude_skills": 43,
       "codex_prompts": 2,
-      "codex_skills": 20
+      "codex_skills": 24
     }
   },
   "commands": [
@@ -26,10 +26,24 @@
       "allowed_tools": "AskUserQuestion(*), Read(*), Bash(*), Write(*), Glob(*)"
     },
     {
+      "name": "add",
+      "command": "/workflow:spec:add",
+      "description": "Add specs, conventions, constraints, or learnings to project guidelines interactively or automatically",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [--type <convention|constraint|learning>] [--category <category>] [--dimension <specs|personal>] [--scope <global|project>] [--interactive] \\\"rule text\\\"",
+      "category": "workflow",
+      "subcategory": "workflow/spec",
+      "usage_scenario": "general",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/commands/workflow/spec/add.md",
+      "allowed_tools": ""
+    },
+    {
       "name": "analyze-with-file",
       "command": "/workflow:analyze-with-file",
       "description": "Interactive collaborative analysis with documented discussions, CLI-assisted exploration, and evolving understanding",
-      "h1_description": "",
+      "h1_description": "**Context Source**: cli-explore-agent + Gemini/Codex analysis **Output Directory**: `.workflow/.analysis/{session-id}/` **Core Innovation**: Documented discussion timeline with evolving understanding",
       "arguments": "[-y|--yes] [-c|--continue] \\\"topic or question\\\"",
       "category": "workflow",
       "subcategory": null,
@@ -37,7 +51,7 @@
       "difficulty": "Beginner",
       "cli": "claude",
       "source": ".claude/commands/workflow/analyze-with-file.md",
-      "allowed_tools": "TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
     },
     {
       "name": "analyze-with-file",
@@ -65,7 +79,21 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/workflow/ui-design/animation-extract.md",
-      "allowed_tools": "TodoWrite(*), Read(*), Write(*), Glob(*), Bash(*), AskUserQuestion(*), Task(ui-design-agent)"
+      "allowed_tools": "TodoWrite(*), Read(*), Write(*), Glob(*), Bash(*), AskUserQuestion(*), Agent(ui-design-agent)"
+    },
+    {
+      "name": "auto",
+      "command": "/ddd:auto",
+      "description": "Chain command - automated document-driven development flow. Detects project state and runs the appropriate chain for new or existing projects.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [--skip-spec] [--skip-build] [--spec <session-id>] [--resume] \\\"project idea or task description\\\"",
+      "category": "ddd",
+      "subcategory": null,
+      "usage_scenario": "general",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/commands/ddd/auto.md",
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
     },
     {
       "name": "brainstorm",
@@ -79,7 +107,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/brainstorm/SKILL.md",
-      "allowed_tools": "Skill(*), Task(conceptual-planning-agent, context-search-agent), AskUserQuestion(*), TodoWrite(*), Read(*), Write(*), Edit(*), Glob(*), Bash(*)"
+      "allowed_tools": "Skill(*), Agent(conceptual-planning-agent, context-search-agent), AskUserQuestion(*), TodoWrite(*), Read(*), Write(*), Edit(*), Glob(*), Bash(*)"
     },
     {
       "name": "brainstorm",
@@ -107,7 +135,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/workflow/brainstorm-with-file.md",
-      "allowed_tools": "TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
     },
     {
       "name": "brainstorm-with-file",
@@ -163,7 +191,7 @@
       "difficulty": "Beginner",
       "cli": "claude",
       "source": ".claude/commands/ccw-coordinator.md",
-      "allowed_tools": "Task(*), AskUserQuestion(*), Read(*), Write(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "Agent(*), AskUserQuestion(*), Read(*), Write(*), Bash(*), Glob(*), Grep(*)"
     },
     {
       "name": "ccw-help",
@@ -191,7 +219,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/workflow/clean.md",
-      "allowed_tools": "TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Glob(*), Bash(*), Write(*)"
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Glob(*), Bash(*), Write(*)"
     },
     {
       "name": "clean",
@@ -331,7 +359,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/workflow/debug-with-file.md",
-      "allowed_tools": "TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
     },
     {
       "name": "debug-with-file",
@@ -362,6 +390,48 @@
       "allowed_tools": "Read(*), Write(*), Edit(*), TodoWrite(*), Glob(*), Bash(*)"
     },
     {
+      "name": "doc-generate",
+      "command": "/ddd:doc-generate",
+      "description": "Generate full document tree from doc-index.json. Layer 3 (components) → Layer 2 (features) → Layer 1 (indexes/overview). Standalone or called by scan/index-build.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [--layer <3|2|1|all>] [--force] [--skip-overview] [--skip-schema]",
+      "category": "ddd",
+      "subcategory": null,
+      "usage_scenario": "implementation",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/commands/ddd/doc-generate.md",
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
+    },
+    {
+      "name": "doc-refresh",
+      "command": "/ddd:doc-refresh",
+      "description": "Incrementally update affected documents based on changed components/features. Layer 3 → 2 → 1 selective refresh. Called by sync/update or used standalone.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [--components <id1,id2,...>] [--features <id1,id2,...>] [--minimal] [--dry-run]",
+      "category": "ddd",
+      "subcategory": null,
+      "usage_scenario": "general",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/commands/ddd/doc-refresh.md",
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
+    },
+    {
+      "name": "execute",
+      "command": "/ddd:execute",
+      "description": "Document-aware execution engine — executes plan.json + TASK-*.json with doc-index context enrichment, per-batch impact verification, and post-completion doc sync.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [--skip-sync] [--skip-verify] [--plan <path>] [--in-memory] \\\"optional task description\\\"",
+      "category": "ddd",
+      "subcategory": null,
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/commands/ddd/execute.md",
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*), mcp__ace-tool__search_context(*)"
+    },
+    {
       "name": "execute",
       "command": "/issue:execute",
       "description": "Execute queue with DAG-based parallel orchestration (one commit per solution)",
@@ -387,7 +457,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/workflow/ui-design/explore-auto.md",
-      "allowed_tools": "Skill(*), TodoWrite(*), Read(*), Bash(*), Glob(*), Write(*), Task(conceptual-planning-agent)"
+      "allowed_tools": "Skill(*), TodoWrite(*), Read(*), Bash(*), Glob(*), Write(*), Agent(conceptual-planning-agent)"
     },
     {
       "name": "from-brainstorm",
@@ -415,7 +485,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/workflow/ui-design/generate.md",
-      "allowed_tools": "TodoWrite(*), Read(*), Write(*), Task(ui-design-agent), Bash(*)"
+      "allowed_tools": "TodoWrite(*), Read(*), Write(*), Agent(ui-design-agent), Bash(*)"
     },
     {
       "name": "imitate-auto",
@@ -432,46 +502,18 @@
       "allowed_tools": "Skill(*), TodoWrite(*), Read(*), Write(*), Bash(*)"
     },
     {
-      "name": "init",
-      "command": "/workflow:init",
-      "description": "Initialize project-level state with intelligent project analysis using cli-explore-agent",
+      "name": "index-build",
+      "command": "/ddd:index-build",
+      "description": "Build document index from spec-generator outputs + codebase mapping. Requires existing spec session. For projects without specs, use /ddd:scan instead.",
       "h1_description": "",
-      "arguments": "[--regenerate] [--skip-specs]",
-      "category": "workflow",
-      "subcategory": null,
-      "usage_scenario": "general",
-      "difficulty": "Advanced",
-      "cli": "claude",
-      "source": ".claude/commands/workflow/init.md",
-      "allowed_tools": ""
-    },
-    {
-      "name": "init-guidelines",
-      "command": "/workflow:init-guidelines",
-      "description": "Interactive wizard to fill specs/*.md based on project analysis",
-      "h1_description": "",
-      "arguments": "[--reset]",
-      "category": "workflow",
-      "subcategory": null,
-      "usage_scenario": "general",
-      "difficulty": "Intermediate",
-      "cli": "claude",
-      "source": ".claude/commands/workflow/init-guidelines.md",
-      "allowed_tools": ""
-    },
-    {
-      "name": "init-specs",
-      "command": "/workflow:init-specs",
-      "description": "Interactive wizard to create individual specs or personal constraints with scope selection",
-      "h1_description": "",
-      "arguments": "[--scope <global|project>] [--dimension <specs|personal>] [--category <general|exploration|planning|execution>]",
-      "category": "workflow",
+      "arguments": "[-y|--yes] [-s|--spec <spec-session-id>] [--from-scratch]",
+      "category": "ddd",
       "subcategory": null,
       "usage_scenario": "implementation",
       "difficulty": "Intermediate",
       "cli": "claude",
-      "source": ".claude/commands/workflow/init-specs.md",
-      "allowed_tools": ""
+      "source": ".claude/commands/ddd/index-build.md",
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*), mcp__ace-tool__search_context(*)"
     },
     {
       "name": "integration-test-cycle",
@@ -485,7 +527,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/workflow/integration-test-cycle.md",
-      "allowed_tools": "TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*), Skill(*)"
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*), Skill(*)"
     },
     {
       "name": "issue-discover",
@@ -513,7 +555,7 @@
       "difficulty": "Beginner",
       "cli": "claude",
       "source": ".claude/skills/issue-manage/SKILL.md",
-      "allowed_tools": "Bash, Read, Write, AskUserQuestion, Task, Glob"
+      "allowed_tools": "Bash, Read, Write, AskUserQuestion, Agent, Glob"
     },
     {
       "name": "issue:discover",
@@ -527,7 +569,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/issue/discover.md",
-      "allowed_tools": "Skill(*), TodoWrite(*), Read(*), Bash(*), Task(*), AskUserQuestion(*), Glob(*), Grep(*)"
+      "allowed_tools": "Skill(*), TodoWrite(*), Read(*), Bash(*), Agent(*), AskUserQuestion(*), Glob(*), Grep(*)"
     },
     {
       "name": "issue:discover-by-prompt",
@@ -541,7 +583,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/commands/issue/discover-by-prompt.md",
-      "allowed_tools": "Skill(*), TodoWrite(*), Read(*), Bash(*), Task(*), AskUserQuestion(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__exa__search(*)"
+      "allowed_tools": "Skill(*), TodoWrite(*), Read(*), Bash(*), Agent(*), AskUserQuestion(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__exa__search(*)"
     },
     {
       "name": "layout-extract",
@@ -555,7 +597,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/workflow/ui-design/layout-extract.md",
-      "allowed_tools": "TodoWrite(*), Read(*), Write(*), Glob(*), Bash(*), AskUserQuestion(*), Task(ui-design-agent), mcp__exa__web_search_exa(*)"
+      "allowed_tools": "TodoWrite(*), Read(*), Write(*), Glob(*), Bash(*), AskUserQuestion(*), Agent(ui-design-agent), mcp__exa__web_search_exa(*)"
     },
     {
       "name": "list",
@@ -597,7 +639,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/memory-manage/SKILL.md",
-      "allowed_tools": "Task(*), Bash(*), AskUserQuestion(*), Read(*)"
+      "allowed_tools": "Agent(*), Bash(*), AskUserQuestion(*), Read(*)"
     },
     {
       "name": "new",
@@ -629,6 +671,20 @@
     },
     {
       "name": "plan",
+      "command": "/ddd:plan",
+      "description": "Document-driven planning pipeline — queries doc-index, explores codebase with doc-aware angles, clarifies ambiguities, and produces unified plan.json + TASK-*.json artifacts with doc_context traceability.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [--explore] [--skip-explore] [--skip-clarify] \\\"task description or feature keyword\\\"",
+      "category": "ddd",
+      "subcategory": null,
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/commands/ddd/plan.md",
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Write(*), mcp__ace-tool__search_context(*)"
+    },
+    {
+      "name": "plan",
       "command": "/issue:plan",
       "description": "Batch plan issue resolution using issue-plan-agent (explore + plan closed-loop)",
       "h1_description": "",
@@ -639,7 +695,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/commands/issue/plan.md",
-      "allowed_tools": "TodoWrite(*), Task(*), Skill(*), AskUserQuestion(*), Bash(*), Read(*), Write(*)"
+      "allowed_tools": "TodoWrite(*), Agent(*), Skill(*), AskUserQuestion(*), Bash(*), Read(*), Write(*)"
     },
     {
       "name": "prep-cycle",
@@ -681,7 +737,21 @@
       "difficulty": "Beginner",
       "cli": "claude",
       "source": ".claude/commands/memory/prepare.md",
-      "allowed_tools": "Task(*), Bash(*)"
+      "allowed_tools": "Agent(*), Bash(*)"
+    },
+    {
+      "name": "project-documentation-workflow",
+      "command": "/project-documentation-workflow",
+      "description": "Wave-based comprehensive project documentation generator with dynamic task decomposition. Analyzes project structure and generates appropriate documentation tasks, computes optimal execution waves via topological sort, produces complete documentation suite including architecture, methods, theory, features, usage, and design philosophy.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"project path or description\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "planning",
+      "difficulty": "Beginner",
+      "cli": "codex",
+      "source": ".codex/skills/project-documentation-workflow/SKILL.md",
+      "allowed_tools": "spawn_agents_on_csv, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion"
     },
     {
       "name": "queue",
@@ -695,7 +765,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/commands/issue/queue.md",
-      "allowed_tools": "TodoWrite(*), Task(*), Bash(*), Read(*), Write(*)"
+      "allowed_tools": "TodoWrite(*), Agent(*), Bash(*), Read(*), Write(*)"
     },
     {
       "name": "refactor-cycle",
@@ -709,7 +779,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/workflow/refactor-cycle.md",
-      "allowed_tools": "TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
     },
     {
       "name": "resume",
@@ -751,7 +821,7 @@
       "difficulty": "Beginner",
       "cli": "claude",
       "source": ".claude/skills/review-code/SKILL.md",
-      "allowed_tools": "Task, AskUserQuestion, Read, Write, Glob, Grep, Bash, mcp__ace-tool__search_context, mcp__ide__getDiagnostics"
+      "allowed_tools": "Agent, AskUserQuestion, Read, Write, Glob, Grep, Bash, mcp__ace-tool__search_context, mcp__ide__getDiagnostics"
     },
     {
       "name": "review-cycle",
@@ -765,7 +835,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/review-cycle/SKILL.md",
-      "allowed_tools": "Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill"
+      "allowed_tools": "Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill"
     },
     {
       "name": "review-cycle",
@@ -793,7 +863,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/workflow/roadmap-with-file.md",
-      "allowed_tools": "TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
     },
     {
       "name": "roadmap-with-file",
@@ -835,7 +905,49 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/idaw/run-coordinate.md",
-      "allowed_tools": "Task(*), AskUserQuestion(*), Read(*), Write(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "Agent(*), AskUserQuestion(*), Read(*), Write(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "scan",
+      "command": "/ddd:scan",
+      "description": "Scan existing codebase to build document index without specs. Analyzes code structure, infers features, discovers components, and reverse-engineers project knowledge graph.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [--from-scratch] [--scope <dir>] \\\"optional project description\\\"",
+      "category": "ddd",
+      "subcategory": null,
+      "usage_scenario": "implementation",
+      "difficulty": "Beginner",
+      "cli": "claude",
+      "source": ".claude/commands/ddd/scan.md",
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*), mcp__ace-tool__search_context(*)"
+    },
+    {
+      "name": "session-sync",
+      "command": "/session-sync",
+      "description": "Quick-sync session work to specs/*.md and project-tech.json",
+      "h1_description": "One-shot update `specs/*.md` + `project-tech.json` from current session context.",
+      "arguments": "[-y|--yes] [\\\"what was done\\\"]",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "session-management",
+      "difficulty": "Intermediate",
+      "cli": "codex",
+      "source": ".codex/skills/session-sync/SKILL.md",
+      "allowed_tools": "AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep"
+    },
+    {
+      "name": "setup",
+      "command": "/workflow:spec:setup",
+      "description": "Initialize project-level state and configure specs via interactive questionnaire using cli-explore-agent",
+      "h1_description": "",
+      "arguments": "[--regenerate] [--skip-specs] [--reset]",
+      "category": "workflow",
+      "subcategory": "workflow/spec",
+      "usage_scenario": "general",
+      "difficulty": "Advanced",
+      "cli": "claude",
+      "source": ".claude/commands/workflow/spec/setup.md",
+      "allowed_tools": ""
     },
     {
       "name": "skill-generator",
@@ -849,7 +961,21 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/skill-generator/SKILL.md",
-      "allowed_tools": "Task, AskUserQuestion, Read, Bash, Glob, Grep, Write"
+      "allowed_tools": "Agent, AskUserQuestion, Read, Bash, Glob, Grep, Write"
+    },
+    {
+      "name": "skill-simplify",
+      "command": "/skill-simplify",
+      "description": "SKILL.md simplification with functional integrity verification. Analyze redundancy, optimize content, check no functionality lost. Triggers on \"simplify skill\", \"optimize skill\", \"skill-simplify\".",
+      "h1_description": "Three-phase pipeline: analyze functional inventory, apply optimization rules, verify integrity.",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": null,
+      "usage_scenario": "analysis",
+      "difficulty": "Beginner",
+      "cli": "claude",
+      "source": ".claude/skills/skill-simplify/SKILL.md",
+      "allowed_tools": "AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "skill-tuning",
@@ -863,21 +989,21 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/skill-tuning/SKILL.md",
-      "allowed_tools": "Task, AskUserQuestion, Read, Write, Bash, Glob, Grep, mcp__ace-tool__search_context"
+      "allowed_tools": "Agent, AskUserQuestion, Read, Write, Bash, Glob, Grep, mcp__ace-tool__search_context"
     },
     {
-      "name": "solidify",
-      "command": "/workflow:session:solidify",
-      "description": "Crystallize session learnings and user-defined constraints into permanent project guidelines, or compress recent memories",
+      "name": "spec-add",
+      "command": "/spec-add",
+      "description": "Add specs, conventions, constraints, or learnings to project guidelines interactively or automatically",
       "h1_description": "",
-      "arguments": "[-y|--yes] [--type <convention|constraint|learning|compress>] [--category <category>] [--limit <N>] \\\"rule or insight\\\"",
-      "category": "workflow",
-      "subcategory": "workflow/session",
-      "usage_scenario": "session-management",
+      "arguments": "[-y|--yes] [--type <convention|constraint|learning>] [--category <category>] [--dimension <specs|personal>] [--scope <global|project>] [--interactive] \\\"rule text\\\"",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "general",
       "difficulty": "Intermediate",
-      "cli": "claude",
-      "source": ".claude/commands/workflow/session/solidify.md",
-      "allowed_tools": ""
+      "cli": "codex",
+      "source": ".codex/skills/spec-add/SKILL.md",
+      "allowed_tools": "AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "spec-generator",
@@ -891,7 +1017,21 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/spec-generator/SKILL.md",
-      "allowed_tools": "Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill"
+      "allowed_tools": "Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill"
+    },
+    {
+      "name": "spec-setup",
+      "command": "/spec-setup",
+      "description": "Initialize project-level state and configure specs via interactive questionnaire using cli-explore-agent",
+      "h1_description": "",
+      "arguments": "[--regenerate] [--skip-specs] [--reset]",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "general",
+      "difficulty": "Advanced",
+      "cli": "codex",
+      "source": ".codex/skills/spec-setup/SKILL.md",
+      "allowed_tools": "spawn_agent, wait, send_input, close_agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "start",
@@ -951,6 +1091,20 @@
     },
     {
       "name": "sync",
+      "command": "/ddd:sync",
+      "description": "Post-task synchronization - update document index, generate action log, and refresh feature/component docs after completing a development task.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [--dry-run] [--from-manifest <path>] [--task-id <id>] [--commit <hash>] \\\"task summary\\\"",
+      "category": "ddd",
+      "subcategory": null,
+      "usage_scenario": "implementation",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/commands/ddd/sync.md",
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*), mcp__ace-tool__search_context(*)"
+    },
+    {
+      "name": "sync",
       "command": "/workflow:session:sync",
       "description": "Quick-sync session work to specs/*.md and project-tech",
       "h1_description": "One-shot update `specs/*.md` + `project-tech.json` from current session context.",
@@ -966,8 +1120,8 @@
     {
       "name": "team-arch-opt",
       "command": "/team-arch-opt",
-      "description": "Unified team skill for architecture optimization. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team arch-opt\".",
-      "h1_description": "Unified team skill: Analyze codebase architecture, identify structural issues (dependency cycles, coupling/cohesion, layering violations, God Classes, dead code), design refactoring strategies, implement changes, validate improvements, and review code quality. Built on **team-worker agent architecture** -- all worker roles share a single agent definition with role-specific Phase 2-4 loaded from markdown specs.",
+      "description": "Unified team skill for architecture optimization. Uses team-worker agent architecture with role directories for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team arch-opt\".",
+      "h1_description": "Orchestrate multi-agent architecture optimization: analyze codebase → design refactoring plan → implement changes → validate improvements → review code quality.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
@@ -975,26 +1129,26 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/team-arch-opt/SKILL.md",
-      "allowed_tools": "Task, TaskCreate, TaskList, TaskGet, TaskUpdate, TeamCreate, TeamDelete, SendMessage, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context"
+      "allowed_tools": "Agent, TaskCreate, TaskList, TaskGet, TaskUpdate, TeamCreate, TeamDelete, SendMessage, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context"
     },
     {
       "name": "team-brainstorm",
       "command": "/team-brainstorm",
-      "description": "Unified team skill for brainstorming team. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team brainstorm\".",
-      "h1_description": "Unified team skill: multi-angle brainstorming via Generator-Critic loops, shared memory, and dynamic pipeline selection. All team members invoke with `--role=xxx` to route to role-specific execution.",
+      "description": "Unified team skill for brainstorming team. Uses team-worker agent architecture with role directories for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team brainstorm\".",
+      "h1_description": "Orchestrate multi-agent brainstorming: generate ideas → challenge assumptions → synthesize → evaluate. Supports Quick, Deep, and Full pipelines with Generator-Critic loop.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
       "usage_scenario": "planning",
-      "difficulty": "Intermediate",
+      "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/team-brainstorm/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
-      "name": "team-coordinate-v2",
-      "command": "/team-coordinate-v2",
-      "description": "Universal team coordination skill with dynamic role generation. Uses team-worker agent architecture with role-spec files. Only coordinator is built-in -- all worker roles are generated at runtime as role-specs and spawned via team-worker agent. Beat/cadence model for orchestration. Triggers on \"team coordinate v2\".",
+      "name": "team-coordinate",
+      "command": "/team-coordinate",
+      "description": "Universal team coordination skill with dynamic role generation. Uses team-worker agent architecture with role-spec files. Only coordinator is built-in -- all worker roles are generated at runtime as role-specs and spawned via team-worker agent. Beat/cadence model for orchestration. Triggers on \"Team Coordinate \".",
       "h1_description": "Universal team coordination skill: analyze task -> generate role-specs -> dispatch -> execute -> deliver. Only the **coordinator** is built-in. All worker roles are **dynamically generated** as lightweight role-spec files and spawned via the `team-worker` agent.",
       "arguments": "",
       "category": "skill",
@@ -1002,13 +1156,41 @@
       "usage_scenario": "implementation",
       "difficulty": "Advanced",
       "cli": "claude",
-      "source": ".claude/skills/team-coordinate-v2/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "source": ".claude/skills/team-coordinate/SKILL.md",
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
-      "name": "team-executor-v2",
-      "command": "/team-executor-v2",
-      "description": "Lightweight session execution skill. Resumes existing team-coordinate-v2 sessions for pure execution via team-worker agents. No analysis, no role generation -- only loads and executes. Session path required. Triggers on \"team executor v2\".",
+      "name": "team-designer",
+      "command": "/team-designer",
+      "description": "Meta-skill for generating team skills following the v4 architecture pattern. Produces complete skill packages with SKILL.md router, coordinator, worker roles, specs, and templates. Triggers on \"team-designer\", \"design team\".",
+      "h1_description": "Generate complete team skills following the team-lifecycle-v4 architecture: SKILL.md as universal router, coordinator with beat model, worker roles with optional commands/, shared specs, and templates.",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": null,
+      "usage_scenario": "planning",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/skills/team-designer/SKILL.md",
+      "allowed_tools": "Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "team-edict",
+      "command": "/team-edict",
+      "description": "|",
+      "h1_description": "受古代三省六部制启发的多 agent 协作框架。核心设计：**严格的级联审批流 + 实时看板可观测性 + 多 CLI 并行分析**。",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": null,
+      "usage_scenario": "general",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/skills/team-edict/SKILL.md",
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "team-executor",
+      "command": "/team-executor",
+      "description": "Lightweight session execution skill. Resumes existing team-coordinate sessions for pure execution via team-worker agents. No analysis, no role generation -- only loads and executes. Session path required. Triggers on \"Team Executor\".",
       "h1_description": "Lightweight session execution skill: load session -> reconcile state -> spawn team-worker agents -> execute -> deliver. **No analysis, no role generation** -- only executes existing team-coordinate sessions.",
       "arguments": "",
       "category": "skill",
@@ -1016,14 +1198,14 @@
       "usage_scenario": "implementation",
       "difficulty": "Advanced",
       "cli": "claude",
-      "source": ".claude/skills/team-executor-v2/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "source": ".claude/skills/team-executor/SKILL.md",
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
       "name": "team-frontend",
       "command": "/team-frontend",
-      "description": "Unified team skill for frontend development team. All roles invoke this skill with --role arg. Built-in ui-ux-pro-max design intelligence. Triggers on \"team frontend\".",
-      "h1_description": "Unified team skill: frontend development with built-in ui-ux-pro-max design intelligence. Covers requirement analysis, design system generation, frontend implementation, and quality assurance. All team members invoke with `--role=xxx` to route to role-specific execution.",
+      "description": "Unified team skill for frontend development. Pure router — all roles read this file. Beat model is coordinator-only in monitor.md. Built-in ui-ux-pro-max design intelligence. Triggers on \"team frontend\".",
+      "h1_description": "Unified team skill: frontend development with built-in ui-ux-pro-max design intelligence. Covers requirement analysis, design system generation, frontend implementation, and quality assurance. Built on **team-worker agent architecture** — all worker roles share a single agent definition with role-specific Phase 2-4 loaded from role.md specs.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
@@ -1031,35 +1213,49 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/team-frontend/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), TodoWrite(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), WebFetch(*), WebSearch(*)"
+      "allowed_tools": "Agent(*), TaskCreate(*), TaskList(*), TaskGet(*), TaskUpdate(*), TeamCreate(*), TeamDelete(*), SendMessage(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), WebFetch(*), WebSearch(*), mcp__ace-tool__search_context(*)"
+    },
+    {
+      "name": "team-frontend-debug",
+      "command": "/team-frontend-debug",
+      "description": "Frontend debugging team using Chrome DevTools MCP. Dual-mode — feature-list testing or bug-report debugging. Triggers on \"team-frontend-debug\", \"frontend debug\".",
+      "h1_description": "Dual-mode frontend debugging: feature-list testing or bug-report debugging, powered by Chrome DevTools MCP.",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": null,
+      "usage_scenario": "testing",
+      "difficulty": "Beginner",
+      "cli": "claude",
+      "source": ".claude/skills/team-frontend-debug/SKILL.md",
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__chrome-devtools__*(*)"
     },
     {
       "name": "team-issue",
       "command": "/team-issue",
-      "description": "Unified team skill for issue resolution. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team issue\".",
-      "h1_description": "Unified team skill: issue processing pipeline (explore → plan → implement → review → integrate). All team members invoke with `--role=xxx` to route to role-specific execution.",
+      "description": "Unified team skill for issue resolution. Uses team-worker agent architecture with role directories for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team issue\".",
+      "h1_description": "Orchestrate issue resolution pipeline: explore context -> plan solution -> review (optional) -> marshal queue -> implement. Supports Quick, Full, and Batch pipelines with review-fix cycle.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
       "usage_scenario": "issue-management",
-      "difficulty": "Intermediate",
+      "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/team-issue/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-iterdev",
       "command": "/team-iterdev",
-      "description": "Unified team skill for iterative development team. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team iterdev\".",
-      "h1_description": "Iterative development team skill. Generator-Critic loops (developer<->reviewer, max 3 rounds), task ledger (task-ledger.json) for real-time progress, shared memory (cross-sprint learning), and dynamic pipeline selection for incremental delivery. All team members route via `--role=xxx`.",
+      "description": "Unified team skill for iterative development team. Pure router — all roles read this file. Beat model is coordinator-only in monitor.md. Generator-Critic loops (developer<->reviewer, max 3 rounds). Triggers on \"team iterdev\".",
+      "h1_description": "Iterative development team skill. Generator-Critic loops (developer<->reviewer, max 3 rounds), task ledger (task-ledger.json) for real-time progress, shared memory (cross-sprint learning), and dynamic pipeline selection for incremental delivery.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
-      "usage_scenario": "general",
+      "usage_scenario": "analysis",
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/team-iterdev/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
       "name": "team-lifecycle",
@@ -1076,24 +1272,24 @@
       "allowed_tools": ""
     },
     {
-      "name": "team-lifecycle-v5",
-      "command": "/team-lifecycle-v5",
-      "description": "Unified team skill for full lifecycle - spec/impl/test. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents loaded with role-specific Phase 2-4 specs. Triggers on \"team lifecycle\".",
-      "h1_description": "Unified team skill: specification -> implementation -> testing -> review. Built on **team-worker agent architecture** — all worker roles share a single agent definition with role-specific Phase 2-4 loaded from markdown specs.",
+      "name": "team-lifecycle-v4",
+      "command": "/team-lifecycle-v4",
+      "description": "Full lifecycle team skill with clean architecture. SKILL.md is a universal router — all roles read it. Beat model is coordinator-only. Structure is roles/ + specs/ + templates/. Triggers on \"team lifecycle v4\".",
+      "h1_description": "Orchestrate multi-agent software development: specification → planning → implementation → testing → review.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
-      "usage_scenario": "testing",
-      "difficulty": "Advanced",
+      "usage_scenario": "general",
+      "difficulty": "Intermediate",
       "cli": "claude",
-      "source": ".claude/skills/team-lifecycle-v5/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), TodoWrite(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "source": ".claude/skills/team-lifecycle-v4/SKILL.md",
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
       "name": "team-perf-opt",
       "command": "/team-perf-opt",
-      "description": "Unified team skill for performance optimization. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team perf-opt\".",
-      "h1_description": "Unified team skill: Profile application performance, identify bottlenecks, design optimization strategies, implement changes, benchmark improvements, and review code quality. Built on **team-worker agent architecture** -- all worker roles share a single agent definition with role-specific Phase 2-4 loaded from markdown specs.",
+      "description": "Unified team skill for performance optimization. Coordinator orchestrates pipeline, workers are team-worker agents. Supports single/fan-out/independent parallel modes. Triggers on \"team perf-opt\".",
+      "h1_description": "Profile application performance, identify bottlenecks, design optimization strategies, implement changes, benchmark improvements, and review code quality.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
@@ -1101,21 +1297,21 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/team-perf-opt/SKILL.md",
-      "allowed_tools": "Task, TaskCreate, TaskList, TaskGet, TaskUpdate, TeamCreate, TeamDelete, SendMessage, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context"
+      "allowed_tools": "Agent, TaskCreate, TaskList, TaskGet, TaskUpdate, TeamCreate, TeamDelete, SendMessage, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context"
     },
     {
       "name": "team-planex",
       "command": "/team-planex",
-      "description": "Unified team skill for plan-and-execute pipeline. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team planex\".",
-      "h1_description": "Unified team skill: plan-and-execute pipeline for issue-based development. Built on **team-worker agent architecture** — all worker roles share a single agent definition with role-specific Phase 2-4 loaded from markdown specs.",
+      "description": "Unified team skill for plan-and-execute pipeline. Pure router — coordinator always. Beat model is coordinator-only in monitor.md. Triggers on \"team planex\".",
+      "h1_description": "Unified team skill: plan-and-execute pipeline for issue-based development. Built on **team-worker agent architecture** — coordinator orchestrates, workers are team-worker agents loading role-specific instructions from `roles/<role>/role.md`.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
       "usage_scenario": "planning",
-      "difficulty": "Advanced",
+      "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/team-planex/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "Agent(*), TaskCreate(*), TaskList(*), TaskGet(*), TaskUpdate(*), TeamCreate(*), TeamDelete(*), SendMessage(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-planex",
@@ -1134,22 +1330,22 @@
     {
       "name": "team-quality-assurance",
       "command": "/team-quality-assurance",
-      "description": "Unified team skill for quality assurance team. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team quality-assurance\", \"team qa\".",
-      "h1_description": "Unified team skill: quality assurance combining issue discovery and software testing into a closed loop of scout -> strategy -> generate -> execute -> analyze. Uses multi-perspective scanning, Generator-Executor pipeline, and shared defect pattern database for progressive quality assurance. All team members invoke with `--role=xxx` to route to role-specific execution.",
+      "description": "Unified team skill for quality assurance. Full closed-loop QA combining issue discovery and software testing. Triggers on \"team quality-assurance\", \"team qa\".",
+      "h1_description": "Orchestrate multi-agent QA: scout -> strategist -> generator -> executor -> analyst. Supports discovery, testing, and full closed-loop modes with parallel generation and GC loops.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
-      "usage_scenario": "general",
+      "usage_scenario": "testing",
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/team-quality-assurance/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
       "name": "team-review",
       "command": "/team-review",
-      "description": "Unified team skill for code scanning, vulnerability review, optimization suggestions, and automated fix. 4-role team: coordinator, scanner, reviewer, fixer. Triggers on team-review.",
-      "h1_description": "Unified team skill: code scanning, vulnerability review, optimization suggestions, and automated fix. All team members invoke with `--role=xxx` to route to role-specific execution.",
+      "description": "Unified team skill for code review. 3-role pipeline: scanner, reviewer, fixer. Triggers on \"team-review\".",
+      "h1_description": "Orchestrate multi-agent code review: scanner -> reviewer -> fixer. Toolchain + LLM scan, deep analysis with root cause enrichment, and automated fix with rollback-on-failure.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
@@ -1157,13 +1353,13 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/team-review/SKILL.md",
-      "allowed_tools": "Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet, Read, Write, Edit, Bash, Glob, Grep, Skill, mcp__ace-tool__search_context"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)"
     },
     {
       "name": "team-roadmap-dev",
       "command": "/team-roadmap-dev",
       "description": "Unified team skill for roadmap-driven development workflow. Coordinator discusses roadmap with user, then dispatches phased execution pipeline (plan -> execute -> verify). All roles invoke this skill with --role arg. Triggers on \"team roadmap-dev\".",
-      "h1_description": "Unified team skill: roadmap-driven development with phased execution pipeline. Coordinator discusses roadmap with the user and manages phase transitions. All team members invoke with `--role=xxx` to route to role-specific execution.",
+      "h1_description": "Roadmap-driven development with phased execution pipeline. Coordinator discusses roadmap with the user and manages phase transitions. Workers are spawned as team-worker agents.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
@@ -1171,55 +1367,55 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/team-roadmap-dev/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
     },
     {
       "name": "team-tech-debt",
       "command": "/team-tech-debt",
-      "description": "Unified team skill for tech debt identification and cleanup. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team tech-debt\", \"tech debt cleanup\", \"技术债务\".",
-      "h1_description": "技术债务识别与清理团队。融合\"债务扫描\"、\"量化评估\"、\"治理规划\"、\"清理执行\"、\"验证回归\"五大能力域，形成\"扫描->评估->规划->清理->验证\"闭环。通过 Scanner 多维度扫描、Executor-Validator 修复验证循环、共享债务清单数据库，实现渐进式技术债务治理。所有成员通过 `--role=xxx` 路由到角色执行逻辑。",
-      "arguments": "",
-      "category": "skill",
-      "subcategory": null,
-      "usage_scenario": "general",
-      "difficulty": "Intermediate",
-      "cli": "claude",
-      "source": ".claude/skills/team-tech-debt/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
-    },
-    {
-      "name": "team-testing",
-      "command": "/team-testing",
-      "description": "Unified team skill for testing team. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team testing\".",
-      "h1_description": "Unified team skill: progressive test coverage through Generator-Critic loops (generator<->executor), shared memory (defect pattern tracking), and dynamic layer selection. All team members invoke with `--role=xxx` to route to role-specific execution.",
-      "arguments": "",
-      "category": "skill",
-      "subcategory": null,
-      "usage_scenario": "testing",
-      "difficulty": "Intermediate",
-      "cli": "claude",
-      "source": ".claude/skills/team-testing/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
-    },
-    {
-      "name": "team-uidesign",
-      "command": "/team-uidesign",
-      "description": "Unified team skill for UI design team. All roles invoke this skill with --role arg for role-specific execution. CP-9 Dual-Track design+implementation.",
-      "h1_description": "Unified team skill: design system analysis, token definition, component specification, accessibility audit, and code implementation via CP-9 Dual-Track (design+implementation). All team members invoke with `--role=xxx` to route to role-specific execution.",
+      "description": "Unified team skill for tech debt identification and remediation. Scans codebase for tech debt, assesses severity, plans and executes fixes with validation. Uses team-worker agent architecture with roles/ for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team tech debt\".",
+      "h1_description": "Systematic tech debt governance: scan -> assess -> plan -> fix -> validate. Built on **team-worker agent architecture** — all worker roles share a single agent definition with role-specific Phase 2-4 loaded from `roles/<role>/role.md`.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
       "usage_scenario": "planning",
-      "difficulty": "Intermediate",
+      "difficulty": "Advanced",
+      "cli": "claude",
+      "source": ".claude/skills/team-tech-debt/SKILL.md",
+      "allowed_tools": "Agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, TaskList, TaskGet, TaskUpdate, TaskCreate, TeamCreate, TeamDelete, SendMessage, mcp__ace-tool__search_context, mcp__ccw-tools__read_file, mcp__ccw-tools__write_file, mcp__ccw-tools__edit_file, mcp__ccw-tools__team_msg"
+    },
+    {
+      "name": "team-testing",
+      "command": "/team-testing",
+      "description": "Unified team skill for testing team. Progressive test coverage through Generator-Critic loops, shared memory, and dynamic layer selection. Triggers on \"team testing\".",
+      "h1_description": "Orchestrate multi-agent test pipeline: strategist -> generator -> executor -> analyst. Progressive layer coverage (L1/L2/L3) with Generator-Critic loops for coverage convergence.",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": null,
+      "usage_scenario": "testing",
+      "difficulty": "Advanced",
+      "cli": "claude",
+      "source": ".claude/skills/team-testing/SKILL.md",
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "team-uidesign",
+      "command": "/team-uidesign",
+      "description": "Unified team skill for UI design team. Research -> design tokens -> audit -> implementation. Uses team-worker agent architecture with roles/ for domain logic. Coordinator orchestrates dual-track pipeline with GC loops and sync points. Triggers on \"team ui design\", \"ui design team\".",
+      "h1_description": "Systematic UI design pipeline: research -> design tokens -> review -> implementation. Built on **team-worker agent architecture** — all worker roles share a single agent definition with role-specific Phase 2-4 loaded from `roles/<role>/role.md`.",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": null,
+      "usage_scenario": "planning",
+      "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/team-uidesign/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), TodoWrite(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), WebFetch(*), WebSearch(*)"
+      "allowed_tools": "Agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, TaskList, TaskGet, TaskUpdate, TaskCreate, TeamCreate, TeamDelete, SendMessage, mcp__ace-tool__search_context, mcp__ccw-tools__read_file, mcp__ccw-tools__write_file, mcp__ccw-tools__edit_file, mcp__ccw-tools__team_msg"
     },
     {
       "name": "team-ultra-analyze",
       "command": "/team-ultra-analyze",
-      "description": "Unified team skill for deep collaborative analysis. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team ultra-analyze\", \"team analyze\".",
-      "h1_description": "Deep collaborative analysis team skill. Splits monolithic analysis into 5-role collaboration: explore -> analyze -> discuss -> synthesize. Supports Quick/Standard/Deep pipeline modes with configurable depth (N parallel agents). Discussion loops enable user-guided progressive understanding. All members route via `--role=xxx`.",
+      "description": "Deep collaborative analysis team skill. All roles route via this SKILL.md. Beat model is coordinator-only (monitor.md). Structure is roles/ + specs/. Triggers on \"team ultra-analyze\", \"team analyze\".",
+      "h1_description": "Deep collaborative analysis: explore -> analyze -> discuss -> synthesize. Supports Quick/Standard/Deep pipeline modes with configurable depth (N parallel agents). Discussion loops enable user-guided progressive understanding.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
@@ -1227,7 +1423,21 @@
       "difficulty": "Beginner",
       "cli": "claude",
       "source": ".claude/skills/team-ultra-analyze/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Task(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+    },
+    {
+      "name": "team-ux-improve",
+      "command": "/team-ux-improve",
+      "description": "Unified team skill for UX improvement. Systematically discovers and fixes UI/UX interaction issues including unresponsive buttons, missing feedback, and state refresh problems. Uses team-worker agent architecture with roles/ for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team ux improve\".",
+      "h1_description": "Systematic UX improvement pipeline: scan -> diagnose -> design -> implement -> test. Built on **team-worker agent architecture** — all worker roles share a single agent definition with role-specific Phase 2-4 loaded from `roles/<role>/role.md`.",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": null,
+      "usage_scenario": "analysis",
+      "difficulty": "Advanced",
+      "cli": "claude",
+      "source": ".claude/skills/team-ux-improve/SKILL.md",
+      "allowed_tools": "Agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, TaskList, TaskGet, TaskUpdate, TaskCreate, TeamCreate, TeamDelete, SendMessage, mcp__ace-tool__search_context, mcp__ccw-tools__read_file, mcp__ccw-tools__write_file, mcp__ccw-tools__edit_file, mcp__ccw-tools__team_msg"
     },
     {
       "name": "unified-execute-with-file",
@@ -1241,7 +1451,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/commands/workflow/unified-execute-with-file.md",
-      "allowed_tools": "TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
     },
     {
       "name": "unified-execute-with-file",
@@ -1258,6 +1468,20 @@
       "allowed_tools": ""
     },
     {
+      "name": "update",
+      "command": "/ddd:update",
+      "description": "Incremental index update - detect code changes and trace impact to related features/requirements. Lightweight alternative to full sync.",
+      "h1_description": "",
+      "arguments": "[-y|--yes] [--files <file1,file2,...>] [--staged] [--check-only]",
+      "category": "ddd",
+      "subcategory": null,
+      "usage_scenario": "general",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/commands/ddd/update.md",
+      "allowed_tools": "TodoWrite(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*), mcp__ace-tool__search_context(*)"
+    },
+    {
       "name": "workflow-execute",
       "command": "/workflow-execute",
       "description": "Coordinate agent execution for workflow tasks with automatic session discovery, parallel task processing, and status tracking. Triggers on \"workflow-execute\".",
@@ -1269,7 +1493,7 @@
       "difficulty": "Beginner",
       "cli": "claude",
       "source": ".claude/skills/workflow-execute/SKILL.md",
-      "allowed_tools": "Skill, Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "Skill, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-execute",
@@ -1286,22 +1510,36 @@
       "allowed_tools": "spawn_agents_on_csv, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
-      "name": "workflow-lite-planex",
-      "command": "/workflow-lite-planex",
-      "description": "Lightweight planning and execution skill (Phase 1: plan, Phase 2: execute). Triggers on \"workflow-lite-planex\".",
-      "h1_description": "Unified lightweight planning and execution skill (planex = plan + execute). Phase 1 handles planning pipeline, Phase 2 handles execution.",
+      "name": "workflow-lite-execute",
+      "command": "/workflow-lite-execute",
+      "description": "Lightweight execution engine - multi-mode input, task grouping, batch execution, code review, and project state sync",
+      "h1_description": "Execution engine for workflow-lite-plan handoff and standalone task execution.",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": null,
+      "usage_scenario": "implementation",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/skills/workflow-lite-execute/SKILL.md",
+      "allowed_tools": "Skill, Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep"
+    },
+    {
+      "name": "workflow-lite-plan",
+      "command": "/workflow-lite-plan",
+      "description": "Lightweight planning skill - task analysis, multi-angle exploration, clarification, adaptive planning, confirmation, and execution handoff",
+      "h1_description": "Planning pipeline: explore → clarify → plan → confirm → handoff to lite-execute.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
       "usage_scenario": "planning",
       "difficulty": "Intermediate",
       "cli": "claude",
-      "source": ".claude/skills/workflow-lite-planex/SKILL.md",
-      "allowed_tools": "Skill, Task, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep"
+      "source": ".claude/skills/workflow-lite-plan/SKILL.md",
+      "allowed_tools": "Skill, Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
-      "name": "workflow-lite-planex",
-      "command": "/workflow-lite-planex",
+      "name": "workflow-lite-plan",
+      "command": "/workflow-lite-plan",
       "description": "Explore-first wave pipeline. Decomposes requirement into exploration angles, runs wave exploration via spawn_agents_on_csv, synthesizes findings into execution tasks with cross-phase context linking (E*→T*), then wave-executes via spawn_agents_on_csv.",
       "h1_description": "",
       "arguments": "[-y|--yes] [-c|--concurrency N] [--continue] \\\"requirement description\\\"",
@@ -1316,8 +1554,8 @@
     {
       "name": "workflow-multi-cli-plan",
       "command": "/workflow-multi-cli-plan",
-      "description": "Multi-CLI collaborative planning and execution skill with integrated execution phase. Triggers on \"workflow-multi-cli-plan\".",
-      "h1_description": "Unified multi-CLI collaborative planning and execution skill. Routes to multi-cli-plan (ACE context + multi-CLI discussion + plan generation) which then hands off to lite-execute (Phase 2) internally for execution.",
+      "description": "Multi-CLI collaborative planning with ACE context gathering, iterative cross-verification, and execution handoff",
+      "h1_description": "",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
@@ -1325,7 +1563,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/workflow-multi-cli-plan/SKILL.md",
-      "allowed_tools": "Skill, Task, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context"
+      "allowed_tools": "Skill, Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-plan",
@@ -1339,7 +1577,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/workflow-plan/SKILL.md",
-      "allowed_tools": "Skill, Task, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "Skill, Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-plan",
@@ -1367,7 +1605,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/workflow-skill-designer/SKILL.md",
-      "allowed_tools": "Task, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-tdd",
@@ -1395,7 +1633,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/workflow-tdd-plan/SKILL.md",
-      "allowed_tools": "Skill, Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "Skill, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-test-fix",
@@ -1409,7 +1647,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/workflow-test-fix/SKILL.md",
-      "allowed_tools": "Skill, Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "Skill, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-test-fix-cycle",
@@ -1451,7 +1689,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/commands/workflow/collaborative-plan-with-file.md",
-      "allowed_tools": "TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Bash(*), Write(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)"
+      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Bash(*), Write(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)"
     },
     {
       "name": "workflow:ui-design:codify-style",
@@ -1479,7 +1717,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/commands/workflow/ui-design/import-from-code.md",
-      "allowed_tools": "Read,Write,Bash,Glob,Grep,Task,TodoWrite"
+      "allowed_tools": "Read,Write,Bash,Glob,Grep,Agent,TodoWrite"
     },
     {
       "name": "workflow:ui-design:reference-page-generator",
@@ -1493,11 +1731,12 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/workflow/ui-design/reference-page-generator.md",
-      "allowed_tools": "Read,Write,Bash,Task,TodoWrite"
+      "allowed_tools": "Read,Write,Bash,Agent,TodoWrite"
     }
   ],
   "categories": [
     "cli",
+    "ddd",
     "general",
     "idaw",
     "issue",
@@ -1511,6 +1750,14 @@
     "codex"
   ],
   "relationships": {
+    "index-build": {
+      "prerequisites": [
+        "/ddd:scan"
+      ],
+      "next_steps": [],
+      "alternatives": [],
+      "related": []
+    },
     "prep-plan": {
       "prerequisites": [],
       "next_steps": [

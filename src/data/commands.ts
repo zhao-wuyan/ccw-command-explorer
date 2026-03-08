@@ -1135,6 +1135,21 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
           '第三步：/issue:execute - 批量执行，每个Issue单独git commit',
         ],
       },
+      {
+        id: 'issue-discover-to-pipeline',
+        title: 'Issue Discover → CSV 流水线批量执行',
+        scenario: '用 codex issue-discover 分析完问题后，想批量执行修复',
+        recommendation: '将 discovery 产物文件路径传给 csv-wave-pipeline',
+        commands: ['/issue-discover', '/csv-wave-pipeline <discovery-issues.jsonl路径>'],
+        commandType: 'sequence',
+        reason: 'csv-wave-pipeline 接收需求描述（可以是文件路径），AI 会自动读取并分解执行',
+        tips: [
+          'issue-discover 产物在 .workflow/issues/discoveries/{discovery-id}/ 目录',
+          '将 discovery-issues.jsonl 文件路径作为参数传给 csv-wave-pipeline',
+          'csv-wave-pipeline 会读取 JSONL 内容作为需求，自动分解成 tasks.csv 并执行',
+          '适合发现大量问题后批量修复的场景',
+        ],
+      },
     ],
   },
   {

@@ -1,0 +1,28 @@
+{
+  "id": "TASK-012",
+  "title": "验证和测试",
+  "description": "验证所有拆分后的文件正确工作，运行项目构建和类型检查",
+  "depends_on": ["TASK-010", "TASK-011"],
+  "convergence": {
+    "criteria": [
+      "TypeScript 编译通过（tsc --noEmit）",
+      "项目构建成功（npm run build）",
+      "sync-commands.py 脚本运行正常",
+      "所有导出和导入正确"
+    ]
+  },
+  "files": [
+    {
+      "path": "src/data/*.ts",
+      "change": "验证所有文件"
+    }
+  ],
+  "implementation": [
+    "1. 运行 tsc --noEmit 检查类型错误",
+    "2. 运行 npm run build 构建项目",
+    "3. 运行 python scripts/sync-commands.py 验证脚本",
+    "4. 检查 App.tsx 的导入是否正常工作",
+    "5. 验证所有数据导出正确"
+  ],
+  "test": "所有验证步骤通过"
+}

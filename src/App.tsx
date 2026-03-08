@@ -5,7 +5,7 @@ import {
   Lightbulb, TestTube, FlaskConical, Search as SearchIcon, Palette,
   Wrench, X, Clock, Target, Sparkles, BookOpen, Info, Bot, Play,
   ChevronRight, Terminal, MessageSquare, CheckCircle, AlertTriangle,
-  Lightbulb as TipIcon, Cpu, Settings as SettingsIcon, Github, Star
+  Lightbulb as TipIcon, Cpu, Settings as SettingsIcon, Github
 } from 'lucide-react';
 import {
   COMMANDS, CATEGORIES, TIMELINE, WORKFLOW_LEVELS, GRANDMA_COMMANDS,
@@ -3241,6 +3241,16 @@ function App() {
 
       {/* 头部 */}
       <header className="header">
+        {/* GitHub 右上角按钮 */}
+        <a
+          href="https://github.com/zhao-wuyan/ccw-command-explorer"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="github-corner-btn"
+        >
+          <Github size={18} />
+          <span>GitHub</span>
+        </a>
         <div className="header-content">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
@@ -3270,24 +3280,6 @@ function App() {
                 <p className="stat-label">{stat.label}</p>
               </motion.div>
             ))}
-            {/* GitHub Star 按钮 */}
-            <motion.a
-              href="https://github.com/zhao-wuyan/ccw-command-explorer"
-              target="_blank"
-              rel="noopener noreferrer"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-              className="github-star-btn"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Github size={20} />
-              <span className="github-text">Star</span>
-              <span className="github-star-count">
-                <Star size={14} fill="#f59e0b" color="#f59e0b" />
-              </span>
-            </motion.a>
           </div>
         </div>
       </header>

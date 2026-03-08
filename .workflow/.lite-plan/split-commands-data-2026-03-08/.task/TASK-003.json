@@ -1,0 +1,27 @@
+{
+  "id": "TASK-003",
+  "title": "创建 timeline.ts - 提取时间线数据",
+  "description": "从 commands.ts 提取 TIMELINE 数据到独立的 timeline.ts 文件",
+  "depends_on": ["TASK-001", "TASK-002"],
+  "convergence": {
+    "criteria": [
+      "timeline.ts 文件创建成功",
+      "包含 TIMELINE 数组数据",
+      "从 types.ts 导入 TimelineItem, VersionDetail 类型",
+      "从 constants.ts 导入 COLORS"
+    ]
+  },
+  "files": [
+    {
+      "path": "src/data/timeline.ts",
+      "change": "新建文件，包含时间线数据"
+    }
+  ],
+  "implementation": [
+    "1. 创建 src/data/timeline.ts 文件",
+    "2. 从 commands.ts 复制 TIMELINE 数组",
+    "3. 从 types.ts 导入 TimelineItem, VersionDetail 类型",
+    "4. 从 constants.ts 导入 COLORS"
+  ],
+  "test": "验证数据完整，TypeScript 编译通过"
+}

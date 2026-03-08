@@ -1,0 +1,25 @@
+{
+  "id": "TASK-006",
+  "title": "创建 deprecated.ts - 提取废弃命令数据",
+  "description": "从 commands.ts 提取 DEPRECATED_COMMANDS 数据到独立的 deprecated.ts 文件",
+  "depends_on": ["TASK-001"],
+  "convergence": {
+    "criteria": [
+      "deprecated.ts 文件创建成功",
+      "包含 DEPRECATED_COMMANDS 数组数据",
+      "定义 DeprecatedCommand 接口类型"
+    ]
+  },
+  "files": [
+    {
+      "path": "src/data/deprecated.ts",
+      "change": "新建文件，包含废弃命令数据"
+    }
+  ],
+  "implementation": [
+    "1. 创建 src/data/deprecated.ts 文件",
+    "2. 定义 DeprecatedCommand 接口（包含 old, newCmd, reason 字段）",
+    "3. 从 commands.ts 复制 DEPRECATED_COMMANDS 数组"
+  ],
+  "test": "验证数据完整，TypeScript 编译通过"
+}

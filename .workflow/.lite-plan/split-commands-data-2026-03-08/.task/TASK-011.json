@@ -1,0 +1,29 @@
+{
+  "id": "TASK-011",
+  "title": "修改 sync-commands.py 脚本",
+  "description": "修改 sync-commands.py 脚本，使其对比以 commands.ts 的 COMMANDS 数据为准，同时扫描其他拆分文件中的命令引用",
+  "depends_on": ["TASK-009"],
+  "convergence": {
+    "criteria": [
+      "sync-commands.py 仍然从 commands.ts 提取 COMMANDS 数据",
+      "新增扫描 deprecated.ts 中的废弃命令列表",
+      "新增扫描 patterns.ts 中的命令引用（COMMAND_CHAINS, TASK_PATTERNS）",
+      "检测残留旧命令：扫描所有拆分文件，发现不存在于 COMMANDS 的命令引用"
+    ]
+  },
+  "files": [
+    {
+      "path": "scripts/sync-commands.py",
+      "change": "修改脚本，支持多文件扫描"
+    }
+  ],
+  "implementation": [
+    "1. 修改 get_ts_commands() 函数，从 src/data/commands.ts 提取 COMMANDS",
+    "2. 新增 get_deprecated_commands() 函数，从 deprecated.ts 提取废弃命令",
+    "3. 新增 scan_other_files() 函数，扫描 patterns.ts, experience.ts 等文件中的命令引用",
+    "4. 修改 analyze_commands() 函数，对比 COMMANDS 与目录扫描结果",
+    "5. 添加残留旧命令检测：发现其他文件中引用了已删除的命令",
+    "6. 更新 print_report() 输出格式，显示多文件扫描结果"
+  ],
+  "test": "运行 python scripts/sync-commands.py 验证功能正确"
+}

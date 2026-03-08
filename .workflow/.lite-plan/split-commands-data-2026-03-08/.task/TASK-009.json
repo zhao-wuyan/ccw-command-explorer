@@ -1,0 +1,33 @@
+{
+  "id": "TASK-009",
+  "title": "重构 commands.ts - 只保留 COMMANDS 和 STATS",
+  "description": "重构 commands.ts 文件，只保留 COMMANDS 核心数据和 STATS 统计数据，从其他文件导入类型和配置",
+  "depends_on": ["TASK-001", "TASK-002", "TASK-003", "TASK-004", "TASK-005", "TASK-006", "TASK-007", "TASK-008"],
+  "convergence": {
+    "criteria": [
+      "commands.ts 只包含 COMMANDS 数组和 STATS 对象",
+      "从 types.ts 导入 Command 类型",
+      "从 constants.ts 导入 CATEGORIES, COLORS",
+      "STATS.totalCommands 正确计算 COMMANDS.length"
+    ]
+  },
+  "files": [
+    {
+      "path": "src/data/commands.ts",
+      "change": "重构文件，只保留核心命令数据"
+    }
+  ],
+  "implementation": [
+    "1. 删除 commands.ts 中的所有类型定义（已移到 types.ts）",
+    "2. 删除 COLORS, CATEGORIES, CLI_CONFIG（已移到 constants.ts）",
+    "3. 删除 TIMELINE（已移到 timeline.ts）",
+    "4. 删除 WORKFLOW_LEVELS（已移到 workflow-levels.ts）",
+    "5. 删除 GRANDMA_COMMANDS（已移到 grandma.ts）",
+    "6. 删除 DEPRECATED_COMMANDS（已移到 deprecated.ts）",
+    "7. 删除 EXPERIENCE_GUIDE（已移到 experience.ts）",
+    "8. 删除 TASK_PATTERNS, COMMAND_CHAINS, analyzeIntent（已移到 patterns.ts）",
+    "9. 添加从其他文件的导入语句",
+    "10. 保留 COMMANDS 和 STATS"
+  ],
+  "test": "验证 TypeScript 编译通过，COMMANDS 数据完整"
+}

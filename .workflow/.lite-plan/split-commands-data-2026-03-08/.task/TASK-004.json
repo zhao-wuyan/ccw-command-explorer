@@ -1,0 +1,27 @@
+{
+  "id": "TASK-004",
+  "title": "创建 workflow-levels.ts - 提取工作流级别数据",
+  "description": "从 commands.ts 提取 WORKFLOW_LEVELS 数据到独立的 workflow-levels.ts 文件",
+  "depends_on": ["TASK-001", "TASK-002"],
+  "convergence": {
+    "criteria": [
+      "workflow-levels.ts 文件创建成功",
+      "包含 WORKFLOW_LEVELS 数组数据",
+      "从 types.ts 导入 WorkflowLevel 类型",
+      "从 constants.ts 导入 COLORS"
+    ]
+  },
+  "files": [
+    {
+      "path": "src/data/workflow-levels.ts",
+      "change": "新建文件，包含工作流级别数据"
+    }
+  ],
+  "implementation": [
+    "1. 创建 src/data/workflow-levels.ts 文件",
+    "2. 从 commands.ts 复制 WORKFLOW_LEVELS 数组",
+    "3. 从 types.ts 导入 WorkflowLevel 类型",
+    "4. 从 constants.ts 导入 COLORS"
+  ],
+  "test": "验证数据完整，TypeScript 编译通过"
+}

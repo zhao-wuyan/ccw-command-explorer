@@ -1,0 +1,26 @@
+{
+  "id": "TASK-001",
+  "title": "创建 types.ts - 提取所有类型定义",
+  "description": "从 commands.ts 提取所有类型定义到独立的 types.ts 文件",
+  "depends_on": [],
+  "convergence": {
+    "criteria": [
+      "types.ts 文件创建成功",
+      "包含所有类型定义：CommandStatus, CLIType, CommandCategory, Command, VersionDetail, TimelineItem, WorkflowLevel, ExperienceTip, ExperienceCategory, TaskPattern, CommandChain, MatchResult, ChainOption, IntentAnalysis",
+      "类型定义完整且正确导出"
+    ]
+  },
+  "files": [
+    {
+      "path": "src/data/types.ts",
+      "change": "新建文件，包含所有类型定义"
+    }
+  ],
+  "implementation": [
+    "1. 创建 src/data/types.ts 文件",
+    "2. 从 commands.ts 复制所有 interface 和 type 定义",
+    "3. 确保所有类型都有 export 关键字",
+    "4. 包含的类型：CommandStatus, CLIType, CommandCategory, Command, VersionDetail, TimelineItem, WorkflowLevel, ExperienceTip, ExperienceCategory, TaskPattern, CommandChain, MatchResult, ChainOption, IntentAnalysis"
+  ],
+  "test": "验证 TypeScript 编译通过，无类型错误"
+}

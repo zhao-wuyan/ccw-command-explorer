@@ -1,0 +1,27 @@
+{
+  "id": "TASK-002",
+  "title": "创建 constants.ts - 提取配置常量",
+  "description": "从 commands.ts 提取配置常量（COLORS, CATEGORIES, CLI_CONFIG）到独立的 constants.ts 文件",
+  "depends_on": ["TASK-001"],
+  "convergence": {
+    "criteria": [
+      "constants.ts 文件创建成功",
+      "包含 COLORS, CATEGORIES, CLI_CONFIG 三个配置对象",
+      "从 types.ts 导入 CommandCategory, CLIType 类型"
+    ]
+  },
+  "files": [
+    {
+      "path": "src/data/constants.ts",
+      "change": "新建文件，包含配置常量"
+    }
+  ],
+  "implementation": [
+    "1. 创建 src/data/constants.ts 文件",
+    "2. 从 commands.ts 复制 COLORS 对象",
+    "3. 从 commands.ts 复制 CATEGORIES 对象",
+    "4. 从 commands.ts 复制 CLI_CONFIG 对象",
+    "5. 从 types.ts 导入 CommandCategory, CLIType 类型"
+  ],
+  "test": "验证 TypeScript 编译通过，常量可正确引用"
+}

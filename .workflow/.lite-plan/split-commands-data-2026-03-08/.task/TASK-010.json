@@ -1,0 +1,32 @@
+{
+  "id": "TASK-010",
+  "title": "创建 index.ts - 统一导出所有模块",
+  "description": "创建 index.ts 文件，统一导出所有拆分后的模块，保持向后兼容",
+  "depends_on": ["TASK-009"],
+  "convergence": {
+    "criteria": [
+      "index.ts 文件创建成功",
+      "导出所有类型、常量、数据和函数",
+      "App.tsx 的导入语句无需修改（从 index.ts 导入）"
+    ]
+  },
+  "files": [
+    {
+      "path": "src/data/index.ts",
+      "change": "新建文件，统一导出所有模块"
+    }
+  ],
+  "implementation": [
+    "1. 创建 src/data/index.ts 文件",
+    "2. 从 types.ts 导出所有类型",
+    "3. 从 constants.ts 导出 COLORS, CATEGORIES, CLI_CONFIG",
+    "4. 从 commands.ts 导出 COMMANDS, STATS",
+    "5. 从 timeline.ts 导出 TIMELINE",
+    "6. 从 workflow-levels.ts 导出 WORKFLOW_LEVELS",
+    "7. 从 grandma.ts 导出 GRANDMA_COMMANDS",
+    "8. 从 deprecated.ts 导出 DEPRECATED_COMMANDS",
+    "9. 从 experience.ts 导出 EXPERIENCE_GUIDE",
+    "10. 从 patterns.ts 导出 TASK_PATTERNS, COMMAND_CHAINS, analyzeIntent"
+  ],
+  "test": "验证所有导出正确，App.tsx 无需修改导入路径"
+}

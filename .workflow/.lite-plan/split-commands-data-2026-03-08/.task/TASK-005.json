@@ -1,0 +1,25 @@
+{
+  "id": "TASK-005",
+  "title": "创建 grandma.ts - 提取老奶奶推荐数据",
+  "description": "从 commands.ts 提取 GRANDMA_COMMANDS 数据到独立的 grandma.ts 文件",
+  "depends_on": ["TASK-001"],
+  "convergence": {
+    "criteria": [
+      "grandma.ts 文件创建成功",
+      "包含 GRANDMA_COMMANDS 数组数据",
+      "定义 GrandmaCommand 接口类型"
+    ]
+  },
+  "files": [
+    {
+      "path": "src/data/grandma.ts",
+      "change": "新建文件，包含老奶奶推荐数据"
+    }
+  ],
+  "implementation": [
+    "1. 创建 src/data/grandma.ts 文件",
+    "2. 定义 GrandmaCommand 接口（包含 cmd, desc, emoji, scenario, category, detail 字段）",
+    "3. 从 commands.ts 复制 GRANDMA_COMMANDS 数组"
+  ],
+  "test": "验证数据完整，TypeScript 编译通过"
+}

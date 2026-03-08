@@ -1,0 +1,29 @@
+{
+  "id": "TASK-008",
+  "title": "创建 patterns.ts - 提取任务模式和命令链数据",
+  "description": "从 commands.ts 提取 TASK_PATTERNS, COMMAND_CHAINS 和 analyzeIntent 函数到独立的 patterns.ts 文件",
+  "depends_on": ["TASK-001"],
+  "convergence": {
+    "criteria": [
+      "patterns.ts 文件创建成功",
+      "包含 TASK_PATTERNS 数组数据",
+      "包含 COMMAND_CHAINS 对象数据",
+      "包含 analyzeIntent 函数",
+      "从 types.ts 导入 TaskPattern, CommandChain, MatchResult, ChainOption, IntentAnalysis 类型"
+    ]
+  },
+  "files": [
+    {
+      "path": "src/data/patterns.ts",
+      "change": "新建文件，包含任务模式、命令链和分析函数"
+    }
+  ],
+  "implementation": [
+    "1. 创建 src/data/patterns.ts 文件",
+    "2. 从 commands.ts 复制 TASK_PATTERNS 数组",
+    "3. 从 commands.ts 复制 COMMAND_CHAINS 对象",
+    "4. 从 commands.ts 复制 analyzeIntent 函数",
+    "5. 从 types.ts 导入所需类型"
+  ],
+  "test": "验证数据和函数完整，TypeScript 编译通过"
+}

@@ -1,0 +1,27 @@
+{
+  "id": "TASK-007",
+  "title": "创建 experience.ts - 提取经验指南数据",
+  "description": "从 commands.ts 提取 EXPERIENCE_GUIDE 数据到独立的 experience.ts 文件",
+  "depends_on": ["TASK-001", "TASK-002"],
+  "convergence": {
+    "criteria": [
+      "experience.ts 文件创建成功",
+      "包含 EXPERIENCE_GUIDE 数组数据",
+      "从 types.ts 导入 ExperienceTip, ExperienceCategory 类型",
+      "从 constants.ts 导入 COLORS"
+    ]
+  },
+  "files": [
+    {
+      "path": "src/data/experience.ts",
+      "change": "新建文件，包含经验指南数据"
+    }
+  ],
+  "implementation": [
+    "1. 创建 src/data/experience.ts 文件",
+    "2. 从 commands.ts 复制 EXPERIENCE_GUIDE 数组",
+    "3. 从 types.ts 导入 ExperienceTip, ExperienceCategory 类型",
+    "4. 从 constants.ts 导入 COLORS"
+  ],
+  "test": "验证数据完整，TypeScript 编译通过"
+}

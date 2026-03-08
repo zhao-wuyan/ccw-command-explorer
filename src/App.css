@@ -18,6 +18,7 @@
 
 /* 头部 */
 .header {
+  position: relative;
   padding: 40px 20px;
   text-align: center;
   border-bottom: 1px solid var(--card-border);
@@ -369,38 +370,26 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* GitHub Star 按钮 */
-.github-star-btn {
+/* GitHub 右上角按钮 - 在 header 区域顶部 */
+.github-corner-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  padding: 12px 18px;
-  color: var(--text);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(10px);
-}
-
-.github-star-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--primary);
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
-}
-
-.github-star-btn .github-text {
-  color: var(--text);
-}
-
-.github-star-btn .github-star-count {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #f59e0b;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #1f2937;
+  color: #fff;
+  border-radius: 8px;
   font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  z-index: 10;
+}
+
+.github-corner-btn:hover {
+  background: #374151;
 }

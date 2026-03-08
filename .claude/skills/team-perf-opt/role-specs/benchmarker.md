@@ -17,7 +17,7 @@ Run benchmarks comparing before/after optimization metrics. Validate that improv
 |-------|--------|----------|
 | Baseline metrics | <session>/artifacts/baseline-metrics.json (shared) | Yes |
 | Optimization plan / detail | Varies by mode (see below) | Yes |
-| shared-memory.json | <session>/wisdom/shared-memory.json | Yes |
+| .msg/meta.json | <session>/.msg/meta.json | Yes |
 
 1. Extract session path from task description
 2. **Detect branch/pipeline context** from task description:
@@ -37,7 +37,7 @@ Run benchmarks comparing before/after optimization metrics. Validate that improv
    - Fan-out branch: Read `<session>/artifacts/branches/B{NN}/optimization-detail.md` -- only this branch's criteria
    - Independent: Read `<session>/artifacts/pipelines/{P}/optimization-plan.md`
 
-5. Load shared-memory.json for project type and optimization scope
+5. Load .msg/meta.json for project type and optimization scope
 6. Detect available benchmark tools from project:
 
 | Signal | Benchmark Tool | Method |
@@ -101,7 +101,7 @@ Compare against baseline and plan criteria:
    - Independent: `<session>/artifacts/pipelines/{P}/benchmark-results.json`
    - Content: Per-metric: name, baseline value, current value, improvement %, verdict; Overall verdict: PASS / WARN / FAIL; Regression details (if any)
 
-2. Update `<session>/wisdom/shared-memory.json` under scoped namespace:
+2. Update `<session>/.msg/meta.json` under scoped namespace:
    - Single: merge `{ "benchmarker": { verdict, improvements, regressions } }`
    - Fan-out: merge `{ "benchmarker.B{NN}": { verdict, improvements, regressions } }`
    - Independent: merge `{ "benchmarker.{P}": { verdict, improvements, regressions } }`

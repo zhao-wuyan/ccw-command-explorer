@@ -706,10 +706,19 @@ if (!autoMode) {
 | Export | Copy plan.md + plan-note.md to user-specified location |
 | Done | Display artifact paths, end workflow |
 
+### Step 4.5: Sync Session State
+
+```bash
+$session-sync -y "Plan complete: {domains} domains, {tasks} tasks"
+```
+
+Updates specs/*.md with planning insights and project-tech.json with planning session entry.
+
 **Success Criteria**:
 - `plan.md` generated with complete summary
 - `.task/TASK-*.json` collected at session root (consumable by unified-execute)
 - All artifacts present in session directory
+- Session state synced via `$session-sync`
 - User informed of completion and next steps
 
 ---

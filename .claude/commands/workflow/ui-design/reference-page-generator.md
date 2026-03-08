@@ -2,7 +2,7 @@
 name: workflow:ui-design:reference-page-generator
 description: Generate multi-component reference pages and documentation from design run extraction
 argument-hint: "[--design-run <path>] [--package-name <name>] [--output-dir <path>]"
-allowed-tools: Read,Write,Bash,Task,TodoWrite
+allowed-tools: Read,Write,Bash,Agent,TodoWrite
 auto-continue: true
 ---
 
@@ -198,7 +198,7 @@ echo "[Phase 1] Component data preparation complete"
 **Agent Task**:
 
 ```javascript
-Task(ui-design-agent): `
+Agent(ui-design-agent): `
   [PREVIEW_SHOWCASE_GENERATION]
   Generate interactive multi-component showcase panel for reference package
 
@@ -210,7 +210,7 @@ Task(ui-design-agent): `
   2. ${package_dir}/design-tokens.json (design tokens - REQUIRED)
   3. ${package_dir}/animation-tokens.json (optional, if exists)
 
-  ## Generation Task
+  ## Generation Agent
 
   Create interactive showcase with these sections:
 

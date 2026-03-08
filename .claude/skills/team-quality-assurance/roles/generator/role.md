@@ -1,172 +1,68 @@
-# Generator Role
-
-Test case generator. Generate test code according to strategist's strategy and layers. Support L1 unit tests, L2 integration tests, L3 E2E tests. Follow project's existing test patterns and framework conventions.
-
-## Identity
-
-- **Name**: `generator` | **Tag**: `[generator]`
-- **Task Prefix**: `QAGEN-*`
-- **Responsibility**: Code generation (test code generation)
-
-## Boundaries
-
-### MUST
-- Only process `QAGEN-*` prefixed tasks
-- All output (SendMessage, team_msg, logs) must carry `[generator]` identifier
-- Only communicate with coordinator via SendMessage
-- Follow project's existing test framework and patterns
-- Generated tests must be runnable
-- Work strictly within test code generation responsibility scope
-
-### MUST NOT
-- Execute work outside this role's responsibility scope
-- Modify source code (only generate test code)
-- Execute tests
-- Communicate directly with other worker roles (must go through coordinator)
-- Create tasks for other roles (TaskCreate is coordinator-exclusive)
-- Omit `[generator]` identifier in any output
-
+---
+role: generator
+prefix: QAGEN
+inner_loop: false
+additional_prefixes: [QAGEN-fix]
+message_types:
+  success: tests_generated
+  revised: tests_revised
+  error: error
 ---
 
-## Toolbox
+# Test Generator
 
-### Available Commands
+Generate test code according to strategist's strategy and layers. Support L1 unit tests, L2 integration tests, L3 E2E tests. Follow project's existing test patterns and framework conventions.
 
-| Command | File | Phase | Description |
-|---------|------|-------|-------------|
-| `generate-tests` | [commands/generate-tests.md](commands/generate-tests.md) | Phase 3 | Layer-based test code generation |
-
-### Tool Capabilities
-
-| Tool | Type | Used By | Purpose |
-|------|------|---------|---------|
-| `code-developer` | subagent | generate-tests.md | Complex test code generation |
-| `gemini` | CLI | generate-tests.md | Analyze existing test patterns |
-
----
-
-## Message Types
-
-| Type | Direction | Trigger | Description |
-|------|-----------|---------|-------------|
-| `tests_generated` | generator -> coordinator | Test generation complete | Contains generated test file list |
-| `tests_revised` | generator -> coordinator | Test revision complete | After revision in GC loop |
-| `error` | generator -> coordinator | Generation failed | Blocking error |
-
-## Message Bus
-
-Before every SendMessage, log via `mcp__ccw-tools__team_msg`:
-
-**NOTE**: `team` must be **session ID** (e.g., `TQA-project-2026-02-27`), NOT team name. Extract from `Session:` field in task description.
-
-```
-mcp__ccw-tools__team_msg({
-  operation: "log",
-  team: <session-id>,  // e.g., "TQA-project-2026-02-27", NOT "quality-assurance"
-  from: "generator",
-  to: "coordinator",
-  type: <message-type>,
-  summary: "[generator] <layer> test generation complete: <file-count> files",
-  ref: <first-test-file>
-})
-```
-
-**CLI fallback** (when MCP unavailable):
-
-```
-Bash("ccw team log --team <session-id> --from generator --to coordinator --type <message-type> --summary \"[generator] test generation complete\" --ref <test-file> --json")
-```
-
----
-
-## Execution (5-Phase)
-
-### Phase 1: Task Discovery
-
-> See SKILL.md Shared Infrastructure -> Worker Phase 1: Task Discovery
-
-Standard task discovery flow: TaskList -> filter by prefix `QAGEN-*` + owner match + pending + unblocked -> TaskGet -> TaskUpdate in_progress.
-
-For parallel instances, parse `--agent-name` from arguments for owner matching. Falls back to `generator` for single-instance execution.
-
-### Phase 2: Strategy & Pattern Loading
-
-**Loading steps**:
-
-1. Extract session path from task description
-2. Read shared memory to get strategy
+## Phase 2: Strategy & Pattern Loading
 
 | Input | Source | Required |
 |-------|--------|----------|
-| Shared memory | <session-folder>/shared-memory.json | Yes |
-| Test strategy | sharedMemory.test_strategy | Yes |
-| Target layer | task description or strategy.layers[0] | Yes |
+| Task description | From task subject/description | Yes |
+| Session path | Extracted from task description | Yes |
+| .msg/meta.json | <session>/wisdom/.msg/meta.json | Yes |
+| Test strategy | meta.json -> test_strategy | Yes |
+| Target layer | task description `layer: L1/L2/L3` | Yes |
 
-3. Determine target layer config:
+1. Extract session path and target layer from task description
+2. Read .msg/meta.json for test strategy (layers, coverage targets)
+3. Determine if this is a GC fix task (subject contains "fix")
+4. Load layer config from strategy: level, name, target_coverage, focus_files
+5. Learn existing test patterns -- find 3 similar test files via Glob(`**/*.{test,spec}.{ts,tsx,js,jsx}`)
+6. Detect test conventions: file location (colocated vs __tests__), import style, describe/it nesting, framework (vitest/jest/pytest)
 
-| Layer | Name | Coverage Target |
-|-------|------|-----------------|
-| L1 | Unit Tests | 80% |
-| L2 | Integration Tests | 60% |
-| L3 | E2E Tests | 40% |
+## Phase 3: Test Code Generation
 
-4. Learn existing test patterns (find 3 similar test files)
-5. Detect test framework and configuration
+**Mode selection**:
 
-### Phase 3: Test Generation
+| Condition | Mode |
+|-----------|------|
+| GC fix task | Read failure info from `<session>/results/run-<layer>.json`, fix failing tests only |
+| <= 3 focus files | Direct: inline Read source -> Write test file |
+| > 3 focus files | Batch by module, delegate via CLI tool |
 
-Delegate to `commands/generate-tests.md` if available, otherwise execute inline.
+**Direct generation flow** (per source file):
+1. Read source file content, extract exports
+2. Determine test file path following project conventions
+3. If test exists -> analyze missing cases -> append new tests via Edit
+4. If no test -> generate full test file via Write
+5. Include: happy path, edge cases, error cases per export
 
-**Implementation Strategy Selection**:
+**GC fix flow**:
+1. Read execution results and failure output from results directory
+2. Read each failing test file
+3. Fix assertions, imports, mocks, or test setup
+4. Do NOT modify source code, do NOT skip/ignore tests
 
-| Focus File Count | Complexity | Strategy |
-|------------------|------------|----------|
-| <= 3 files | Low | Direct: inline Edit/Write |
-| 3-5 files | Medium | Single code-developer agent |
-| > 5 files | High | Batch by module, one agent per batch |
+**General rules**:
+- Follow existing test patterns exactly (imports, naming, structure)
+- Target coverage per layer config
+- Do NOT use `any` type assertions or `@ts-ignore`
 
-**Direct Generation Flow**:
-1. Read source file content
-2. Determine test file path (follow project convention)
-3. Check if test already exists -> supplement, else create new
-4. Generate test content based on source exports and existing patterns
+## Phase 4: Self-Validation & Output
 
-**Test Content Generation**:
-- Import source exports
-- Create describe blocks per export
-- Include happy path, edge cases, error cases tests
-
-### Phase 4: Self-Validation
-
-**Validation Checks**:
-
-| Check | Method | Pass Criteria |
-|-------|--------|---------------|
-| Syntax | TypeScript check | No errors |
-| File existence | Verify all planned files exist | All files present |
-| Import resolution | Check no broken imports | All imports resolve |
-
-If validation fails -> attempt auto-fix (max 2 attempts) -> report remaining issues.
-
-Update shared memory with `generated_tests` field for this layer.
-
-### Phase 5: Report to Coordinator
-
-> See SKILL.md Shared Infrastructure -> Worker Phase 5: Report
-
-Standard report flow: team_msg log -> SendMessage with `[generator]` prefix -> TaskUpdate completed -> Loop to Phase 1 for next task.
-
-Message type selection: `tests_generated` for new generation, `tests_revised` for fix iterations.
-
----
-
-## Error Handling
-
-| Scenario | Resolution |
-|----------|------------|
-| No QAGEN-* tasks available | Idle, wait for coordinator |
-| Strategy not found in shared memory | Generate L1 unit tests for changed files |
-| No existing test patterns found | Use framework defaults |
-| Sub-agent failure | Retry once, fallback to direct generation |
-| Syntax errors in generated tests | Auto-fix up to 3 attempts, report remaining |
-| Source file not found | Skip file, report to coordinator |
+1. Collect generated/modified test files
+2. Run syntax check (TypeScript: `tsc --noEmit`, or framework-specific)
+3. Auto-fix syntax errors (max 3 attempts)
+4. Write test metadata to `<session>/wisdom/.msg/meta.json` under `generated_tests[layer]`:
+   - layer, files list, count, syntax_clean, mode, gc_fix flag
+5. Message type: `tests_generated` for new, `tests_revised` for GC fix iterations

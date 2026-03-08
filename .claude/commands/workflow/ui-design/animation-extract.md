@@ -2,7 +2,7 @@
 name: animation-extract
 description: Extract animation and transition patterns from prompt inference and image references for design system documentation
 argument-hint: "[-y|--yes] [--design-id <id>] [--session <id>] [--images "<glob>"] [--focus "<types>"] [--interactive] [--refine]"
-allowed-tools: TodoWrite(*), Read(*), Write(*), Glob(*), Bash(*), AskUserQuestion(*), Task(ui-design-agent)
+allowed-tools: TodoWrite(*), Read(*), Write(*), Glob(*), Bash(*), AskUserQuestion(*), Agent(ui-design-agent)
 ---
 
 ## Auto Mode
@@ -207,14 +207,14 @@ IF has_images:
 
 ### Step 2: Generate Animation Specification Options (Agent Task 1)
 
-**Executor**: `Task(ui-design-agent)`
+**Executor**: `Agent(ui-design-agent)`
 
 **Conditional Logic**: Branch based on `refine_mode` flag
 
 ```javascript
 IF NOT refine_mode:
     // EXPLORATION MODE (default)
-    Task(ui-design-agent): `
+    Agent(ui-design-agent): `
       [ANIMATION_SPECIFICATION_GENERATION_TASK]
       Generate context-aware animation specification questions
 
@@ -308,7 +308,7 @@ IF NOT refine_mode:
 
 ELSE:
     // REFINEMENT MODE
-    Task(ui-design-agent): `
+    Agent(ui-design-agent): `
       [ANIMATION_REFINEMENT_OPTIONS_TASK]
       Generate refinement options for existing animation system
 
@@ -656,7 +656,7 @@ ELSE:
 
 ## Phase 2: Animation System Generation (Agent Task 2)
 
-**Executor**: `Task(ui-design-agent)` for animation token generation
+**Executor**: `Agent(ui-design-agent)` for animation token generation
 
 ### Step 1: Load User Selection or Use Defaults
 
@@ -706,14 +706,14 @@ IF has_images:
 bash(mkdir -p {base_path}/animation-extraction)
 ```
 
-### Step 3: Launch Animation Generation Task
+### Step 3: Launch Animation Generation Agent
 
 **Conditional Task**: Branch based on `refine_mode` flag
 
 ```javascript
 IF NOT refine_mode:
     // EXPLORATION MODE
-    Task(ui-design-agent): `
+    Agent(ui-design-agent): `
       [ANIMATION_SYSTEM_GENERATION_TASK]
       Generate production-ready animation system based on user preferences and CSS extraction
 
@@ -871,7 +871,7 @@ IF NOT refine_mode:
 
 ELSE:
     // REFINEMENT MODE
-    Task(ui-design-agent): `
+    Agent(ui-design-agent): `
       [ANIMATION_SYSTEM_REFINEMENT_TASK]
       Apply selected refinements to existing animation system
 

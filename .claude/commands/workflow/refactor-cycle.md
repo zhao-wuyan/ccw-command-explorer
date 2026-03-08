@@ -2,7 +2,7 @@
 name: refactor-cycle
 description: Tech debt discovery and self-iterating refactoring with multi-dimensional analysis, prioritized execution, regression validation, and reflection-driven adjustment
 argument-hint: "[-y|--yes] [-c|--continue] [--scope=module|project] \"module or refactoring goal\""
-allowed-tools: TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)
+allowed-tools: TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)
 ---
 
 ## Auto Mode
@@ -200,7 +200,7 @@ Closed-loop tech debt lifecycle: **Discover → Assess → Plan → Refactor →
 1. **Codebase Exploration via cli-explore-agent**
 
 ```javascript
-Task({
+Agent({
   subagent_type: "cli-explore-agent",
   run_in_background: false,
   description: `Explore codebase for debt: ${topicSlug}`,
@@ -465,7 +465,7 @@ Set `state.json.current_item` to item ID.
 #### Step 4.2: Execute Refactoring
 
 ```javascript
-Task({
+Agent({
   subagent_type: "code-developer",
   run_in_background: false,
   description: `Refactor ${item.id}: ${item.title}`,
@@ -499,7 +499,7 @@ ${JSON.stringify(item.refactor_plan, null, 2)}
 
 ```javascript
 // 1. Run tests
-Task({
+Agent({
   subagent_type: "test-fix-agent",
   run_in_background: false,
   description: `Validate refactoring: ${item.id}`,
@@ -827,7 +827,7 @@ AskUserQuestion({
 - Need regression-safe iterative refactoring with rollback
 - Want documented reasoning for each refactoring decision
 
-**Use `workflow-lite-planex` skill when:**
+**Use `workflow-lite-plan` skill when:**
 - Single specific bug or issue to fix
 - No systematic debt analysis needed
 

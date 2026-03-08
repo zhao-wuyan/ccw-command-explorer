@@ -26,7 +26,7 @@ Interactive collaborative analysis workflow with **documented discussion process
 | Trigger | What to Record | Target Section |
 |---------|---------------|----------------|
 | **Direction choice** | What was chosen, why, what alternatives were discarded | `#### Decision Log` |
-| **Key finding** | Finding content, impact scope, confidence level | `#### Key Findings` |
+| **Key finding** | Finding content, impact scope, confidence level, hypothesis impact | `#### Key Findings` |
 | **Assumption change** | Old assumption → new understanding, reason, impact | `#### Corrected Assumptions` |
 | **User feedback** | User's original input, rationale for adoption/adjustment | `#### User Input` |
 | **Disagreement & trade-off** | Conflicting viewpoints, trade-off basis, final choice | `#### Decision Log` |
@@ -38,13 +38,23 @@ Interactive collaborative analysis workflow with **documented discussion process
 > - **Context**: [What triggered this decision]
 > - **Options considered**: [Alternatives evaluated]
 > - **Chosen**: [Selected approach] — **Reason**: [Rationale]
+> - **Rejected**: [Why other options were discarded]
 > - **Impact**: [Effect on analysis direction/conclusions]
+```
+
+**Key Finding Record Format**:
+```markdown
+> **Finding**: [Content]
+> - **Confidence**: [High/Medium/Low] — **Why**: [Evidence basis]
+> - **Hypothesis Impact**: [Confirms/Refutes/Modifies] hypothesis "[name]"
+> - **Scope**: [What areas this affects]
 ```
 
 **Recording Principles**:
 - **Immediacy**: Record decisions as they happen, not at the end of a phase
-- **Completeness**: Capture context, options, chosen approach, and reason
+- **Completeness**: Capture context, options, chosen approach, reason, and rejected alternatives
 - **Traceability**: Later phases must be able to trace back why a decision was made
+- **Depth**: Capture reasoning and hypothesis impact, not just outcomes
 
 ## Auto Mode
 
@@ -91,22 +101,33 @@ Step 2: Exploration (Inline, No Agents)
    │   ├─ Single: Comprehensive analysis
    │   └─ Multi (≤4): Serial per-perspective analysis with synthesis
    ├─ Aggregate findings → explorations.json / perspectives.json
-   └─ Update discussion.md with Round 1
+   ├─ Update discussion.md with Round 1
+   │   ├─ Replace ## Current Understanding with initial findings
+   │   └─ Update ## Table of Contents
+   └─ Initial Intent Coverage Check (early drift detection)
 
 Step 3: Interactive Discussion (Multi-Round, max 5)
+   ├─ Current Understanding Summary (round ≥ 2, before findings)
    ├─ Present exploration findings
    ├─ Gather user feedback
    ├─ Process response:
-   │   ├─ Deepen → deeper inline analysis in current direction
+   │   ├─ Deepen → context-driven + heuristic options → deeper inline analysis
+   │   ├─ Agree & Suggest → user-directed exploration
    │   ├─ Adjust → new inline analysis with adjusted focus
    │   ├─ Questions → direct answers with evidence
    │   └─ Complete → exit loop for synthesis
-   ├─ Update discussion.md with each round
+   ├─ Update discussion.md:
+   │   ├─ Append round details + Narrative Synthesis
+   │   ├─ Replace ## Current Understanding with latest state
+   │   └─ Update ## Table of Contents
+   ├─ Intent Drift Check (round ≥ 2, building on Phase 2 initial check)
    └─ Repeat until user selects complete or max rounds
 
 Step 4: Synthesis & Conclusion
-   ├─ Consolidate all insights → conclusions.json
+   ├─ Intent Coverage Verification (mandatory gate)
+   ├─ Consolidate all insights → conclusions.json (with steps[] per recommendation)
    ├─ Update discussion.md with final synthesis
+   ├─ Interactive Recommendation Review (per-recommendation confirm/modify/reject)
    └─ Offer options: quick execute / create issue / generate task / export / done
 
 Step 5: Execute (Optional - user selects, routes by complexity)
@@ -237,6 +258,19 @@ const discussionMd = `# Analysis Discussion
 **Dimensions**: ${dimensions.join(', ')}
 **Depth**: ${analysisDepth}
 
+## Table of Contents
+<!-- TOC: Auto-updated after each round/phase. Links to major sections. -->
+- [Analysis Context](#analysis-context)
+- [Current Understanding](#current-understanding)
+- [Discussion Timeline](#discussion-timeline)
+- [Decision Trail](#decision-trail)
+
+## Current Understanding
+<!-- REPLACEABLE BLOCK: Overwrite (not append) after each round with latest consolidated understanding.
+     Follow Consolidation Rules: promote confirmed insights, track corrections, focus on current state. -->
+
+> To be populated after exploration.
+
 ## Analysis Context
 - Focus areas: ${focusAreas.join(', ')}
 - Perspectives: ${selectedPerspectives.map(p => p.name).join(', ')}
@@ -260,12 +294,6 @@ ${generateInitialQuestions(topic, dimensions).map(q => `- ${q}`).join('\n')}
 ## Decision Trail
 
 > Consolidated critical decisions across all rounds (populated in Phase 4).
-
----
-
-## Current Understanding
-
-> To be populated after exploration.
 `
 Write(`${sessionFolder}/discussion.md`, discussionMd)
 ```
@@ -426,10 +454,33 @@ Append Round 1 with exploration results:
 - Discussion points
 - Open questions
 
+##### Step 2.5: Initial Intent Coverage Check
+
+Perform the FIRST intent coverage check before entering Phase 3:
+
+```javascript
+// Re-read original user intent / analysis context from discussion.md header
+// Check each intent item against Round 1 findings
+// Append to discussion.md:
+
+appendToDiscussion(`
+#### Initial Intent Coverage Check (Post-Exploration)
+${originalIntents.map((intent, i) => {
+  const status = assessCoverage(intent, explorationFindings)
+  return `- ${status.icon} Intent ${i+1}: ${intent} — ${status.detail}`
+}).join('\n')}
+
+> 接下来的讨论将重点关注未覆盖 (❌) 和进行中 (🔄) 的意图。
+`)
+
+// Present to user at beginning of Phase 3 for early course correction
+```
+
 **Success Criteria**:
 - exploration-codebase.json created with codebase context (if codebase exists)
 - explorations.json (single) or perspectives.json (multi) created with findings
 - discussion.md updated with Round 1 results
+- **Initial Intent Coverage Check** completed — early drift detection before interactive rounds
 - Ready for interactive discussion
 - **Key findings recorded** with evidence references and confidence levels
 - **Exploration decisions recorded** (why certain perspectives/search strategies were chosen)
@@ -440,11 +491,22 @@ Append Round 1 with exploration results:
 
 **Max Rounds**: 5 discussion rounds (can exit earlier if user indicates analysis is complete)
 
-##### Step 3.1: Present Findings & Gather Feedback
+##### Step 3.1: Current Understanding Summary & Present Findings
+
+**Current Understanding Summary** (Round >= 2, BEFORE presenting new findings):
+- Generate 1-2 sentence recap of established consensus and last round's direction
+- Example: "到目前为止，我们已确认 [established facts]。上一轮 [key action/direction]。现在，这是新一轮的发现："
+- Purpose: Reset context, prevent cognitive overload, make incremental progress visible
 
 Display current understanding and gather user direction:
 
 ```javascript
+// Round >= 2: Display Current Understanding Summary first
+if (round >= 2) {
+  // Generate 1-2 sentence recap from previous round's narrative synthesis
+  // Display before presenting new findings
+}
+
 // Display current findings summary from explorations.json or perspectives.json
 // Show key points, discussion points, open questions
 
@@ -456,6 +518,7 @@ if (!autoYes) {
       multiSelect: false,
       options: [
         { label: "Deepen", description: "Analysis direction is correct, investigate deeper" },
+        { label: "Agree & Suggest", description: "Agree with direction, but have specific next step in mind" },
         { label: "Adjust Direction", description: "Different understanding or focus needed" },
         { label: "Specific Questions", description: "Have specific questions to ask" },
         { label: "Analysis Complete", description: "Sufficient information obtained, proceed to synthesis" }
@@ -474,13 +537,32 @@ if (!autoYes) {
 
 **Deepen** — continue analysis in current direction:
 ```javascript
-// Deeper inline analysis using search tools
-// Investigate edge cases, special scenarios
-// Identify patterns not yet discussed
-// Suggest improvement approaches
-// Provide risk/impact assessments
-// Update explorations.json with deepening findings
+// Generate deepen direction options dynamically:
+// - 2-3 context-driven options from: unresolved questions, low-confidence findings, unexplored dimensions
+// - 1-2 heuristic options that break current frame:
+//   e.g., "compare with best practices in [related domain]",
+//   "analyze under extreme load scenarios",
+//   "review from security audit perspective",
+//   "explore simpler architectural alternatives"
+// AskUserQuestion with generated options (single-select)
+// Execute selected direction via inline search tools
+// Merge new findings into explorations.json
 // Record: Which assumptions were confirmed, specific angles for deeper exploration
+```
+
+**Agree & Suggest** — user provides specific next step:
+```javascript
+// Ask user for their specific direction (free text input)
+const userSuggestion = AskUserQuestion({
+  questions: [{
+    question: "请描述您希望下一步深入的方向:",
+    header: "Your Direction",
+    multiSelect: false,
+    options: [/* user will select "Other" to type free text */]
+  }]
+})
+// Execute user's specific direction via inline search tools
+// Record: User-driven exploration rationale and findings
 ```
 
 **Adjust Direction** — new focus area:
@@ -525,25 +607,45 @@ const adjustedFocus = AskUserQuestion({
 
 Update discussion.md with results from each discussion round:
 
+**Append** to Discussion Timeline:
+
 | Section | Content |
 |---------|---------|
-| User Direction | Action taken (deepen/adjust/questions) and focus area |
-| Decision Log | Decisions made this round using Decision Record format |
-| Analysis Results | Key findings, insights, evidence with file references |
-| Insights | New learnings or clarifications from this round |
+| User Direction | Action taken (deepen/adjust/suggest/questions) and focus area |
+| Decision Log | Decisions made this round using Decision Record format (with rejected alternatives) |
+| Key Findings | Findings using Key Finding Record format (with confidence + hypothesis impact) |
+| Analysis Results | Detailed insights, evidence with file references |
 | Corrected Assumptions | Important wrong→right transformations with explanation |
 | Open Items | Remaining questions or areas for future investigation |
+| **Narrative Synthesis** | Round-end summary connecting this round to overall understanding evolution |
+
+**Replace** (not append) these sections:
+
+| Section | Update Rule |
+|---------|-------------|
+| `## Current Understanding` | Overwrite with latest consolidated understanding. Follow Consolidation Rules: promote confirmed insights, track corrections, focus on current state — NOT cumulative history |
+| `## Table of Contents` | Update links to include new Round N sections and any new headings |
+
+**Round Narrative Synthesis** (append after each round update):
+```markdown
+### Round N: Narrative Synthesis
+**起点**: 基于上一轮的 [conclusions/questions]，本轮从 [starting point] 切入。
+**关键进展**: [New findings] [confirmed/refuted/modified] 了之前关于 [hypothesis] 的理解。
+**决策影响**: 用户选择 [feedback type]，导致分析方向 [adjusted/deepened/maintained]。
+**当前理解**: 经过本轮，核心认知更新为 [updated understanding]。
+**遗留问题**: [remaining questions driving next round]
+```
 
 **Documentation Standards**:
 - Clear timestamps for each round
-- Evidence-based findings with file references
+- Evidence-based findings with file references and confidence levels
 - Explicit tracking of assumption corrections
 - Organized by analysis dimension
-- Links between rounds showing understanding evolution
+- Narrative synthesis linking rounds into coherent understanding evolution
 
-##### Step 3.4: Intent Drift Check (every round ≥ 2)
+##### Step 3.4: Intent Drift Check (every round ≥ 2, building on Phase 2 initial check)
 
-Re-read "User Intent" / "Analysis Context" from discussion.md header. For each original intent item, check coverage status:
+Re-read "User Intent" / "Analysis Context" from discussion.md header. Compare against the Initial Intent Coverage Check from Phase 2. For each original intent item, check updated coverage status:
 
 ```markdown
 #### Intent Coverage Check
@@ -554,7 +656,7 @@ Re-read "User Intent" / "Analysis Context" from discussion.md header. For each o
 ```
 
 - If any item is "implicitly absorbed" (⚠️), note it explicitly in discussion.md — absorbed ≠ addressed
-- If any item is ❌ after 3+ rounds, surface it to the user in the next round's presentation
+- If ❌ or ⚠️ items exist → **proactively surface** to user at start of next round: "以下原始意图尚未充分覆盖：[list]。是否需要调整优先级？"
 
 **Success Criteria**:
 - User feedback processed for each round
@@ -609,7 +711,11 @@ const conclusions = {
       action: '...',                    // What to do (imperative verb + target)
       rationale: '...',                 // Why this matters
       priority: 'high|medium|low',
-      evidence_refs: ['file:line', ...] // Supporting evidence locations
+      evidence_refs: ['file:line', ...], // Supporting evidence locations
+      steps: [                          // Granular sub-steps for execution
+        { description: '...', target: 'file/module', verification: 'how to verify done' }
+      ],
+      review_status: 'accepted|modified|rejected|pending' // Set during Phase 4 review
     }
   ],
   open_questions: [...],             // Unresolved questions
@@ -617,7 +723,10 @@ const conclusions = {
     { type: 'issue|task|research', summary: '...' }
   ],
   decision_trail: [                  // Consolidated decisions from all phases
-    { round: 1, decision: '...', context: '...', options_considered: [...], chosen: '...', reason: '...', impact: '...' }
+    { round: 1, decision: '...', context: '...', options_considered: [...], chosen: '...', rejected_reasons: '...', reason: '...', impact: '...' }
+  ],
+  narrative_trail: [                 // From Step 3.3 Narrative Synthesis
+    { round: 1, starting_point: '...', key_progress: '...', hypothesis_impact: '...', updated_understanding: '...', remaining_questions: '...' }
   ],
   intent_coverage: [                 // From Step 4.0
     { intent: '...', status: 'addressed|transformed|absorbed|missed', where_addressed: '...', notes: '...' }
@@ -654,7 +763,59 @@ Append conclusions section and finalize:
 
 **Session Statistics**: Total discussion rounds, key findings count, dimensions covered, artifacts generated, **decision count**.
 
-##### Step 4.3: Post-Completion Options
+##### Step 4.3: Interactive Recommendation Review (skip in auto mode)
+
+Walk through each recommendation one-by-one for user confirmation before proceeding:
+
+```javascript
+// Order recommendations by priority: high → medium → low
+const sortedRecs = conclusions.recommendations.sort(byPriority)
+
+for (const [index, rec] of sortedRecs.entries()) {
+  // 1. Present recommendation details
+  // Display: action, rationale, priority, steps[] (numbered sub-steps with target + verification)
+
+  // 2. Gather user review
+  const review = AskUserQuestion({
+    questions: [{
+      question: `Recommendation #${index + 1}: "${rec.action}" (${rec.priority} priority, ${rec.steps.length} steps). Your decision:`,
+      header: `Rec #${index + 1}`,
+      multiSelect: false,
+      options: [
+        { label: "Accept", description: "Accept this recommendation as-is" },
+        { label: "Modify", description: "Adjust scope, steps, or priority" },
+        { label: "Reject", description: "Remove this recommendation" },
+        { label: "Accept All Remaining", description: "Skip review for remaining recommendations" }
+      ]
+    }]
+  })
+
+  // 3. Process review decision
+  // Accept → rec.review_status = "accepted"
+  // Modify → gather modification via free text → update rec → rec.review_status = "modified"
+  // Reject → gather reason → rec.review_status = "rejected"
+  // Accept All Remaining → mark all remaining as "accepted", break loop
+
+  // 4. Record review decision to discussion.md Decision Log
+  // 5. Update conclusions.json
+}
+
+// Display review summary:
+// Accepted: N | Modified: N | Rejected: N
+// Only accepted/modified recommendations proceed to next step
+```
+
+**Review Summary Format** (append to discussion.md):
+```markdown
+### Recommendation Review Summary
+| # | Action | Priority | Steps | Review Status | Notes |
+|---|--------|----------|-------|---------------|-------|
+| 1 | [action] | high | 3 | ✅ Accepted | |
+| 2 | [action] | medium | 2 | ✏️ Modified | [modification notes] |
+| 3 | [action] | low | 1 | ❌ Rejected | [reason] |
+```
+
+##### Step 4.4: Post-Completion Options
 
 **Complexity Assessment** — determine whether .task/*.json generation is warranted:
 
@@ -709,8 +870,8 @@ if (!autoYes) {
 
 | Selection | Action |
 |-----------|--------|
-| Quick Execute | Jump to Phase 5 (routes by complexity) |
-| Create Issue | `Skill(skill="issue:new", args="...")` |
+| Quick Execute | Jump to Phase 5 (only reviewed recs with status accepted/modified) |
+| Create Issue | `Skill(skill="issue:new", args="...")` (only reviewed recs) |
 | Generate Task | Jump to Phase 5 Step 5.1-5.2 only (generate .task/*.json, no execution) |
 | Export Report | Copy discussion.md + conclusions.json to user-specified location |
 | Done | Display artifact paths, end |
@@ -935,9 +1096,9 @@ The discussion.md file evolves through the analysis:
 - **Analysis Context**: Focus areas, perspectives, depth level
 - **Initial Questions**: Key questions to guide the analysis
 - **Initial Decisions**: Why these dimensions and focus areas were selected
-- **Discussion Timeline**: Round-by-round findings
-  - Round 1: Initial Understanding + Exploration Results + **Initial Decision Log**
-  - Round 2-N: User feedback + direction adjustments + new insights + **Decision Log per round**
+- **Discussion Timeline**: Round-by-round findings with narrative synthesis
+  - Round 1: Initial Understanding + Exploration Results + **Initial Decision Log** + **Narrative Synthesis**
+  - Round 2-N: Current Understanding Summary + User feedback + direction adjustments + new insights + **Decision Log** + **Key Findings** + **Narrative Synthesis**
 - **Decision Trail**: Consolidated critical decisions across all rounds
 - **Synthesis & Conclusions**: Summary, key conclusions, recommendations
 - **Current Understanding (Final)**: Consolidated insights
@@ -948,7 +1109,7 @@ The discussion.md file evolves through the analysis:
 Each discussion round follows a consistent structure:
 
 ```markdown
-### Round N - [Deepen|Adjust|Q&A] (timestamp)
+### Round N - [Deepen|Adjust|Suggest|Q&A] (timestamp)
 
 #### User Input
 What the user indicated they wanted to focus on
@@ -958,15 +1119,19 @@ What the user indicated they wanted to focus on
 > - **Context**: [What triggered this decision]
 > - **Options considered**: [Alternatives evaluated]
 > - **Chosen**: [Selected approach] — **Reason**: [Rationale]
+> - **Rejected**: [Why other options were discarded]
 > - **Impact**: [Effect on analysis direction/conclusions]
 
+#### Key Findings
+> **Finding**: [Content]
+> - **Confidence**: [High/Medium/Low] — **Why**: [Evidence basis]
+> - **Hypothesis Impact**: [Confirms/Refutes/Modifies] hypothesis "[name]"
+> - **Scope**: [What areas this affects]
+
 #### Analysis Results
-New findings from this round's analysis
+Detailed findings from this round's analysis
 - Finding 1 (evidence: file:line)
 - Finding 2 (evidence: file:line)
-
-#### Insights
-Key learnings and clarifications
 
 #### Corrected Assumptions
 - ~~Previous assumption~~ → Corrected understanding
@@ -974,6 +1139,13 @@ Key learnings and clarifications
 
 #### Open Items
 Remaining questions or areas for investigation
+
+#### Narrative Synthesis
+**起点**: 基于上一轮的 [conclusions/questions]，本轮从 [starting point] 切入。
+**关键进展**: [New findings] [confirmed/refuted/modified] 了之前关于 [hypothesis] 的理解。
+**决策影响**: 用户选择 [feedback type]，导致分析方向 [adjusted/deepened/maintained]。
+**当前理解**: 经过本轮，核心认知更新为 [updated understanding]。
+**遗留问题**: [remaining questions driving next round]
 ```
 
 ## Error Handling

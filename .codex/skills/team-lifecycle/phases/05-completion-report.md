@@ -138,6 +138,27 @@ state.completed_at = new Date().toISOString()
 
 Write("<session-dir>/team-session.json",
   JSON.stringify(state, null, 2))
+
+// Update message bus meta.json status
+const meta = JSON.parse(Read("<session-dir>/.msg/meta.json"))
+meta.status = "completed"
+meta.updated_at = new Date().toISOString()
+Write("<session-dir>/.msg/meta.json", JSON.stringify(meta, null, 2))
+
+// Log completion event to message bus
+const msgCounter = getLastMsgCounter("<session-dir>/.msg/messages.jsonl") + 1
+logToMessageBus("<session-dir>", msgCounter, {
+  from: "coordinator",
+  type: "shutdown",
+  summary: `Pipeline completed: ${completedTasks}/${totalTasks} tasks (${successRate}%)`,
+  data: {
+    tasks_completed: completedTasks,
+    tasks_total: totalTasks,
+    success_rate: successRate,
+    duration_min: durationMin,
+    failed_tasks: failedTasks
+  }
+})
 ```
 
 ### Step 5.8: Output Completion Report

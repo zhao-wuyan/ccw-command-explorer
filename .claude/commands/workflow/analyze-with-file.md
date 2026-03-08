@@ -2,7 +2,7 @@
 name: analyze-with-file
 description: Interactive collaborative analysis with documented discussions, CLI-assisted exploration, and evolving understanding
 argument-hint: "[-y|--yes] [-c|--continue] \"topic or question\""
-allowed-tools: TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)
+allowed-tools: TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)
 ---
 
 ## Auto Mode
@@ -11,222 +11,120 @@ When `--yes` or `-y`: Auto-confirm exploration decisions, use recommended analys
 
 # Workflow Analyze Command
 
-## Quick Start
-
-```bash
-# Basic usage
-/workflow:analyze-with-file "如何优化这个项目的认证架构"
-
-# With options
-/workflow:analyze-with-file --continue "认证架构"    # Continue existing session
-/workflow:analyze-with-file -y "性能瓶颈分析"        # Auto mode
-```
-
 **Context Source**: cli-explore-agent + Gemini/Codex analysis
 **Output Directory**: `.workflow/.analysis/{session-id}/`
 **Core Innovation**: Documented discussion timeline with evolving understanding
 
 ## Output Artifacts
 
-### Phase 1: Topic Understanding
-
-| Artifact | Description |
-|----------|-------------|
-| `discussion.md` | Evolution of understanding & discussions (initialized) |
-| Session variables | Dimensions, focus areas, analysis depth |
-
-### Phase 2: CLI Exploration
-
-| Artifact | Description |
-|----------|-------------|
-| `exploration-codebase.json` | Single codebase context from cli-explore-agent |
-| `explorations/*.json` | Multi-perspective codebase explorations (parallel, up to 4) |
-| `explorations.json` | Single perspective aggregated findings |
-| `perspectives.json` | Multi-perspective findings (up to 4 perspectives) with synthesis |
-| Updated `discussion.md` | Round 1 with exploration results |
-
-### Phase 3: Interactive Discussion
-
-| Artifact | Description |
-|----------|-------------|
-| Updated `discussion.md` | Round 2-N with user feedback and insights |
-| Corrected assumptions | Tracked in discussion timeline |
-
-### Phase 4: Synthesis & Conclusion
-
-| Artifact | Description |
-|----------|-------------|
-| `conclusions.json` | Final synthesis with recommendations |
-| Final `discussion.md` | ⭐ Complete analysis with conclusions |
-
-## Overview
-
-Interactive collaborative analysis workflow with **documented discussion process**. Records understanding evolution, facilitates multi-round Q&A, and uses CLI tools for deep exploration.
-
-**Core workflow**: Topic → Explore → Discuss → Document → Refine → Conclude
+| Phase | Artifact | Description |
+|-------|----------|-------------|
+| 1 | `discussion.md` | Initialized with TOC, Current Understanding block, timeline, metadata |
+| 1 | Session variables | Dimensions, focus areas, analysis depth |
+| 2 | `exploration-codebase.json` | Single codebase context from cli-explore-agent |
+| 2 | `explorations/*.json` | Multi-perspective codebase explorations (parallel, up to 4) |
+| 2 | `explorations.json` | Single perspective aggregated findings |
+| 2 | `perspectives.json` | Multi-perspective findings (up to 4) with synthesis |
+| 2 | Updated `discussion.md` | Round 1 + Initial Intent Coverage Check + Current Understanding replaced |
+| 3 | Updated `discussion.md` | Round 2-N: feedback, insights, narrative synthesis; TOC + Current Understanding updated each round |
+| 4 | `conclusions.json` | Final synthesis with recommendations (incl. steps[] + review_status) |
+| 4 | Final `discussion.md` | Complete analysis with conclusions, recommendation review summary, intent coverage matrix |
 
 ### Decision Recording Protocol
 
-**⚠️ CRITICAL**: During analysis, the following situations **MUST** trigger immediate recording to discussion.md:
+**CRITICAL**: Record immediately when any of these occur:
 
 | Trigger | What to Record | Target Section |
 |---------|---------------|----------------|
-| **Direction choice** | What was chosen, why, what alternatives were discarded | `#### Decision Log` |
-| **Key finding** | Finding content, impact scope, confidence level | `#### Key Findings` |
-| **Assumption change** | Old assumption → new understanding, reason for change, impact | `#### Corrected Assumptions` |
-| **User feedback** | User's original input, rationale for adoption/adjustment | `#### User Input` |
-| **Disagreement & trade-off** | Conflicting viewpoints, trade-off basis, final choice | `#### Decision Log` |
-| **Scope adjustment** | Before/after scope, trigger reason for adjustment | `#### Decision Log` |
+| **Direction choice** | What chosen, why, alternatives discarded | `#### Decision Log` |
+| **Key finding** | Content, impact scope, confidence level, hypothesis impact | `#### Key Findings` |
+| **Assumption change** | Old → new understanding, reason, impact | `#### Corrected Assumptions` |
+| **User feedback** | Input, rationale for adoption/adjustment | `#### User Input` |
+| **Disagreement & trade-off** | Conflicting views, trade-off basis, final choice | `#### Decision Log` |
+| **Scope adjustment** | Before/after scope, trigger reason | `#### Decision Log` |
 
 **Decision Record Format**:
 ```markdown
-> **Decision**: [Description of the decision]
-> - **Context**: [What triggered this decision]
-> - **Options considered**: [Alternatives evaluated]
-> - **Chosen**: [Selected approach] — **Reason**: [Rationale]
-> - **Impact**: [Effect on analysis direction/conclusions]
+> **Decision**: [Description]
+> - **Context**: [Trigger]
+> - **Options considered**: [Alternatives]
+> - **Chosen**: [Approach] — **Reason**: [Rationale]
+> - **Rejected**: [Why other options were discarded]
+> - **Impact**: [Effect on analysis]
 ```
 
-**Recording Principles**:
-- **Immediacy**: Record decisions as they happen, not at the end of a phase
-- **Completeness**: Capture context, options, chosen approach, and reason
-- **Traceability**: Later phases must be able to trace back why a decision was made
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    INTERACTIVE ANALYSIS WORKFLOW                         │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  Phase 1: Topic Understanding                                            │
-│     ├─ Parse topic/question                                              │
-│     ├─ Identify analysis dimensions (architecture, performance, etc.)    │
-│     ├─ Initial scoping with user                                         │
-│     └─ Initialize discussion.md                                          │
-│                                                                          │
-│  Phase 2: CLI Exploration                                                │
-│     ├─ Codebase Exploration (cli-explore-agent, supports parallel ≤4)    │
-│     ├─ Multi-Perspective Analysis (AFTER exploration)                    │
-│     │   ├─ Single: Comprehensive analysis                                │
-│     │   └─ Multi (≤4): Parallel perspectives with synthesis              │
-│     ├─ Aggregate findings                                                │
-│     └─ Update discussion.md with Round 1                                 │
-│                                                                          │
-│  Phase 3: Interactive Discussion (Multi-Round)                           │
-│     ├─ Present exploration findings                                      │
-│     ├─ Facilitate Q&A with user                                          │
-│     ├─ Capture user insights and corrections                             │
-│     ├─ Actions: Deepen | Adjust direction | Answer questions             │
-│     ├─ Update discussion.md with each round                              │
-│     └─ Repeat until clarity achieved (max 5 rounds)                      │
-│                                                                          │
-│  Phase 4: Synthesis & Conclusion                                         │
-│     ├─ Consolidate all insights                                          │
-│     ├─ Generate conclusions with recommendations                         │
-│     ├─ Update discussion.md with final synthesis                         │
-│     └─ Offer follow-up options (issue/task/report)                       │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
+**Key Finding Record Format**:
+```markdown
+> **Finding**: [Content]
+> - **Confidence**: [High/Medium/Low] — **Why**: [Evidence basis]
+> - **Hypothesis Impact**: [Confirms/Refutes/Modifies] hypothesis "[name]"
+> - **Scope**: [What areas this affects]
 ```
 
-## Output Structure
-
-```
-.workflow/.analysis/ANL-{slug}-{date}/
-├── discussion.md              # ⭐ Evolution of understanding & discussions
-├── exploration-codebase.json  # Phase 2: Single codebase context
-├── explorations/              # Phase 2: Multi-perspective codebase explorations (if selected)
-│   ├── technical.json
-│   └── architectural.json
-├── explorations.json          # Phase 2: Single perspective findings
-├── perspectives.json          # Phase 2: Multi-perspective findings (if selected)
-└── conclusions.json           # Phase 4: Final synthesis
-```
+**Principles**: Immediacy (record as-it-happens), Completeness (context+options+chosen+reason+rejected), Traceability (later phases trace back), Depth (capture reasoning, not just outcomes)
 
 ## Implementation
 
+### AskUserQuestion Constraints
+
+All `AskUserQuestion` calls MUST comply:
+- **questions**: 1-4 questions per call
+- **options**: 2-4 per question (system auto-adds "Other" for free-text input)
+- **header**: max 12 characters
+- **label**: 1-5 words per option
+
 ### Session Initialization
 
-**Objective**: Create session context and directory structure for analysis.
-
-**Required Actions**:
 1. Extract topic/question from `$ARGUMENTS`
-2. Generate session ID: `ANL-{slug}-{date}`
-   - slug: lowercase, alphanumeric + Chinese, max 40 chars
-   - date: YYYY-MM-DD (UTC+8)
+2. Generate session ID: `ANL-{slug}-{date}` (slug: lowercase alphanumeric+Chinese, max 40 chars; date: YYYY-MM-DD UTC+8)
 3. Define session folder: `.workflow/.analysis/{session-id}`
-4. Parse command options:
-   - `-c` or `--continue` for session continuation
-   - `-y` or `--yes` for auto-approval mode
-5. Auto-detect mode: If session folder + discussion.md exist → continue mode
-6. Create directory structure: `{session-folder}/`
+4. Parse options: `-c`/`--continue` for continuation, `-y`/`--yes` for auto-approval
+5. Auto-detect: If session folder + discussion.md exist → continue mode
+6. Create directory structure
+7. **Create Progress Tracking** (TodoWrite — MANDATORY):
+   ```
+   TodoWrite([
+     { id: "phase-1", title: "Phase 1: Topic Understanding", status: "in_progress" },
+     { id: "phase-2", title: "Phase 2: CLI Exploration", status: "pending" },
+     { id: "phase-3", title: "Phase 3: Interactive Discussion", status: "pending" },
+     { id: "phase-4", title: "Phase 4: Synthesis & Conclusion", status: "pending" },
+     { id: "next-step", title: "GATE: Post-Completion Next Step", status: "pending" }
+   ])
+   ```
+   - Update status to `"in_progress"` when entering each phase, `"completed"` when done
+   - **`next-step` is a terminal gate** — workflow is NOT complete until this todo is `"completed"`
 
-**Session Variables**:
-- `sessionId`: Unique session identifier
-- `sessionFolder`: Base directory for all artifacts
-- `autoMode`: Boolean for auto-confirmation
-- `mode`: new | continue
+**Session Variables**: `sessionId`, `sessionFolder`, `autoMode` (boolean), `mode` (new|continue)
 
 ### Phase 1: Topic Understanding
 
-**Objective**: Analyze topic, identify dimensions, gather user input, initialize discussion.md.
+1. **Parse Topic & Identify Dimensions** — Match keywords against Analysis Dimensions table
+2. **Initial Scoping** (if new session + not auto mode) — use **single AskUserQuestion call with up to 3 questions**:
+   - Q1 **Focus** (multiSelect: true, header: "分析方向"): Top 3-4 directions from Dimension-Direction Mapping (options max 4)
+   - Q2 **Perspectives** (multiSelect: true, header: "分析视角"): Up to 4 from Analysis Perspectives table (options max 4), default: single comprehensive
+   - Q3 **Depth** (multiSelect: false, header: "分析深度"): Quick Overview / Standard / Deep Dive (3 options)
+3. **Initialize discussion.md** — Structure includes:
+   - **Dynamic TOC** (top of file, updated after each round/phase): `## Table of Contents` with links to major sections
+   - **Current Understanding** (replaceable block, overwritten each round — NOT appended): `## Current Understanding` initialized as "To be populated after exploration"
+   - Session metadata, user context, initial questions, empty discussion timeline, initial dimension selection rationale
+4. **Record Phase 1 Decisions** — Dimension selection reasoning, depth rationale, any user adjustments
 
-**Prerequisites**:
-- Session initialized with valid sessionId and sessionFolder
-- Topic/question available from $ARGUMENTS
-
-**Workflow Steps**:
-
-1. **Parse Topic & Identify Dimensions**
-   - Match topic keywords against ANALYSIS_DIMENSIONS
-   - Identify relevant dimensions: architecture, implementation, performance, security, concept, comparison, decision
-   - Default to "general" if no match
-
-2. **Initial Scoping** (if new session + not auto mode)
-   - **Focus**: Multi-select from directions generated by detected dimensions (see Dimension-Direction Mapping)
-   - **Perspectives**: Multi-select up to 4 analysis perspectives (see Analysis Perspectives), default: single comprehensive view
-   - **Depth**: Single-select from Quick Overview (10-15min) / Standard Analysis (30-60min) / Deep Dive (1-2hr)
-
-3. **Initialize discussion.md**
-   - Create discussion.md with session metadata
-   - Add user context: focus areas, analysis depth
-   - Add initial understanding: dimensions, scope, key questions
-   - Create empty sections for discussion timeline
-   - **📌 Record initial decisions**: Document dimension selection rationale, excluded dimensions with reasons, intent behind user preferences
-
-4. **📌 Record Phase 1 Decisions**
-   - Record why these dimensions were selected (keyword match + user confirmation)
-   - Record the rationale behind analysis depth selection
-   - If user adjusted recommended focus, record the adjustment reason
-
-**Success Criteria**:
-- Session folder created with discussion.md initialized
-- Analysis dimensions identified
-- User preferences captured (focus, depth)
-- **Phase 1 decisions recorded** with context and rationale
+**Success**: Session folder + discussion.md created, dimensions identified, preferences captured, decisions recorded
+**TodoWrite**: Update `phase-1` → `"completed"`, `phase-2` → `"in_progress"`
 
 ### Phase 2: CLI Exploration
 
-**Objective**: Gather codebase context, then execute deep analysis via CLI tools.
+Codebase exploration FIRST, then CLI analysis.
 
-**Prerequisites**:
-- Phase 1 completed successfully
-- discussion.md initialized
-- Dimensions identified
+**Step 1: Codebase Exploration** (cli-explore-agent, parallel up to 6)
 
-**Workflow Steps** (⚠️ Codebase exploration FIRST):
+- **Single**: General codebase analysis → `{sessionFolder}/exploration-codebase.json`
+- **Multi-perspective**: Parallel per-perspective → `{sessionFolder}/explorations/{perspective}.json`
+- **Common tasks**: `ccw tool exec get_modules_by_depth '{}'`, keyword searches, read `.workflow/project-tech.json`
 
-1. **Codebase Exploration via cli-explore-agent** (supports parallel up to 4)
-   - Agent type: `cli-explore-agent`
-   - Execution mode: parallel if multi-perspective selected, otherwise single (run_in_background: false for sequential, true for parallel)
-   - **Single exploration**: General codebase analysis
-   - **Multi-perspective**: Parallel explorations per perspective focus (max 4, each with specific angle)
-   - **Common tasks**: Run `ccw tool exec get_modules_by_depth '{}'`, execute searches based on topic keywords, read `.workflow/project-tech.json`
-   - **Output**: `{sessionFolder}/exploration-codebase.json` (single) or `{sessionFolder}/explorations/{perspective}.json` (multi)
-   - **Purpose**: Enrich CLI prompts with codebase context for each perspective
-
-**Single Exploration Example**:
 ```javascript
-Task({
+// Template for cli-explore-agent (single or per-perspective)
+Agent({
   subagent_type: "cli-explore-agent",
   run_in_background: false,
   description: `Explore codebase: ${topicSlug}`,
@@ -234,450 +132,297 @@ Task({
 ## Analysis Context
 Topic: ${topic_or_question}
 Dimensions: ${dimensions.join(', ')}
+// For multi-perspective, add: Perspective: ${perspective.name} - ${perspective.focus}
 Session: ${sessionFolder}
 
 ## MANDATORY FIRST STEPS
 1. Run: ccw tool exec get_modules_by_depth '{}'
-2. Execute relevant searches based on topic keywords
-3. Read: .workflow/project-tech.json (if exists)
+2. Read: .workflow/project-tech.json (if exists)
 
-## Exploration Focus
-${dimensions.map(d => `- ${d}: Identify relevant code patterns and structures`).join('\n')}
+## Layered Exploration (MUST follow all 3 layers)
+
+### Layer 1 — Module Discovery (Breadth)
+- Search by topic keywords, identify ALL relevant files
+- Map module boundaries and entry points → relevant_files[] with annotations
+
+### Layer 2 — Structure Tracing (Depth)
+- Top 3-5 key files: trace call chains 2-3 levels deep
+- Identify data flow paths and dependencies → call_chains[], data_flows[]
+
+### Layer 3 — Code Anchor Extraction (Detail)
+- Each key finding: extract code snippet (20-50 lines) with file:line
+- Annotate WHY this matters → code_anchors[]
 
 ## Output
-Write findings to: ${sessionFolder}/exploration-codebase.json
+Write to: ${sessionFolder}/exploration-codebase.json
+// Multi-perspective: ${sessionFolder}/explorations/${perspective.name}.json
 
-Schema: {relevant_files, patterns, key_findings, questions_for_user, _metadata}
+Schema: {relevant_files, patterns, key_findings, code_anchors: [{file, lines, snippet, significance}], call_chains: [{entry, chain, files}], questions_for_user, _metadata}
 `
 })
 ```
 
-**Multi-Perspective Parallel Example** (up to 4 agents):
+**Step 2: CLI Analysis** (AFTER exploration)
+
+- **Single**: Comprehensive CLI analysis with exploration context
+- **Multi (up to 4)**: Parallel CLI calls per perspective
+- Execution: `Bash` with `run_in_background: true`
+
 ```javascript
-// Launch parallel explorations for each selected perspective
-selectedPerspectives.forEach(perspective => {
-  Task({
-    subagent_type: "cli-explore-agent",
-    run_in_background: false,  // Sequential execution, wait for each
-    description: `Explore ${perspective.name}: ${topicSlug}`,
-    prompt: `
-## Analysis Context
-Topic: ${topic_or_question}
-Perspective: ${perspective.name} - ${perspective.focus}
-Session: ${sessionFolder}
-
-## MANDATORY FIRST STEPS
-1. Run: ccw tool exec get_modules_by_depth '{}'
-2. Execute searches focused on ${perspective.focus}
-3. Read: .workflow/project-tech.json (if exists)
-
-## Exploration Focus (${perspective.name} angle)
-${perspective.exploration_tasks.map(t => `- ${t}`).join('\n')}
-
-## Output
-Write findings to: ${sessionFolder}/explorations/${perspective.name}.json
-
-Schema: {relevant_files, patterns, key_findings, perspective_insights, _metadata}
-`
-  })
-})
-```
-
-2. **Multi-Perspective CLI Analysis** (⚠️ AFTER exploration)
-   - If user selected multiple perspectives (≤4): Launch CLI calls in parallel
-   - If single/default perspective: Launch single comprehensive CLI analysis
-   - **Shared context**: Include exploration-codebase.json findings in all prompts
-   - **Execution**: Bash with run_in_background: true, wait for all results
-   - **Output**: perspectives.json with analysis from each perspective
-
-**Single Perspective Example**:
-```javascript
-Bash({
-  command: `ccw cli -p "
-PURPOSE: Analyze topic '${topic_or_question}' from ${dimensions.join(', ')} perspectives
-Success: Actionable insights with clear reasoning
-
-PRIOR EXPLORATION CONTEXT:
-- Key files: ${explorationResults.relevant_files.slice(0,5).map(f => f.path).join(', ')}
-- Patterns found: ${explorationResults.patterns.slice(0,3).join(', ')}
-- Key findings: ${explorationResults.key_findings.slice(0,3).join(', ')}
-
-TASK:
-• Build on exploration findings above
-• Analyze common patterns and anti-patterns
-• Highlight potential issues or opportunities
-• Generate discussion points for user clarification
-
-MODE: analysis
-CONTEXT: @**/* | Topic: ${topic_or_question}
-EXPECTED: Structured analysis with clear sections, specific insights tied to evidence, questions to deepen understanding, recommendations with rationale
-CONSTRAINTS: Focus on ${dimensions.join(', ')}
-" --tool gemini --mode analysis`,
-  run_in_background: true
-})
-```
-
-**Multi-Perspective Example** (parallel, up to 4):
-```javascript
-// Build shared context once
+// Build shared exploration context for CLI prompts
 const explorationContext = `
 PRIOR EXPLORATION CONTEXT:
 - Key files: ${explorationResults.relevant_files.slice(0,5).map(f => f.path).join(', ')}
-- Patterns found: ${explorationResults.patterns.slice(0,3).join(', ')}
-- Key findings: ${explorationResults.key_findings.slice(0,3).join(', ')}`
+- Patterns: ${explorationResults.patterns.slice(0,3).join(', ')}
+- Findings: ${explorationResults.key_findings.slice(0,3).join(', ')}
+- Code anchors:
+${(explorationResults.code_anchors || []).slice(0,5).map(a => `  [${a.file}:${a.lines}] ${a.significance}\n  \`\`\`\n  ${a.snippet}\n  \`\`\``).join('\n')}
+- Call chains: ${(explorationResults.call_chains || []).slice(0,3).map(c => `${c.entry} → ${c.chain.join(' → ')}`).join('; ')}`
 
-// Launch parallel CLI calls based on selected perspectives (max 4)
-selectedPerspectives.forEach(perspective => {
-  Bash({
-    command: `ccw cli -p "
-PURPOSE: ${perspective.purpose} for '${topic_or_question}'
-Success: ${perspective.success_criteria}
+// Single perspective (for multi: loop selectedPerspectives with perspective.purpose/tasks/constraints)
+Bash({
+  command: `ccw cli -p "
+PURPOSE: Analyze '${topic_or_question}' from ${dimensions.join(', ')} perspectives
+Success: Actionable insights with clear reasoning
 
 ${explorationContext}
 
 TASK:
-${perspective.tasks.map(t => `• ${t}`).join('\n')}
+• Build on exploration findings — reference specific code anchors
+• Analyze common patterns and anti-patterns with code evidence
+• Highlight potential issues/opportunities with file:line references
+• Generate discussion points for user clarification
 
 MODE: analysis
 CONTEXT: @**/* | Topic: ${topic_or_question}
-EXPECTED: ${perspective.expected_output}
-CONSTRAINTS: ${perspective.constraints}
-" --tool ${perspective.tool} --mode analysis`,
-    run_in_background: true
-  })
+EXPECTED: Structured analysis with sections, insights tied to evidence, questions, recommendations
+CONSTRAINTS: Focus on ${dimensions.join(', ')}
+" --tool gemini --mode analysis`,
+  run_in_background: true
 })
-
-// ⚠️ STOP POINT: Wait for hook callback to receive all results before continuing
+// STOP: Wait for hook callback before continuing
+// Multi-perspective: Same pattern per perspective with perspective.purpose/tasks/constraints/tool
 ```
 
-3. **Aggregate Findings**
-   - Consolidate all codebase explorations (exploration-codebase.json or explorations/*.json) and CLI perspective findings
-   - If multi-perspective: Extract synthesis from both explorations and analyses (convergent themes, conflicting views, unique contributions)
-   - Extract aggregated findings, discussion points, open questions across all sources
-   - Write to explorations.json (single) or perspectives.json (multi)
+**Step 3: Aggregate Findings**
+- Consolidate explorations + CLI results
+- Multi: Extract synthesis (convergent themes, conflicting views, unique contributions)
+- Write to `explorations.json` (single) or `perspectives.json` (multi)
 
-4. **Update discussion.md**
-   - Append Round 1 section with exploration results
-   - Single perspective: Include sources analyzed, key findings, discussion points, open questions
-   - Multi-perspective: Include per-perspective findings + synthesis section
+**Step 4: Update discussion.md** — Append Round 1 with sources, key findings, discussion points, open questions
 
-**explorations.json Schema** (single perspective):
-- `session_id`: Session identifier
-- `timestamp`: Exploration completion time
-- `topic`: Original topic/question
-- `dimensions[]`: Analysis dimensions
+**Step 5: Initial Intent Coverage Check** (FIRST check, before entering Phase 3):
+- Re-read original "User Intent" / "Analysis Context" from discussion.md header
+- Check each intent item against Round 1 findings: ✅ addressed / 🔄 in-progress / ❌ not yet touched
+- Append initial Intent Coverage Check to discussion.md
+- Present to user at beginning of Phase 3: "初始探索完成后，以下意图的覆盖情况：[list]。接下来的讨论将重点关注未覆盖的部分。"
+- Purpose: Early course correction — catch drift before spending multiple interactive rounds
+
+**explorations.json Schema** (single):
+- `session_id`, `timestamp`, `topic`, `dimensions[]`
 - `sources[]`: {type, file/summary}
-- `key_findings[]`: Main insights
-- `discussion_points[]`: Questions for user
-- `open_questions[]`: Unresolved questions
+- `key_findings[]`, `code_anchors[]`: {file, lines, snippet, significance}
+- `call_chains[]`: {entry, chain, files}
+- `discussion_points[]`, `open_questions[]`
 
-**perspectives.json Schema** (multi-perspective):
-- `session_id`: Session identifier
-- `timestamp`: Exploration completion time
-- `topic`: Original topic/question
-- `dimensions[]`: Analysis dimensions
+**perspectives.json Schema** (multi — extends explorations.json):
 - `perspectives[]`: [{name, tool, findings, insights, questions}]
 - `synthesis`: {convergent_themes, conflicting_views, unique_contributions}
-- `aggregated_findings[]`: Main insights across perspectives
-- `discussion_points[]`: Questions for user
-- `open_questions[]`: Unresolved questions
+- code_anchors/call_chains include `perspective` field
 
-**Success Criteria**:
-- exploration-codebase.json (single) or explorations/*.json (multi) created with codebase context
-- explorations.json (single) or perspectives.json (multi) created with findings
-- discussion.md updated with Round 1 results
-- All agents and CLI calls completed successfully
-- **📌 Key findings recorded** with evidence references and confidence levels
-- **📌 Exploration decisions recorded** (why chose certain perspectives, tool selection rationale)
+**Success**: Exploration + CLI artifacts created, discussion.md Round 1, key findings and exploration decisions recorded
+**TodoWrite**: Update `phase-2` → `"completed"`, `phase-3` → `"in_progress"`
 
 ### Phase 3: Interactive Discussion
 
-**Objective**: Iteratively refine understanding through user-guided discussion cycles.
+**Guideline**: Delegate complex tasks to agents (cli-explore-agent) or CLI calls. Avoid direct analysis in main process.
 
-**Prerequisites**:
-- Phase 2 completed successfully
-- explorations.json contains initial findings
-- discussion.md has Round 1 results
+**Loop** (max 5 rounds):
 
-**Guideline**: For complex tasks (code analysis, implementation, refactoring), delegate to agents via Task tool (cli-explore-agent, code-developer, universal-executor) or CLI calls (ccw cli). Avoid direct analysis/execution in main process.
+1. **Current Understanding Summary** (Round >= 2, BEFORE presenting new findings):
+   - Generate 1-2 sentence recap: "到目前为止，我们已确认 [established facts]。上一轮 [key action/direction]。现在，这是新一轮的发现："
+   - Purpose: Reset context, prevent cognitive overload, make incremental progress visible
 
-**Workflow Steps**:
+2. **Present Findings** from explorations.json
 
-1. **Present Findings**
-   - Display current findings from explorations.json
-   - Show key points for user input
+3. **Gather Feedback** (AskUserQuestion, single-select, header: "分析反馈"):
+   - **继续深入**: Direction correct — deepen automatically or user specifies direction (combines agree+deepen and agree+suggest)
+   - **调整方向**: Different focus or specific questions to address
+   - **补充信息**: User has additional context, constraints, or corrections to provide
+   - **分析完成**: Sufficient → exit to Phase 4
 
-2. **Gather User Feedback** (AskUserQuestion)
-   - **Question**: Feedback on current analysis
-   - **Options** (single-select):
-     - **同意，继续深入**: Analysis direction correct, deepen exploration
-     - **需要调整方向**: Different understanding or focus
-     - **分析完成**: Sufficient information obtained
-     - **有具体问题**: Specific questions to ask
+4. **Process Response** (always record user choice + impact to discussion.md):
 
-3. **Process User Response**
+   **继续深入** → Sub-question to choose direction (AskUserQuestion, single-select, header: "深入方向"):
+   - Dynamically generate **max 3** context-driven options from: unresolved questions, low-confidence findings, unexplored dimensions, user-highlighted areas
+   - Add **1** heuristic option that breaks current frame (e.g., "compare with best practices", "review from security perspective", "explore simpler alternatives")
+   - Total: **max 4 options**. Each specifies: label, description, tool (cli-explore-agent for code-level / Gemini CLI for pattern-level), scope
+   - **"Other" is auto-provided** by AskUserQuestion — covers user-specified custom direction (no need for separate "suggest next step" option)
+   - Execute selected direction → merge new code_anchors/call_chains → record confirmed assumptions + deepen angle
 
-   **📌 Recording Checkpoint**: Regardless of which option the user selects, the following MUST be recorded to discussion.md:
-   - User's original choice and expression
-   - Impact of this choice on analysis direction
-   - If direction changed, record a full Decision Record
+   **调整方向** → AskUserQuestion (header: "新方向", user selects or provides custom via "Other") → new CLI exploration → Record Decision (old vs new direction, reason, impact)
 
-   **Agree, Deepen**:
-   - Continue analysis in current direction
-   - Use CLI for deeper exploration
-   - **📌 Record**: Which assumptions were confirmed, specific angles for deeper exploration
+   **补充信息** → Capture user input, integrate into context, answer questions via CLI/analysis if needed → Record corrections/additions + updated understanding
 
-   **Adjust Direction**:
-   - AskUserQuestion for adjusted focus (code details / architecture / best practices)
-   - Launch new CLI exploration with adjusted scope
-   - **📌 Record Decision**: Trigger reason for direction adjustment, old vs new direction comparison, expected impact
+   **分析完成** → Exit loop → Record why concluding
 
-   **Specific Questions**:
-   - Capture user questions
-   - Use CLI or direct analysis to answer
-   - Document Q&A in discussion.md
-   - **📌 Record**: Knowledge gaps revealed by the question, new understanding gained from the answer
+5. **Update discussion.md**:
+   - **Append** Round N: user input, direction adjustment, Q&A, corrections, new insights
+   - **Replace** `## Current Understanding` block with latest consolidated understanding (follow Consolidation Rules: promote confirmed, track corrections, focus on NOW)
+   - **Update** `## Table of Contents` with links to new Round N sections
 
-   **Complete**:
-   - Exit discussion loop, proceed to Phase 4
-   - **📌 Record**: Why concluding at this round (sufficient information / scope fully focused / user satisfied)
+6. **Round Narrative Synthesis** (append to discussion.md after each round update):
+   ```markdown
+   ### Round N: Narrative Synthesis
+   **起点**: 基于上一轮的 [conclusions/questions]，本轮从 [starting point] 切入。
+   **关键进展**: [New findings] [confirmed/refuted/modified] 了之前关于 [hypothesis] 的理解。
+   **决策影响**: 用户选择 [feedback type]，导致分析方向 [adjusted/deepened/maintained]。
+   **当前理解**: 经过本轮，核心认知更新为 [updated understanding]。
+   **遗留问题**: [remaining questions driving next round]
+   ```
 
-4. **Update discussion.md**
-   - Append Round N section with:
-     - User input summary
-     - Direction adjustment (if any)
-     - User questions & answers (if any)
-     - Updated understanding
-     - Corrected assumptions
-     - New insights
+7. **Intent Drift Check** (every round >= 2):
+   - Re-read original "User Intent" from discussion.md header
+   - Check each item: addressed / in-progress / implicitly absorbed / not yet discussed
+   ```markdown
+   #### Intent Coverage Check
+   - ✅ Intent 1: [addressed in Round N]
+   - 🔄 Intent 2: [in-progress]
+   - ⚠️ Intent 3: [implicitly absorbed by X — needs confirmation]
+   - ❌ Intent 4: [not yet discussed]
+   ```
+   - If ❌ or ⚠️ items exist → **proactively surface** to user at start of next round: "以下原始意图尚未充分覆盖：[list]。是否需要调整优先级？"
 
-5. **📌 Intent Drift Check** (every round ≥ 2)
-   - Re-read "User Intent" from discussion.md header
-   - For each original intent item, check: addressed / in-progress / not yet discussed / implicitly absorbed
-   - If any item is "implicitly absorbed" (addressed by a different solution than originally envisioned), explicitly note this in discussion.md:
-     ```markdown
-     #### Intent Coverage Check
-     - ✅ Intent 1: [addressed in Round N]
-     - 🔄 Intent 2: [in-progress, current focus]
-     - ⚠️ Intent 3: [implicitly absorbed by X — needs explicit confirmation]
-     - ❌ Intent 4: [not yet discussed]
-     ```
-   - If any item is ❌ or ⚠️ after 3+ rounds, surface it to the user in the next round's presentation
-
-6. **Repeat or Converge**
-   - Continue loop (max 5 rounds) or exit to Phase 4
-
-**Discussion Actions**:
-
-| User Choice | Action | Tool | Description |
-|-------------|--------|------|-------------|
-| Deepen | Continue current direction | Gemini CLI | Deeper analysis in same focus |
-| Adjust | Change analysis angle | Selected CLI | New exploration with adjusted scope |
-| Questions | Answer specific questions | CLI or analysis | Address user inquiries |
-| Complete | Exit discussion loop | - | Proceed to synthesis |
-
-**Success Criteria**:
-- User feedback processed for each round
-- discussion.md updated with all discussion rounds
-- Assumptions corrected and documented
-- Exit condition reached (user selects "完成" or max rounds)
-- **📌 All decision points recorded** with Decision Record format
-- **📌 Direction changes documented** with before/after comparison and rationale
+**Success**: All rounds documented with narrative synthesis, assumptions corrected, all decisions recorded with rejection reasoning, direction changes with before/after
+**TodoWrite**: Update `phase-3` → `"completed"`, `phase-4` → `"in_progress"`
 
 ### Phase 4: Synthesis & Conclusion
 
-**Objective**: Consolidate insights, generate conclusions, offer next steps.
-
-**Prerequisites**:
-- Phase 3 completed successfully
-- Multiple rounds of discussion documented
-- User ready to conclude
-
-**Workflow Steps**:
-
-1. **📌 Intent Coverage Verification** (MANDATORY before synthesis)
-   - Re-read all original "User Intent" items from discussion.md header
-   - For EACH intent item, determine coverage status:
-     - **✅ Addressed**: Explicitly discussed and concluded with clear design/recommendation
-     - **🔀 Transformed**: Original intent evolved into a different solution — document the transformation chain
-     - **⚠️ Absorbed**: Implicitly covered by a broader solution — flag for explicit confirmation
-     - **❌ Missed**: Not discussed — MUST be either addressed now or explicitly listed as out-of-scope with reason
-   - Write "Intent Coverage Matrix" to discussion.md:
-     ```markdown
-     ### Intent Coverage Matrix
-     | # | Original Intent | Status | Where Addressed | Notes |
-     |---|----------------|--------|-----------------|-------|
-     | 1 | [intent text] | ✅ Addressed | Round N, Conclusion #M | |
-     | 2 | [intent text] | 🔀 Transformed | Round N → Round M | Original: X → Final: Y |
-     | 3 | [intent text] | ❌ Missed | — | Reason for omission |
-     ```
-   - **Gate**: If any item is ❌ Missed, MUST either:
-     - (a) Add a dedicated discussion round to address it before continuing, OR
-     - (b) Explicitly confirm with user that it is intentionally deferred
+1. **Intent Coverage Verification** (MANDATORY before synthesis):
+   - Check each original intent: ✅ Addressed / 🔀 Transformed / ⚠️ Absorbed / ❌ Missed
+   ```markdown
+   ### Intent Coverage Matrix
+   | # | Original Intent | Status | Where Addressed | Notes |
+   |---|----------------|--------|-----------------|-------|
+   | 1 | [intent] | ✅ Addressed | Round N, Conclusion #M | |
+   | 2 | [intent] | 🔀 Transformed | Round N → M | Original: X → Final: Y |
+   | 3 | [intent] | ❌ Missed | — | Reason |
+   ```
+   - **Gate**: ❌ Missed items must be either (a) addressed in additional round or (b) confirmed deferred by user
    - Add `intent_coverage[]` to conclusions.json
 
-2. **Consolidate Insights**
-   - Extract all findings from discussion timeline
-   - **📌 Compile Decision Trail**: Aggregate all Decision Records from Phases 1-3 into a consolidated decision log
-   - **Key conclusions**: Main points with evidence and confidence levels (high/medium/low)
-   - **Recommendations**: Action items with rationale and priority (high/medium/low)
-   - **Open questions**: Remaining unresolved questions
-   - **Follow-up suggestions**: Issue/task creation suggestions
-   - **📌 Decision summary**: How key decisions shaped the final conclusions (link conclusions back to decisions)
+2. **Consolidate Insights**:
+   - Compile Decision Trail from all phases
+   - Key conclusions with evidence + confidence (high/medium/low)
+   - Recommendations with rationale + priority (high/medium/low)
+   - Open questions, follow-up suggestions
+   - Decision summary linking conclusions back to decisions
    - Write to conclusions.json
 
-3. **Final discussion.md Update**
-   - Append conclusions section:
-     - **Summary**: High-level overview
-     - **Key Conclusions**: Ranked with evidence and confidence
-     - **Recommendations**: Prioritized action items
-     - **Remaining Questions**: Unresolved items
-   - Update "Current Understanding (Final)":
-     - **What We Established**: Confirmed points
-     - **What Was Clarified/Corrected**: Important corrections
-     - **Key Insights**: Valuable learnings
-   - **📌 Add "Decision Trail" section**:
-     - **Critical Decisions**: List of pivotal decisions that shaped the analysis outcome
-     - **Direction Changes**: Timeline of scope/focus adjustments with rationale
-     - **Trade-offs Made**: Key trade-offs and why certain paths were chosen over others
-   - Add session statistics: rounds, duration, sources, artifacts, **decision count**
+3. **Final discussion.md Update**:
+   - **Conclusions**: Summary, ranked key conclusions, prioritized recommendations, remaining questions
+   - **Current Understanding (Final)**: What established, what clarified/corrected, key insights
+   - **Decision Trail**: Critical decisions, direction changes timeline, trade-offs
+   - Session statistics: rounds, duration, sources, artifacts, decision count
 
-4. **Display Conclusions Summary**
-   - Present analysis conclusions to the user before asking for next steps:
-   ```javascript
-   console.log(`
-## Analysis Report
+4. **Display Conclusions Summary** — Present to user:
+   - **Analysis Report**: summary, key conclusions (numbered, with confidence), recommendations (numbered, with priority + rationale + steps)
+   - Open questions if any
+   - Link to full report: `{sessionFolder}/discussion.md`
 
-**Summary**: ${conclusions.summary}
+5. **Interactive Recommendation Review** (skip in auto mode):
 
-**Key Conclusions** (${conclusions.key_conclusions.length}):
-${conclusions.key_conclusions.map((c, i) => `${i+1}. [${c.confidence}] ${c.point}`).join('\n')}
+   Walk through each recommendation one-by-one for user confirmation:
 
-**Recommendations** (${conclusions.recommendations.length}):
-${conclusions.recommendations.map((r, i) => `${i+1}. [${r.priority}] ${r.action} — ${r.rationale}`).join('\n')}
-${conclusions.open_questions.length > 0 ? `\n**Open Questions**:\n${conclusions.open_questions.map(q => '- ' + q).join('\n')}` : ''}
-
-📄 Full report: ${sessionFolder}/discussion.md
-`)
+   ```
+   For each recommendation (ordered by priority high→medium→low):
+     1. Present: action, rationale, priority, steps[] (numbered sub-steps)
+     2. AskUserQuestion (single-select, header: "建议#N"):
+        - **确认** (label: "确认", desc: "Accept as-is") → review_status = "accepted"
+        - **修改** (label: "修改", desc: "Adjust scope/steps") → record modification → review_status = "modified"
+        - **删除** (label: "删除", desc: "Not needed") → record reason → review_status = "rejected"
+        - **跳过审议** (label: "跳过审议", desc: "Accept all remaining") → break loop
+     3. Record review decision to discussion.md Decision Log
+     4. Update conclusions.json recommendation.review_status
    ```
 
-5. **Post-Completion Options** (⚠️ TERMINAL — analyze-with-file ends after user selection)
+   **After review loop**: Display summary of reviewed recommendations:
+   - Accepted: N items | Modified: N items | Rejected: N items
+   - Only accepted/modified recommendations proceed to next step
 
-   > **WORKFLOW BOUNDARY**: After user selects any option below, the analyze-with-file workflow is **COMPLETE**.
-   > If "执行任务" is selected, workflow-lite-planex takes over exclusively — do NOT return to any analyze-with-file phase.
-   > The "Phase" numbers in workflow-lite-planex (LP-Phase 1-5) are SEPARATE from analyze-with-file phases.
+6. **MANDATORY GATE: Next Step Selection** — workflow MUST NOT end without executing this step.
 
-   ```javascript
-   const hasActionableRecs = conclusions.recommendations?.some(r => r.priority === 'high' || r.priority === 'medium')
+   **TodoWrite**: Update `phase-4` → `"completed"`, `next-step` → `"in_progress"`
 
-   const nextStep = AskUserQuestion({
-     questions: [{
-       question: "Report generated. What would you like to do next?",
-       header: "Next Step",
-       multiSelect: false,
-       options: [
-         { label: hasActionableRecs ? "执行任务 (Recommended)" : "执行任务", description: "Launch workflow-lite-planex to plan & execute" },
-         { label: "产出Issue", description: "Launch issue-discover with conclusions" },
-         { label: "完成", description: "No further action" }
-       ]
-     }]
-   })
-   ```
+   > **CRITICAL**: This AskUserQuestion is a **terminal gate**. The workflow is INCOMPLETE if this question is not asked. After displaying conclusions (step 4) and recommendation review (step 5), you MUST immediately proceed here.
 
-   **Handle "执行任务"** (⚠️ TERMINAL — analyze-with-file ends here, lite-plan takes over exclusively):
-   ```javascript
-   if (nextStep.includes("执行任务")) {
-     // 1. Build task description from high/medium priority recommendations
-     const taskDescription = conclusions.recommendations
-       .filter(r => r.priority === 'high' || r.priority === 'medium')
-       .map(r => r.action)
-       .join('\n') || conclusions.summary
+   Call AskUserQuestion (single-select, header: "Next Step"):
+   - **执行任务** (Recommended if high/medium priority recs exist): "基于分析结论启动 workflow-lite-plan 制定执行计划"
+   - **产出Issue**: "将建议转化为 issue 进行跟踪管理"
+   - **完成**: "分析已足够，无需进一步操作"
 
-     // 2. Assemble compact analysis context as inline memory block
-     const contextLines = [
-       `## Prior Analysis (${sessionId})`,
-       `**Summary**: ${conclusions.summary}`
-     ]
-     const codebasePath = `${sessionFolder}/exploration-codebase.json`
-     if (file_exists(codebasePath)) {
-       const data = JSON.parse(Read(codebasePath))
-       const files = (data.relevant_files || []).slice(0, 8).map(f => f.path || f.file || f).filter(Boolean)
-       const findings = (data.key_findings || []).slice(0, 5)
-       if (files.length) contextLines.push(`**Key Files**: ${files.join(', ')}`)
-       if (findings.length) contextLines.push(`**Key Findings**:\n${findings.map(f => `- ${f}`).join('\n')}`)
-     }
+   **Handle user selection**:
 
-     // 3. ⛔ SESSION TERMINATION — output explicit boundary
-     console.log(`
----
-## ⛔ ANALYZE-WITH-FILE SESSION COMPLETE
-All Phase 1-4 of analyze-with-file are FINISHED.
-Session: ${sessionId} — concluded at ${new Date().toISOString()}
-DO NOT reference any analyze-with-file phase instructions beyond this point.
----
-`)
+   **"执行任务"** → MUST invoke Skill tool (do NOT just display a summary and stop):
+   1. Build `taskDescription` from high/medium priority recommendations (fallback: summary)
+   2. Assemble context: `## Prior Analysis ({sessionId})` + summary + key files (up to 8) + key findings (up to 5) from exploration-codebase.json
+   3. **Invoke Skill tool immediately**:
+      ```javascript
+      Skill({ skill: "workflow-lite-plan", args: `${taskDescription}\n\n${contextLines}` })
+      ```
+      If Skill invocation is omitted, the workflow is BROKEN.
+   4. After Skill invocation, analyze-with-file is complete — do not output any additional content
 
-     // 4. Hand off to lite-plan — analyze-with-file COMPLETE, do NOT return to any analyze phase
-     Skill(skill="workflow-lite-planex", args=`"${taskDescription}\n\n${contextLines.join('\n')}"`)
-     return  // ⛔ analyze-with-file terminates here
-   }
-   ```
+   **"产出Issue"** → Convert recommendations to issues:
+   1. For each recommendation in conclusions.recommendations (priority high/medium):
+      - Build issue JSON: `{title, context: rec.action + rec.rationale, priority: rec.priority == 'high' ? 2 : 3, source: 'discovery', labels: dimensions}`
+      - Create via pipe: `echo '<issue-json>' | ccw issue create`
+   2. Display created issue IDs with next step hint: `/issue:plan <id>`
+
+   **"完成"** → No further action needed.
+
+   **TodoWrite**: Update `next-step` → `"completed"` after user selection is handled
 
 **conclusions.json Schema**:
-- `session_id`: Session identifier
-- `topic`: Original topic/question
-- `completed`: Completion timestamp
-- `total_rounds`: Number of discussion rounds
-- `summary`: Executive summary
-- `key_conclusions[]`: {point, evidence, confidence}
-- `recommendations[]`: {action, rationale, priority}
-- `open_questions[]`: Unresolved questions
-- `follow_up_suggestions[]`: {type, summary}
-- `decision_trail[]`: {round, decision, context, options_considered, chosen, reason, impact}
+- `session_id`, `topic`, `completed`, `total_rounds`, `summary`
+- `key_conclusions[]`: {point, evidence, confidence, code_anchor_refs[]}
+- `code_anchors[]`: {file, lines, snippet, significance}
+- `recommendations[]`: {action, rationale, priority, steps[]: {description, target, verification}, review_status: accepted|modified|rejected|pending}
+- `open_questions[]`, `follow_up_suggestions[]`: {type, summary}
+- `decision_trail[]`: {round, decision, context, options_considered, chosen, rejected_reasons, reason, impact}
+- `narrative_trail[]`: {round, starting_point, key_progress, hypothesis_impact, updated_understanding, remaining_questions}
 - `intent_coverage[]`: {intent, status, where_addressed, notes}
 
-**Success Criteria**:
-- conclusions.json created with final synthesis
-- discussion.md finalized with conclusions and decision trail
-- **📌 Intent Coverage Matrix** verified — all original intents accounted for (no ❌ Missed without explicit user deferral)
-- User offered next step options
-- Session complete
-- **📌 Complete decision trail** documented and traceable from initial scoping to final conclusions
+**Success**: conclusions.json created, discussion.md finalized, Intent Coverage Matrix verified, complete decision trail documented, `next-step` gate completed
 
 ## Configuration
 
 ### Analysis Perspectives
 
-Optional multi-perspective parallel exploration (single perspective is default, max 4):
-
 | Perspective | Tool | Focus | Best For |
 |------------|------|-------|----------|
-| **Technical** | Gemini | Implementation, code patterns, technical feasibility | Understanding how and technical details |
-| **Architectural** | Claude | System design, scalability, component interactions | Understanding structure and organization |
-| **Business** | Codex | Value, ROI, stakeholder impact, strategy | Understanding business implications |
-| **Domain Expert** | Gemini | Domain-specific patterns, best practices, standards | Industry-specific knowledge and practices |
+| **Technical** | Gemini | Implementation, code patterns, feasibility | How + technical details |
+| **Architectural** | Claude | System design, scalability, interactions | Structure + organization |
+| **Business** | Codex | Value, ROI, stakeholder impact | Business implications |
+| **Domain Expert** | Gemini | Domain patterns, best practices, standards | Industry knowledge |
 
-**Selection**: User can multi-select up to 4 perspectives in Phase 1, or default to single comprehensive view
+User multi-selects up to 4 in Phase 1, default: single comprehensive view.
 
 ### Dimension-Direction Mapping
 
-When user selects focus areas, generate directions dynamically from detected dimensions (don't use static options):
-
 | Dimension | Possible Directions |
 |-----------|-------------------|
-| architecture | System Design, Component Interactions, Technology Choices, Integration Points, Design Patterns, Scalability Strategy |
-| implementation | Code Structure, Implementation Details, Code Patterns, Error Handling, Testing Approach, Algorithm Analysis |
-| performance | Performance Bottlenecks, Optimization Opportunities, Resource Utilization, Caching Strategy, Concurrency Issues |
-| security | Security Vulnerabilities, Authentication/Authorization, Access Control, Data Protection, Input Validation |
-| concept | Conceptual Foundation, Core Mechanisms, Fundamental Patterns, Theory & Principles, Trade-offs & Reasoning |
-| comparison | Solution Comparison, Pros & Cons Analysis, Technology Evaluation, Approach Differences |
-| decision | Decision Criteria, Trade-off Analysis, Risk Assessment, Impact Analysis, Implementation Implications |
+| architecture | System Design, Component Interactions, Technology Choices, Integration Points, Design Patterns, Scalability |
+| implementation | Code Structure, Details, Patterns, Error Handling, Testing, Algorithm Analysis |
+| performance | Bottlenecks, Optimization, Resource Utilization, Caching, Concurrency |
+| security | Vulnerabilities, Auth, Access Control, Data Protection, Input Validation |
+| concept | Foundation, Core Mechanisms, Patterns, Theory, Trade-offs |
+| comparison | Solution Comparison, Pros/Cons, Technology Evaluation, Approach Differences |
+| decision | Criteria, Trade-off Analysis, Risk Assessment, Impact, Implementation Implications |
 
-**Implementation**: Present 2-3 top dimension-related directions, allow user to multi-select and add custom directions.
+Present 2-3 top directions per dimension, allow multi-select + custom.
 
 ### Analysis Dimensions
-
-Dimensions matched against topic keywords to identify focus areas:
 
 | Dimension | Keywords |
 |-----------|----------|
@@ -691,8 +436,6 @@ Dimensions matched against topic keywords to identify focus areas:
 
 ### Consolidation Rules
 
-When updating "Current Understanding":
-
 | Rule | Description |
 |------|-------------|
 | Promote confirmed insights | Move validated findings to "What We Established" |
@@ -701,108 +444,19 @@ When updating "Current Understanding":
 | Avoid timeline repetition | Don't copy discussion details |
 | Preserve key learnings | Keep insights valuable for future reference |
 
-**Example**:
-
-❌ **Bad (cluttered)**:
-```markdown
-## Current Understanding
-In round 1 we discussed X, then in round 2 user said Y...
-```
-
-✅ **Good (consolidated)**:
-```markdown
-## Current Understanding
-
-### What We Established
-- The authentication flow uses JWT with refresh tokens
-- Rate limiting is implemented at API gateway level
-
-### What Was Clarified
-- ~~Assumed Redis for sessions~~ → Actually uses database-backed sessions
-
-### Key Insights
-- Current architecture supports horizontal scaling
-```
-
 ## Error Handling
 
 | Error | Resolution |
 |-------|------------|
 | cli-explore-agent fails | Continue with available context, note limitation |
 | CLI timeout | Retry with shorter prompt, or skip perspective |
-| User timeout in discussion | Save state, show resume command |
-| Max rounds reached | Force synthesis, offer continuation option |
+| User timeout | Save state, show resume command |
+| Max rounds reached | Force synthesis, offer continuation |
 | No relevant findings | Broaden search, ask user for clarification |
 | Session folder conflict | Append timestamp suffix |
 | Gemini unavailable | Fallback to Codex or manual analysis |
 
-## Best Practices
-
-1. **Clear Topic Definition**: Detailed topics lead to better dimension identification
-2. **Agent-First for Complex Tasks**: For code analysis, implementation, or refactoring tasks during discussion, delegate to agents via Task tool (cli-explore-agent, code-developer, universal-executor) or CLI calls (ccw cli). Avoid direct analysis/execution in main process
-3. **Review discussion.md**: Check understanding evolution before conclusions
-4. **Embrace Corrections**: Track wrong-to-right transformations as learnings
-5. **Document Evolution**: discussion.md captures full thinking process
-6. **Use Continue Mode**: Resume sessions to build on previous analysis
-7. **Record Decisions Immediately**: Never defer recording - capture decisions as they happen using the Decision Record format. A decision not recorded in-the-moment is a decision lost
-8. **Link Decisions to Outcomes**: When writing conclusions, explicitly reference which decisions led to which outcomes. This creates an auditable trail from initial scoping to final recommendations
-
-## Templates
-
-### Discussion Document Structure
-
-**discussion.md** contains:
-- **Header**: Session metadata (ID, topic, started, dimensions)
-- **User Context**: Focus areas, analysis depth
-- **Discussion Timeline**: Round-by-round findings
-  - Round 1: Initial Understanding + Exploration Results + **Initial Decision Log**
-  - Round 2-N: User feedback, adjusted understanding, corrections, new insights, **Decision Log per round**
-- **Decision Trail**: Consolidated critical decisions across all rounds
-- **Conclusions**: Summary, key conclusions, recommendations
-- **Current Understanding (Final)**: Consolidated insights
-- **Session Statistics**: Rounds, duration, sources, artifacts, decision count
-
-Example sections:
-
-```markdown
-### Round 2 - Discussion (timestamp)
-
-#### User Input
-User agrees with current direction, wants deeper code analysis
-
-#### Decision Log
-> **Decision**: Shift focus from high-level architecture to implementation-level code analysis
-> - **Context**: User confirmed architectural understanding is sufficient
-> - **Options considered**: Continue architecture analysis / Deep-dive into code patterns / Focus on testing gaps
-> - **Chosen**: Deep-dive into code patterns — **Reason**: User explicitly requested code-level analysis
-> - **Impact**: Subsequent exploration will target specific modules rather than system overview
-
-#### Updated Understanding
-- Identified session management uses database-backed approach
-- Rate limiting applied at gateway, not application level
-
-#### Corrected Assumptions
-- ~~Assumed Redis for sessions~~ → Database-backed sessions
-  - Reason: User clarified architecture decision
-
-#### New Insights
-- Current design allows horizontal scaling without session affinity
-```
-
-## Usage Recommendations(Requires User Confirmation) 
-
-**When to Execute Directly :**
-- Short, focused analysis tasks (single module/component)
-- Clear, well-defined topics with limited scope
-- Quick information gathering without multi-round iteration
-- Follow-up analysis building on existing session
-
-**Use `Skill(skill="workflow-lite-planex", args="\"task description\"")` when:**
-- Ready to implement (past analysis phase)
-- Need simple task breakdown
-- Focus on quick execution planning
-
-> **Note**: Phase 4「执行任务」assembles analysis context as inline `## Prior Analysis` block in task description, allowing lite-plan to skip redundant exploration automatically.
+> **Lite-plan handoff**: Phase 4「执行任务」assembles analysis context as inline `## Prior Analysis` block, allowing lite-plan to skip redundant exploration.
 
 ---
 

@@ -216,7 +216,7 @@ async function execute(state, workDir) {
           file: 'phases/*.md',
           action: 'modify',
           diff: `+ try {
-    const result = await Task({...});
+    const result = await Agent({...});
 +   if (!result) throw new Error('Empty result');
 + } catch (e) {
 +   updateState({ errors: [...errors, e.message], error_count: error_count + 1 });

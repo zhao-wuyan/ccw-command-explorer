@@ -239,7 +239,7 @@ def build_command_relationships() -> Dict[str, Any]:
             "alternatives": ["workflow:resume"],
             "related": ["workflow:session:list", "workflow:status"]
         },
-        "workflow-lite-planex": {
+        "workflow-lite-plan": {
             "calls_internally": [],
             "next_steps": ["workflow:status"],
             "alternatives": ["workflow-plan"],
@@ -247,7 +247,7 @@ def build_command_relationships() -> Dict[str, Any]:
         },
         "workflow:lite-fix": {
             "next_steps": ["workflow:status"],
-            "alternatives": ["workflow-lite-planex"],
+            "alternatives": ["workflow-lite-plan"],
             "related": ["workflow-test-fix"]
         },
         "workflow:review-session-cycle": {
@@ -272,7 +272,7 @@ def build_command_relationships() -> Dict[str, Any]:
 def identify_essential_commands(all_commands: List[Dict]) -> List[Dict]:
     """Identify the most essential commands for beginners."""
     essential_names = [
-        "workflow-lite-planex", "workflow:lite-fix", "workflow-plan",
+        "workflow-lite-plan", "workflow:lite-fix", "workflow-plan",
         "workflow-execute", "workflow:status", "workflow:session:start",
         "workflow:review-session-cycle", "cli:analyze", "cli:chat",
         "memory:docs", "workflow:brainstorm:artifacts",

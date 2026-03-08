@@ -99,8 +99,9 @@ async function runOrchestrator(workDir) {
         target_skill: { name: state.target_skill.name, path: state.target_skill.path }
       };
 
-      const result = await Task({
+      const result = await Agent({
         subagent_type: 'universal-executor',
+        description: `Execute skill-tuning action: ${actionId}`,
         run_in_background: false,
         prompt: `
 [CONTEXT]

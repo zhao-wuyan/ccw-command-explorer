@@ -2,7 +2,7 @@
 prefix: STRATEGY
 inner_loop: false
 discuss_rounds: [DISCUSS-OPT]
-subagents: [discuss]
+delegates_to: []
 message_types:
   success: strategy_complete
   error: error
@@ -18,13 +18,13 @@ Analyze bottleneck reports and baseline metrics to design a prioritized optimiza
 |-------|--------|----------|
 | Bottleneck report | <session>/artifacts/bottleneck-report.md | Yes |
 | Baseline metrics | <session>/artifacts/baseline-metrics.json | Yes |
-| shared-memory.json | <session>/wisdom/shared-memory.json | Yes |
+| .msg/meta.json | <session>/.msg/meta.json | Yes |
 | Wisdom files | <session>/wisdom/patterns.md | No |
 
 1. Extract session path from task description
 2. Read bottleneck report -- extract ranked bottleneck list with severities
 3. Read baseline metrics -- extract current performance numbers
-4. Load shared-memory.json for profiler findings (project_type, scope)
+4. Load .msg/meta.json for profiler findings (project_type, scope)
 5. Assess overall optimization complexity:
 
 | Bottleneck Count | Severity Mix | Complexity |
@@ -55,7 +55,7 @@ Prioritize optimizations by impact/effort ratio:
 | P2 (Medium) | Medium impact + Low effort |
 | P3 (Low) | Low impact or High effort -- defer |
 
-If complexity is High, invoke `discuss` subagent (DISCUSS-OPT round) to evaluate trade-offs between competing strategies before finalizing the plan.
+If complexity is High, use CLI tools for multi-perspective analysis (DISCUSS-OPT round) to evaluate trade-offs between competing strategies before finalizing the plan.
 
 Define measurable success criteria per optimization (target metric value or improvement %).
 
@@ -88,7 +88,7 @@ Define measurable success criteria per optimization (target metric value or impr
    - Each optimization must be **non-overlapping** in target files (no two OPT-IDs modify the same file unless explicitly noted with conflict resolution)
    - Implementation guidance must be self-contained -- a branch optimizer should be able to work from a single OPT block without reading others
 
-2. Update `<session>/wisdom/shared-memory.json` under `strategist` namespace:
+2. Update `<session>/.msg/meta.json` under `strategist` namespace:
    - Read existing -> merge -> write back:
    ```json
    {

@@ -26,6 +26,11 @@ const specConfig = JSON.parse(Read(`${workDir}/spec-config.json`));
 const productBrief = Read(`${workDir}/product-brief.md`);
 const requirements = Read(`${workDir}/requirements.md`);
 const architecture = Read(`${workDir}/architecture.md`);
+
+let glossary = null;
+try {
+  glossary = JSON.parse(Read(`${workDir}/glossary.json`));
+} catch (e) { /* proceed without */ }
 ```
 
 ### Step 2: Epic Decomposition via Gemini CLI
@@ -69,10 +74,11 @@ TASK:
 
 MODE: analysis
 EXPECTED: Structured output with: Epic list (ID, title, priority, MVP flag), Stories per Epic (ID, user story, AC, size, trace), dependency Mermaid diagram, execution order, MVP definition
-CONSTRAINTS: 
+CONSTRAINTS:
 - Every Must-have requirement must appear in at least one Story
 - Stories must be small enough to implement independently (no XL stories in MVP)
 - Dependencies should be minimized across Epics
+\${glossary ? \`- Maintain terminology consistency with glossary: \${glossary.terms.map(t => t.term).join(', ')}\` : ''}
 " --tool gemini --mode analysis`,
   run_in_background: true
 });

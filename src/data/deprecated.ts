@@ -53,4 +53,7 @@ export const DEPRECATED_COMMANDS: DeprecatedCommand[] = [
   { old: '/req-plan-with-file', newCmd: '/workflow-lite-plan', reason: '命令迁移到轻量级规划执行流程' },
   { old: '/workflow-req-plan', newCmd: '/workflow-plan', reason: '命令整合' },
   { old: '/team-lifecycle-v2', newCmd: '/team-lifecycle-v5', reason: '已升级到 v5 版本' },
+  { old: '/workflow:init-specs', newCmd: '/workflow:spec:setup', reason: '命令整合到统一规格管理' },
+  { old: '/workflow:init-guidelines', newCmd: '/workflow:spec:setup', reason: '命令整合到统一规格管理' },
+  { old: '/workflow:session:solidify', newCmd: '/workflow:spec:add', reason: '固化经验功能整合到规格添加命令' },
 ];

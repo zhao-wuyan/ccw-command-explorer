@@ -227,6 +227,33 @@ specConfig.phasesCompleted.push({
 Write(`${workDir}/spec-config.json`, JSON.stringify(specConfig, null, 2));
 ```
 
+### Step 5.5: Generate glossary.json
+
+```javascript
+// Extract terminology from product brief and CLI analysis
+// Generate structured glossary for cross-document consistency
+
+const glossary = {
+  session_id: specConfig.session_id,
+  terms: [
+    // Extract from product brief content:
+    // - Key domain nouns from problem statement
+    // - User persona names
+    // - Technical terms from multi-perspective synthesis
+    // Each term should have:
+    // { term: "...", definition: "...", aliases: [], first_defined_in: "product-brief.md", category: "core|technical|business" }
+  ]
+};
+
+Write(`${workDir}/glossary.json`, JSON.stringify(glossary, null, 2));
+```
+
+**Glossary Injection**: In all subsequent phase prompts, inject the following into the CONTEXT section:
+```
+TERMINOLOGY GLOSSARY (use these terms consistently):
+${JSON.stringify(glossary.terms, null, 2)}
+```
+
 ## Output
 
 - **File**: `product-brief.md`

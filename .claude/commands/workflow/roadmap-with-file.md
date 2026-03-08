@@ -2,7 +2,7 @@
 name: roadmap-with-file
 description: Strategic requirement roadmap with iterative decomposition and issue creation. Outputs roadmap.md (human-readable, single source) + issues.jsonl (machine-executable). Handoff to team-planex.
 argument-hint: "[-y|--yes] [-c|--continue] [-m progressive|direct|auto] \"requirement description\""
-allowed-tools: TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)
+allowed-tools: TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)
 ---
 
 ## Auto Mode
@@ -355,12 +355,12 @@ Bash(`mkdir -p ${sessionFolder}`)
 
 **Agent Prompt Template**:
 ```javascript
-Task({
+Agent({
   subagent_type: "cli-roadmap-plan-agent",
   run_in_background: false,
   description: `Roadmap decomposition: ${slug}`,
   prompt: `
-## Roadmap Decomposition Task
+## Roadmap Decomposition Agent
 
 ### Input Context
 - **Requirement**: ${requirement}
@@ -534,10 +534,10 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 | Scenario | Recommended Command |
 |----------|-------------------|
 | Strategic planning, need issue tracking | `/workflow:roadmap-with-file` |
-| Quick task breakdown, immediate execution | `/workflow-lite-planex` |
+| Quick task breakdown, immediate execution | `/workflow-lite-plan` |
 | Collaborative multi-agent planning | `/workflow:collaborative-plan-with-file` |
 | Full specification documents | `spec-generator` skill |
-| Code implementation from existing plan | `/workflow-lite-planex` (Phase 1: plan → Phase 2: execute) |
+| Code implementation from existing plan | `/workflow-lite-plan` (Phase 1: plan → Phase 2: execute) |
 
 ---
 

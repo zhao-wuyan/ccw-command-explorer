@@ -531,21 +531,31 @@ ${feature_mode ? `
 **Status**: Draft (from synthesis)
 
 ## 1. Requirements Summary
-[Consolidated requirements from all role perspectives]
-- Functional requirements (from product-manager, product-owner)
-- User experience requirements (from ux-expert, ui-designer)
-- Technical requirements (from system-architect, data-architect, api-designer)
-- Domain requirements (from subject-matter-expert)
+[Consolidated requirements from all role perspectives using RFC 2119 keywords]
+- Functional requirements (from product-manager, product-owner) - use MUST/SHOULD/MAY
+- User experience requirements (from ux-expert, ui-designer) - use MUST/SHOULD/MAY
+- Technical requirements (from system-architect, data-architect, api-designer) - use MUST/SHOULD/MAY
+- Domain requirements (from subject-matter-expert) - use MUST/SHOULD/MAY
+
+**Example**:
+- The feature MUST support user authentication via email/password
+- The UI SHOULD provide real-time feedback within 100ms
+- The system MAY cache user preferences for offline access
 
 ## 2. Design Decisions [CORE SECTION]
 [Key architectural and design decisions with rationale - 40%+ of word count]
 For each decision:
-- **Decision**: [What was decided]
+- **Decision**: [What was decided - MUST use RFC 2119 keywords]
 - **Context**: [Why this decision was needed]
 - **Options Considered**: [Alternatives from different roles]
-- **Chosen Approach**: [Selected option with rationale]
+- **Chosen Approach**: [Selected option with rationale using MUST/SHOULD/MAY]
 - **Trade-offs**: [What we gain vs. what we sacrifice]
 - **Source**: [Which role(s) drove this decision]
+
+**RFC 2119 Examples**:
+- "The system MUST authenticate users before granting access"
+- "The feature SHOULD cache frequently accessed data for performance"
+- "The component MAY support OAuth2 authentication as an optional enhancement"
 
 ## 3. Interface Contract
 [API endpoints, data models, component interfaces]

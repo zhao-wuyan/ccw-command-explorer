@@ -1,7 +1,6 @@
 ---
 prefix: PLAN
 inner_loop: true
-subagents: [issue-plan-agent]
 message_types:
   success: issue_ready
   error: error
@@ -36,18 +35,19 @@ For each issue, execute in sequence:
 
 ### 3a. Generate Solution
 
-Delegate to `issue-plan-agent` subagent:
+Use CLI tool for issue planning:
 
+```bash
+ccw cli -p "PURPOSE: Generate implementation solution for issue <issueId>; success = actionable task breakdown with file paths
+TASK: • Load issue details • Analyze requirements • Design solution approach • Break down into implementation tasks • Identify files to modify/create
+MODE: analysis
+CONTEXT: @**/* | Memory: Session context from <session>/wisdom/
+EXPECTED: JSON solution with: title, description, tasks array (each with description, files_touched), estimated_complexity
+CONSTRAINTS: Follow project patterns | Reference existing implementations
+" --tool gemini --mode analysis --rule planning-breakdown-task-steps
 ```
-Task({
-  subagent_type: "issue-plan-agent",
-  description: "Plan issue <issueId>",
-  prompt: `issue_ids: ["<issueId>"]
-project_root: "<project-root>"
-Generate solution for this issue. Auto-bind single solution.`,
-  run_in_background: false
-})
-```
+
+Parse CLI output to extract solution JSON. If CLI fails, fallback to `ccw issue solution <issueId> --json`.
 
 ### 3b. Write Solution Artifact
 
@@ -88,7 +88,6 @@ InnerLoop: true`,
 
 Send message via team_msg + SendMessage to coordinator:
 - type: `issue_ready`
-- summary: `[planner] Solution ready for <issueId>`
 
 ### 3f. Continue Loop
 

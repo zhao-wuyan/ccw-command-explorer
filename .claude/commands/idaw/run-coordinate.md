@@ -2,7 +2,7 @@
 name: run-coordinate
 description: IDAW coordinator - execute task skill chains via external CLI with hook callbacks and git checkpoints
 argument-hint: "[-y|--yes] [--task <id>[,<id>,...]] [--dry-run] [--tool <tool>]"
-allowed-tools: Task(*), AskUserQuestion(*), Read(*), Write(*), Bash(*), Glob(*), Grep(*)
+allowed-tools: Agent(*), AskUserQuestion(*), Read(*), Write(*), Bash(*), Glob(*), Grep(*)
 ---
 
 # IDAW Run Coordinate Command (/idaw:run-coordinate)
@@ -26,16 +26,16 @@ Coordinator variant of `/idaw:run`: external CLI execution with background tasks
 
 ```javascript
 const SKILL_CHAIN_MAP = {
-  'bugfix':          ['workflow-lite-planex', 'workflow-test-fix'],
-  'bugfix-hotfix':   ['workflow-lite-planex'],
-  'feature':         ['workflow-lite-planex', 'workflow-test-fix'],
+  'bugfix':          ['workflow-lite-plan', 'workflow-test-fix'],
+  'bugfix-hotfix':   ['workflow-lite-plan'],
+  'feature':         ['workflow-lite-plan', 'workflow-test-fix'],
   'feature-complex': ['workflow-plan', 'workflow-execute', 'workflow-test-fix'],
   'refactor':        ['workflow:refactor-cycle'],
   'tdd':             ['workflow-tdd-plan', 'workflow-execute'],
   'test':            ['workflow-test-fix'],
   'test-fix':        ['workflow-test-fix'],
   'review':          ['review-cycle'],
-  'docs':            ['workflow-lite-planex']
+  'docs':            ['workflow-lite-plan']
 };
 ```
 
@@ -216,7 +216,7 @@ const chain = firstTask.skill_chain || SKILL_CHAIN_MAP[resolvedType] || SKILL_CH
 firstTask.status = 'in_progress';
 firstTask.task_type = resolvedType;
 firstTask.execution.started_at = new Date().toISOString();
-Write(`.workflow/.idaw/tasks/${firstTask.id}.json`, JSON.stringify(firstTask, null, 2));
+Write(`.workflow/.idaw/tasks/${firstTask.id}.json`, JSON.stringify(firstAgent, null, 2));
 
 // Update session
 session.current_task = firstTask.id;
@@ -239,7 +239,7 @@ CONSTRAINTS: Keep concise`;
 
 // Assemble prompt for first skill
 const skillName = chain[0];
-const prompt = assembleCliPrompt(skillName, firstTask, null, autoYes);
+const prompt = assembleCliPrompt(skillName, firstAgent, null, autoYes);
 
 session.prompts_used.push({
   task_id: firstTask.id,
@@ -403,7 +403,7 @@ CONSTRAINTS: Actionable diagnosis`;
     nextTask.status = 'in_progress';
     nextTask.task_type = nextType;
     nextTask.execution.started_at = new Date().toISOString();
-    Write(`.workflow/.idaw/tasks/${nextTaskId}.json`, JSON.stringify(nextTask, null, 2));
+    Write(`.workflow/.idaw/tasks/${nextTaskId}.json`, JSON.stringify(nextAgent, null, 2));
 
     session.current_task = nextTaskId;
     session.current_skill_index = 0;
@@ -417,7 +417,7 @@ CONSTRAINTS: Actionable diagnosis`;
     }
 
     const nextSkillName = nextChain[0];
-    const nextPrompt = assembleCliPrompt(nextSkillName, nextTask, null, true);
+    const nextPrompt = assembleCliPrompt(nextSkillName, nextAgent, null, true);
 
     session.prompts_used.push({
       task_id: nextTaskId,
@@ -472,11 +472,11 @@ function assembleCliPrompt(skillName, task, previousResult, autoYes) {
   const yFlag = autoYes ? ' -y' : '';
 
   // Map skill to command invocation
-  if (skillName === 'workflow-lite-planex') {
+  if (skillName === 'workflow-lite-plan') {
     const goal = sanitize(`${task.title}\n${task.description}`);
-    prompt = `/workflow-lite-planex${yFlag} "${goal}"`;
-    if (task.task_type === 'bugfix') prompt = `/workflow-lite-planex${yFlag} --bugfix "${goal}"`;
-    if (task.task_type === 'bugfix-hotfix') prompt = `/workflow-lite-planex${yFlag} --hotfix "${goal}"`;
+    prompt = `/workflow-lite-plan${yFlag} "${goal}"`;
+    if (task.task_type === 'bugfix') prompt = `/workflow-lite-plan${yFlag} --bugfix "${goal}"`;
+    if (task.task_type === 'bugfix-hotfix') prompt = `/workflow-lite-plan${yFlag} --hotfix "${goal}"`;
 
   } else if (skillName === 'workflow-plan') {
     prompt = `/workflow-plan${yFlag} "${sanitize(task.title)}"`;
@@ -608,8 +608,8 @@ Phase 5: handleStepCompletion()
     {
       "task_id": "IDAW-001",
       "skill_index": 0,
-      "skill": "workflow-lite-planex",
-      "prompt": "/workflow-lite-planex -y \"Fix login timeout\"",
+      "skill": "workflow-lite-plan",
+      "prompt": "/workflow-lite-plan -y \"Fix login timeout\"",
       "timestamp": "ISO"
     }
   ]

@@ -30,37 +30,26 @@ Single-issue implementation agent. Loads solution from artifact file, routes to 
 
 ### Backend Selection
 
-| Method | Backend | Agent Type |
-|--------|---------|------------|
-| `agent` | code-developer subagent | Inline delegation |
+| Method | Backend | CLI Tool |
+|--------|---------|----------|
 | `codex` | `ccw cli --tool codex --mode write` | Background CLI |
 | `gemini` | `ccw cli --tool gemini --mode write` | Background CLI |
-
-### Agent Backend
-
-```
-Task({
-  subagent_type: "code-developer",
-  description: "Implement <issue-title>",
-  prompt: `Issue: <issueId>
-Title: <solution.title>
-Solution: <solution JSON>
-Implement all tasks from the solution plan.`,
-  run_in_background: false
-})
-```
 
 ### CLI Backend (Codex/Gemini)
 
 ```bash
-ccw cli -p "Issue: <issueId>
+ccw cli -p "PURPOSE: Implement solution for issue <issueId>; success = all tasks completed, tests pass
+TASK: <solution.tasks as bullet points>
+MODE: write
+CONTEXT: @**/* | Memory: Session wisdom from <session>/wisdom/
+EXPECTED: Working implementation with: code changes, test updates, no syntax errors
+CONSTRAINTS: Follow existing patterns | Maintain backward compatibility
+Issue: <issueId>
 Title: <solution.title>
-Solution Plan: <solution JSON>
-Implement all tasks. Follow existing patterns. Run tests." \
-  --tool <codex|gemini> --mode write
+Solution: <solution JSON>" --tool <codex|gemini> --mode write --rule development-implement-feature
 ```
 
-Wait for CLI completion before proceeding.
+Wait for CLI completion before proceeding to verification.
 
 ## Phase 4: Verification + Commit
 
@@ -88,15 +77,14 @@ ccw issue update <issueId> --status completed
 
 ### Report
 
-Send `impl_complete` message to coordinator via team_msg + SendMessage:
-- summary: `[executor] Implemented <issueId>: <title>`
+Send `impl_complete` message to coordinator via team_msg + SendMessage.
 
 ## Boundaries
 
 | Allowed | Prohibited |
 |---------|-----------|
 | Load solution from file | Create or modify issues |
-| Implement via Agent/Codex/Gemini | Modify solution artifacts |
-| Run tests | Spawn additional agents |
+| Implement via CLI tools (Codex/Gemini) | Modify solution artifacts |
+| Run tests | Spawn additional agents (use CLI tools instead) |
 | git commit | Direct user interaction |
 | Update issue status | Create tasks for other roles |

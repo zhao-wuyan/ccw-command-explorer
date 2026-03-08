@@ -194,7 +194,7 @@ FOR each conflict:
       }
 
       // 5. Agent re-analysis
-      reanalysisResult = Task({
+      reanalysisResult = Agent({
         subagent_type: "cli-execution-agent",
         run_in_background: false,
         prompt: `Conflict: ${conflict.id}, Strategy: ${selectedStrategy.name}

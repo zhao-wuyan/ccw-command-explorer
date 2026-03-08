@@ -2,7 +2,7 @@
 name: workflow:collaborative-plan-with-file
 description: Collaborative planning with Plan Note - Understanding agent creates shared plan-note.md template, parallel agents fill pre-allocated sections, conflict detection without merge. Outputs executable plan-note.md.
 argument-hint: "[-y|--yes] <task description> [--max-agents=5]"
-allowed-tools: TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Bash(*), Write(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)
+allowed-tools: TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Bash(*), Write(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)
 ---
 
 ## Auto Mode
@@ -587,7 +587,11 @@ Schema (tasks): ~/.ccw/workflows/cli-templates/schemas/task-schema.json
    - Execution command
    - Conflict status
 
-6. **Update Todo**
+6. **Sync Session State**
+   - Execute: `/workflow:session:sync -y "Plan complete: ${subDomains.length} domains, ${allTasks.length} tasks"`
+   - Updates specs/*.md with planning insights and project-tech.json with planning session entry
+
+7. **Update Todo**
    - Set Phase 4 status to `completed`
 
 **plan.md Structure**:

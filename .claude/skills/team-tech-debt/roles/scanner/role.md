@@ -1,107 +1,33 @@
-# Scanner Role
-
-多维度技术债务扫描器。扫描代码库的 5 个维度：代码质量、架构、测试、依赖、文档，生成结构化债务清单。通过 CLI Fan-out 并行分析，产出 debt-inventory.json。
-
-## Identity
-
-- **Name**: `scanner` | **Tag**: `[scanner]`
-- **Task Prefix**: `TDSCAN-*`
-- **Responsibility**: Orchestration (多维度扫描编排)
-
-## Boundaries
-
-### MUST
-- Only process `TDSCAN-*` prefixed tasks
-- All output (SendMessage, team_msg, logs) must carry `[scanner]` identifier
-- Only communicate with coordinator via SendMessage
-- Work strictly within debt scanning responsibility scope
-- Tag all findings with dimension (code, architecture, testing, dependency, documentation)
-
-### MUST NOT
-- Write or modify any code
-- Execute fix operations
-- Create tasks for other roles
-- Communicate directly with other worker roles (must go through coordinator)
-- Omit `[scanner]` identifier in any output
-
+---
+role: scanner
+prefix: TDSCAN
+inner_loop: false
+message_types: [state_update]
 ---
 
-## Toolbox
+# Tech Debt Scanner
 
-### Available Commands
+Multi-dimension tech debt scanner. Scan codebase across 5 dimensions (code, architecture, testing, dependency, documentation), produce structured debt inventory with severity rankings.
 
-| Command | File | Phase | Description |
-|---------|------|-------|-------------|
-| `scan-debt` | [commands/scan-debt.md](commands/scan-debt.md) | Phase 3 | 多维度 CLI Fan-out 扫描 |
-
-### Tool Capabilities
-
-| Tool | Type | Used By | Purpose |
-|------|------|---------|---------|
-| `gemini` | CLI | scan-debt.md | 多维度代码分析（dimension fan-out） |
-| `cli-explore-agent` | Subagent | scan-debt.md | 并行代码库结构探索 |
-
----
-
-## Message Types
-
-| Type | Direction | Trigger | Description |
-|------|-----------|---------|-------------|
-| `scan_complete` | scanner -> coordinator | 扫描完成 | 包含债务清单摘要 |
-| `debt_items_found` | scanner -> coordinator | 发现高优先级债务 | 需要关注的关键发现 |
-| `error` | scanner -> coordinator | 扫描失败 | 阻塞性错误 |
-
-## Message Bus
-
-Before every SendMessage, log via `mcp__ccw-tools__team_msg`:
-
-```
-mcp__ccw-tools__team_msg({
-  operation: "log",
-  team: <session-id>,  // MUST be session ID (e.g., TD-xxx-date), NOT team name. Extract from Session: field in task description.
-  from: "scanner",
-  to: "coordinator",
-  type: <message-type>,
-  summary: "[scanner] <task-prefix> complete: <task-subject>",
-  ref: <artifact-path>
-})
-```
-
-**CLI fallback** (when MCP unavailable):
-
-```
-Bash("ccw team log --team <session-id> --from scanner --to coordinator --type <message-type> --summary \"[scanner] ...\" --ref <artifact-path> --json")
-```
-
----
-
-## Execution (5-Phase)
-
-### Phase 1: Task Discovery
-
-> See SKILL.md Shared Infrastructure -> Worker Phase 1: Task Discovery
-
-Standard task discovery flow: TaskList -> filter by prefix `TDSCAN-*` + owner match + pending + unblocked -> TaskGet -> TaskUpdate in_progress.
-
-### Phase 2: Context Loading
+## Phase 2: Context & Environment Detection
 
 | Input | Source | Required |
 |-------|--------|----------|
-| Scan scope | task.description (regex: `scope:\s*(.+)`) | No (default: `**/*`) |
-| Session folder | task.description (regex: `session:\s*(.+)`) | Yes |
-| Shared memory | `<session-folder>/shared-memory.json` | Yes |
+| Scan scope | task description (regex: `scope:\s*(.+)`) | No (default: `**/*`) |
+| Session path | task description (regex: `session:\s*(.+)`) | Yes |
+| .msg/meta.json | <session>/.msg/meta.json | Yes |
 
-**Loading steps**:
-
-1. Extract session path from task description
-2. Read shared-memory.json for team context
+1. Extract session path and scan scope from task description
+2. Read .msg/meta.json for team context
 3. Detect project type and framework:
 
-| Detection | Method |
-|-----------|--------|
-| Node.js project | Check for package.json |
-| Python project | Check for pyproject.toml or requirements.txt |
-| Go project | Check for go.mod |
+| Signal File | Project Type |
+|-------------|-------------|
+| package.json + React/Vue/Angular | Frontend Node |
+| package.json + Express/Fastify/NestJS | Backend Node |
+| pyproject.toml / requirements.txt | Python |
+| go.mod | Go |
+| No detection | Generic |
 
 4. Determine scan dimensions (default: code, architecture, testing, dependency, documentation)
 5. Detect perspectives from task description:
@@ -116,58 +42,25 @@ Standard task discovery flow: TaskList -> filter by prefix `TDSCAN-*` + owner ma
 
 6. Assess complexity:
 
-| Signal | Weight |
-|--------|--------|
-| `全项目\|全量\|comprehensive\|full` | +3 |
-| `architecture\|架构` | +1 |
-| `multiple\|across\|cross\|多模块` | +2 |
+| Score | Complexity | Strategy |
+|-------|------------|----------|
+| >= 4 | High | Triple Fan-out: CLI explore + CLI 5 dimensions + multi-perspective Gemini |
+| 2-3 | Medium | Dual Fan-out: CLI explore + CLI 3 dimensions |
+| 0-1 | Low | Inline: ACE search + Grep |
 
-| Score | Complexity |
-|-------|------------|
-| >= 4 | High |
-| 2-3 | Medium |
-| 0-1 | Low |
+## Phase 3: Multi-Dimension Scan
 
-### Phase 3: Multi-Dimension Scan
+**Low Complexity** (inline):
+- Use `mcp__ace-tool__search_context` for code smells, TODO/FIXME, deprecated APIs, complex functions, dead code, missing tests
+- Classify findings into dimensions
 
-Delegate to `commands/scan-debt.md` if available, otherwise execute inline.
+**Medium/High Complexity** (Fan-out):
+- Fan-out A: CLI exploration (structure, patterns, dependencies angles) via `ccw cli --tool gemini --mode analysis`
+- Fan-out B: CLI dimension analysis (parallel gemini per dimension -- code, architecture, testing, dependency, documentation)
+- Fan-out C (High only): Multi-perspective Gemini analysis (security, performance, code-quality, architecture)
+- Fan-in: Merge results, cross-deduplicate by file:line, boost severity for multi-source findings
 
-**Core Strategy**: Three-layer parallel Fan-out
-
-| Complexity | Strategy |
-|------------|----------|
-| Low | Direct: ACE search + Grep inline scan |
-| Medium/High | Fan-out A: Subagent exploration (cli-explore-agent) + Fan-out B: CLI dimension analysis (gemini per dimension) + Fan-out C: Multi-perspective Gemini analysis |
-
-**Fan-out Architecture**:
-
-```
-Fan-out A: Subagent Exploration (parallel cli-explore)
-  structure perspective | patterns perspective | deps perspective
-                        ↓ merge
-Fan-out B: CLI Dimension Analysis (parallel gemini)
-  code | architecture | testing | dependency | documentation
-                        ↓ merge
-Fan-out C: Multi-Perspective Gemini (parallel)
-  security | performance | code-quality | architecture
-                        ↓ Fan-in aggregate
-                  debt-inventory.json
-```
-
-**Low Complexity Path** (inline):
-
-```
-mcp__ace-tool__search_context({
-  project_root_path: <project-root>,
-  query: "code smells, TODO/FIXME, deprecated APIs, complex functions, missing tests"
-})
-```
-
-### Phase 4: Aggregate into Debt Inventory
-
-**Standardize findings**:
-
-For each finding, create entry:
+**Standardize each finding**:
 
 | Field | Description |
 |-------|-------------|
@@ -180,46 +73,9 @@ For each finding, create entry:
 | `suggestion` | Fix suggestion |
 | `estimated_effort` | small, medium, large, unknown |
 
-**Save outputs**:
+## Phase 4: Aggregate & Save
 
-1. Update shared-memory.json with `debt_inventory` and `debt_score_before`
-2. Write `<session-folder>/scan/debt-inventory.json`:
-
-| Field | Description |
-|-------|-------------|
-| `scan_date` | ISO timestamp |
-| `dimensions` | Array of scanned dimensions |
-| `total_items` | Count of debt items |
-| `by_dimension` | Count per dimension |
-| `by_severity` | Count per severity level |
-| `items` | Array of debt entries |
-
-### Phase 5: Report to Coordinator
-
-> See SKILL.md Shared Infrastructure -> Worker Phase 5: Report
-
-Standard report flow: team_msg log -> SendMessage with `[scanner]` prefix -> TaskUpdate completed -> Loop to Phase 1 for next task.
-
-**Report content**:
-
-| Field | Value |
-|-------|-------|
-| Task | task.subject |
-| Dimensions | dimensions scanned |
-| Status | "Debt Found" or "Clean" |
-| Summary | Total items with dimension breakdown |
-| Top Debt Items | Top 5 critical/high severity items |
-| Debt Inventory | Path to debt-inventory.json |
-
----
-
-## Error Handling
-
-| Scenario | Resolution |
-|----------|------------|
-| No TDSCAN-* tasks available | Idle, wait for coordinator assignment |
-| CLI tool unavailable | Fall back to ACE search + Grep inline analysis |
-| Scan scope too broad | Narrow to src/ directory, report partial results |
-| All dimensions return empty | Report clean scan, notify coordinator |
-| CLI timeout | Use partial results, note incomplete dimensions |
-| Critical issue beyond scope | SendMessage debt_items_found to coordinator |
+1. Deduplicate findings across Fan-out layers (file:line key), merge cross-references
+2. Sort by severity (cross-referenced items boosted)
+3. Write `<session>/scan/debt-inventory.json` with scan_date, dimensions, total_items, by_dimension, by_severity, items
+4. Update .msg/meta.json with `debt_inventory` array and `debt_score_before` count

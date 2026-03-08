@@ -65,7 +65,7 @@ Find and spawn the next ready tasks.
 2. For each ready task, spawn team-worker:
 
 ```
-Task({
+Agent({
   subagent_type: "team-worker",
   description: "Spawn <role> worker for <task-id>",
   team_name: "perf-opt",
@@ -166,7 +166,7 @@ CONTEXT:
   - Session: <session-folder>
   - Branch: B{NN}
   - Upstream artifacts: branches/B{NN}/review-report.md, branches/B{NN}/benchmark-results.json
-  - Shared memory: <session>/wisdom/shared-memory.json (namespace: optimizer.B{NN})
+  - Shared memory: <session>/.msg/meta.json (namespace: optimizer.B{NN})
 EXPECTED: Fixed source files for B{NN} only
 CONSTRAINTS: Targeted fixes only | Do not touch other branches
 ---

@@ -55,6 +55,16 @@
   ],
   "utility": [
     {
+      "name": "ccw-help",
+      "description": "CCW command help system. Search, browse, recommend commands, skills, teams. Triggers \"ccw-help\", \"ccw-issue\".",
+      "category": "utility",
+      "is_team": false,
+      "has_phases": false,
+      "has_role_specs": false,
+      "version": "8.0.0",
+      "source": "../../../skills/ccw-help/SKILL.md"
+    },
+    {
       "name": "issue-manage",
       "description": "Interactive issue management with menu-driven CRUD operations. Use when managing issues, viewing issue status, editing issue fields, performing bulk operations, or viewing issue history. Triggers on \"manage issue\", \"list issues\", \"edit issue\", \"delete issue\", \"bulk update\", \"issue dashboard\", \"issue history\", \"completed issues\".",
       "category": "utility",
@@ -109,6 +119,16 @@
   ],
   "team": [
     {
+      "name": "team-arch-opt",
+      "description": "Unified team skill for architecture optimization. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team arch-opt\".",
+      "category": "team",
+      "is_team": true,
+      "has_phases": false,
+      "has_role_specs": true,
+      "version": "",
+      "source": "../../../skills/team-arch-opt/SKILL.md"
+    },
+    {
       "name": "team-brainstorm",
       "description": "Unified team skill for brainstorming team. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team brainstorm\".",
       "category": "team",
@@ -120,7 +140,7 @@
     },
     {
       "name": "team-coordinate",
-      "description": "Universal team coordination skill with dynamic role generation. Only coordinator is built-in -- all worker roles are generated at runtime based on task analysis. Beat/cadence model for orchestration. Triggers on \"team coordinate\".",
+      "description": "Universal team coordination skill with dynamic role generation. Uses team-worker agent architecture with role-spec files. Only coordinator is built-in -- all worker roles are generated at runtime as role-specs and spawned via team-worker agent. Beat/cadence model for orchestration. Triggers on \"Team Coordinate \".",
       "category": "team",
       "is_team": true,
       "has_phases": false,
@@ -129,34 +149,14 @@
       "source": "../../../skills/team-coordinate/SKILL.md"
     },
     {
-      "name": "team-coordinate-v2",
-      "description": "Universal team coordination skill with dynamic role generation. Uses team-worker agent architecture with role-spec files. Only coordinator is built-in -- all worker roles are generated at runtime as role-specs and spawned via team-worker agent. Beat/cadence model for orchestration. Triggers on \"team coordinate v2\".",
-      "category": "team",
-      "is_team": true,
-      "has_phases": false,
-      "has_role_specs": false,
-      "version": "",
-      "source": "../../../skills/team-coordinate-v2/SKILL.md"
-    },
-    {
       "name": "team-executor",
-      "description": "Lightweight session execution skill. Resumes existing team-coordinate sessions for pure execution. No analysis, no role generation -- only loads and executes. Session path required. Triggers on \"team executor\".",
+      "description": "Lightweight session execution skill. Resumes existing team-coordinate sessions for pure execution via team-worker agents. No analysis, no role generation -- only loads and executes. Session path required. Triggers on \"Team Executor\".",
       "category": "team",
       "is_team": true,
       "has_phases": false,
       "has_role_specs": false,
       "version": "",
       "source": "../../../skills/team-executor/SKILL.md"
-    },
-    {
-      "name": "team-executor-v2",
-      "description": "Lightweight session execution skill. Resumes existing team-coordinate-v2 sessions for pure execution via team-worker agents. No analysis, no role generation -- only loads and executes. Session path required. Triggers on \"team executor v2\".",
-      "category": "team",
-      "is_team": true,
-      "has_phases": false,
-      "has_role_specs": false,
-      "version": "",
-      "source": "../../../skills/team-executor-v2/SKILL.md"
     },
     {
       "name": "team-frontend",
@@ -189,34 +189,24 @@
       "source": "../../../skills/team-iterdev/SKILL.md"
     },
     {
-      "name": "team-lifecycle-v3",
-      "description": "Unified team skill for full lifecycle - spec/impl/test. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team lifecycle\".",
-      "category": "team",
-      "is_team": true,
-      "has_phases": false,
-      "has_role_specs": false,
-      "version": "",
-      "source": "../../../skills/team-lifecycle-v3/SKILL.md"
-    },
-    {
-      "name": "team-lifecycle-v4",
-      "description": "Unified team skill for full lifecycle - spec/impl/test. Optimized cadence with inline discuss subagent and shared explore. All roles invoke this skill with --role arg for role-specific execution. Triggers on \"team lifecycle\".",
-      "category": "team",
-      "is_team": true,
-      "has_phases": false,
-      "has_role_specs": false,
-      "version": "",
-      "source": "../../../skills/team-lifecycle-v4/SKILL.md"
-    },
-    {
-      "name": "team-lifecycle-v5",
+      "name": "team-lifecycle",
       "description": "Unified team skill for full lifecycle - spec/impl/test. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents loaded with role-specific Phase 2-4 specs. Triggers on \"team lifecycle\".",
       "category": "team",
       "is_team": true,
       "has_phases": false,
       "has_role_specs": true,
       "version": "",
-      "source": "../../../skills/team-lifecycle-v5/SKILL.md"
+      "source": "../../../skills/team-lifecycle/SKILL.md"
+    },
+    {
+      "name": "team-perf-opt",
+      "description": "Unified team skill for performance optimization. Uses team-worker agent architecture with role-spec files for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on \"team perf-opt\".",
+      "category": "team",
+      "is_team": true,
+      "has_phases": false,
+      "has_role_specs": true,
+      "version": "",
+      "source": "../../../skills/team-perf-opt/SKILL.md"
     },
     {
       "name": "team-planex",
@@ -311,14 +301,14 @@
       "source": "../../../skills/workflow-execute/SKILL.md"
     },
     {
-      "name": "workflow-lite-planex",
-      "description": "Lightweight planning and execution skill (Phase 1: plan, Phase 2: execute). Triggers on \"workflow-lite-planex\".",
+      "name": "workflow-lite-plan",
+      "description": "Lightweight planning and execution skill (Phase 1: plan, Phase 2: execute). Triggers on \"workflow-lite-plan\".",
       "category": "workflow",
       "is_team": false,
       "has_phases": true,
       "has_role_specs": false,
       "version": "",
-      "source": "../../../skills/workflow-lite-planex/SKILL.md"
+      "source": "../../../skills/workflow-lite-plan/SKILL.md"
     },
     {
       "name": "workflow-multi-cli-plan",
@@ -351,7 +341,7 @@
       "source": "../../../skills/workflow-skill-designer/SKILL.md"
     },
     {
-      "name": "workflow-tdd-plan-plan",
+      "name": "workflow-tdd-plan",
       "description": "Unified TDD workflow skill combining 6-phase TDD planning with Red-Green-Refactor task chain generation, and 4-phase TDD verification with compliance reporting. Triggers on \"workflow-tdd-plan\", \"workflow-tdd-verify\".",
       "category": "workflow",
       "is_team": false,

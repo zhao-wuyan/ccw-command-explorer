@@ -1,7 +1,7 @@
 ---
 name: workflow-execute
 description: Coordinate agent execution for workflow tasks with automatic session discovery, parallel task processing, and status tracking. Triggers on "workflow-execute".
-allowed-tools: Skill, Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Skill, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Workflow Execute
@@ -500,7 +500,7 @@ TodoWrite({
 **Path-Based Invocation**: Pass paths and trigger markers, let agent parse task JSON autonomously.
 
 ```bash
-Task(subagent_type="{meta.agent}",
+Agent(subagent_type="{meta.agent}",
      run_in_background=false,
      prompt="Implement task {task.id}: {task.title}
 

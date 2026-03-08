@@ -2,7 +2,7 @@
 name: clean
 description: Intelligent code cleanup with mainline detection, stale artifact discovery, and safe execution
 argument-hint: "[-y|--yes] [--dry-run] [\"focus area\"]"
-allowed-tools: TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Glob(*), Bash(*), Write(*)
+allowed-tools: TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Glob(*), Bash(*), Write(*)
 ---
 
 # Clean Command (/workflow:clean)

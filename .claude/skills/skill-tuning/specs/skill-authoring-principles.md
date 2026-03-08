@@ -114,18 +114,21 @@ Write(`${workDir}/final-output.json`, finalResult);  // 只存最终结果
 // 上下文流转模式
 async function executePhase(context) {
   const { previousResult, constraints, config } = context;
-  
-  const result = await Task({
+
+  const result = await Agent({
+    subagent_type: 'universal-executor',
+    description: 'Execute phase with context passing',
+    run_in_background: false,
     prompt: `
       [CONTEXT]
       Previous: ${JSON.stringify(previousResult)}
       Constraints: ${constraints.join(', ')}
-      
+
       [TASK]
       Process and return result directly.
     `
   });
-  
+
   return {
     ...context,
     currentResult: result,

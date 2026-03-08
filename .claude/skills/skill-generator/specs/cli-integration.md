@@ -12,7 +12,7 @@ Suitable for scenarios that need immediate results.
 
 ```javascript
 // Agent call - synchronous
-const result = Task({
+const result = Agent({
   subagent_type: 'universal-executor',
   prompt: 'Execute task...',
   run_in_background: false  // Key: synchronous execution
@@ -77,7 +77,7 @@ ccw cli -p "<PROMPT>" --tool <gemini|qwen|codex> --mode <analysis|write>
 General-purpose executor, the most commonly used agent type.
 
 ```javascript
-Task({
+Agent({
   subagent_type: 'universal-executor',
   prompt: `
 Execute task:
@@ -99,7 +99,7 @@ Execute task:
 Code exploration agent for quick codebase understanding.
 
 ```javascript
-Task({
+Agent({
   subagent_type: 'Explore',
   prompt: `
 Explore src/ directory:
@@ -123,7 +123,7 @@ Thoroughness: medium
 Deep code analysis agent.
 
 ```javascript
-Task({
+Agent({
   subagent_type: 'cli-explore-agent',
   prompt: `
 Deep analysis of src/auth/ module:

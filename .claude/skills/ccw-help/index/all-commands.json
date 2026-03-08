@@ -46,8 +46,8 @@
   {
     "name": "flow-create",
     "command": "/flow-create",
-    "description": "",
-    "arguments": "",
+    "description": "Flow Template Generator - Generate workflow templates for meta-skill/flow-coordinator with interactive 3-phase workflow",
+    "arguments": "[template-name] [--output <path>]",
     "category": "general",
     "subcategory": null,
     "usage_scenario": "implementation",

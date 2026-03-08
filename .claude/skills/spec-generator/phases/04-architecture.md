@@ -33,6 +33,19 @@ if (specConfig.has_codebase) {
     discoveryContext = JSON.parse(Read(`${workDir}/discovery-context.json`));
   } catch (e) { /* no context */ }
 }
+
+// Load glossary for terminology consistency
+let glossary = null;
+try {
+  glossary = JSON.parse(Read(`${workDir}/glossary.json`));
+} catch (e) { /* proceed without */ }
+
+// Load spec type profile for specialized sections
+const specType = specConfig.spec_type || 'service';
+let profile = null;
+try {
+  profile = Read(`templates/profiles/${specType}-profile.md`);
+} catch (e) { /* use base template only */ }
 ```
 
 ### Step 2: Architecture Analysis via Gemini CLI
@@ -66,6 +79,28 @@ TASK:
 - Identify security architecture: auth, authorization, data protection
 - List API endpoints (high-level)
 ${discoveryContext ? '- Map new components to existing codebase modules' : ''}
+- For each core entity with a lifecycle, create an ASCII state machine diagram showing:
+  - All states and transitions
+  - Trigger events for each transition
+  - Side effects of transitions
+  - Error states and recovery paths
+- Define a Configuration Model: list all configurable fields with name, type, default value, constraint, and description
+- Define Error Handling strategy:
+  - Classify errors (transient/permanent/degraded)
+  - Per-component error behavior using RFC 2119 keywords
+  - Recovery mechanisms
+- Define Observability requirements:
+  - Key metrics (name, type: counter/gauge/histogram, labels)
+  - Structured log format and key log events
+  - Health check endpoints
+\${profile ? \`
+SPEC TYPE PROFILE REQUIREMENTS (\${specType}):
+\${profile}
+\` : ''}
+\${glossary ? \`
+TERMINOLOGY GLOSSARY (use consistently):
+\${JSON.stringify(glossary.terms, null, 2)}
+\` : ''}
 
 MODE: analysis
 EXPECTED: Complete architecture with: style justification, component diagram, tech stack table, ADRs, data model, security controls, API overview

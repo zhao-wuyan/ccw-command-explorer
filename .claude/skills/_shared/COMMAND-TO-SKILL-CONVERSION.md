@@ -83,7 +83,7 @@
 | 内容类型 | 保留要求 | 示例 |
 |---------|---------|------|
 | **Bash命令** | 完整命令，包含所有参数、管道、重定向 | `find . -name "*.json" \| head -1` |
-| **Agent Prompt** | 全文保留，包含OBJECTIVE、TASK、EXPECTED等所有节 | 完整的Task({prompt: "..."}) |
+| **Agent Prompt** | 全文保留，包含OBJECTIVE、TASK、EXPECTED等所有节 | 完整的Agent({prompt: "..."}) |
 | **代码函数** | 完整函数体，所有if/else分支 | `analyzeTaskComplexity()` 全部代码 |
 | **参数表格** | 所有行列，不省略任何参数 | Session Types表格 |
 | **JSON Schema** | 所有字段、类型、required定义 | context-package.json schema |
@@ -95,7 +95,7 @@
 
 1. **将代码替换为描述**
    - ❌ 错误：`Execute context gathering agent`
-   - ✅ 正确：完整的 `Task({ subagent_type: "context-search-agent", prompt: "...[完整200行prompt]..." })`
+   - ✅ 正确：完整的 `Agent({ subagent_type: "context-search-agent", prompt: "...[完整200行prompt]..." })`
 
 2. **省略Prompt内容**
    - ❌ 错误：`Agent prompt for context gathering (see original file)`
@@ -277,7 +277,7 @@ commands/                              skills/
 ---
 name: {skill-name}
 description: {简短描述}. Triggers on "{trigger-phrase}".
-allowed-tools: Task, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
 ---
 ```
 
@@ -440,7 +440,7 @@ Complete: IMPL_PLAN.md + Task JSONs
 |--------|---------|---------|
 | **代码块数量** | 计数 ` ```bash ` 和 ` ```javascript ` | 与原文件相等 |
 | **表格数量** | 计数 ` \| ` 开头的行 | 与原文件相等 |
-| **Agent Prompt** | 搜索 `Task({` | 完整的prompt参数内容 |
+| **Agent Prompt** | 搜索 `Agent({` | 完整的prompt参数内容 |
 | **步骤编号** | 检查 `### Step` | 编号序列与原文件一致 |
 | **文件行数** | `wc -l` | ±20%以内 |
 | **关键函数** | 搜索函数名 | 所有函数完整保留 |
@@ -492,10 +492,10 @@ Execute the context-search-agent to gather project context.
 ### Step 2: Run context gathering
 
 ```javascript
-Task({
+Agent({
   subagent_type: "context-search-agent",
   prompt: `
-## Context Search Task
+## Context Search Agent
 
 ### OBJECTIVE
 Gather comprehensive context for planning session ${sessionId}
@@ -535,7 +535,7 @@ Gather comprehensive context for planning session ${sessionId}
 │       └─→ 数量应相等                                            │
 │                                                                  │
 │  Step 3: 关键内容抽查                                            │
-│       - 搜索 Task({ → Agent Prompt 完整性                        │
+│       - 搜索 Agent({ → Agent Prompt 完整性                        │
 │       - 搜索函数名 → 函数体完整性                                │
 │       - 搜索表格标记 → 表格完整性                                │
 │                                                                  │
@@ -562,8 +562,8 @@ grep -c '^|' commands/workflow/tools/context-gather.md
 grep -c '^|' skills/workflow-plan/phases/02-context-gathering.md
 
 # 4. Agent Prompt检查
-grep -c 'Task({' commands/workflow/tools/context-gather.md
-grep -c 'Task({' skills/workflow-plan/phases/02-context-gathering.md
+grep -c 'Agent({' commands/workflow/tools/context-gather.md
+grep -c 'Agent({' skills/workflow-plan/phases/02-context-gathering.md
 
 # 5. 函数定义检查
 grep -E '^(function|const.*=.*=>|async function)' commands/workflow/tools/context-gather.md

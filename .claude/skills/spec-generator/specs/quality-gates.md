@@ -111,6 +111,9 @@ Content provides sufficient detail for execution teams.
 | Success metrics | >= 2 quantifiable metrics | Warning |
 | Scope boundaries | In-scope and out-of-scope listed | Warning |
 | Multi-perspective | >= 2 CLI perspectives synthesized | Info |
+| Terminology glossary generated | glossary.json created with >= 5 terms | Warning |
+| Non-Goals section present | At least 1 non-goal with rationale | Warning |
+| Concepts section present | Terminology table in product brief | Warning |
 
 ### Phase 3: Requirements (PRD)
 
@@ -122,6 +125,8 @@ Content provides sufficient detail for execution teams.
 | Non-functional requirements | >= 1 (performance, security, etc.) | Warning |
 | User stories | >= 1 per Must-have requirement | Warning |
 | Traceability | Requirements trace to product brief goals | Warning |
+| RFC 2119 keywords used | Behavioral requirements use MUST/SHOULD/MAY | Warning |
+| Data model defined | Core entities have field-level definitions | Warning |
 
 ### Phase 4: Architecture
 
@@ -134,6 +139,12 @@ Content provides sufficient detail for execution teams.
 | Integration points | External systems/APIs identified | Warning |
 | Data model | Key entities and relationships described | Warning |
 | Codebase mapping | Mapped to existing code (if has_codebase) | Info |
+| State machine defined | >= 1 lifecycle state diagram (if service/platform type) | Warning |
+| Configuration model defined | All config fields with type/default/constraint (if service type) | Warning |
+| Error handling strategy | Per-component error classification and recovery | Warning |
+| Observability metrics | >= 3 metrics defined (if service/platform type) | Warning |
+| Trust model defined | Trust levels documented (if service type) | Info |
+| Implementation guidance | Key decisions for implementers listed | Info |
 
 ### Phase 5: Epics & Stories
 
@@ -171,6 +182,8 @@ Product Brief goals  ->  Requirements (each goal has >= 1 requirement)
 Requirements         ->  Architecture (each Must requirement has design coverage)
 Requirements         ->  Epics (each Must requirement appears in >= 1 story)
 Architecture ADRs    ->  Epics (tech choices reflected in implementation stories)
+Glossary terms       ->  All Documents (core terms used consistently)
+Non-Goals (Brief)    ->  Requirements + Epics (no contradictions)
 ```
 
 ### Consistency Checks
@@ -181,6 +194,9 @@ Architecture ADRs    ->  Epics (tech choices reflected in implementation stories
 | User personas | Brief + PRD + Epics | Same user names/roles throughout |
 | Scope | Brief + PRD | PRD scope does not exceed brief scope |
 | Tech stack | Architecture + Epics | Stories reference correct technologies |
+| Glossary compliance | All | Core terms match glossary.json definitions, no synonym drift |
+| Scope containment | Brief + PRD | PRD requirements do not introduce scope beyond brief boundaries |
+| Non-Goals respected | Brief + PRD + Epics | No requirement/story contradicts explicit Non-Goals |
 
 ### Traceability Matrix Format
 
@@ -217,3 +233,23 @@ Architecture ADRs    ->  Epics (tech choices reflected in implementation stories
 - Consider additional ADR alternatives
 - Story estimation hints missing
 - Mermaid diagrams could be more detailed
+
+---
+
+## Iteration Quality Tracking
+
+When Phase 6.5 (Auto-Fix) is triggered:
+
+| Iteration | Expected Improvement | Max Iterations |
+|-----------|---------------------|----------------|
+| 1st | Fix all Error-severity issues | - |
+| 2nd | Fix remaining Warnings, improve scores | Max reached |
+
+### Iteration Exit Criteria
+
+| Condition | Action |
+|-----------|--------|
+| Overall score >= 80% after fix | Pass, proceed to handoff |
+| Overall score 60-79% after 2 iterations | Review, proceed with caveats |
+| Overall score < 60% after 2 iterations | Fail, manual intervention required |
+| No Error-severity issues remaining | Eligible for handoff regardless of score |

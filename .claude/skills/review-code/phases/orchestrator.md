@@ -132,8 +132,9 @@ async function runOrchestrator() {
       // 确定当前需要审查的维度（使用 StateManager）
       const currentDimension = StateManager.getNextDimension(state);
 
-      const result = await Task({
+      const result = await Agent({
         subagent_type: 'universal-executor',
+        description: `Execute code review action: ${actionId}`,
         run_in_background: false,
         prompt: `
 [WORK_DIR]

@@ -17,7 +17,7 @@ Validate refactoring changes by running build checks, test suites, dependency me
 |-------|--------|----------|
 | Architecture baseline | <session>/artifacts/architecture-baseline.json (shared) | Yes |
 | Refactoring plan / detail | Varies by mode (see below) | Yes |
-| shared-memory.json | <session>/wisdom/shared-memory.json | Yes |
+| .msg/meta.json | <session>/wisdom/.msg/meta.json | Yes |
 
 1. Extract session path from task description
 2. **Detect branch/pipeline context** from task description:
@@ -37,7 +37,7 @@ Validate refactoring changes by running build checks, test suites, dependency me
    - Fan-out branch: Read `<session>/artifacts/branches/B{NN}/refactoring-detail.md` -- only this branch's criteria
    - Independent: Read `<session>/artifacts/pipelines/{P}/refactoring-plan.md`
 
-5. Load shared-memory.json for project type and refactoring scope
+5. Load .msg/meta.json for project type and refactoring scope
 6. Detect available validation tools from project:
 
 | Signal | Validation Tool | Method |
@@ -50,7 +50,7 @@ Validate refactoring changes by running build checks, test suites, dependency me
 | Makefile with test target | Custom tests | make test |
 | No tooling detected | Manual validation | File existence + import grep checks |
 
-7. Get changed files scope from shared-memory:
+7. Get changed files scope from .msg/meta.json:
    - Single: `refactorer` namespace
    - Fan-out: `refactorer.B{NN}` namespace
    - Independent: `refactorer.{P}` namespace
@@ -108,7 +108,7 @@ Compare against baseline and plan criteria:
    - Independent: `<session>/artifacts/pipelines/{P}/validation-results.json`
    - Content: Per-dimension: name, baseline value, current value, improvement/regression, verdict; Overall verdict: PASS / WARN / FAIL; Failure details (if any)
 
-2. Update `<session>/wisdom/shared-memory.json` under scoped namespace:
+2. Update `<session>/wisdom/.msg/meta.json` under scoped namespace:
    - Single: merge `{ "validator": { verdict, improvements, regressions, build_pass, test_pass } }`
    - Fan-out: merge `{ "validator.B{NN}": { verdict, improvements, regressions, build_pass, test_pass } }`
    - Independent: merge `{ "validator.{P}": { verdict, improvements, regressions, build_pass, test_pass } }`

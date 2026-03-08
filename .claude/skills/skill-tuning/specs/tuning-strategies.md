@@ -140,8 +140,10 @@ function updateHistory(state, newItem) {
 
 ```javascript
 // Add summarization before passing to next phase
-const summary = await Task({
+const summary = await Agent({
   subagent_type: 'universal-executor',
+  description: 'Summarize content for context compression',
+  run_in_background: false,
   prompt: `Summarize in <100 words: ${fullContent}\nReturn JSON: { summary, key_points[] }`
 });
 nextPhasePrompt = `Previous summary: ${summary.summary}`;
@@ -268,12 +270,17 @@ function validateAgentResult(result, requiredFields) {
 ### flatten_nesting
 
 ```javascript
-// Before: Agent A's prompt tells it to call Task({subagent_type: 'B'})
+// Before: Agent A's prompt tells it to call Agent({subagent_type: 'B'})
 // After: Agent A returns signal, orchestrator handles
 // Agent A: return { needs_agent_b: true, context: {...} }
 // Orchestrator:
 if (parsedA.needs_agent_b) {
-  resultB = await Task({ subagent_type: 'B', prompt: `Context: ${parsedA.context}` });
+  resultB = await Agent({
+    subagent_type: 'B',
+    description: 'Handle delegated task from Agent A',
+    run_in_background: false,
+    prompt: `Context: ${parsedA.context}`
+  });
 }
 ```
 

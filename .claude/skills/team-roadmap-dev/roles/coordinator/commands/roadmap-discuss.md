@@ -13,7 +13,7 @@ Discuss project roadmap with the user using project-tech.json + specs/*.md as co
 
 ## Strategy
 
-Direct interaction via AskUserQuestion. No delegation to workers or subagents. Coordinator handles this entirely.
+Direct interaction via AskUserQuestion. No delegation to workers or CLI tools. Coordinator handles this entirely.
 
 ## Parameters
 
@@ -130,7 +130,7 @@ if (!autoYes) {
 ### Step 6: Analyze Codebase and Generate Phased Roadmap
 
 ```javascript
-// Use Gemini CLI (or cli-explore-agent) to analyze the codebase
+// Use Gemini CLI (or CLI exploration tool) to analyze the codebase
 // and generate a phased breakdown based on goal + project context
 Bash({
   command: `ccw cli -p "PURPOSE: Analyze codebase and generate phased execution roadmap for: ${projectGoal}

@@ -18,7 +18,7 @@ Orchestrate the roadmap-driven development workflow: init prerequisites -> roadm
 - Manage state.md updates at every phase transition
 - Route verifier gap results to planner for closure
 - Parse user requirements and clarify ambiguous inputs via AskUserQuestion
-- Create team and spawn worker subagents in background
+- Create team and spawn worker team members in background
 - Dispatch tasks with proper dependency chains
 - Monitor progress via worker callbacks and route messages
 - Maintain session state persistence
@@ -26,7 +26,7 @@ Orchestrate the roadmap-driven development workflow: init prerequisites -> roadm
 ### MUST NOT
 
 - Execute any business tasks (code, analysis, testing, verification)
-- Call code-developer, cli-explore-agent, or other implementation subagents
+- Call CLI tools for code generation, exploration, or planning
 - Modify source code or generate implementation artifacts
 - Bypass worker roles to do work directly
 - Skip roadmap discussion phase
@@ -37,16 +37,58 @@ Orchestrate the roadmap-driven development workflow: init prerequisites -> roadm
 
 ---
 
+## Command Execution Protocol
+
+When coordinator needs to execute a command (dispatch, monitor, pause, resume):
+
+1. **Read the command file**: `roles/coordinator/commands/<command-name>.md`
+2. **Follow the workflow** defined in the command file (Phase 2-4 structure)
+3. **Commands are inline execution guides** -- NOT separate agents or subprocesses
+4. **Execute synchronously** -- complete the command workflow before proceeding
+
+Example:
+```
+Phase 3 needs task dispatch
+  -> Read roles/coordinator/commands/dispatch.md
+  -> Execute Phase 2 (Context Loading)
+  -> Execute Phase 3 (Task Chain Creation)
+  -> Execute Phase 4 (Validation)
+  -> Continue to Phase 4
+```
+
+---
+
 ## Entry Router
 
-When coordinator is invoked, first detect the invocation type:
+When coordinator is invoked, detect invocation type:
 
 | Detection | Condition | Handler |
 |-----------|-----------|---------|
+| Worker callback | Message contains role tag [planner], [executor], [verifier] | -> handleCallback |
 | Resume mode | Arguments contain `--resume` | -> commands/resume.md: load session, re-enter monitor |
-| Status check | Arguments contain "check" or "status" | -> handleCheck: output execution graph, no advancement |
-| Manual continue | Arguments contain "resume" or "continue" | -> handleContinue: check worker states, advance pipeline |
-| New session | None of the above | -> Phase 1 (Init Prerequisites) |
+| Status check | Arguments contain "check" or "status" | -> handleCheck |
+| Manual resume | Arguments contain "resume" or "continue" | -> handleResume |
+| Pipeline complete | All tasks have status "completed" | -> handleComplete |
+| Interrupted session | Active/paused session exists | -> Phase 0 (Session Resume Check) |
+| New session | None of above | -> Phase 1 (Init Prerequisites) |
+
+For callback/check/resume/complete: load `commands/monitor.md` and execute matched handler, then STOP.
+
+### Router Implementation
+
+1. **Load session context** (if exists):
+   - Scan `.workflow/.team/RD-*/.msg/meta.json` for active/paused sessions
+   - If found, extract session folder path, status, and pipeline mode
+
+2. **Parse $ARGUMENTS** for detection keywords:
+   - Check for role name tags in message content
+   - Check for "check", "status", "resume", "continue", "--resume" keywords
+
+3. **Route to handler**:
+   - For monitor handlers: Read `commands/monitor.md`, execute matched handler, STOP
+   - For --resume: Read `commands/resume.md`, execute resume flow
+   - For Phase 0: Execute Session Resume Check
+   - For Phase 1: Execute Init Prerequisites below
 
 ---
 
@@ -56,6 +98,7 @@ When coordinator is invoked, first detect the invocation type:
 
 | Command | File | Phase | Description |
 |---------|------|-------|-------------|
+| `analyze` | [commands/analyze.md](commands/analyze.md) | Phase 1 | Detect depth/phase-count/gate signals from task description |
 | `roadmap-discuss` | [commands/roadmap-discuss.md](commands/roadmap-discuss.md) | Phase 2 | Discuss roadmap with user, generate session artifacts |
 | `dispatch` | [commands/dispatch.md](commands/dispatch.md) | Phase 3 | Create task chain per phase |
 | `monitor` | [commands/monitor.md](commands/monitor.md) | Phase 4 | Stop-Wait phase execution loop |
@@ -92,11 +135,10 @@ Before every SendMessage, log via `mcp__ccw-tools__team_msg`:
 ```
 mcp__ccw-tools__team_msg({
   operation: "log",
-  team: <session-id>,  // MUST be session ID (e.g., RD-xxx-date), NOT team name. Extract from Session: field in task description.
+  session_id: <session-id>,
   from: "coordinator",
   to: <target-role>,
   type: <message-type>,
-  summary: "[coordinator] <summary>",
   ref: <artifact-path>
 })
 ```
@@ -104,7 +146,7 @@ mcp__ccw-tools__team_msg({
 **CLI fallback** (when MCP unavailable):
 
 ```
-Bash("ccw team log --team <session-id> --from coordinator --to <target> --type <type> --summary \"[coordinator] <summary>\" --json")
+Bash("ccw team log --session-id <session-id> --from coordinator --type <type> --json")
 ```
 
 ---
@@ -157,8 +199,27 @@ Delegate to `commands/roadmap-discuss.md`:
 **Workflow**:
 
 1. Call `TeamCreate({ team_name: "roadmap-dev" })`
-2. Spawn worker roles (see SKILL.md Coordinator Spawn Template)
-3. Load `commands/dispatch.md` for task chain creation
+
+2. Initialize meta.json with pipeline metadata:
+```typescript
+// Use team_msg to write pipeline metadata to .msg/meta.json
+mcp__ccw-tools__team_msg({
+  operation: "log",
+  session_id: "<session-id>",
+  from: "coordinator",
+  type: "state_update",
+  summary: "Session initialized",
+  data: {
+    pipeline_mode: "roadmap-driven",
+    pipeline_stages: ["planner", "executor", "verifier"],
+    roles: ["coordinator", "planner", "executor", "verifier"],
+    team_name: "roadmap-dev"
+  }
+})
+```
+
+3. Spawn worker roles (see SKILL.md Coordinator Spawn Template)
+4. Load `commands/dispatch.md` for task chain creation
 
 | Step | Action |
 |------|--------|

@@ -38,7 +38,7 @@ CONTEXT:
   - Scope: <optimization-scope>
   - Branch: <branch-id or 'none'>
   - Upstream artifacts: <artifact-1>, <artifact-2>
-  - Shared memory: <session>/wisdom/shared-memory.json
+  - Shared memory: <session>/.msg/meta.json
 EXPECTED: <deliverable path> + <quality criteria>
 CONSTRAINTS: <scope limits, focus areas>
 ---
@@ -77,7 +77,7 @@ CONTEXT:
   - Session: <session-folder>
   - Scope: <optimization-scope>
   - Branch: none
-  - Shared memory: <session>/wisdom/shared-memory.json
+  - Shared memory: <session>/.msg/meta.json
 EXPECTED: <session>/artifacts/baseline-metrics.json + <session>/artifacts/bottleneck-report.md | Quantified metrics with evidence
 CONSTRAINTS: Focus on <optimization-scope> | Profile before any changes
 ---
@@ -101,7 +101,7 @@ CONTEXT:
   - Scope: <optimization-scope>
   - Branch: none
   - Upstream artifacts: baseline-metrics.json, bottleneck-report.md
-  - Shared memory: <session>/wisdom/shared-memory.json
+  - Shared memory: <session>/.msg/meta.json
 EXPECTED: <session>/artifacts/optimization-plan.md | Priority-ordered with improvement targets, discrete OPT-IDs
 CONSTRAINTS: Focus on highest-impact optimizations | Risk assessment required | Non-overlapping file targets per OPT-ID
 ---
@@ -125,7 +125,7 @@ CONTEXT:
   - Scope: <optimization-scope>
   - Branch: none
   - Upstream artifacts: optimization-plan.md
-  - Shared memory: <session>/wisdom/shared-memory.json
+  - Shared memory: <session>/.msg/meta.json
 EXPECTED: Modified source files + validation passing | Optimizations applied without regressions
 CONSTRAINTS: Preserve existing behavior | Minimal changes per optimization | Follow code conventions
 ---
@@ -149,7 +149,7 @@ CONTEXT:
   - Scope: <optimization-scope>
   - Branch: none
   - Upstream artifacts: baseline-metrics.json, optimization-plan.md
-  - Shared memory: <session>/wisdom/shared-memory.json
+  - Shared memory: <session>/.msg/meta.json
 EXPECTED: <session>/artifacts/benchmark-results.json | Per-metric comparison with verdicts
 CONSTRAINTS: Must compare against baseline | Flag any regressions
 ---
@@ -173,7 +173,7 @@ CONTEXT:
   - Scope: <optimization-scope>
   - Branch: none
   - Upstream artifacts: optimization-plan.md, benchmark-results.json (if available)
-  - Shared memory: <session>/wisdom/shared-memory.json
+  - Shared memory: <session>/.msg/meta.json
 EXPECTED: <session>/artifacts/review-report.md | Per-dimension findings with severity
 CONSTRAINTS: Focus on optimization changes only | Provide specific file:line references
 ---
@@ -233,7 +233,7 @@ CONTEXT:
   - Session: <session-folder>
   - Scope: optimize rendering
   - Pipeline: A
-  - Shared memory: <session>/wisdom/shared-memory.json (namespace: profiler.A)
+  - Shared memory: <session>/.msg/meta.json (namespace: profiler.A)
 EXPECTED: <session>/artifacts/pipelines/A/baseline-metrics.json + bottleneck-report.md
 CONSTRAINTS: Focus on rendering scope
 ---
@@ -252,7 +252,7 @@ PipelineId: A",
 **Procedure**:
 
 1. Read `<session>/artifacts/optimization-plan.md` to count OPT-IDs
-2. Read `shared-memory.json` -> `strategist.optimization_count`
+2. Read `.msg/meta.json` -> `strategist.optimization_count`
 3. **Auto mode decision**:
 
 | Optimization Count | Decision |
@@ -289,7 +289,7 @@ CONTEXT:
   - Session: <session-folder>
   - Branch: B{NN}
   - Upstream artifacts: branches/B{NN}/optimization-detail.md
-  - Shared memory: <session>/wisdom/shared-memory.json (namespace: optimizer.B{NN})
+  - Shared memory: <session>/.msg/meta.json (namespace: optimizer.B{NN})
 EXPECTED: Modified source files for OPT-{NNN} only
 CONSTRAINTS: Only implement this branch's optimization | Do not touch files outside OPT-{NNN} scope
 ---
@@ -310,7 +310,7 @@ CONTEXT:
   - Session: <session-folder>
   - Branch: B{NN}
   - Upstream artifacts: baseline-metrics.json, branches/B{NN}/optimization-detail.md
-  - Shared memory: <session>/wisdom/shared-memory.json (namespace: benchmarker.B{NN})
+  - Shared memory: <session>/.msg/meta.json (namespace: benchmarker.B{NN})
 EXPECTED: <session>/artifacts/branches/B{NN}/benchmark-results.json
 CONSTRAINTS: Only benchmark this branch's metrics
 ---
@@ -331,7 +331,7 @@ CONTEXT:
   - Session: <session-folder>
   - Branch: B{NN}
   - Upstream artifacts: branches/B{NN}/optimization-detail.md
-  - Shared memory: <session>/wisdom/shared-memory.json (namespace: reviewer.B{NN})
+  - Shared memory: <session>/.msg/meta.json (namespace: reviewer.B{NN})
 EXPECTED: <session>/artifacts/branches/B{NN}/review-report.md
 CONSTRAINTS: Only review this branch's changes
 ---

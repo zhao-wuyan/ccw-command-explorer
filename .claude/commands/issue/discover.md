@@ -2,7 +2,7 @@
 name: issue:discover
 description: Discover potential issues from multiple perspectives (bug, UX, test, quality, security, performance, maintainability, best-practices) using CLI explore. Supports Exa external research for security and best-practices perspectives.
 argument-hint: "[-y|--yes] <path-pattern> [--perspectives=bug,ux,...] [--external]"
-allowed-tools: Skill(*), TodoWrite(*), Read(*), Bash(*), Task(*), AskUserQuestion(*), Glob(*), Grep(*)
+allowed-tools: Skill(*), TodoWrite(*), Read(*), Bash(*), Agent(*), AskUserQuestion(*), Glob(*), Grep(*)
 ---
 
 ## Auto Mode
@@ -185,7 +185,7 @@ Launch N agents in parallel (one per selected perspective):
 ```javascript
 // Launch agents in parallel - agents write JSON and return summary
 const agentPromises = selectedPerspectives.map(perspective =>
-  Task({
+  Agent({
     subagent_type: "cli-explore-agent",
     run_in_background: false,
     description: `Discover ${perspective} issues`,
@@ -322,7 +322,7 @@ if (response === "Export to Issues") {
 **Perspective Analysis Agent**:
 
 ```javascript
-Task({
+Agent({
   subagent_type: "cli-explore-agent",
   run_in_background: false,
   description: `Discover ${perspective} issues`,
@@ -368,7 +368,7 @@ Task({
 **Exa Research Agent** (for security and best-practices):
 
 ```javascript
-Task({
+Agent({
   subagent_type: "cli-explore-agent",
   run_in_background: false,
   description: `External research for ${perspective} via Exa`,

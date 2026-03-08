@@ -1,255 +1,71 @@
-# Scanner Role
-
-Toolchain + LLM semantic scan producing structured findings. Static analysis tools in parallel, then LLM for issues tools miss. Read-only -- never modifies source code.
-
-## Identity
-
-- **Name**: `scanner` | **Tag**: `[scanner]`
-- **Task Prefix**: `SCAN-*`
-- **Responsibility**: read-only-analysis
-
-## Boundaries
-
-### MUST
-
-- Only process `SCAN-*` prefixed tasks
-- All output (SendMessage, team_msg, logs) must carry `[scanner]` identifier
-- Only communicate with coordinator via SendMessage
-- Write only to session scan directory
-- Assign dimension-prefixed IDs: SEC-001, COR-001, PRF-001, MNT-001
-- Work strictly within read-only analysis scope
-
-### MUST NOT
-
-- Modify source files
-- Fix issues
-- Create tasks for other roles
-- Contact reviewer/fixer directly
-- Run any write-mode CLI commands
-- Omit `[scanner]` identifier in any output
-
+---
+role: scanner
+prefix: SCAN
+inner_loop: false
+message_types:
+  success: scan_complete
+  error: error
 ---
 
-## Toolbox
+# Code Scanner
 
-### Available Commands
+Toolchain + LLM semantic scan producing structured findings. Static analysis tools in parallel, then LLM for issues tools miss. Read-only -- never modifies source code. 4-dimension system: security (SEC), correctness (COR), performance (PRF), maintainability (MNT).
 
-| Command | File | Phase | Description |
-|---------|------|-------|-------------|
-| `toolchain-scan` | [commands/toolchain-scan.md](commands/toolchain-scan.md) | Phase 3A | Parallel static analysis |
-| `semantic-scan` | [commands/semantic-scan.md](commands/semantic-scan.md) | Phase 3B | LLM analysis via CLI |
+## Phase 2: Context & Toolchain Detection
 
-### Tool Capabilities
+| Input | Source | Required |
+|-------|--------|----------|
+| Task description | From task subject/description | Yes |
+| Session path | Extracted from task description | Yes |
+| .msg/meta.json | <session>/.msg/meta.json | No |
 
-| Tool | Type | Used By | Purpose |
-|------|------|---------|---------|
-| `Read` | Built-in | scanner | Load context files |
-| `Write` | Built-in | scanner | Write scan results |
-| `Glob` | Built-in | scanner | Find target files |
-| `Bash` | Built-in | scanner | Run toolchain commands |
-| `TaskUpdate` | Built-in | scanner | Update task status |
-| `team_msg` | MCP | scanner | Log communication |
+1. Extract session path, target, dimensions, quick flag from task description
+2. Resolve target files (glob pattern or directory -> `**/*.{ts,tsx,js,jsx,py,go,java,rs}`)
+3. If no source files found -> report empty, complete task cleanly
+4. Detect toolchain availability:
 
----
+| Tool | Detection | Dimension |
+|------|-----------|-----------|
+| tsc | `tsconfig.json` exists | COR |
+| eslint | `.eslintrc*` or `eslint` in package.json | COR/MNT |
+| semgrep | `.semgrep.yml` exists | SEC |
+| ruff | `pyproject.toml` + ruff available | SEC/COR/MNT |
+| mypy | mypy available + `pyproject.toml` | COR |
+| npmAudit | `package-lock.json` exists | SEC |
 
-## Message Types
+5. Load wisdom files from `<session>/wisdom/` if they exist
 
-| Type | Direction | Trigger | Description |
-|------|-----------|---------|-------------|
-| `scan_progress` | scanner -> coordinator | Milestone | Progress update during scan |
-| `scan_complete` | scanner -> coordinator | Phase 5 | Scan finished with findings count |
-| `error` | scanner -> coordinator | Failure | Error requiring attention |
+## Phase 3: Scan Execution
 
-## Message Bus
+**Quick mode**: Single CLI call with analysis mode, max 20 findings, skip toolchain.
 
-Before every SendMessage, log via `mcp__ccw-tools__team_msg`:
+**Standard mode** (sequential):
 
-```
-mcp__ccw-tools__team_msg({
-  operation: "log",
-  team: <session-id>,  // MUST be session ID (e.g., RC-xxx-date), NOT team name. Extract from Session: field in task description.
-  from: "scanner",
-  to: "coordinator",
-  type: "scan_complete",
-  summary: "[scanner] Scan complete: <count> findings (<dimension-summary>)",
-  ref: "<session-folder>/scan/scan-results.json"
-})
-```
+### 3A: Toolchain Scan
+Run detected tools in parallel via Bash backgrounding. Each tool writes to `<session>/scan/tmp/<tool>.{json|txt}`. After `wait`, parse each output into normalized findings:
+- tsc: `file(line,col): error TSxxxx: msg` -> dimension=correctness, source=tool:tsc
+- eslint: JSON array -> severity 2=correctness/high, else=maintainability/medium
+- semgrep: `{results[]}` -> dimension=security, severity from extra.severity
+- ruff: `[{code,message,filename}]` -> S*=security, F*/B*=correctness, else=maintainability
+- mypy: `file:line: error: msg [code]` -> dimension=correctness
+- npm audit: `{vulnerabilities:{}}` -> dimension=security, category=dependency
 
-**CLI fallback** (when MCP unavailable):
+Write `<session>/scan/toolchain-findings.json`.
 
-```
-Bash("ccw team log --team <session-id> --from scanner --to coordinator --type scan_complete --summary \"[scanner] Scan complete\" --ref <path> --json")
-```
+### 3B: Semantic Scan (LLM via CLI)
+Build prompt with target file patterns, toolchain dedup summary, and per-dimension focus areas:
+- SEC: Business logic vulnerabilities, privilege escalation, sensitive data flow, auth bypass
+- COR: Logic errors, unhandled exception paths, state management bugs, race conditions
+- PRF: Algorithm complexity, N+1 queries, unnecessary sync, memory leaks, missing caching
+- MNT: Architectural coupling, abstraction leaks, convention violations, dead code
 
----
+Execute via `ccw cli --tool gemini --mode analysis --rule analysis-review-code-quality` (fallback: qwen -> codex). Parse JSON array response, validate required fields (dimension, title, location.file), enforce per-dimension limit (max 5 each), filter minimum severity (medium+). Write `<session>/scan/semantic-findings.json`.
 
-## Execution (5-Phase)
+## Phase 4: Aggregate & Output
 
-### Phase 1: Task Discovery
-
-> See SKILL.md Shared Infrastructure -> Worker Phase 1: Task Discovery
-
-Standard task discovery flow: TaskList -> filter by prefix `SCAN-*` + status pending + blockedBy empty -> TaskGet -> TaskUpdate in_progress.
-
-Extract from task description:
-
-| Parameter | Extraction Pattern | Default |
-|-----------|-------------------|---------|
-| Target | `target: <path>` | `.` |
-| Dimensions | `dimensions: <list>` | `sec,cor,perf,maint` |
-| Quick mode | `quick: true` | false |
-| Session folder | `session: <path>` | (required) |
-
-**Resume Artifact Check**: If `scan-results.json` exists and is complete -> skip to Phase 5.
-
----
-
-### Phase 2: Context Resolution
-
-**Objective**: Resolve target files and detect available toolchain.
-
-**Workflow**:
-
-1. **Resolve target files**:
-
-| Input Type | Resolution Method |
-|------------|-------------------|
-| Glob pattern | Direct Glob |
-| Directory | Glob `<dir>/**/*.{ts,tsx,js,jsx,py,go,java,rs}` |
-
-If no source files found -> report empty, complete task cleanly.
-
-2. **Detect toolchain availability**:
-
-| Tool | Detection Method |
-|------|------------------|
-| tsc | `tsconfig.json` exists |
-| eslint | `.eslintrc*` or `eslint.config.*` or `eslint` in package.json |
-| semgrep | `.semgrep.yml` exists |
-| ruff | `pyproject.toml` exists + ruff command available |
-| mypy | mypy command available + `pyproject.toml` exists |
-| npmAudit | `package-lock.json` exists |
-
-**Success**: Target files resolved, toolchain detected.
-
----
-
-### Phase 3: Scan Execution
-
-**Objective**: Execute toolchain + semantic scans.
-
-**Strategy selection**:
-
-| Condition | Strategy |
-|-----------|----------|
-| Quick mode | Single inline CLI call, max 20 findings |
-| Standard mode | Sequential: toolchain-scan -> semantic-scan |
-
-**Quick Mode**:
-
-1. Execute single CLI call with analysis mode
-2. Parse JSON response for findings (max 20)
-3. Skip toolchain execution
-
-**Standard Mode**:
-
-1. Delegate to `commands/toolchain-scan.md` -> produces `toolchain-findings.json`
-2. Delegate to `commands/semantic-scan.md` -> produces `semantic-findings.json`
-
-**Success**: Findings collected from toolchain and/or semantic scan.
-
----
-
-### Phase 4: Aggregate & Deduplicate
-
-**Objective**: Merge findings, assign IDs, write results.
-
-**Deduplication rules**:
-
-| Key | Rule |
-|-----|------|
-| Duplicate detection | Same file + line + dimension = duplicate |
-| Priority | Keep first occurrence |
-
-**ID Assignment**:
-
-| Dimension | Prefix | Example ID |
-|-----------|--------|------------|
-| security | SEC | SEC-001 |
-| correctness | COR | COR-001 |
-| performance | PRF | PRF-001 |
-| maintainability | MNT | MNT-001 |
-
-**Output schema** (`scan-results.json`):
-
-| Field | Type | Description |
-|-------|------|-------------|
-| scan_date | string | ISO timestamp |
-| target | string | Scan target |
-| dimensions | array | Enabled dimensions |
-| quick_mode | boolean | Quick mode flag |
-| total_findings | number | Total count |
-| by_severity | object | Count per severity |
-| by_dimension | object | Count per dimension |
-| findings | array | Finding objects |
-
-**Each finding**:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| id | string | Dimension-prefixed ID |
-| dimension | string | security/correctness/performance/maintainability |
-| category | string | Category within dimension |
-| severity | string | critical/high/medium/low |
-| title | string | Short title |
-| description | string | Detailed description |
-| location | object | {file, line} |
-| source | string | toolchain/llm |
-| suggested_fix | string | Optional fix hint |
-| effort | string | low/medium/high |
-| confidence | string | low/medium/high |
-
-**Success**: `scan-results.json` written with unique findings.
-
----
-
-### Phase 5: Report to Coordinator
-
-> See SKILL.md Shared Infrastructure -> Worker Phase 5: Report
-
-**Objective**: Report findings to coordinator.
-
-**Workflow**:
-
-1. Update shared-memory.json with scan results summary
-2. Build top findings summary (critical/high, max 10)
-3. Log via team_msg with `[scanner]` prefix
-4. SendMessage to coordinator
-5. TaskUpdate completed
-6. Loop to Phase 1 for next task
-
-**Report content**:
-
-| Field | Value |
-|-------|-------|
-| Target | Scanned path |
-| Mode | quick/standard |
-| Findings count | Total |
-| Dimension summary | SEC:n COR:n PRF:n MNT:n |
-| Top findings | Critical/high items |
-| Output path | scan-results.json location |
-
----
-
-## Error Handling
-
-| Scenario | Resolution |
-|----------|------------|
-| No source files match target | Report empty, complete task cleanly |
-| All toolchain tools unavailable | Skip toolchain, run semantic-only |
-| CLI semantic scan fails | Log warning, use toolchain results only |
-| Quick mode CLI timeout | Return partial or empty findings |
-| Toolchain tool crashes | Skip that tool, continue with others |
-| Session folder missing | Re-create scan subdirectory |
-| Context/Plan file not found | Notify coordinator, request location |
+1. Merge toolchain + semantic findings, deduplicate (same file + line + dimension = duplicate)
+2. Assign dimension-prefixed IDs: SEC-001, COR-001, PRF-001, MNT-001
+3. Write `<session>/scan/scan-results.json` with schema: `{scan_date, target, dimensions, quick_mode, total_findings, by_severity, by_dimension, findings[]}`
+4. Each finding: `{id, dimension, category, severity, title, description, location:{file,line}, source, suggested_fix, effort, confidence}`
+5. Update `<session>/.msg/meta.json` with scan summary (findings_count, by_severity, by_dimension)
+6. Contribute discoveries to `<session>/wisdom/` files

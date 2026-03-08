@@ -429,7 +429,7 @@ On failure, run:
       { timeout: 3600000, run_in_background: true }
     );
   } else {
-    return Task({
+    return Agent({
       subagent_type: 'code-developer',
       run_in_background: false,
       description: `Execute solution ${solutionId}`,

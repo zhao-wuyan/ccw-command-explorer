@@ -117,7 +117,7 @@ const hasCodebase = Glob('**/*.{ts,js,py,java,go,rs}').length > 0
   || Glob('Cargo.toml').length > 0;
 
 if (hasCodebase) {
-  Task({
+  Agent({
     subagent_type: "cli-explore-agent",
     run_in_background: false,
     description: `Explore codebase for spec: ${slug}`,
@@ -185,6 +185,17 @@ if (!autoMode) {
         header: "Focus",
         multiSelect: true,
         options: seedAnalysis.dimensions.map(d => ({ label: d, description: `Explore ${d} in depth` }))
+      },
+      {
+        question: "What type of specification is this?",
+        header: "Spec Type",
+        multiSelect: false,
+        options: [
+          { label: "Service (Recommended)", description: "Long-running service with lifecycle, state machine, observability" },
+          { label: "API", description: "REST/GraphQL API with endpoints, auth, rate limiting" },
+          { label: "Library/SDK", description: "Reusable package with public API surface, examples" },
+          { label: "Platform", description: "Multi-component system, uses Service profile" }
+        ]
       }
     ]
   });
@@ -192,6 +203,7 @@ if (!autoMode) {
   // Auto mode defaults
   depth = "standard";
   focusAreas = seedAnalysis.dimensions;
+  specType = "service"; // default for auto mode
 }
 ```
 
@@ -209,6 +221,9 @@ const specConfig = {
   focus_areas: focusAreas,
   seed_analysis: seedAnalysis,
   has_codebase: hasCodebase,
+  spec_type: specType, // "service" | "api" | "library" | "platform"
+  iteration_count: 0,
+  iteration_history: [],
   phasesCompleted: [
     {
       phase: 1,

@@ -17,33 +17,42 @@ Structured specification document generator producing a complete document chain 
 spec-generator/
 |- SKILL.md                          # Entry point: metadata + architecture + flow
 |- phases/
-|  |- 01-discovery.md                # Seed analysis + codebase exploration
-|  |- 02-product-brief.md            # Multi-CLI product brief generation
-|  |- 03-requirements.md             # PRD with MoSCoW priorities
-|  |- 04-architecture.md             # Architecture decisions + review
+|  |- 01-discovery.md                # Seed analysis + codebase exploration + spec type selection
+|  |- 01-5-requirement-clarification.md  # Interactive requirement expansion
+|  |- 02-product-brief.md            # Multi-CLI product brief + glossary generation
+|  |- 03-requirements.md             # PRD with MoSCoW priorities + RFC 2119 constraints
+|  |- 04-architecture.md             # Architecture + state machine + config model + observability
 |  |- 05-epics-stories.md            # Epic/Story decomposition
-|  |- 06-readiness-check.md          # Quality validation + handoff
+|  |- 06-readiness-check.md          # Quality validation + handoff + iterate option
+|  |- 06-5-auto-fix.md               # Auto-fix loop for readiness issues (max 2 iterations)
 |- specs/
 |  |- document-standards.md          # Format, frontmatter, naming rules
-|  |- quality-gates.md               # Per-phase quality criteria
+|  |- quality-gates.md               # Per-phase quality criteria + iteration tracking
+|  |- glossary-template.json         # Terminology glossary schema
 |- templates/
-|  |- product-brief.md               # Product brief template
+|  |- product-brief.md               # Product brief template (+ Concepts & Non-Goals)
 |  |- requirements-prd.md            # PRD template
-|  |- architecture-doc.md            # Architecture document template
-|  |- epics-template.md              # Epic/Story template
+|  |- architecture-doc.md            # Architecture template (+ state machine, config, observability)
+|  |- epics-template.md              # Epic/Story template (+ versioning)
+|  |- profiles/                      # Spec type specialization profiles
+|     |- service-profile.md          # Service spec: lifecycle, observability, trust
+|     |- api-profile.md              # API spec: endpoints, auth, rate limiting
+|     |- library-profile.md          # Library spec: public API, examples, compatibility
 |- README.md                         # This file
 ```
 
 ## 6-Phase Pipeline
 
-| Phase | Name | Output | CLI Tools |
-|-------|------|--------|-----------|
-| 1 | Discovery | spec-config.json | Gemini (analysis) |
-| 2 | Product Brief | product-brief.md | Gemini + Codex + Claude (parallel) |
-| 3 | Requirements | requirements.md | Gemini (analysis) |
-| 4 | Architecture | architecture.md | Gemini + Codex (sequential) |
-| 5 | Epics & Stories | epics.md | Gemini (analysis) |
-| 6 | Readiness Check | readiness-report.md, spec-summary.md | Gemini (validation) |
+| Phase | Name | Output | CLI Tools | Key Features |
+|-------|------|--------|-----------|-------------|
+| 1 | Discovery | spec-config.json | Gemini (analysis) | Spec type selection |
+| 1.5 | Req Expansion | refined-requirements.json | Gemini (analysis) | Multi-round interactive |
+| 2 | Product Brief | product-brief.md, glossary.json | Gemini + Codex + Claude (parallel) | Terminology glossary |
+| 3 | Requirements | requirements/ | Gemini (analysis) | RFC 2119, data model |
+| 4 | Architecture | architecture/ | Gemini + Codex (sequential) | State machine, config, observability |
+| 5 | Epics & Stories | epics/ | Gemini (analysis) | Glossary consistency |
+| 6 | Readiness Check | readiness-report.md, spec-summary.md | Gemini (validation) | Terminology + scope validation |
+| 6.5 | Auto-Fix | Updated phase docs | Gemini (analysis) | Max 2 iterations |
 
 ## Runtime Output
 
@@ -51,12 +60,21 @@ spec-generator/
 .workflow/.spec/SPEC-{slug}-{YYYY-MM-DD}/
 |- spec-config.json              # Session state
 |- discovery-context.json        # Codebase context (optional)
+|- refined-requirements.json     # Phase 1.5 (requirement expansion)
+|- glossary.json                 # Phase 2 (terminology)
 |- product-brief.md              # Phase 2
-|- requirements.md               # Phase 3
-|- architecture.md               # Phase 4
-|- epics.md                      # Phase 5
+|- requirements/                 # Phase 3 (directory)
+|  |- _index.md
+|  |- REQ-*.md
+|  └── NFR-*.md
+|- architecture/                 # Phase 4 (directory)
+|  |- _index.md
+|  └── ADR-*.md
+|- epics/                        # Phase 5 (directory)
+|  |- _index.md
+|  └── EPIC-*.md
 |- readiness-report.md           # Phase 6
-|- spec-summary.md               # Phase 6
+└── spec-summary.md              # Phase 6
 ```
 
 ## Flags
@@ -64,10 +82,13 @@ spec-generator/
 - `-y|--yes`: Auto mode - skip all interactive confirmations
 - `-c|--continue`: Resume from last completed phase
 
+Spec type is selected interactively in Phase 1 (defaults to `service` in auto mode)
+Available types: `service`, `api`, `library`, `platform`
+
 ## Handoff
 
 After Phase 6, choose execution path:
-- `workflow-lite-planex` - Execute per Epic
+- `workflow-lite-plan` - Execute per Epic
 - `workflow:req-plan-with-file` - Roadmap decomposition
 - `workflow-plan` - Full planning
 - `issue:new` - Create issues per Epic
@@ -79,3 +100,6 @@ After Phase 6, choose execution path:
 - **Template-driven**: Consistent format via templates + frontmatter
 - **Resumable**: spec-config.json tracks completed phases
 - **Pure documentation**: No code generation - clean handoff to execution workflows
+- **Type-specialized**: Profiles adapt templates to service/api/library/platform requirements
+- **Iterative quality**: Phase 6.5 auto-fix repairs issues, max 2 iterations before handoff
+- **Terminology-first**: glossary.json ensures consistent terminology across all documents

@@ -842,15 +842,15 @@ export const SESSION_CASES: Case[] = [
     category: '会话管理',
     scenario: '将学到的经验保存为项目规则',
     commands: [
-      { cmd: '/workflow:session:solidify', desc: '固化会话经验' },
+      { cmd: '/workflow:spec:add', desc: '添加经验到项目规范' },
     ],
     steps: [
-      { role: 'user', content: '/workflow:session:solidify', type: 'command' },
-      { role: 'system', content: '📊 发现可复用经验:\n\n  1. OAuth2 state 参数必须验证 (防 CSRF)\n  2. Token 刷新应该使用无状态 JWT\n  3. Provider 抽象使用策略模式\n  4. 测试必须覆盖 token 过期场景\n\n是否保存到项目规则？', type: 'note' },
-      { role: 'user', content: '是', type: 'command' },
-      { role: 'system', content: '✅ 经验已固化到 CLAUDE.md！\n\n  新增 OAuth2 开发规范章节:\n  - 安全要求 (state, PKCE)\n  - Token 管理 (时效配置)\n  - 代码规范 (策略模式)', type: 'result', highlight: true },
+      { role: 'user', content: '/workflow:spec:add "OAuth2 state 参数必须验证防CSRF" --type learning --category security', type: 'command' },
+      { role: 'system', content: '📊 添加学习经验:\n\n  类型: learning\n  分类: security\n  内容: OAuth2 state 参数必须验证防CSRF\n\n已保存到 .ccw/specs/coding-conventions.md', type: 'note' },
+      { role: 'user', content: '继续添加更多经验', type: 'command' },
+      { role: 'system', content: '✅ 已添加 4 条经验到项目规范:\n\n  1. OAuth2 state 参数必须验证 (防 CSRF)\n  2. Token 刷新应该使用无状态 JWT\n  3. Provider 抽象使用策略模式\n  4. 测试必须覆盖 token 过期场景\n\n后续对话会自动应用这些规则', type: 'result', highlight: true },
     ],
-    tips: ['从会话提取经验', '自动生成项目规则', '后续对话自动应用'],
+    tips: ['从会话提取经验', '自动生成项目规则', '支持三种类型: convention/constraint/learning', '后续对话自动应用'],
   },
   {
     id: 'SESS-003',

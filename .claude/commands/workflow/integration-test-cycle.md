@@ -2,7 +2,7 @@
 name: integration-test-cycle
 description: Self-iterating integration test workflow with codebase exploration, test development, autonomous test-fix cycles, and reflection-driven strategy adjustment
 argument-hint: "[-y|--yes] [-c|--continue] [--max-iterations=N] \"module or feature description\""
-allowed-tools: TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*), Skill(*)
+allowed-tools: TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*), Skill(*)
 ---
 
 ## Auto Mode
@@ -209,7 +209,7 @@ Unified integration test workflow: **Explore → Design → Develop → Test →
 1. **Codebase Exploration via cli-explore-agent**
 
 ```javascript
-Task({
+Agent({
   subagent_type: "cli-explore-agent",
   run_in_background: false,
   description: `Explore integration points: ${topicSlug}`,
@@ -391,7 +391,7 @@ Also set `state.json.phase` to `"designed"`.
 1. **Generate Integration Tests via @code-developer**
 
 ```javascript
-Task({
+Agent({
   subagent_type: "code-developer",
   run_in_background: false,
   description: `Generate integration tests: ${topicSlug}`,
@@ -435,7 +435,7 @@ Also set state.json "phase" to "developed".
 2. **Code Validation Gate via @test-fix-agent**
 
 ```javascript
-Task({
+Agent({
   subagent_type: "test-fix-agent",
   run_in_background: false,
   description: `Validate generated tests: ${topicSlug}`,
@@ -605,7 +605,7 @@ After each iteration, update the `## Cumulative Learnings` section in reflection
 
 **@test-fix-agent** (test execution):
 ```javascript
-Task({
+Agent({
   subagent_type: "test-fix-agent",
   run_in_background: false,
   description: `Execute integration tests: iteration ${N}`,
@@ -637,7 +637,7 @@ For each failure, assign:
 
 **@cli-planning-agent** (failure analysis with reflection):
 ```javascript
-Task({
+Agent({
   subagent_type: "cli-planning-agent",
   run_in_background: false,
   description: `Analyze failures: iteration ${N} - ${strategy}`,
@@ -676,7 +676,7 @@ Analyze test failures using reflection context and generate fix strategy.
 
 **@test-fix-agent** (apply fixes):
 ```javascript
-Task({
+Agent({
   subagent_type: "test-fix-agent",
   run_in_background: false,
   description: `Apply fixes: iteration ${N} - ${strategy}`,
@@ -805,6 +805,10 @@ AskUserQuestion({
   }]
 })
 ```
+
+4. **Sync Session State** (automatic)
+   - Execute: `/workflow:session:sync -y "Integration test cycle complete: ${passRate}% pass rate, ${iterations} iterations"`
+   - Updates specs/*.md with test learnings and project-tech.json with development index entry
 
 ---
 

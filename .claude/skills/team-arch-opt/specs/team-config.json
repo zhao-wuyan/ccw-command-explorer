@@ -4,7 +4,6 @@
   "team_display_name": "Architecture Optimization",
   "skill_name": "team-arch-opt",
   "skill_path": ".claude/skills/team-arch-opt/",
-  "worker_agent": "team-worker",
   "pipeline_type": "Linear with Review-Fix Cycle (Parallel-Capable)",
   "completion_action": "interactive",
   "has_inline_discuss": true,
@@ -31,7 +30,7 @@
         "inner_loop": false,
         "additional_prefixes": [],
         "discuss_rounds": [],
-        "subagents": ["explore"],
+        "cli_tools": ["explore"],
         "message_types": {
           "success": "analyze_complete",
           "error": "error"
@@ -51,7 +50,7 @@
         "inner_loop": false,
         "additional_prefixes": [],
         "discuss_rounds": ["DISCUSS-REFACTOR"],
-        "subagents": ["discuss"],
+        "cli_tools": ["discuss"],
         "message_types": {
           "success": "design_complete",
           "error": "error"
@@ -71,7 +70,7 @@
         "inner_loop": true,
         "additional_prefixes": ["FIX"],
         "discuss_rounds": [],
-        "subagents": ["explore"],
+        "cli_tools": ["explore"],
         "message_types": {
           "success": "refactor_complete",
           "error": "error",
@@ -92,7 +91,7 @@
         "inner_loop": false,
         "additional_prefixes": [],
         "discuss_rounds": [],
-        "subagents": [],
+        "cli_tools": [],
         "message_types": {
           "success": "validate_complete",
           "error": "error",
@@ -113,7 +112,7 @@
         "inner_loop": false,
         "additional_prefixes": ["QUALITY"],
         "discuss_rounds": ["DISCUSS-REVIEW"],
-        "subagents": ["discuss"],
+        "cli_tools": ["discuss"],
         "message_types": {
           "success": "review_complete",
           "error": "error",
@@ -193,10 +192,10 @@
     "diagram": "See pipeline-diagram section"
   },
 
-  "subagents": [
+  "cli_tools": [
     {
       "name": "explore",
-      "agent_type": "cli-explore-agent",
+      "implementation": "ccw cli with analysis mode",
       "callable_by": ["analyzer", "refactorer"],
       "purpose": "Shared codebase exploration for architecture-critical structures, dependency graphs, and module boundaries",
       "has_cache": true,
@@ -204,7 +203,7 @@
     },
     {
       "name": "discuss",
-      "agent_type": "cli-discuss-agent",
+      "implementation": "ccw cli with analysis mode",
       "callable_by": ["designer", "reviewer"],
       "purpose": "Multi-perspective discussion for refactoring approaches and review findings",
       "has_cache": false

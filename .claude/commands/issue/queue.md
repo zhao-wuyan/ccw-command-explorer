@@ -2,7 +2,7 @@
 name: queue
 description: Form execution queue from bound solutions using issue-queue-agent (solution-level)
 argument-hint: "[-y|--yes] [--queues <n>] [--issue <id>]"
-allowed-tools: TodoWrite(*), Task(*), Bash(*), Read(*), Write(*)
+allowed-tools: TodoWrite(*), Agent(*), Bash(*), Read(*), Write(*)
 ---
 
 ## Auto Mode
@@ -247,7 +247,7 @@ if (numQueues === 1) {
       description=`Queue ${i + 1}/${numQueues}: ${group.length} solutions`
     )
   );
-  // All agents launched in parallel via single message with multiple Task tool calls
+  // All agents launched in parallel via single message with multiple Agent tool calls
 }
 ```
 

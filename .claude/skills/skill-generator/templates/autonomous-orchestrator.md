@@ -111,7 +111,7 @@ async function runOrchestrator() {
     try {
       const actionPrompt = Read(\`phases/actions/${actionId}.md\`);
 
-      const result = await Task({
+      const result = await Agent({
         subagent_type: 'universal-executor',
         run_in_background: false,
         prompt: \`

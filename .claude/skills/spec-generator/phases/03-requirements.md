@@ -60,6 +60,11 @@ TASK:
   - Should: Important but has workaround
   - Could: Nice-to-have, enhances experience
   - Won't: Explicitly deferred
+- Use RFC 2119 keywords (MUST, SHOULD, MAY, MUST NOT, SHOULD NOT) to define behavioral constraints for each requirement. Example: 'The system MUST return a 401 response within 100ms for invalid tokens.'
+- For each core domain entity referenced in requirements, define its data model: fields, types, constraints, and relationships to other entities
+- Maintain terminology consistency with the glossary below:
+  TERMINOLOGY GLOSSARY:
+  \${glossary ? JSON.stringify(glossary.terms, null, 2) : 'N/A - generate terms inline'}
 
 MODE: analysis
 EXPECTED: Structured requirements with: ID, title, description, user story, acceptance criteria, priority, traceability to goals

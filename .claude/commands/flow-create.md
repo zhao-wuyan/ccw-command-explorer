@@ -93,7 +93,7 @@ async function selectCommandCategory() {
         { label: "Brainstorm", description: "brainstorm-with-file, brainstorm (unified skill)" },
         { label: "Analysis", description: "analyze-with-file" },
         { label: "Issue", description: "discover, plan, queue, execute, from-brainstorm, convert-to-plan" },
-        { label: "Utility", description: "clean, init, replan, status" }
+        { label: "Utility", description: "clean, spec:setup, spec:add, replan, status" }
       ],
       multiSelect: false
     }]
@@ -107,7 +107,7 @@ async function selectCommandCategory() {
 async function selectCommand(category) {
   const commandOptions = {
     'Planning': [
-      { label: "/workflow-lite-planex", description: "Lightweight merged-mode planning" },
+      { label: "/workflow-lite-plan", description: "Lightweight merged-mode planning" },
       { label: "/workflow-plan", description: "Full planning with architecture design" },
       { label: "/workflow-multi-cli-plan", description: "Multi-CLI collaborative planning (Gemini+Codex+Claude)" },
       { label: "/workflow-tdd-plan", description: "TDD workflow planning with Red-Green-Refactor" },
@@ -132,7 +132,7 @@ async function selectCommand(category) {
       { label: "/workflow:review", description: "Post-implementation review" }
     ],
     'Bug Fix': [
-      { label: "/workflow-lite-planex", description: "Lightweight bug diagnosis and fix (with --bugfix flag)" },
+      { label: "/workflow-lite-plan", description: "Lightweight bug diagnosis and fix (with --bugfix flag)" },
       { label: "/workflow:debug-with-file", description: "Hypothesis-driven debugging with documentation" }
     ],
     'Brainstorm': [
@@ -153,7 +153,7 @@ async function selectCommand(category) {
     ],
     'Utility': [
       { label: "/workflow:clean", description: "Intelligent code cleanup" },
-      { label: "/workflow:init", description: "Initialize project-level state" },
+      { label: "/workflow:spec:setup", description: "Initialize project-level state" },
       { label: "/workflow:replan", description: "Interactive workflow replanning" },
       { label: "/workflow:status", description: "Generate workflow status views" }
     ]
@@ -302,7 +302,7 @@ async function defineSteps(templateDesign) {
   "description": "Quick implementation with testing",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow-lite-planex", "args": "\"{{goal}}\"", "unit": "quick-implementation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create lightweight implementation plan (includes execution)" },
+    { "cmd": "/workflow-lite-plan", "args": "\"{{goal}}\"", "unit": "quick-implementation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create lightweight implementation plan (includes execution)" },
     { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate test tasks" },
     { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute test-fix cycle until pass rate >= 95%" }
   ]
@@ -334,7 +334,7 @@ async function defineSteps(templateDesign) {
   "description": "Bug diagnosis and fix with testing",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow-lite-planex", "args": "--bugfix \"{{goal}}\"", "unit": "bug-fix", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Diagnose, plan, and execute bug fix" },
+    { "cmd": "/workflow-lite-plan", "args": "--bugfix \"{{goal}}\"", "unit": "bug-fix", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Diagnose, plan, and execute bug fix" },
     { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Generate regression tests" },
     { "cmd": "/workflow-test-fix", "unit": "test-validation", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Verify fix with tests" }
   ]
@@ -348,7 +348,7 @@ async function defineSteps(templateDesign) {
   "description": "Urgent production bug fix (no tests)",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow-lite-planex", "args": "--hotfix \"{{goal}}\"", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Emergency hotfix mode" }
+    { "cmd": "/workflow-lite-plan", "args": "--hotfix \"{{goal}}\"", "unit": "standalone", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Emergency hotfix mode" }
   ]
 }
 ```
@@ -417,7 +417,7 @@ async function defineSteps(templateDesign) {
   "description": "Bridge lightweight planning to issue workflow",
   "level": 2,
   "steps": [
-    { "cmd": "/workflow-lite-planex", "args": "\"{{goal}}\"", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create lightweight plan" },
+    { "cmd": "/workflow-lite-plan", "args": "\"{{goal}}\"", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Create lightweight plan" },
     { "cmd": "/issue:convert-to-plan", "args": "--latest-lite-plan -y", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Convert to issue plan" },
     { "cmd": "/issue:queue", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "mainprocess" }, "contextHint": "Form execution queue" },
     { "cmd": "/issue:execute", "args": "--queue auto", "unit": "rapid-to-issue", "execution": { "type": "slash-command", "mode": "async" }, "contextHint": "Execute issue queue" }

@@ -23,8 +23,7 @@
       "message_types_sent": ["exploration_ready", "error"],
       "message_types_received": [],
       "commands": ["explore"],
-      "subagents": ["cli-explore-agent"]
-    },
+      "cli_tools": ["gemini"]    },
     "analyst": {
       "name": "analyst",
       "responsibility": "Read-only analysis (深度分析)",
@@ -44,8 +43,7 @@
       "message_types_received": [],
       "commands": ["deepen"],
       "cli_tools": ["gemini"],
-      "subagents": ["cli-explore-agent"]
-    },
+      "cli_tools": ["gemini"]    },
     "synthesizer": {
       "name": "synthesizer",
       "responsibility": "Read-only analysis (综合结论)",

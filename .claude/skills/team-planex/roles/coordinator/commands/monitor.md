@@ -16,7 +16,7 @@ Event-driven pipeline coordination with Spawn-and-Stop pattern. Three wake-up so
 
 | Input | Source | Required |
 |-------|--------|----------|
-| Session file | `<session-folder>/team-session.json` | Yes |
+| Session file | `<session-folder>/.msg/meta.json` | Yes |
 | Task list | `TaskList()` | Yes |
 | Active workers | session.active_workers[] | Yes |
 
@@ -117,7 +117,7 @@ Collect task states from TaskList()
       |   +- PLAN-* -> planner
       |   +- EXEC-* -> executor
       +- Spawn team-worker:
-         Task({
+         Agent({
            subagent_type: "team-worker",
            description: "Spawn <role> worker for <subject>",
            team_name: <team-name>,
@@ -125,7 +125,7 @@ Collect task states from TaskList()
            run_in_background: true,
            prompt: `## Role Assignment
 role: <role>
-role_spec: .claude/skills/team-planex/role-specs/<role>.md
+role_spec: .claude/skills/team-planex/roles/<role>/role.md
 session: <session-folder>
 session_id: <session-id>
 team_name: <team-name>

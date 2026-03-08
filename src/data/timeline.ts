@@ -154,7 +154,7 @@ export const TIMELINE: TimelineItem[] = [
     date: '2026-02',
     version: 'v7.0',
     title: '重大架构更新',
-    desc: '当前最新版本',
+    desc: 'Team 系统重构',
     color: COLORS.accent5,
     commands: 120,
     detail: {
@@ -181,6 +181,49 @@ export const TIMELINE: TimelineItem[] = [
         '/issue-manage'
       ],
       usage: '重大架构更新！Team 系统重构、工作流引擎改革、Dashboard 升级、队列调度系统，335+ 提交，442+ 新功能！'
+    }
+  },
+  {
+    date: '2026-03',
+    version: 'v7.2',
+    title: '架构优化与文档驱动',
+    desc: '当前最新版本',
+    color: COLORS.primary,
+    commands: 127,
+    detail: {
+      version: 'v7.2.2',
+      highlights: [
+        '新 Skill: team-arch-opt 架构优化',
+        '新 Skill: DDD 文档驱动开发流水线 (9 个命令)',
+        '新 Skill: team-edict 三省六部协作框架',
+        '新 Skill: team-frontend-debug 前端调试',
+        '新 Skill: team-ux-improve UX 改进',
+        '新 Skill: skill-simplify SKILL.md 简化',
+        '新 Skill: workflow-lite-execute 轻量执行引擎',
+        '新命令: workflow:spec:setup、workflow:spec:add',
+        '依赖循环、耦合内聚分析',
+        '分层违规、God Class 检测'
+      ],
+      newCommands: [
+        '/ddd:auto',
+        '/ddd:sync',
+        '/ddd:update',
+        '/ddd:scan',
+        '/ddd:plan',
+        '/ddd:execute',
+        '/ddd:index-build',
+        '/ddd:doc-refresh',
+        '/ddd:doc-generate',
+        '/workflow:spec:setup',
+        '/workflow:spec:add',
+        '/team-designer',
+        '/team-edict',
+        '/team-frontend-debug',
+        '/team-ux-improve',
+        '/skill-simplify',
+        '/workflow-lite-execute'
+      ],
+      usage: '重大更新！DDD 文档驱动开发流水线上线，用 /ddd:auto 一键完成规划→执行→同步！新增三省六部协作框架、前端调试团队、UX 改进团队等新技能！'
     }
   },
 ];

@@ -274,7 +274,7 @@ const tasks = [
 \`\`\`javascript
 const results = await Promise.all(
   tasks.map(task =>
-    Task({
+    Agent({
       subagent_type: 'universal-executor',
       run_in_background: false,
       prompt: task.prompt

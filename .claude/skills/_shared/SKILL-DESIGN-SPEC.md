@@ -140,7 +140,7 @@ graph TD
 ---
 name: {skill-name}
 description: {一句话描述}. {触发关键词}. Triggers on "{关键词1}", "{关键词2}".
-allowed-tools: Task, AskUserQuestion, Read, Bash, Glob, Grep, Write, {其他MCP工具}
+allowed-tools: Agent, AskUserQuestion, Read, Bash, Glob, Grep, Write, {其他MCP工具}
 ---
 
 # {Skill 标题}
@@ -192,7 +192,7 @@ description: |                # 必需：描述 + 触发词
   Generate XXX documents. 
   Triggers on "keyword1", "keyword2".
 allowed-tools: |              # 必需：允许使用的工具
-  Task, AskUserQuestion, Read, Bash, 
+  Agent, AskUserQuestion, Read, Bash,
   Glob, Grep, Write, mcp__chrome__*
 ---
 ```
@@ -641,7 +641,7 @@ touch my-skill/templates/agent-base.md
 ---
 name: my-skill
 description: Generate XXX. Triggers on "keyword1", "keyword2".
-allowed-tools: Task, AskUserQuestion, Read, Bash, Glob, Grep, Write
+allowed-tools: Agent, AskUserQuestion, Read, Bash, Glob, Grep, Write
 ---
 
 # My Skill
@@ -680,7 +680,7 @@ Generate XXX through multi-phase analysis.
 
 | 工具 | 用途 | 适用 Skill |
 |------|------|------------|
-| `Task` | 启动子 Agent | 所有 |
+| `Agent` | 启动子 Agent | 所有 |
 | `AskUserQuestion` | 用户交互 | 所有 |
 | `Read/Write/Glob/Grep` | 文件操作 | 所有 |
 | `Bash` | 脚本执行 | 需要自动化 |

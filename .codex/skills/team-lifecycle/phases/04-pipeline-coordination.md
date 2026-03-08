@@ -272,6 +272,9 @@ Execution timeout reached for task ${agent.taskId}. Please:
 For each completed agent, extract TASK_COMPLETE data and update state.
 
 ```javascript
+// Message counter for NDJSON log
+let msgCounter = getLastMsgCounter("<session-dir>/.msg/messages.jsonl") + 1
+
 for (const agent of spawnedAgents) {
   const output = results.status[agent.agentId]?.completed
   if (!output) continue  // handled in timeout section
@@ -306,6 +309,26 @@ for (const agent of spawnedAgents) {
 
   // Close agent
   close_agent({ id: agent.agentId })
+
+  // Log to message bus
+  logToMessageBus("<session-dir>", msgCounter++, {
+    from: task.owner,
+    type: "impl_complete",
+    summary: `${task.id} completed: ${taskResult.summary || task.status}`,
+    data: {
+      task_id: task.id,
+      status: task.status,
+      artifact: task.artifact_path,
+      discuss_verdict: task.discuss_verdict
+    }
+  })
+
+  // Update role_state in meta.json
+  updateMetaRoleState("<session-dir>", task.owner, {
+    status: task.status,
+    task_id: task.id,
+    completed_at: task.completed_at
+  })
 
   // Route by consensus verdict
   if (taskResult.discuss_verdict === "consensus_blocked") {
@@ -711,6 +734,95 @@ result = wait([reviewer]) -> close_agent(reviewer)
 | DISCUSS-006 HIGH | Parsed from reviewer output | Always pause for user |
 | Revision also blocked | Revision task returns HIGH | Pause, escalate to user |
 | GC loop exceeded | gc_loop_count >= MAX_GC_ROUNDS | Stop loop, report QA state |
+
+---
+
+## Message Bus Helpers
+
+Helper functions for writing to `.msg/messages.jsonl` and updating `.msg/meta.json`. These maintain compatibility with the Claude version's `team_msg` tool format.
+
+### logToMessageBus
+
+Append an NDJSON event to `messages.jsonl`:
+
+```javascript
+function logToMessageBus(sessionDir, counter, { from, to, type, summary, data }) {
+  const msg = {
+    id: `MSG-${String(counter).padStart(3, '0')}`,
+    ts: new Date().toISOString(),
+    from: from || "coordinator",
+    to: to || "coordinator",
+    type: type || "message",
+    summary: summary || `${type} from ${from}`,
+    data: data || {}
+  }
+
+  // Append to NDJSON log
+  appendToFile(`${sessionDir}/.msg/messages.jsonl`, JSON.stringify(msg) + "\n")
+}
+```
+
+### updateMetaRoleState
+
+Update role-specific state in `meta.json`:
+
+```javascript
+function updateMetaRoleState(sessionDir, role, stateData) {
+  const metaPath = `${sessionDir}/.msg/meta.json`
+  const meta = JSON.parse(Read(metaPath))
+
+  if (!meta.role_state) meta.role_state = {}
+  meta.role_state[role] = {
+    ...meta.role_state[role],
+    ...stateData,
+    _updated_at: new Date().toISOString()
+  }
+  meta.updated_at = new Date().toISOString()
+
+  Write(metaPath, JSON.stringify(meta, null, 2))
+}
+```
+
+### getLastMsgCounter
+
+Read the last message counter from `messages.jsonl`:
+
+```javascript
+function getLastMsgCounter(logPath) {
+  try {
+    const content = Read(logPath)
+    const lines = content.trim().split("\n").filter(Boolean)
+    if (lines.length === 0) return 0
+    const lastMsg = JSON.parse(lines[lines.length - 1])
+    return parseInt(lastMsg.id.replace("MSG-", ""), 10)
+  } catch {
+    return 0
+  }
+}
+```
+
+### meta.json Schema
+
+The `.msg/meta.json` file follows this schema (compatible with Claude version's `team_msg state_update`):
+
+```json
+{
+  "status": "active | paused | completed",
+  "pipeline_mode": "<mode>",
+  "pipeline_stages": ["role1", "role2", "..."],
+  "roles": ["coordinator", "role1", "role2", "..."],
+  "team_name": "lifecycle",
+  "role_state": {
+    "<role>": {
+      "status": "completed",
+      "task_id": "TASK-ID",
+      "completed_at": "<ISO8601>",
+      "_updated_at": "<ISO8601>"
+    }
+  },
+  "updated_at": "<ISO8601>"
+}
+```
 
 ---
 

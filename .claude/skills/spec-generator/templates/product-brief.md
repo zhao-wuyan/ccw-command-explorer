@@ -30,6 +30,15 @@ dependencies:
 
 {executive_summary - 2-3 sentences capturing the essence of the product/feature}
 
+## Concepts & Terminology
+
+| Term | Definition | Aliases |
+|------|-----------|---------|
+| {term_1} | {definition} | {comma-separated aliases if any} |
+| {term_2} | {definition} | |
+
+{Note: All documents in this specification MUST use these terms consistently.}
+
 ## Vision
 
 {vision_statement - clear, aspirational 1-3 sentence statement of what success looks like}
@@ -69,6 +78,15 @@ dependencies:
 ### Out of Scope
 - {explicitly excluded item 1}
 - {explicitly excluded item 2}
+
+### Non-Goals
+
+{Explicit list of things this project will NOT do, with rationale for each:}
+
+| Non-Goal | Rationale |
+|----------|-----------|
+| {non_goal_1} | {why this is explicitly excluded} |
+| {non_goal_2} | {why this is explicitly excluded} |
 
 ### Assumptions
 - {key assumption 1}
@@ -130,4 +148,6 @@ dependencies:
 | `{product_name}` | Seed analysis | Product/feature name |
 | `{executive_summary}` | CLI synthesis | 2-3 sentence summary |
 | `{vision_statement}` | CLI product perspective | Aspirational vision |
+| `{term_1}`, `{term_2}` | CLI synthesis | Domain terms with definitions and optional aliases |
+| `{non_goal_1}`, `{non_goal_2}` | CLI synthesis | Explicit exclusions with rationale |
 | All `{...}` fields | CLI analysis outputs | Filled from multi-perspective analysis |

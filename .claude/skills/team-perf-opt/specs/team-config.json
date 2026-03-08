@@ -31,7 +31,7 @@
         "inner_loop": false,
         "additional_prefixes": [],
         "discuss_rounds": [],
-        "subagents": ["explore"],
+        "delegates_to": [],
         "message_types": {
           "success": "profile_complete",
           "error": "error"
@@ -51,7 +51,7 @@
         "inner_loop": false,
         "additional_prefixes": [],
         "discuss_rounds": ["DISCUSS-OPT"],
-        "subagents": ["discuss"],
+        "delegates_to": [],
         "message_types": {
           "success": "strategy_complete",
           "error": "error"
@@ -71,7 +71,7 @@
         "inner_loop": true,
         "additional_prefixes": ["FIX"],
         "discuss_rounds": [],
-        "subagents": ["explore"],
+        "delegates_to": [],
         "message_types": {
           "success": "impl_complete",
           "error": "error",
@@ -92,7 +92,7 @@
         "inner_loop": false,
         "additional_prefixes": [],
         "discuss_rounds": [],
-        "subagents": [],
+        "delegates_to": [],
         "message_types": {
           "success": "bench_complete",
           "error": "error",
@@ -113,7 +113,7 @@
         "inner_loop": false,
         "additional_prefixes": ["QUALITY"],
         "discuss_rounds": ["DISCUSS-REVIEW"],
-        "subagents": ["discuss"],
+        "delegates_to": [],
         "message_types": {
           "success": "review_complete",
           "error": "error",
@@ -192,24 +192,6 @@
     },
     "diagram": "See pipeline-diagram section"
   },
-
-  "subagents": [
-    {
-      "name": "explore",
-      "agent_type": "cli-explore-agent",
-      "callable_by": ["profiler", "optimizer"],
-      "purpose": "Shared codebase exploration for performance-critical code paths",
-      "has_cache": true,
-      "cache_domain": "explorations"
-    },
-    {
-      "name": "discuss",
-      "agent_type": "cli-discuss-agent",
-      "callable_by": ["strategist", "reviewer"],
-      "purpose": "Multi-perspective discussion for optimization approaches and review findings",
-      "has_cache": false
-    }
-  ],
 
   "shared_resources": [
     {

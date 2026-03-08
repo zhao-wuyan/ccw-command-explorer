@@ -1,7 +1,7 @@
 ---
 name: workflow-skill-designer
 description: Meta-skill for designing orchestrator+phases structured workflow skills. Creates SKILL.md coordinator with progressive phase loading, TodoWrite patterns, and data flow. Triggers on "design workflow skill", "create workflow skill", "workflow skill designer".
-allowed-tools: Task, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Workflow Skill Designer
@@ -141,7 +141,7 @@ Read("phases/02-lite-execute.md")
 // Execute with executionContext (Mode 1)
 
 // WRONG: Skill routing (unnecessary round-trip)
-Skill(skill="workflow-lite-planex", args="--in-memory")
+Skill(skill="workflow-lite-plan", args="--in-memory")
 ```
 
 ### Pattern 8: Phase File Hygiene

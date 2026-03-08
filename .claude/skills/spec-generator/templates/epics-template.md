@@ -101,6 +101,19 @@ graph LR
 |------|---------------|------------|
 | {risk description} | [EPIC-{NNN}](EPIC-{NNN}-{slug}.md) | {mitigation} |
 
+## Versioning & Changelog
+
+### Version Strategy
+- **Versioning Scheme**: {semver/calver/custom}
+- **Breaking Change Definition**: {what constitutes a breaking change}
+- **Deprecation Policy**: {how deprecated features are handled}
+
+### Changelog
+
+| Version | Date | Type | Description |
+|---------|------|------|-------------|
+| {version} | {date} | {Added/Changed/Fixed/Removed} | {description} |
+
 ## Open Questions
 
 - [ ] {question about scope or implementation 1}

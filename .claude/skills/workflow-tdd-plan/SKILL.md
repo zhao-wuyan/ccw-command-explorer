@@ -1,7 +1,7 @@
 ---
 name: workflow-tdd-plan-plan
 description: Unified TDD workflow skill combining 6-phase TDD planning with Red-Green-Refactor task chain generation, and 4-phase TDD verification with compliance reporting. Triggers on "workflow-tdd-plan", "workflow-tdd-verify".
-allowed-tools: Skill, Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Skill, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Workflow TDD

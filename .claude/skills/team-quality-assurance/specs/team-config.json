@@ -24,7 +24,7 @@
       "message_types_received": [],
       "commands": ["scan"],
       "cli_tools": ["gemini"],
-      "subagents": ["cli-explore-agent"]
+      "cli_tools": ["gemini"]
     },
     "strategist": {
       "name": "strategist",
@@ -35,7 +35,7 @@
       "message_types_received": [],
       "commands": ["analyze-scope"],
       "cli_tools": ["gemini"],
-      "subagents": ["cli-explore-agent"]
+      "cli_tools": ["gemini"]
     },
     "generator": {
       "name": "generator",
@@ -46,7 +46,7 @@
       "message_types_received": [],
       "commands": ["generate-tests"],
       "cli_tools": ["gemini"],
-      "subagents": ["code-developer"]
+      "cli_tools": ["gemini"]
     },
     "executor": {
       "name": "executor",
@@ -56,7 +56,7 @@
       "message_types_sent": ["tests_passed", "tests_failed", "coverage_report", "error"],
       "message_types_received": [],
       "commands": ["run-fix-cycle"],
-      "subagents": ["code-developer"]
+      "cli_tools": ["gemini"]
     },
     "analyst": {
       "name": "analyst",

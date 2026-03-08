@@ -38,7 +38,7 @@ ERROR: Invalid session type. Valid types: workflow, review, tdd, test, docs
 
 ## Step 0: Initialize Project State (First-time Only)
 
-**Executed before all modes** - Ensures project-level state files exist by calling `/workflow:init`.
+**Executed before all modes** - Ensures project-level state files exist by calling `/workflow:spec:setup`.
 
 ### Check and Initialize
 ```bash
@@ -47,10 +47,10 @@ bash(test -f .workflow/project-tech.json && echo "TECH_EXISTS" || echo "TECH_NOT
 bash(test -f .ccw/specs/*.md && echo "GUIDELINES_EXISTS" || echo "GUIDELINES_NOT_FOUND")
 ```
 
-**If either NOT_FOUND**, delegate to `/workflow:init`:
+**If either NOT_FOUND**, delegate to `/workflow:spec:setup`:
 ```javascript
-// Call workflow:init for intelligent project analysis
-Skill(skill="workflow:init");
+// Call workflow:spec:setup for intelligent project analysis
+Skill(skill="workflow:spec:setup");
 
 // Wait for init completion
 // project-tech.json and specs/*.md will be created
@@ -58,11 +58,11 @@ Skill(skill="workflow:init");
 
 **Output**:
 - If BOTH_EXIST: `PROJECT_STATE: initialized`
-- If NOT_FOUND: Calls `/workflow:init` → creates:
+- If NOT_FOUND: Calls `/workflow:spec:setup` → creates:
   - `.workflow/project-tech.json` with full technical analysis
   - `.ccw/specs/*.md` with empty scaffold
 
-**Note**: `/workflow:init` uses cli-explore-agent to build comprehensive project understanding (technology stack, architecture, key components). This step runs once per project. Subsequent executions skip initialization.
+**Note**: `/workflow:spec:setup` uses cli-explore-agent to build comprehensive project understanding (technology stack, architecture, key components). This step runs once per project. Subsequent executions skip initialization.
 
 ## Mode 1: Discovery Mode (Default)
 

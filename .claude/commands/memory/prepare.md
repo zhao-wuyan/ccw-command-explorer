@@ -2,7 +2,7 @@
 name: prepare
 description: Delegate to universal-executor agent to analyze project via Gemini/Qwen CLI and return JSON core content package for task context
 argument-hint: "[--tool gemini|qwen] \"task context description\""
-allowed-tools: Task(*), Bash(*)
+allowed-tools: Agent(*), Bash(*)
 examples:
   - /memory:prepare "在当前前端基础上开发用户认证功能"
   - /memory:prepare --tool qwen "重构支付模块API"

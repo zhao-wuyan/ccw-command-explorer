@@ -224,6 +224,7 @@ Phase 8: Fix Execution
 Phase 9: Fix Completion
    └─ Ref: phases/09-fix-completion.md
       ├─ Aggregate results → fix-summary.md
+      ├─ Sync session state: $session-sync -y "Review cycle complete: {findings} findings, {fixed} fixed"
       └─ Optional: complete workflow session if all fixes successful
 
 Complete: Review reports + optional fix results
@@ -472,4 +473,10 @@ review-cycle src/auth/**
 
 # Step 2: Fix (continue or standalone)
 review-cycle --fix ${projectRoot}/.workflow/active/WFS-{session-id}/.review/
+```
+
+### Session Sync
+```bash
+# Auto-synced at Phase 9 (fix completion)
+$session-sync -y "Review cycle complete: {findings} findings, {fixed} fixed"
 ```

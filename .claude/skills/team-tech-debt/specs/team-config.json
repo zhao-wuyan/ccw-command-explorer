@@ -23,8 +23,7 @@
       "message_types_sent": ["scan_complete", "debt_items_found", "error"],
       "message_types_received": [],
       "commands": ["scan-debt"],
-      "cli_tools": ["gemini"],
-      "subagents": ["cli-explore-agent"]
+      "cli_tools": ["gemini"]
     },
     "assessor": {
       "name": "assessor",
@@ -44,8 +43,7 @@
       "message_types_sent": ["plan_ready", "plan_revision", "error"],
       "message_types_received": [],
       "commands": ["create-plan"],
-      "cli_tools": ["gemini"],
-      "subagents": ["cli-explore-agent"]
+      "cli_tools": ["gemini"]
     },
     "executor": {
       "name": "executor",
@@ -55,7 +53,7 @@
       "message_types_sent": ["fix_complete", "fix_progress", "error"],
       "message_types_received": [],
       "commands": ["remediate"],
-      "subagents": ["code-developer"]
+      "cli_tools": [{"tool": "gemini", "mode": "write"}]
     },
     "validator": {
       "name": "validator",
@@ -65,8 +63,7 @@
       "message_types_sent": ["validation_complete", "regression_found", "error"],
       "message_types_received": [],
       "commands": ["verify"],
-      "subagents": ["code-developer"],
-      "cli_tools": ["gemini"]
+      "cli_tools": [{"tool": "gemini", "mode": "write"}]
     }
   },
 
@@ -96,7 +93,7 @@
   },
 
   "shared_memory": {
-    "file": "shared-memory.json",
+    "file": ".msg/meta.json",
     "fields": {
       "debt_inventory": { "owner": "scanner", "type": "array" },
       "assessment_matrix": { "owner": "assessor", "type": "object" },

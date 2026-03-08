@@ -2,7 +2,7 @@
 name: ccw-coordinator
 description: Command orchestration tool - analyze requirements, recommend chain, execute sequentially with state persistence
 argument-hint: "[task description]"
-allowed-tools: Task(*), AskUserQuestion(*), Read(*), Write(*), Bash(*), Glob(*), Grep(*)
+allowed-tools: Agent(*), AskUserQuestion(*), Read(*), Write(*), Bash(*), Glob(*), Grep(*)
 ---
 
 # CCW Coordinator Command
@@ -17,7 +17,8 @@ Interactive orchestration tool: analyze task → discover commands → recommend
 
 | Skill | 包含操作 |
 |-------|---------|
-| `workflow-lite-planex` | lite-plan (includes execution phase internally) |
+| `workflow-lite-plan` | lite-plan (Skill handoff to lite-execute) |
+| `workflow-lite-execute` | lite-execute (multi-mode execution engine) |
 | `workflow-plan` | plan, plan-verify, replan |
 | `workflow-execute` | execute |
 | `workflow-multi-cli-plan` | multi-cli-plan (includes execution phase internally) |
@@ -547,7 +548,7 @@ Pipeline (管道视图):
 需求 → lite-plan → 代码 → test-cycle-execute → 测试通过
 
 Commands (命令列表):
-1. /workflow-lite-planex
+1. /workflow-lite-plan
 2. /workflow-test-fix
 
 Proceed? [Confirm / Show Details / Adjust / Cancel]
@@ -851,7 +852,7 @@ workflow 操作通过 `Skill()` 调用对应的 Skill。
 
 ```javascript
 // Skill 调用方式
-Skill({ skill: 'workflow-lite-planex', args: '"task description"' });
+Skill({ skill: 'workflow-lite-plan', args: '"task description"' });
 Skill({ skill: 'workflow-execute', args: '--resume-session="WFS-xxx"' });
 Skill({ skill: 'brainstorm', args: '"exploration topic"' });
 Skill({ skill: 'spec-generator', args: '"product specification"' });
@@ -904,7 +905,8 @@ Task: <description>
 
 | Skill | 包含操作 |
 |-------|---------|
-| `workflow-lite-planex` | lite-plan (includes execution phase internally) |
+| `workflow-lite-plan` | lite-plan (Skill handoff to lite-execute) |
+| `workflow-lite-execute` | lite-execute (multi-mode execution engine) |
 | `workflow-plan` | plan, plan-verify, replan |
 | `workflow-execute` | execute |
 | `workflow-multi-cli-plan` | multi-cli-plan (includes execution phase internally) |
@@ -921,8 +923,9 @@ Task: <description>
 **Cycle Workflows**: workflow:integration-test-cycle, workflow:refactor-cycle
 **Execution**: workflow:unified-execute-with-file
 **Design**: workflow:ui-design:*
-**Session Management**: workflow:session:start, workflow:session:resume, workflow:session:complete, workflow:session:solidify, workflow:session:list, workflow:session:sync
-**Utility**: workflow:clean, workflow:init, workflow:init-guidelines, workflow:status
+**Session Management**: workflow:session:start, workflow:session:resume, workflow:session:complete, workflow:session:list, workflow:session:sync
+**Utility**: workflow:clean, workflow:spec:setup, workflow:status
+**Spec Management**: workflow:spec:setup, workflow:spec:add
 **Issue Workflow**: issue:discover, issue:discover-by-prompt, issue:plan, issue:queue, issue:execute, issue:convert-to-plan, issue:from-brainstorm, issue:new
 
 ### Testing Commands Distinction

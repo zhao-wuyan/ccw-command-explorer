@@ -60,7 +60,7 @@ Read("phases/02-lite-execute.md")
 // Execute with executionContext (Mode 1)
 
 // WRONG: Skill routing (unnecessary round-trip)
-Skill(skill="workflow-lite-planex", args="--in-memory")
+Skill(skill="workflow-lite-plan", args="--in-memory")
 ```
 
 ### Content Restriction Enforcement
@@ -303,7 +303,7 @@ function generatePhaseFromRequirements(phase, config) {
     for (const agentType of phase.agentTypes) {
       phaseContent += `### Step: ${agentType} Delegation\n\n`;
       phaseContent += '```javascript\n';
-      phaseContent += `const result = Task({\n`;
+      phaseContent += `const result = Agent({\n`;
       phaseContent += `  subagent_type: "${mapAgentType(agentType)}",\n`;
       phaseContent += `  prompt: \`\n`;
       phaseContent += `    [ROLE] ${agentType}\n`;

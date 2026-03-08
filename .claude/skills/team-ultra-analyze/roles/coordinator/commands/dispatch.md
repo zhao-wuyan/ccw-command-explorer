@@ -1,237 +1,285 @@
-# Command: dispatch
+# Command: Dispatch
 
-> 任务链创建与依赖管理。根据管道模式创建 pipeline 任务链并分配给 worker 角色。
+Create the analysis task chain with correct dependencies and structured task descriptions. Supports Quick, Standard, and Deep pipeline modes.
 
-## When to Use
+## Phase 2: Context Loading
 
-- Phase 3 of Coordinator
-- 管道模式已确定，需要创建任务链
-- 团队已创建，worker 已 spawn
+| Input | Source | Required |
+|-------|--------|----------|
+| User topic | From coordinator Phase 1 | Yes |
+| Session folder | From coordinator Phase 2 | Yes |
+| Pipeline mode | From coordinator Phase 1 | Yes |
+| Perspectives | From coordinator Phase 1 (dimension detection) | Yes |
 
-**Trigger conditions**:
-- Coordinator Phase 2 完成后
-- 讨论循环中需要创建补充分析任务
-- 方向调整需要创建新探索/分析任务
+1. Load topic, pipeline mode, and selected perspectives from coordinator state
+2. Load pipeline stage definitions from SKILL.md Task Metadata Registry
+3. Determine depth = number of selected perspectives (Quick: always 1)
 
-## Strategy
+## Phase 3: Task Chain Creation
 
-### Delegation Mode
+### Task Description Template
 
-**Mode**: Direct（coordinator 直接操作 TaskCreate/TaskUpdate）
+Every task description uses structured format:
 
-### Decision Logic
-
-```javascript
-// 根据 pipelineMode 和 perspectives 选择 pipeline
-function buildPipeline(pipelineMode, perspectives, sessionFolder, taskDescription, dimensions) {
-  const pipelines = {
-    'quick': [
-      { prefix: 'EXPLORE', suffix: '001', owner: 'explorer', desc: '代码库探索', meta: `perspective: general\ndimensions: ${dimensions.join(', ')}`, blockedBy: [] },
-      { prefix: 'ANALYZE', suffix: '001', owner: 'analyst', desc: '综合分析', meta: `perspective: technical\ndimensions: ${dimensions.join(', ')}`, blockedBy: ['EXPLORE-001'] },
-      { prefix: 'SYNTH', suffix: '001', owner: 'synthesizer', desc: '结论综合', blockedBy: ['ANALYZE-001'] }
-    ],
-    'standard': buildStandardPipeline(perspectives, dimensions),
-    'deep': buildDeepPipeline(perspectives, dimensions)
-  }
-  return pipelines[pipelineMode] || pipelines['standard']
-}
-
-function buildStandardPipeline(perspectives, dimensions) {
-  const stages = []
-  const perspectiveList = perspectives.length > 0 ? perspectives : ['technical']
-  const isParallel = perspectiveList.length > 1
-
-  // Parallel explorations — each gets a distinct agent name for true parallelism
-  perspectiveList.forEach((p, i) => {
-    const num = String(i + 1).padStart(3, '0')
-    const explorerName = isParallel ? `explorer-${i + 1}` : 'explorer'
-    stages.push({
-      prefix: 'EXPLORE', suffix: num, owner: explorerName,
-      desc: `代码库探索 (${p})`,
-      meta: `perspective: ${p}\ndimensions: ${dimensions.join(', ')}`,
-      blockedBy: []
-    })
-  })
-
-  // Parallel analyses — each gets a distinct agent name for true parallelism
-  perspectiveList.forEach((p, i) => {
-    const num = String(i + 1).padStart(3, '0')
-    const analystName = isParallel ? `analyst-${i + 1}` : 'analyst'
-    stages.push({
-      prefix: 'ANALYZE', suffix: num, owner: analystName,
-      desc: `深度分析 (${p})`,
-      meta: `perspective: ${p}\ndimensions: ${dimensions.join(', ')}`,
-      blockedBy: [`EXPLORE-${num}`]
-    })
-  })
-
-  // Discussion (blocked by all analyses)
-  const analyzeIds = perspectiveList.map((_, i) => `ANALYZE-${String(i + 1).padStart(3, '0')}`)
-  stages.push({
-    prefix: 'DISCUSS', suffix: '001', owner: 'discussant',
-    desc: '讨论处理 (Round 1)',
-    meta: `round: 1\ntype: initial`,
-    blockedBy: analyzeIds
-  })
-
-  // Synthesis (blocked by discussion)
-  stages.push({
-    prefix: 'SYNTH', suffix: '001', owner: 'synthesizer',
-    desc: '结论综合',
-    blockedBy: ['DISCUSS-001']
-  })
-
-  return stages
-}
-
-function buildDeepPipeline(perspectives, dimensions) {
-  // Same as standard but SYNTH is not created initially
-  // It will be created after discussion loop completes
-  const stages = buildStandardPipeline(perspectives, dimensions)
-  // Remove SYNTH — will be created dynamically after discussion loop
-  return stages.filter(s => s.prefix !== 'SYNTH')
-}
+```
+TaskCreate({
+  subject: "<TASK-ID>",
+  description: "PURPOSE: <what this task achieves> | Success: <measurable completion criteria>
+TASK:
+  - <step 1: specific action>
+  - <step 2: specific action>
+  - <step 3: specific action>
+CONTEXT:
+  - Session: <session-folder>
+  - Topic: <analysis-topic>
+  - Perspective: <perspective or 'all'>
+  - Upstream artifacts: <artifact-1>, <artifact-2>
+  - Shared memory: <session>/wisdom/.msg/meta.json
+EXPECTED: <deliverable path> + <quality criteria>
+CONSTRAINTS: <scope limits, focus areas>
+---
+InnerLoop: false"
+})
+TaskUpdate({ taskId: "<TASK-ID>", addBlockedBy: [<dependency-list>], owner: "<role>" })
 ```
 
-## Execution Steps
+### Mode Router
 
-### Step 1: Context Preparation
+| Mode | Action |
+|------|--------|
+| `quick` | Create 3 tasks: EXPLORE-001 -> ANALYZE-001 -> SYNTH-001 |
+| `standard` | Create N explorers + N analysts + DISCUSS-001 + SYNTH-001 |
+| `deep` | Same as standard but omit SYNTH-001 (created after discussion loop) |
 
-```javascript
-const pipeline = buildPipeline(pipelineMode, selectedPerspectives, sessionFolder, taskDescription, dimensions)
+---
+
+### Quick Mode Task Chain
+
+**EXPLORE-001** (explorer):
+```
+TaskCreate({
+  subject: "EXPLORE-001",
+  description: "PURPOSE: Explore codebase structure for analysis topic | Success: Key files, patterns, and findings collected
+TASK:
+  - Detect project structure and relevant modules
+  - Search for code related to analysis topic
+  - Collect file references, patterns, and key findings
+CONTEXT:
+  - Session: <session-folder>
+  - Topic: <topic>
+  - Perspective: general
+  - Dimensions: <dimensions>
+  - Shared memory: <session>/wisdom/.msg/meta.json
+EXPECTED: <session>/explorations/exploration-001.json | Structured exploration with files and findings
+CONSTRAINTS: Focus on <topic> scope
+---
+InnerLoop: false"
+})
+TaskUpdate({ taskId: "EXPLORE-001", owner: "explorer" })
 ```
 
-### Step 2: Execute Strategy
-
-```javascript
-const taskIds = {}
-
-for (const stage of pipeline) {
-  const taskSubject = `${stage.prefix}-${stage.suffix}: ${stage.desc}`
-
-  // 构建任务描述（包含 session 和上下文信息）
-  const fullDesc = [
-    stage.desc,
-    `\nsession: ${sessionFolder}`,
-    `\ntopic: ${taskDescription}`,
-    stage.meta ? `\n${stage.meta}` : '',
-    `\n\n目标: ${taskDescription}`
-  ].join('')
-
-  // 创建任务
-  TaskCreate({
-    subject: taskSubject,
-    description: fullDesc,
-    activeForm: `${stage.desc}进行中`
-  })
-
-  // 记录任务 ID
-  const allTasks = TaskList()
-  const newTask = allTasks.find(t => t.subject.startsWith(`${stage.prefix}-${stage.suffix}`))
-  taskIds[`${stage.prefix}-${stage.suffix}`] = newTask.id
-
-  // 设置 owner 和依赖
-  const blockedByIds = stage.blockedBy
-    .map(dep => taskIds[dep])
-    .filter(Boolean)
-
-  TaskUpdate({
-    taskId: newTask.id,
-    owner: stage.owner,
-    addBlockedBy: blockedByIds
-  })
-}
+**ANALYZE-001** (analyst):
+```
+TaskCreate({
+  subject: "ANALYZE-001",
+  description: "PURPOSE: Deep analysis of topic from technical perspective | Success: Actionable insights with confidence levels
+TASK:
+  - Load exploration results and build analysis context
+  - Analyze from technical perspective across selected dimensions
+  - Generate insights, findings, discussion points, recommendations
+CONTEXT:
+  - Session: <session-folder>
+  - Topic: <topic>
+  - Perspective: technical
+  - Dimensions: <dimensions>
+  - Upstream artifacts: explorations/exploration-001.json
+  - Shared memory: <session>/wisdom/.msg/meta.json
+EXPECTED: <session>/analyses/analysis-001.json | Structured analysis with evidence
+CONSTRAINTS: Focus on technical perspective | <dimensions>
+---
+InnerLoop: false"
+})
+TaskUpdate({ taskId: "ANALYZE-001", addBlockedBy: ["EXPLORE-001"], owner: "analyst" })
 ```
 
-### Step 3: Result Processing
-
-```javascript
-// 验证任务链
-const allTasks = TaskList()
-const chainTasks = pipeline.map(s => taskIds[`${s.prefix}-${s.suffix}`]).filter(Boolean)
-const chainValid = chainTasks.length === pipeline.length
-
-if (!chainValid) {
-  mcp__ccw-tools__team_msg({
-    operation: "log", team: sessionId, from: "coordinator",
-    to: "user", type: "error",
-    summary: `[coordinator] 任务链创建不完整: ${chainTasks.length}/${pipeline.length}`
-  })
-}
+**SYNTH-001** (synthesizer):
 ```
+TaskCreate({
+  subject: "SYNTH-001",
+  description: "PURPOSE: Integrate analysis into final conclusions | Success: Executive summary with recommendations
+TASK:
+  - Load all exploration, analysis, and discussion artifacts
+  - Extract themes, consolidate evidence, prioritize recommendations
+  - Write conclusions and update discussion.md
+CONTEXT:
+  - Session: <session-folder>
+  - Topic: <topic>
+  - Upstream artifacts: explorations/*.json, analyses/*.json
+  - Shared memory: <session>/wisdom/.msg/meta.json
+EXPECTED: <session>/conclusions.json + discussion.md update | Final conclusions with confidence levels
+CONSTRAINTS: Pure integration, no new exploration
+---
+InnerLoop: false"
+})
+TaskUpdate({ taskId: "SYNTH-001", addBlockedBy: ["ANALYZE-001"], owner: "synthesizer" })
+```
+
+---
+
+### Standard Mode Task Chain
+
+Create tasks in dependency order with parallel exploration and analysis windows:
+
+**EXPLORE-001..N** (explorer, parallel): One per perspective. Each receives unique agent name (explorer-1, explorer-2, ...) for task discovery matching.
+
+```
+// For each perspective[i]:
+TaskCreate({
+  subject: "EXPLORE-<NNN>",
+  description: "PURPOSE: Explore codebase from <perspective> angle | Success: Perspective-specific files and patterns collected
+TASK:
+  - Search codebase from <perspective> perspective
+  - Collect files, patterns, findings relevant to this angle
+  - Generate questions for downstream analysis
+CONTEXT:
+  - Session: <session-folder>
+  - Topic: <topic>
+  - Perspective: <perspective>
+  - Dimensions: <dimensions>
+  - Shared memory: <session>/wisdom/.msg/meta.json
+EXPECTED: <session>/explorations/exploration-<NNN>.json
+CONSTRAINTS: Focus on <perspective> angle
+---
+InnerLoop: false"
+})
+TaskUpdate({ taskId: "EXPLORE-<NNN>", owner: "explorer-<i+1>" })
+```
+
+**ANALYZE-001..N** (analyst, parallel): One per perspective. Each blocked by its corresponding EXPLORE-N.
+
+```
+TaskCreate({
+  subject: "ANALYZE-<NNN>",
+  description: "PURPOSE: Deep analysis from <perspective> perspective | Success: Insights with confidence and evidence
+TASK:
+  - Load exploration-<NNN> results
+  - Analyze from <perspective> perspective
+  - Generate insights, discussion points, open questions
+CONTEXT:
+  - Session: <session-folder>
+  - Topic: <topic>
+  - Perspective: <perspective>
+  - Dimensions: <dimensions>
+  - Upstream artifacts: explorations/exploration-<NNN>.json
+  - Shared memory: <session>/wisdom/.msg/meta.json
+EXPECTED: <session>/analyses/analysis-<NNN>.json
+CONSTRAINTS: <perspective> perspective | <dimensions>
+---
+InnerLoop: false"
+})
+TaskUpdate({ taskId: "ANALYZE-<NNN>", addBlockedBy: ["EXPLORE-<NNN>"], owner: "analyst-<i+1>" })
+```
+
+**DISCUSS-001** (discussant): Blocked by all ANALYZE tasks.
+
+```
+TaskCreate({
+  subject: "DISCUSS-001",
+  description: "PURPOSE: Process analysis results into discussion summary | Success: Convergent themes and discussion points identified
+TASK:
+  - Aggregate all analysis results across perspectives
+  - Identify convergent themes and conflicting views
+  - Generate top discussion points and open questions
+CONTEXT:
+  - Session: <session-folder>
+  - Topic: <topic>
+  - Round: 1
+  - Type: initial
+  - Upstream artifacts: analyses/*.json
+  - Shared memory: <session>/wisdom/.msg/meta.json
+EXPECTED: <session>/discussions/discussion-round-001.json + discussion.md update
+CONSTRAINTS: Aggregate only, no new exploration
+---
+InnerLoop: false"
+})
+TaskUpdate({ taskId: "DISCUSS-001", addBlockedBy: ["ANALYZE-001", ..., "ANALYZE-<N>"], owner: "discussant" })
+```
+
+**SYNTH-001** (synthesizer): Blocked by DISCUSS-001.
+
+```
+TaskCreate({
+  subject: "SYNTH-001",
+  description: "PURPOSE: Cross-perspective integration into final conclusions | Success: Executive summary with prioritized recommendations
+...same as Quick mode SYNTH-001 but blocked by DISCUSS-001..."
+})
+TaskUpdate({ taskId: "SYNTH-001", addBlockedBy: ["DISCUSS-001"], owner: "synthesizer" })
+```
+
+---
+
+### Deep Mode Task Chain
+
+Same as Standard mode, but **omit SYNTH-001**. It will be created dynamically after the discussion loop completes, blocked by the last DISCUSS-N task.
+
+---
 
 ## Discussion Loop Task Creation
 
-讨论循环中动态创建任务：
+Dynamic tasks created during discussion loop:
 
-```javascript
-// 创建新一轮讨论任务
-function createDiscussionTask(round, type, userFeedback, sessionFolder) {
-  const suffix = String(round).padStart(3, '0')
-  TaskCreate({
-    subject: `DISCUSS-${suffix}: 讨论处理 (Round ${round})`,
-    description: `讨论处理\nsession: ${sessionFolder}\nround: ${round}\ntype: ${type}\nuser_feedback: ${userFeedback}`,
-    activeForm: `讨论 Round ${round} 进行中`
-  })
-
-  const allTasks = TaskList()
-  const newTask = allTasks.find(t => t.subject.startsWith(`DISCUSS-${suffix}`))
-  TaskUpdate({ taskId: newTask.id, owner: 'discussant' })
-  return newTask.id
-}
-
-// 创建补充分析任务（方向调整时）
-function createAnalysisFix(round, adjustedFocus, sessionFolder) {
-  const suffix = `fix-${round}`
-  TaskCreate({
-    subject: `ANALYZE-${suffix}: 补充分析 (方向调整 Round ${round})`,
-    description: `补充分析\nsession: ${sessionFolder}\nadjusted_focus: ${adjustedFocus}\ntype: direction-fix`,
-    activeForm: `补充分析 Round ${round} 进行中`
-  })
-
-  const allTasks = TaskList()
-  const newTask = allTasks.find(t => t.subject.startsWith(`ANALYZE-${suffix}`))
-  TaskUpdate({ taskId: newTask.id, owner: 'analyst' })
-  return newTask.id
-}
-
-// 创建最终综合任务
-function createSynthesisTask(sessionFolder, blockedByIds) {
-  TaskCreate({
-    subject: `SYNTH-001: 结论综合`,
-    description: `跨视角整合\nsession: ${sessionFolder}\ntype: final`,
-    activeForm: `结论综合进行中`
-  })
-
-  const allTasks = TaskList()
-  const newTask = allTasks.find(t => t.subject.startsWith('SYNTH-001'))
-  TaskUpdate({
-    taskId: newTask.id,
-    owner: 'synthesizer',
-    addBlockedBy: blockedByIds
-  })
-  return newTask.id
-}
+**DISCUSS-N** (subsequent rounds):
+```
+TaskCreate({
+  subject: "DISCUSS-<NNN>",
+  description: "PURPOSE: Process discussion round <N> | Success: Updated understanding with user feedback integrated
+TASK:
+  - Process user feedback: <feedback>
+  - Execute <type> discussion strategy
+  - Update discussion timeline
+CONTEXT:
+  - Session: <session-folder>
+  - Topic: <topic>
+  - Round: <N>
+  - Type: <deepen|direction-adjusted|specific-questions>
+  - User feedback: <feedback>
+  - Shared memory: <session>/wisdom/.msg/meta.json
+EXPECTED: <session>/discussions/discussion-round-<NNN>.json
+---
+InnerLoop: false"
+})
+TaskUpdate({ taskId: "DISCUSS-<NNN>", owner: "discussant" })
 ```
 
-## Output Format
-
+**ANALYZE-fix-N** (direction adjustment):
 ```
-## Task Chain Created
-
-### Mode: [quick|standard|deep]
-### Pipeline Stages: [count]
-- [prefix]-[suffix]: [description] (owner: [role], blocked by: [deps])
-
-### Verification: PASS/FAIL
+TaskCreate({
+  subject: "ANALYZE-fix-<N>",
+  description: "PURPOSE: Supplementary analysis with adjusted focus | Success: New insights from adjusted direction
+TASK:
+  - Re-analyze from adjusted perspective: <adjusted_focus>
+  - Build on previous exploration findings
+  - Generate updated discussion points
+CONTEXT:
+  - Session: <session-folder>
+  - Topic: <topic>
+  - Type: direction-fix
+  - Adjusted focus: <adjusted_focus>
+  - Shared memory: <session>/wisdom/.msg/meta.json
+EXPECTED: <session>/analyses/analysis-fix-<N>.json
+---
+InnerLoop: false"
+})
+TaskUpdate({ taskId: "ANALYZE-fix-<N>", owner: "analyst" })
 ```
 
-## Error Handling
+## Phase 4: Validation
 
-| Scenario | Resolution |
-|----------|------------|
-| Task creation fails | Retry once, then report to user |
-| Dependency cycle detected | Flatten dependencies, warn coordinator |
-| Invalid pipelineMode | Default to 'standard' mode |
-| Too many perspectives (>4) | Truncate to first 4, warn user |
-| Timeout (>5 min) | Report partial results, notify coordinator |
+Verify task chain integrity:
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Task count correct | TaskList count | quick: 3, standard: 2N+2, deep: 2N+1 |
+| Dependencies correct | Trace blockedBy | Acyclic, correct ordering |
+| All descriptions have PURPOSE/TASK/CONTEXT/EXPECTED | Pattern check | All present |
+| Session path in every task | Check CONTEXT | Session: <folder> present |

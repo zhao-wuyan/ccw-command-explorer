@@ -2,7 +2,7 @@
 name: issue:discover-by-prompt
 description: Discover issues from user prompt with Gemini-planned iterative multi-agent exploration. Uses ACE semantic search for context gathering and supports cross-module comparison (e.g., frontend vs backend API contracts).
 argument-hint: "[-y|--yes] <prompt> [--scope=src/**] [--depth=standard|deep] [--max-iterations=5]"
-allowed-tools: Skill(*), TodoWrite(*), Read(*), Bash(*), Task(*), AskUserQuestion(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__exa__search(*)
+allowed-tools: Skill(*), TodoWrite(*), Read(*), Bash(*), Agent(*), AskUserQuestion(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__exa__search(*)
 ---
 
 ## Auto Mode
@@ -404,7 +404,7 @@ while (shouldContinue && iteration < maxIterations) {
 
   // Step 3: Launch dimension agents with ACE context
   const agentPromises = iterationPlan.dimensions.map(dimension =>
-    Task({
+    Agent({
       subagent_type: "cli-explore-agent",
       run_in_background: false,
       description: `Explore ${dimension.name} (iteration ${iteration})`,

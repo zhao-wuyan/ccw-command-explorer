@@ -3,7 +3,7 @@ prefix: REVIEW
 inner_loop: false
 additional_prefixes: [QUALITY]
 discuss_rounds: [DISCUSS-REVIEW]
-subagents: [discuss]
+delegates_to: []
 message_types:
   success: review_complete
   error: error
@@ -21,7 +21,7 @@ Review optimization code changes for correctness, side effects, regression risks
 | Optimization code changes | From IMPL task artifacts / git diff | Yes |
 | Optimization plan / detail | Varies by mode (see below) | Yes |
 | Benchmark results | Varies by mode (see below) | No |
-| shared-memory.json | <session>/wisdom/shared-memory.json | Yes |
+| .msg/meta.json | <session>/.msg/meta.json | Yes |
 
 1. Extract session path from task description
 2. **Detect branch/pipeline context** from task description:
@@ -37,7 +37,7 @@ Review optimization code changes for correctness, side effects, regression risks
    - Fan-out branch: Read `<session>/artifacts/branches/B{NN}/optimization-detail.md`
    - Independent: Read `<session>/artifacts/pipelines/{P}/optimization-plan.md`
 
-4. Load shared-memory.json for scoped optimizer namespace:
+4. Load .msg/meta.json for scoped optimizer namespace:
    - Single: `optimizer` namespace
    - Fan-out: `optimizer.B{NN}` namespace
    - Independent: `optimizer.{P}` namespace
@@ -65,7 +65,7 @@ Per-dimension review process:
 - Record findings with severity (Critical / High / Medium / Low)
 - Include specific file:line references and suggested fixes
 
-If any Critical findings detected, invoke `discuss` subagent (DISCUSS-REVIEW round) to validate the assessment before issuing verdict.
+If any Critical findings detected, use CLI tools for multi-perspective validation (DISCUSS-REVIEW round) to validate the assessment before issuing verdict.
 
 ## Phase 4: Verdict & Feedback
 
@@ -83,7 +83,7 @@ Classify overall verdict based on findings:
    - Independent: `<session>/artifacts/pipelines/{P}/review-report.md`
    - Content: Per-dimension findings with severity, file:line, description; Overall verdict with rationale; Specific fix instructions for REVISE/REJECT verdicts
 
-2. Update `<session>/wisdom/shared-memory.json` under scoped namespace:
+2. Update `<session>/.msg/meta.json` under scoped namespace:
    - Single: merge `{ "reviewer": { verdict, finding_count, critical_count, dimensions_reviewed } }`
    - Fan-out: merge `{ "reviewer.B{NN}": { verdict, finding_count, critical_count, dimensions_reviewed } }`
    - Independent: merge `{ "reviewer.{P}": { verdict, finding_count, critical_count, dimensions_reviewed } }`

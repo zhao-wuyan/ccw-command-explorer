@@ -181,6 +181,125 @@ erDiagram
 | Scalability | {target} | {how measured} | [ADR-{NNN}](ADR-{NNN}-{slug}.md) |
 | Reliability | {target} | {how measured} | [ADR-{NNN}](ADR-{NNN}-{slug}.md) |
 
+## State Machine
+
+{For each core entity with a lifecycle (e.g., Order, Session, Task):}
+
+### {Entity} Lifecycle
+
+```
+{ASCII state diagram showing all states, transitions, triggers, and error paths}
+
+  ┌──────────┐
+  │  Created  │
+  └─────┬────┘
+        │ start()
+        ▼
+  ┌──────────┐     error      ┌──────────┐
+  │  Running  │ ──────────▶   │  Failed   │
+  └─────┬────┘               └──────────┘
+        │ complete()
+        ▼
+  ┌──────────┐
+  │ Completed │
+  └──────────┘
+```
+
+| From State | Event | To State | Side Effects | Error Handling |
+|-----------|-------|----------|-------------|----------------|
+| {from} | {event} | {to} | {side_effects} | {error_behavior} |
+
+## Configuration Model
+
+### Required Configuration
+
+| Field | Type | Default | Constraint | Description |
+|-------|------|---------|------------|-------------|
+| {field_name} | {string/number/boolean/enum} | {default_value} | {validation rule} | {description} |
+
+### Optional Configuration
+
+| Field | Type | Default | Constraint | Description |
+|-------|------|---------|------------|-------------|
+| {field_name} | {type} | {default} | {constraint} | {description} |
+
+### Environment Variables
+
+| Variable | Maps To | Required |
+|----------|---------|----------|
+| {ENV_VAR} | {config_field} | {yes/no} |
+
+## Error Handling
+
+### Error Classification
+
+| Category | Severity | Retry | Example |
+|----------|----------|-------|---------|
+| Transient | Low | Yes, with backoff | Network timeout, rate limit |
+| Permanent | High | No | Invalid configuration, auth failure |
+| Degraded | Medium | Partial | Dependency unavailable, fallback active |
+
+### Per-Component Error Strategy
+
+| Component | Error Scenario | Behavior | Recovery |
+|-----------|---------------|----------|----------|
+| {component} | {scenario} | {MUST/SHOULD behavior} | {recovery strategy} |
+
+## Observability
+
+### Metrics
+
+| Metric Name | Type | Labels | Description |
+|-------------|------|--------|-------------|
+| {metric_name} | {counter/gauge/histogram} | {label1, label2} | {what it measures} |
+
+### Logging
+
+| Event | Level | Fields | Description |
+|-------|-------|--------|-------------|
+| {event_name} | {INFO/WARN/ERROR} | {structured fields} | {when logged} |
+
+### Health Checks
+
+| Check | Endpoint | Interval | Failure Action |
+|-------|----------|----------|----------------|
+| {check_name} | {/health/xxx} | {duration} | {action on failure} |
+
+## Trust & Safety
+
+### Trust Levels
+
+| Level | Description | Approval Required | Allowed Operations |
+|-------|-------------|-------------------|-------------------|
+| High Trust | {description} | None | {operations} |
+| Standard | {description} | {approval type} | {operations} |
+| Low Trust | {description} | {approval type} | {operations} |
+
+### Security Controls
+
+{Detailed security controls beyond the basic auth covered in Security Architecture}
+
+## Implementation Guidance
+
+### Key Decisions for Implementers
+
+| Decision | Options | Recommendation | Rationale |
+|----------|---------|---------------|-----------|
+| {decision_area} | {option_1, option_2} | {recommended} | {why} |
+
+### Implementation Order
+
+1. {component/module 1}: {why first}
+2. {component/module 2}: {depends on #1}
+
+### Testing Strategy
+
+| Layer | Scope | Tools | Coverage Target |
+|-------|-------|-------|-----------------|
+| Unit | {scope} | {tools} | {target} |
+| Integration | {scope} | {tools} | {target} |
+| E2E | {scope} | {tools} | {target} |
+
 ## Risks & Mitigations
 
 | Risk | Impact | Probability | Mitigation |

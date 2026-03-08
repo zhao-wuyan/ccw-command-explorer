@@ -1,169 +1,111 @@
-# Command: dispatch
+# Dispatch Tasks
 
-> 任务链创建与依赖管理。根据 QA 模式创建 pipeline 任务链并分配给 worker 角色。
+Create task chains from dependency graph with proper blockedBy relationships.
 
-**NOTE**: `teamName` variable must be **session ID** (e.g., `TQA-project-2026-02-27`), NOT team name. Extract from `Session:` field in task description.
+## Workflow
 
-## When to Use
+1. Read task-analysis.json -> extract pipeline_mode and dependency_graph
+2. Read specs/pipelines.md -> get task registry for selected pipeline
+3. Topological sort tasks (respect blockedBy)
+4. Validate all owners exist in role registry (SKILL.md)
+5. For each task (in order):
+   - TaskCreate with structured description (see template below)
+   - TaskUpdate with blockedBy + owner assignment
+6. Update session.json with pipeline.tasks_total
+7. Validate chain (no orphans, no cycles, all refs valid)
 
-- Phase 3 of Coordinator
-- QA 模式已确定，需要创建任务链
-- 团队已创建，worker 已 spawn
-
-**Trigger conditions**:
-- Coordinator Phase 2 完成后
-- 模式切换需要重建任务链
-- GC 循环需要创建修复任务
-
-## Strategy
-
-### Delegation Mode
-
-**Mode**: Direct（coordinator 直接操作 TaskCreate/TaskUpdate）
-
-### Decision Logic
-
-```javascript
-// 根据 qaMode 选择 pipeline
-function buildPipeline(qaMode, sessionFolder, taskDescription) {
-  const pipelines = {
-    'discovery': [
-      { prefix: 'SCOUT', owner: 'scout', desc: '多视角问题扫描', blockedBy: [] },
-      { prefix: 'QASTRAT', owner: 'strategist', desc: '测试策略制定', blockedBy: ['SCOUT'] },
-      { prefix: 'QAGEN', owner: 'generator', desc: '测试代码生成 (L1)', meta: 'layer: L1', blockedBy: ['QASTRAT'] },
-      { prefix: 'QARUN', owner: 'executor', desc: '测试执行 (L1)', meta: 'layer: L1', blockedBy: ['QAGEN'] },
-      { prefix: 'QAANA', owner: 'analyst', desc: '质量分析报告', blockedBy: ['QARUN'] }
-    ],
-    'testing': [
-      { prefix: 'QASTRAT', owner: 'strategist', desc: '测试策略制定', blockedBy: [] },
-      { prefix: 'QAGEN-L1', owner: 'generator', desc: '测试代码生成 (L1)', meta: 'layer: L1', blockedBy: ['QASTRAT'] },
-      { prefix: 'QARUN-L1', owner: 'executor', desc: '测试执行 (L1)', meta: 'layer: L1', blockedBy: ['QAGEN-L1'] },
-      { prefix: 'QAGEN-L2', owner: 'generator', desc: '测试代码生成 (L2)', meta: 'layer: L2', blockedBy: ['QARUN-L1'] },
-      { prefix: 'QARUN-L2', owner: 'executor', desc: '测试执行 (L2)', meta: 'layer: L2', blockedBy: ['QAGEN-L2'] },
-      { prefix: 'QAANA', owner: 'analyst', desc: '质量分析报告', blockedBy: ['QARUN-L2'] }
-    ],
-    'full': [
-      { prefix: 'SCOUT', owner: 'scout', desc: '多视角问题扫描', blockedBy: [] },
-      { prefix: 'QASTRAT', owner: 'strategist', desc: '测试策略制定', blockedBy: ['SCOUT'] },
-      { prefix: 'QAGEN-L1', owner: 'generator-1', desc: '测试代码生成 (L1)', meta: 'layer: L1', blockedBy: ['QASTRAT'] },
-      { prefix: 'QAGEN-L2', owner: 'generator-2', desc: '测试代码生成 (L2)', meta: 'layer: L2', blockedBy: ['QASTRAT'] },
-      { prefix: 'QARUN-L1', owner: 'executor-1', desc: '测试执行 (L1)', meta: 'layer: L1', blockedBy: ['QAGEN-L1'] },
-      { prefix: 'QARUN-L2', owner: 'executor-2', desc: '测试执行 (L2)', meta: 'layer: L2', blockedBy: ['QAGEN-L2'] },
-      { prefix: 'QAANA', owner: 'analyst', desc: '质量分析报告', blockedBy: ['QARUN-L1', 'QARUN-L2'] },
-      { prefix: 'SCOUT-REG', owner: 'scout', desc: '回归扫描', blockedBy: ['QAANA'] }
-    ]
-  }
-  return pipelines[qaMode] || pipelines['discovery']
-}
-```
-
-## Execution Steps
-
-### Step 1: Context Preparation
-
-```javascript
-const pipeline = buildPipeline(qaMode, sessionFolder, taskDescription)
-```
-
-### Step 2: Execute Strategy
-
-```javascript
-const taskIds = {}
-
-for (const stage of pipeline) {
-  // 构建任务描述（包含 session 和层级信息）
-  const fullDesc = [
-    stage.desc,
-    `\nsession: ${sessionFolder}`,
-    stage.meta ? `\n${stage.meta}` : '',
-    `\n\n目标: ${taskDescription}`
-  ].join('')
-
-  // 创建任务
-  TaskCreate({
-    subject: `${stage.prefix}-001: ${stage.desc}`,
-    description: fullDesc,
-    activeForm: `${stage.desc}进行中`
-  })
-
-  // 记录任务 ID（假设 TaskCreate 返回 ID）
-  const allTasks = TaskList()
-  const newTask = allTasks.find(t => t.subject.startsWith(`${stage.prefix}-001`))
-  taskIds[stage.prefix] = newTask.id
-
-  // 设置 owner 和依赖
-  const blockedByIds = stage.blockedBy
-    .map(dep => taskIds[dep])
-    .filter(Boolean)
-
-  TaskUpdate({
-    taskId: newTask.id,
-    owner: stage.owner,
-    addBlockedBy: blockedByIds
-  })
-}
-```
-
-### Step 3: Result Processing
-
-```javascript
-// 验证任务链
-const allTasks = TaskList()
-const chainTasks = pipeline.map(s => taskIds[s.prefix]).filter(Boolean)
-const chainValid = chainTasks.length === pipeline.length
-
-if (!chainValid) {
-  mcp__ccw-tools__team_msg({
-    operation: "log", team: teamName, from: "coordinator",
-    to: "user", type: "error",
-    summary: `[coordinator] 任务链创建不完整: ${chainTasks.length}/${pipeline.length}`
-  })
-}
-```
-
-## GC Loop Task Creation
-
-当 executor 报告覆盖率不达标时，coordinator 调用此逻辑追加任务：
-
-```javascript
-function createGCLoopTasks(gcIteration, targetLayer, sessionFolder) {
-  // 创建修复任务
-  TaskCreate({
-    subject: `QAGEN-fix-${gcIteration}: 修复 ${targetLayer} 测试 (GC #${gcIteration})`,
-    description: `修复未通过测试并补充覆盖\nsession: ${sessionFolder}\nlayer: ${targetLayer}\ntype: gc-fix`,
-    activeForm: `GC循环 #${gcIteration} 修复中`
-  })
-
-  // 创建重新执行任务
-  TaskCreate({
-    subject: `QARUN-gc-${gcIteration}: 重新执行 ${targetLayer} (GC #${gcIteration})`,
-    description: `重新执行测试验证修复\nsession: ${sessionFolder}\nlayer: ${targetLayer}`,
-    activeForm: `GC循环 #${gcIteration} 执行中`
-  })
-
-  // 设置依赖: QARUN-gc 依赖 QAGEN-fix
-  // ... TaskUpdate addBlockedBy
-}
-```
-
-## Output Format
+## Task Description Template
 
 ```
-## Task Chain Created
-
-### Mode: [discovery|testing|full]
-### Pipeline Stages: [count]
-- [prefix]-001: [description] (owner: [role], blocked by: [deps])
-
-### Verification: PASS/FAIL
+PURPOSE: <goal> | Success: <criteria>
+TASK:
+  - <step 1>
+  - <step 2>
+CONTEXT:
+  - Session: <session-folder>
+  - Layer: <L1-unit|L2-integration|L3-e2e> (if applicable)
+  - Upstream artifacts: <list>
+  - Shared memory: <session>/wisdom/.msg/meta.json
+EXPECTED: <artifact path> + <quality criteria>
+CONSTRAINTS: <scope limits>
+---
+InnerLoop: <true|false>
+RoleSpec: .claude/skills/team-quality-assurance/roles/<role>/role.md
 ```
 
-## Error Handling
+## Pipeline Task Registry
 
-| Scenario | Resolution |
-|----------|------------|
-| Task creation fails | Retry once, then report to user |
-| Dependency cycle detected | Flatten dependencies, warn coordinator |
-| Invalid qaMode | Default to 'discovery' mode |
-| Agent/CLI failure | Retry once, then fallback to inline execution |
-| Timeout (>5 min) | Report partial results, notify coordinator |
+### Discovery Mode
+```
+SCOUT-001 (scout): Multi-perspective issue scanning
+  blockedBy: []
+QASTRAT-001 (strategist): Test strategy formulation
+  blockedBy: [SCOUT-001]
+QAGEN-001 (generator): L1 unit test generation
+  blockedBy: [QASTRAT-001], meta: layer=L1
+QARUN-001 (executor): L1 test execution + fix cycles
+  blockedBy: [QAGEN-001], inner_loop: true, meta: layer=L1
+QAANA-001 (analyst): Quality analysis report
+  blockedBy: [QARUN-001]
+```
+
+### Testing Mode
+```
+QASTRAT-001 (strategist): Test strategy formulation
+  blockedBy: []
+QAGEN-L1-001 (generator): L1 unit test generation
+  blockedBy: [QASTRAT-001], meta: layer=L1
+QARUN-L1-001 (executor): L1 test execution + fix cycles
+  blockedBy: [QAGEN-L1-001], inner_loop: true, meta: layer=L1
+QAGEN-L2-001 (generator): L2 integration test generation
+  blockedBy: [QARUN-L1-001], meta: layer=L2
+QARUN-L2-001 (executor): L2 test execution + fix cycles
+  blockedBy: [QAGEN-L2-001], inner_loop: true, meta: layer=L2
+QAANA-001 (analyst): Quality analysis report
+  blockedBy: [QARUN-L2-001]
+```
+
+### Full Mode
+```
+SCOUT-001 (scout): Multi-perspective issue scanning
+  blockedBy: []
+QASTRAT-001 (strategist): Test strategy formulation
+  blockedBy: [SCOUT-001]
+QAGEN-L1-001 (generator-1): L1 unit test generation
+  blockedBy: [QASTRAT-001], meta: layer=L1
+QAGEN-L2-001 (generator-2): L2 integration test generation
+  blockedBy: [QASTRAT-001], meta: layer=L2
+QARUN-L1-001 (executor-1): L1 test execution + fix cycles
+  blockedBy: [QAGEN-L1-001], inner_loop: true, meta: layer=L1
+QARUN-L2-001 (executor-2): L2 test execution + fix cycles
+  blockedBy: [QAGEN-L2-001], inner_loop: true, meta: layer=L2
+QAANA-001 (analyst): Quality analysis report
+  blockedBy: [QARUN-L1-001, QARUN-L2-001]
+SCOUT-002 (scout): Regression scan after fixes
+  blockedBy: [QAANA-001]
+```
+
+## InnerLoop Flag Rules
+
+- true: executor roles (run-fix cycles)
+- false: scout, strategist, generator, analyst roles
+
+## Dependency Validation
+
+- No orphan tasks (all tasks have valid owner)
+- No circular dependencies
+- All blockedBy references exist
+- Session reference in every task description
+- RoleSpec reference in every task description
+
+## Log After Creation
+
+```
+mcp__ccw-tools__team_msg({
+  operation: "log",
+  session_id: <session-id>,
+  from: "coordinator",
+  type: "pipeline_selected",
+  data: { pipeline: "<mode>", task_count: <N> }
+})
+```

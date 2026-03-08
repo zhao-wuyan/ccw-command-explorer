@@ -52,6 +52,7 @@ mkdir -p "<session-dir>/architecture"
 mkdir -p "<session-dir>/analysis"
 mkdir -p "<session-dir>/qa"
 mkdir -p "<session-dir>/wisdom"
+mkdir -p "<session-dir>/.msg"
 ```
 
 **Directory purpose reference**:
@@ -66,6 +67,7 @@ mkdir -p "<session-dir>/wisdom"
 | analysis/ | Analyst design intelligence (UI mode) | analyst |
 | qa/ | QA audit reports | fe-qa |
 | wisdom/ | Cross-task knowledge accumulation | all agents |
+| .msg/ | Message bus: meta.json (pipeline metadata) + messages.jsonl (event log) | orchestrator |
 
 ### Step 2.3: Initialize Wisdom Directory
 
@@ -155,7 +157,59 @@ Write("<session-dir>/team-session.json",
   JSON.stringify(state, null, 2))
 ```
 
-### Step 2.8: Output Confirmation
+### Step 2.8: Initialize Message Bus (CRITICAL for UI)
+
+Initialize `.msg/meta.json` with pipeline metadata so the frontend can display dynamic pipeline stages. This is the **same format** used by the Claude version's `team_msg` tool with `type: "state_update"`.
+
+**pipeline_stages**: Array of role names representing pipeline stages. The UI displays these as the pipeline workflow visualization.
+
+```javascript
+// Determine pipeline_stages and roles based on mode
+const PIPELINE_CONFIG = {
+  "spec-only":          { stages: ["analyst", "writer", "reviewer"],                                                    roles: ["coordinator", "analyst", "writer", "reviewer"] },
+  "impl-only":          { stages: ["planner", "executor", "tester", "reviewer"],                                        roles: ["coordinator", "planner", "executor", "tester", "reviewer"] },
+  "fe-only":            { stages: ["planner", "fe-developer", "fe-qa"],                                                 roles: ["coordinator", "planner", "fe-developer", "fe-qa"] },
+  "fullstack":          { stages: ["planner", "executor", "fe-developer", "tester", "fe-qa", "reviewer"],               roles: ["coordinator", "planner", "executor", "fe-developer", "tester", "fe-qa", "reviewer"] },
+  "full-lifecycle":     { stages: ["analyst", "writer", "planner", "executor", "tester", "reviewer"],                   roles: ["coordinator", "analyst", "writer", "planner", "executor", "tester", "reviewer"] },
+  "full-lifecycle-fe":  { stages: ["analyst", "writer", "planner", "executor", "fe-developer", "tester", "fe-qa", "reviewer"], roles: ["coordinator", "analyst", "writer", "planner", "executor", "fe-developer", "tester", "fe-qa", "reviewer"] }
+}
+
+const config = PIPELINE_CONFIG[requirements.mode]
+
+// Write meta.json (read by API for frontend pipeline display)
+const meta = {
+  status: "active",
+  pipeline_mode: requirements.mode,
+  pipeline_stages: config.stages,
+  roles: config.roles,
+  team_name: "lifecycle",
+  updated_at: new Date().toISOString()
+}
+
+Write("<session-dir>/.msg/meta.json", JSON.stringify(meta, null, 2))
+
+// Initialize messages.jsonl with session init event
+const initMsg = {
+  id: "MSG-001",
+  ts: new Date().toISOString(),
+  from: "coordinator",
+  to: "coordinator",
+  type: "state_update",
+  summary: "Session initialized",
+  data: {
+    pipeline_mode: requirements.mode,
+    pipeline_stages: config.stages,
+    roles: config.roles,
+    team_name: "lifecycle"
+  }
+}
+
+Write("<session-dir>/.msg/messages.jsonl", JSON.stringify(initMsg) + "\n")
+```
+
+> **Why**: The frontend API reads `.msg/meta.json` to derive pipeline stages, roles, and team_name for the dynamic pipeline UI. Without this file, the UI falls back to hardcoded 4-stage pipeline or message inference which may be inaccurate.
+
+### Step 2.9: Output Confirmation
 
 ```
 [orchestrator] Phase 2: Session initialized
@@ -164,6 +218,7 @@ Write("<session-dir>/team-session.json",
   Mode: <mode> (<task-count> tasks)
   Scope: <scope-summary>
   Execution: <sequential | parallel>
+  Message bus: .msg/meta.json initialized
 ```
 
 ---
@@ -175,16 +230,19 @@ Write("<session-dir>/team-session.json",
 | sessionId | String | Passed to Phase 3 |
 | sessionDir | String | Passed to Phase 3 |
 | state | Object | Written to team-session.json, passed to Phase 3 |
+| meta | Object | Written to .msg/meta.json (read by frontend API) |
 
 ---
 
 ## Success Criteria
 
-- Session directory created with all subdirectories
+- Session directory created with all subdirectories (including `.msg/`)
 - Wisdom files initialized (4 files)
 - Explorations cache-index.json created (empty entries)
 - Shared-memory.json created
 - team-session.json written with correct mode, scope, task count
+- `.msg/meta.json` written with pipeline_stages, roles, team_name, pipeline_mode
+- `.msg/messages.jsonl` initialized with session init event
 - State file is valid JSON and readable
 
 ---

@@ -1,7 +1,7 @@
 ---
 prefix: PROFILE
 inner_loop: false
-subagents: [explore]
+delegates_to: []
 message_types:
   success: profile_complete
   error: error
@@ -17,7 +17,7 @@ Profile application performance to identify CPU, memory, I/O, network, and rende
 |-------|--------|----------|
 | Task description | From task subject/description | Yes |
 | Session path | Extracted from task description | Yes |
-| shared-memory.json | <session>/wisdom/shared-memory.json | No |
+| .msg/meta.json | <session>/.msg/meta.json | No |
 
 1. Extract session path and target scope from task description
 2. Detect project type by scanning for framework markers:
@@ -31,7 +31,7 @@ Profile application performance to identify CPU, memory, I/O, network, and rende
 | CLI entry / bin/ directory | CLI Tool | Startup time, throughput, memory peak |
 | No detection | Generic | All profiling dimensions |
 
-3. Use `explore` subagent to map performance-critical code paths within target scope
+3. Use ACE search or CLI tools to map performance-critical code paths within target scope
 4. Detect available profiling tools (test runners, benchmark harnesses, linting tools)
 
 ## Phase 3: Performance Profiling
@@ -69,5 +69,5 @@ Execute profiling based on detected project type:
    - Evidence summary per bottleneck
    - Detected project type and profiling methods used
 
-3. Update `<session>/wisdom/shared-memory.json` under `profiler` namespace:
+3. Update `<session>/.msg/meta.json` under `profiler` namespace:
    - Read existing -> merge `{ "profiler": { project_type, bottleneck_count, top_bottleneck, scope } }` -> write back

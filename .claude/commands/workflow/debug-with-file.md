@@ -2,7 +2,7 @@
 name: debug-with-file
 description: Interactive hypothesis-driven debugging with documented exploration, understanding evolution, and Gemini-assisted correction
 argument-hint: "[-y|--yes] \"bug description or error message\""
-allowed-tools: TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)
+allowed-tools: TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)
 ---
 
 ## Auto Mode
@@ -651,6 +651,6 @@ if (autoYes) {
 | Empty debug.log | Verify reproduction triggered the code path |
 | All hypotheses rejected | Use Gemini to generate new hypotheses based on disproven assumptions |
 | Fix doesn't work | Document failed fix attempt, iterate with refined understanding |
-| >5 iterations | Review consolidated understanding, escalate to `workflow-lite-planex` skill with full context |
+| >5 iterations | Review consolidated understanding, escalate to `workflow-lite-plan` skill with full context |
 | Gemini unavailable | Fallback to manual hypothesis generation, document without Gemini insights |
 | Understanding too long | Consolidate aggressively, archive old iterations to separate file |

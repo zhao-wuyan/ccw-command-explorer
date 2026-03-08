@@ -2,7 +2,7 @@
 name: layout-extract
 description: Extract structural layout information from reference images or text prompts using Claude analysis with variant generation or refinement mode
 argument-hint: "[-y|--yes] [--design-id <id>] [--session <id>] [--images "<glob>"] [--prompt "<desc>"] [--targets "<list>"] [--variants <count>] [--device-type <desktop|mobile|tablet|responsive>] [--interactive] [--refine]"
-allowed-tools: TodoWrite(*), Read(*), Write(*), Glob(*), Bash(*), AskUserQuestion(*), Task(ui-design-agent), mcp__exa__web_search_exa(*)
+allowed-tools: TodoWrite(*), Read(*), Write(*), Glob(*), Bash(*), AskUserQuestion(*), Agent(ui-design-agent), mcp__exa__web_search_exa(*)
 ---
 
 ## Auto Mode
@@ -162,7 +162,7 @@ IF refine_mode:
 ```
 
 ### Step 1: Generate Options (Agent Task 1 - Mode-Specific)
-**Executor**: `Task(ui-design-agent)`
+**Executor**: `Agent(ui-design-agent)`
 
 **Exploration Mode** (default): Generate contrasting layout concepts
 **Refinement Mode** (`--refine`): Generate refinement options for existing layouts
@@ -171,7 +171,7 @@ IF refine_mode:
 // Conditional agent task based on refine_mode
 IF NOT refine_mode:
     // EXPLORATION MODE
-    Task(ui-design-agent): `
+    Agent(ui-design-agent): `
       [LAYOUT_CONCEPT_GENERATION_TASK]
       Generate {variants_count} structurally distinct layout concepts for each target
 
@@ -217,7 +217,7 @@ IF NOT refine_mode:
     `
 ELSE:
     // REFINEMENT MODE
-    Task(ui-design-agent): `
+    Agent(ui-design-agent): `
       [LAYOUT_REFINEMENT_OPTIONS_TASK]
       Generate refinement options for existing layout(s)
 
@@ -461,7 +461,7 @@ Proceeding to generate {total_selections} detailed layout template(s)...
 
 ## Phase 2: Layout Template Generation (Agent Task 2)
 
-**Executor**: `Task(ui-design-agent)` × `Total_Selected_Templates` in **parallel**
+**Executor**: `Agent(ui-design-agent)` × `Total_Selected_Templates` in **parallel**
 
 ### Step 1: Load User Selections or Default to All
 ```bash
@@ -512,7 +512,7 @@ REPORT: "Generating {total_tasks} layout templates across {targets.length} targe
 Generate layout templates for ALL selected concepts in parallel:
 ```javascript
 FOR each task in task_list:
-    Task(ui-design-agent): `
+    Agent(ui-design-agent): `
       [LAYOUT_TEMPLATE_GENERATION_TASK #{task.variant_id} for {task.target}]
       Generate detailed layout template based on user-selected concept.
       Focus ONLY on structure and layout. DO NOT concern with visual style (colors, fonts, etc.).

@@ -1,49 +1,40 @@
 {
   "workflow-plan": {
     "calls_internally": [
-      "workflow:session:start",
-      "workflow:tools:context-gather",
-      "workflow:tools:conflict-resolution",
-      "workflow:tools:task-generate-agent"
+      "workflow:session:start"
     ],
     "next_steps": [
       "workflow-plan-verify",
-      "workflow:status",
-      "workflow-execute"
+      "workflow:session:list",
+      "workflow:unified-execute-with-file"
     ],
-    "alternatives": [
-      "workflow-tdd-plan"
-    ],
+    "alternatives": [],
     "prerequisites": []
   },
   "workflow-tdd-plan": {
     "calls_internally": [
-      "workflow:session:start",
-      "workflow:tools:context-gather",
-      "workflow:tools:task-generate-tdd"
+      "workflow:session:start"
     ],
     "next_steps": [
       "workflow-tdd-verify",
-      "workflow:status",
-      "workflow-execute"
+      "workflow:session:list",
+      "workflow:unified-execute-with-file"
     ],
-    "alternatives": [
-      "workflow-plan"
-    ],
+    "alternatives": [],
     "prerequisites": []
   },
-  "workflow-execute": {
+  "workflow:unified-execute-with-file": {
     "prerequisites": [
       "workflow-plan",
       "workflow-tdd-plan"
     ],
     "related": [
-      "workflow:status",
-      "workflow:resume"
+      "workflow:session:list",
+      "workflow:session:resume"
     ],
     "next_steps": [
-      "workflow:review",
-      "workflow-tdd-verify"
+      "review-cycle",
+      "workflow-test-fix"
     ]
   },
   "workflow-plan-verify": {
@@ -51,24 +42,22 @@
       "workflow-plan"
     ],
     "next_steps": [
-      "workflow-execute"
+      "workflow:unified-execute-with-file"
     ],
     "related": [
-      "workflow:status"
+      "workflow:session:list"
     ]
   },
   "workflow-tdd-verify": {
     "prerequisites": [
-      "workflow-execute"
+      "workflow:unified-execute-with-file"
     ],
-    "related": [
-      "workflow:tools:tdd-coverage-analysis"
-    ]
+    "related": []
   },
   "workflow:session:start": {
     "next_steps": [
       "workflow-plan",
-      "workflow-execute"
+      "workflow:unified-execute-with-file"
     ],
     "related": [
       "workflow:session:list",
@@ -76,71 +65,27 @@
     ]
   },
   "workflow:session:resume": {
-    "alternatives": [
-      "workflow:resume"
-    ],
+    "alternatives": [],
     "related": [
-      "workflow:session:list",
-      "workflow:status"
+      "workflow:session:list"
     ]
   },
-  "workflow-lite-planex": {
+  "workflow-lite-plan": {
     "calls_internally": [],
     "next_steps": [
-      "workflow:status"
+      "workflow:session:list"
     ],
     "alternatives": [
       "workflow-plan"
     ],
     "prerequisites": []
   },
-  "workflow:lite-fix": {
-    "next_steps": [
-      "workflow:status"
-    ],
-    "alternatives": [
-      "workflow-lite-planex"
+  "review-cycle": {
+    "prerequisites": [
+      "workflow:unified-execute-with-file"
     ],
     "related": [
       "workflow-test-fix"
-    ]
-  },
-  "workflow:review-session-cycle": {
-    "prerequisites": [
-      "workflow-execute"
-    ],
-    "next_steps": [
-      "workflow:review-fix"
-    ],
-    "related": [
-      "workflow:review-module-cycle"
-    ]
-  },
-  "workflow:review-fix": {
-    "prerequisites": [
-      "workflow:review-module-cycle",
-      "workflow:review-session-cycle"
-    ],
-    "related": [
-      "workflow-test-fix"
-    ]
-  },
-  "memory:docs": {
-    "calls_internally": [
-      "workflow:session:start",
-      "workflow:tools:context-gather"
-    ],
-    "next_steps": [
-      "workflow-execute"
-    ]
-  },
-  "memory:skill-memory": {
-    "next_steps": [
-      "workflow-plan",
-      "cli:analyze"
-    ],
-    "related": [
-      "memory:load-skill-memory"
     ]
   }
 }

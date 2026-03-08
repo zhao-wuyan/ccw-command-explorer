@@ -82,6 +82,7 @@ Examples:
 | `spec-config.json` | 1 | Session configuration and state |
 | `discovery-context.json` | 1 | Codebase exploration results (optional) |
 | `refined-requirements.json` | 1.5 | Confirmed requirements after discussion |
+| `glossary.json` | 2 | Terminology glossary for cross-document consistency |
 | `product-brief.md` | 2 | Product brief document |
 | `requirements.md` | 3 | PRD document |
 | `architecture.md` | 4 | Architecture decisions document |
@@ -169,6 +170,17 @@ Derived from [REQ-001](requirements.md#req-001).
     "dimensions": ["string array - 3-5 exploration dimensions"]
   },
   "has_codebase": "boolean",
+  "spec_type": "service|api|library|platform (required) - type of specification",
+  "iteration_count": "number (required, default 0) - number of auto-fix iterations completed",
+  "iteration_history": [
+    {
+      "iteration": "number",
+      "timestamp": "ISO8601",
+      "readiness_score": "number (0-100)",
+      "errors_found": "number",
+      "phases_fixed": ["number array - phase numbers that were re-generated"]
+    }
+  ],
   "refined_requirements_file": "string (optional) - path to refined-requirements.json",
   "phasesCompleted": [
     {
@@ -237,6 +249,34 @@ Derived from [REQ-001](requirements.md#req-001).
 
 ---
 
+## glossary.json Schema
+
+```json
+{
+  "session_id": "string (required) - matches spec-config.json",
+  "generated_at": "ISO8601 (required)",
+  "version": "number (required, default 1) - incremented on updates",
+  "terms": [
+    {
+      "term": "string (required) - the canonical term",
+      "definition": "string (required) - concise definition",
+      "aliases": ["string array - acceptable alternative names"],
+      "first_defined_in": "string (required) - source document path",
+      "category": "core|technical|business (required)"
+    }
+  ]
+}
+```
+
+### Glossary Usage Rules
+
+- Terms MUST be defined before first use in any document
+- All documents MUST use the canonical term from glossary; aliases are for reference only
+- Glossary is generated in Phase 2 and injected into all subsequent phase prompts
+- Phase 6 validates glossary compliance across all documents
+
+---
+
 ## Validation Checklist
 
 - [ ] Every document starts with valid YAML frontmatter
@@ -246,3 +286,7 @@ Derived from [REQ-001](requirements.md#req-001).
 - [ ] Heading hierarchy is correct (no skipped levels)
 - [ ] Technical identifiers use correct prefixes
 - [ ] Output files are in the correct directory
+- [ ] `glossary.json` created with >= 5 terms
+- [ ] `spec_type` field set in spec-config.json
+- [ ] All documents use glossary terms consistently
+- [ ] Non-Goals section present in product brief (if applicable)

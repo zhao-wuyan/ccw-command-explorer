@@ -2,7 +2,7 @@
 name: unified-execute-with-file
 description: Universal execution engine for consuming any planning/brainstorm/analysis output with minimal progress tracking, multi-agent coordination, and incremental execution
 argument-hint: "[-y|--yes] [<path>[,<path2>] | -p|--plan <path>[,<path2>]] [--auto-commit] [--commit-prefix \"prefix\"] [\"execution context or task name\"]"
-allowed-tools: TodoWrite(*), Task(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)
+allowed-tools: TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)
 ---
 
 ## Auto Mode
@@ -34,7 +34,7 @@ When `--yes` or `-y`: Auto-confirm execution decisions, follow plan's DAG depend
 ```
 
 **Execution Methods**:
-- **Agent**: Task tool with code-developer (recommended for standard tasks)
+- **Agent**: Agent tool with code-developer (recommended for standard tasks)
 - **CLI-Codex**: `ccw cli --tool codex` (complex tasks, git-aware)
 - **CLI-Gemini**: `ccw cli --tool gemini` (analysis-heavy tasks)
 - **Auto**: Select based on task complexity (default in `-y` mode)
@@ -99,7 +99,7 @@ Universal execution engine consuming **any** planning output and executing it wi
 │  Phase 5: Per-Task Execution (Agent OR CLI)                             │
 │     ├─ Extract relevant notes from previous tasks                       │
 │     ├─ Inject notes into execution context                              │
-│     ├─ Route to Agent (Task tool) OR CLI (ccw cli command)              │
+│     ├─ Route to Agent (Agent tool) OR CLI (ccw cli command)              │
 │     ├─ Generate structured notes for next task                          │
 │     ├─ Auto-commit if enabled (conventional commit format)              │
 │     └─ Append event to unified log                                      │
@@ -507,10 +507,10 @@ ${recommendations.map(r => \`- ${r}\`).join('\\n')}
 
    When: `executionMethod === "Agent"` or `Auto + Low Complexity`
 
-   Execute task via Task tool with code-developer agent:
+   Execute task via Agent tool with code-developer agent:
 
    ```javascript
-   Task({
+   Agent({
      subagent_type: "code-developer",  // or other agent types
      run_in_background: false,
      description: task.title,
@@ -658,9 +658,15 @@ ${recommendations.map(r => \`- ${r}\`).join('\\n')}
    - "优化执行" → Analyze execution improvements
    - "完成" → No further action
 
+5. **Sync Session State** (automatic, unless `--dry-run`)
+   - Execute: `/workflow:session:sync -y "Execution complete: ${completedCount}/${totalCount} tasks succeeded"`
+   - Updates specs/*.md with any learnings from execution
+   - Updates project-tech.json with development index entry
+
 **Success Criteria**:
 - [ ] Statistics collected and displayed
 - [ ] execution.md updated with final status
+- [ ] Session state synced via /workflow:session:sync
 - [ ] User informed of completion
 
 ---

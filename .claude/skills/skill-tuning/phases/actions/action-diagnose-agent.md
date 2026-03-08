@@ -193,7 +193,7 @@ async function execute(state, workDir) {
       type: 'agent_failure',
       severity: 'medium',
       location: { file: 'SKILL.md' },
-      description: 'Task tool used but not declared in allowed-tools',
+      description: 'Agent tool used but not declared in allowed-tools',
       evidence: [`${totalCalls} Task calls found, but Task not in allowed-tools`],
       root_cause: 'Tool declaration mismatch',
       impact: 'May cause runtime permission issues',

@@ -96,7 +96,7 @@ async function execute${toPascalCase(id)}(context) {
   \` : '// No MCP tools configured'}
 
   // 3. Launch Agent for in-depth analysis
-  const agentResult = await Task({
+  const agentResult = await Agent({
     subagent_type: '\${agent.type}',
     prompt: \`
 \${generateAgentPrompt(analysis_type, scope)}
@@ -408,7 +408,7 @@ const semanticContext = await mcp__ace_tool__search_context({
 });
 
 // Use semantic search results as Agent input context
-const agentResult = await Task({
+const agentResult = await Agent({
   subagent_type: 'Explore',
   prompt: \`
 Based on following semantic search results, perform in-depth analysis:

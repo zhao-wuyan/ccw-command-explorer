@@ -378,7 +378,7 @@ docker-compose.override.yml
 ## Integration Points
 
 ### Workflow Commands
-- **After `workflow-lite-planex` skill**: Suggest running cli-init for better analysis
+- **After `workflow-lite-plan` skill**: Suggest running cli-init for better analysis
 - **Before analysis**: Recommend updating ignore patterns for cleaner results
 
 ### CLI Tool Integration

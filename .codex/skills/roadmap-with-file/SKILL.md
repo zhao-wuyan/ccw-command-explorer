@@ -896,7 +896,7 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 | Quick task breakdown, immediate execution | `$lite-plan` |
 | Collaborative multi-agent planning | `$collaborative-plan-with-file` |
 | Full specification documents | `$spec-generator` |
-| Code implementation from existing plan | `$workflow-lite-planex` |
+| Code implementation from existing plan | `$workflow-lite-plan` |
 
 ---
 

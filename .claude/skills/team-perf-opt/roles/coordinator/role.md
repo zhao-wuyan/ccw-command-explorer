@@ -14,7 +14,7 @@ Orchestrates the performance optimization pipeline: manages task chains, spawns 
 - Follow Command Execution Protocol for dispatch and monitor commands
 - Respect pipeline stage dependencies (blockedBy)
 - Stop after spawning workers -- wait for callbacks
-- Handle review-fix cycles with max 3 iterations
+- Handle review-fix cycles with max 3 iterations per branch
 - Execute completion action in Phase 5
 
 ### MUST NOT
@@ -36,16 +36,6 @@ When coordinator needs to execute a command (dispatch, monitor):
 3. **Commands are inline execution guides** -- NOT separate agents or subprocesses
 4. **Execute synchronously** -- complete the command workflow before proceeding
 
-Example:
-```
-Phase 3 needs task dispatch
-  -> Read roles/coordinator/commands/dispatch.md
-  -> Execute Phase 2 (Context Loading)
-  -> Execute Phase 3 (Task Chain Creation)
-  -> Execute Phase 4 (Validation)
-  -> Continue to Phase 4
-```
-
 ---
 
 ## Entry Router
@@ -54,28 +44,25 @@ When coordinator is invoked, detect invocation type:
 
 | Detection | Condition | Handler |
 |-----------|-----------|---------|
-| Worker callback | Message contains role tag [profiler], [strategist], [optimizer], [benchmarker], [reviewer] | -> handleCallback |
-| Branch callback | Message contains branch tag [optimizer-B01], [benchmarker-B02], etc. | -> handleCallback (branch-aware) |
-| Pipeline callback | Message contains pipeline tag [profiler-A], [optimizer-B], etc. | -> handleCallback (pipeline-aware) |
-| Consensus blocked | Message contains "consensus_blocked" | -> handleConsensus |
-| Status check | Arguments contain "check" or "status" | -> handleCheck |
-| Manual resume | Arguments contain "resume" or "continue" | -> handleResume |
-| Pipeline complete | All tasks have status "completed" | -> handleComplete |
-| Interrupted session | Active/paused session exists | -> Phase 0 (Resume Check) |
-| New session | None of above | -> Phase 1 (Requirement Clarification) |
+| Worker callback | Message contains role tag [profiler], [strategist], [optimizer], [benchmarker], [reviewer] | -> handleCallback (monitor.md) |
+| Branch callback | Message contains branch tag [optimizer-B01], [benchmarker-B02], etc. | -> handleCallback branch-aware (monitor.md) |
+| Pipeline callback | Message contains pipeline tag [profiler-A], [optimizer-B], etc. | -> handleCallback pipeline-aware (monitor.md) |
+| Consensus blocked | Message contains "consensus_blocked" | -> handleConsensus (monitor.md) |
+| Status check | Arguments contain "check" or "status" | -> handleCheck (monitor.md) |
+| Manual resume | Arguments contain "resume" or "continue" | -> handleResume (monitor.md) |
+| Pipeline complete | All tasks have status "completed" | -> handleComplete (monitor.md) |
+| Interrupted session | Active/paused session exists | -> Phase 0 |
+| New session | None of above | -> Phase 1 |
 
 For callback/check/resume/complete: load `commands/monitor.md` and execute matched handler, then STOP.
 
 ### Router Implementation
 
 1. **Load session context** (if exists):
-   - Scan `.workflow/.team/PERF-OPT-*/team-session.json` for active/paused sessions
+   - Scan `.workflow/.team/PERF-OPT-*/.msg/meta.json` for active/paused sessions
    - If found, extract session folder path, status, and `parallel_mode`
 
-2. **Parse $ARGUMENTS** for detection keywords:
-   - Check for role name tags in message content (including branch variants like `[optimizer-B01]`)
-   - Check for "check", "status", "resume", "continue" keywords
-   - Check for "consensus_blocked" signal
+2. **Parse $ARGUMENTS** for detection keywords
 
 3. **Route to handler**:
    - For monitor handlers: Read `commands/monitor.md`, execute matched handler, STOP
@@ -89,124 +76,34 @@ For callback/check/resume/complete: load `commands/monitor.md` and execute match
 Triggered when an active/paused session is detected on coordinator entry.
 
 1. Load session.json from detected session folder
-2. Audit task list:
-
-```
-TaskList()
-```
-
-3. Reconcile session state vs task status:
-
-| Task Status | Session Expects | Action |
-|-------------|----------------|--------|
-| in_progress | Should be running | Reset to pending (worker was interrupted) |
-| completed | Already tracked | Skip |
-| pending + unblocked | Ready to run | Include in spawn list |
-
-4. Rebuild team if not active:
-
-```
-TeamCreate({ team_name: "perf-opt" })
-```
-
-5. Spawn workers for ready tasks -> Phase 4 coordination loop
+2. Audit task list: `TaskList()`
+3. Reconcile session state vs task status (reset in_progress to pending, rebuild team)
+4. Spawn workers for ready tasks -> Phase 4 coordination loop
 
 ---
 
 ## Phase 1: Requirement Clarification
 
 1. Parse user task description from $ARGUMENTS
-2. **Parse parallel mode flags**:
-
-| Flag | Value | Default |
-|------|-------|---------|
-| `--parallel-mode` | `single`, `fan-out`, `independent`, `auto` | `auto` |
-| `--max-branches` | integer 1-10 | 5 (from config) |
-
-   - For `independent` mode: remaining positional arguments after flags are `independent_targets` array
-   - Example: `--parallel-mode=independent "optimize rendering" "optimize API"` -> targets = ["optimize rendering", "optimize API"]
-
-3. Identify optimization target:
-
-| Signal | Target |
-|--------|--------|
-| Specific file/module mentioned | Scoped optimization |
-| "slow", "performance", generic | Full application profiling |
-| Specific metric mentioned (FCP, memory, startup) | Targeted metric optimization |
-| Multiple quoted targets (independent mode) | Per-target scoped optimization |
-
-4. If target is unclear, ask for clarification:
-
-```
-AskUserQuestion({
-  questions: [{
-    question: "What should I optimize? Provide a target scope or describe the performance issue.",
-    header: "Scope"
-  }]
-})
-```
-
-5. Record optimization requirement with scope, target metrics, parallel_mode, and max_branches
+2. **Parse parallel mode flags**: `--parallel-mode` (auto/single/fan-out/independent), `--max-branches`
+3. Identify optimization target (specific file, full app, or multiple independent targets)
+4. If target is unclear, AskUserQuestion for scope clarification
+5. Record optimization requirement with scope, target metrics, parallel_mode, max_branches
 
 ---
 
 ## Phase 2: Session & Team Setup
 
-1. Create session directory:
-
-```
-Bash("mkdir -p .workflow/<session-id>/artifacts .workflow/<session-id>/explorations .workflow/<session-id>/wisdom .workflow/<session-id>/discussions")
-```
-
-   For independent mode, also create pipeline subdirectories:
-```
-// For each target in independent_targets
-Bash("mkdir -p .workflow/<session-id>/artifacts/pipelines/A .workflow/<session-id>/artifacts/pipelines/B ...")
-```
-
-2. Write session.json with extended fields:
-
-```json
-{
-  "status": "active",
-  "team_name": "perf-opt",
-  "requirement": "<requirement>",
-  "timestamp": "<ISO-8601>",
-  "parallel_mode": "<auto|single|fan-out|independent>",
-  "max_branches": 5,
-  "branches": [],
-  "independent_targets": [],
-  "fix_cycles": {}
-}
-```
-
-   - `parallel_mode`: from Phase 1 parsing (default: "auto")
-   - `max_branches`: from Phase 1 parsing (default: 5)
-   - `branches`: populated at CP-2.5 for fan-out mode (e.g., ["B01", "B02", "B03"])
-   - `independent_targets`: populated for independent mode (e.g., ["optimize rendering", "optimize API"])
-   - `fix_cycles`: populated per-branch/pipeline as fix cycles occur
-
-3. Initialize shared-memory.json:
-
-```
-Write("<session>/wisdom/shared-memory.json", { "session_id": "<session-id>", "requirement": "<requirement>", "parallel_mode": "<mode>" })
-```
-
-4. Create team:
-
-```
-TeamCreate({ team_name: "perf-opt" })
-```
+1. Create session directory with artifacts/, explorations/, wisdom/, discussions/ subdirs
+2. Write session.json with extended fields (parallel_mode, max_branches, branches, fix_cycles)
+3. Initialize meta.json with pipeline metadata via team_msg
+4. Call `TeamCreate({ team_name: "perf-opt" })`
 
 ---
 
-## Phase 3: Task Chain Creation
+## Phase 3: Create Task Chain
 
-Execute `commands/dispatch.md` inline (Command Execution Protocol):
-
-1. Read `roles/coordinator/commands/dispatch.md`
-2. Follow dispatch Phase 2 (context loading) -> Phase 3 (task chain creation) -> Phase 4 (validation)
-3. Result: all pipeline tasks created with correct blockedBy dependencies
+Execute `commands/dispatch.md` inline (Command Execution Protocol).
 
 ---
 
@@ -214,78 +111,34 @@ Execute `commands/dispatch.md` inline (Command Execution Protocol):
 
 ### Initial Spawn
 
-Find first unblocked task and spawn its worker:
-
-```
-Task({
-  subagent_type: "team-worker",
-  description: "Spawn profiler worker",
-  team_name: "perf-opt",
-  name: "profiler",
-  run_in_background: true,
-  prompt: `## Role Assignment
-role: profiler
-role_spec: .claude/skills/team-perf-opt/role-specs/profiler.md
-session: <session-folder>
-session_id: <session-id>
-team_name: perf-opt
-requirement: <requirement>
-inner_loop: false
-
-Read role_spec file to load Phase 2-4 domain instructions.
-Execute built-in Phase 1 -> role-spec Phase 2-4 -> built-in Phase 5.`
-})
-```
+Find first unblocked task and spawn its worker using SKILL.md Worker Spawn Template with:
+- `role_spec: .claude/skills/team-perf-opt/roles/<role>/role.md`
+- `team_name: perf-opt`
 
 **STOP** after spawning. Wait for worker callback.
 
 ### Coordination (via monitor.md handlers)
 
-All subsequent coordination is handled by `commands/monitor.md` handlers triggered by worker callbacks:
-
-- handleCallback -> mark task done -> check pipeline -> handleSpawnNext
-- handleSpawnNext -> find ready tasks -> spawn team-worker agents -> STOP
-- handleComplete -> all done -> Phase 5
+All subsequent coordination handled by `commands/monitor.md`.
 
 ---
 
 ## Phase 5: Report + Completion Action
 
 1. Load session state -> count completed tasks, calculate duration
-2. List deliverables:
+2. List deliverables (baseline-metrics.json, bottleneck-report.md, optimization-plan.md, benchmark-results.json, review-report.md)
+3. Output pipeline summary with improvement metrics from benchmark results
+4. Execute completion action per SKILL.md Completion Action section
 
-| Deliverable | Path |
-|-------------|------|
-| Baseline Metrics | <session>/artifacts/baseline-metrics.json |
-| Bottleneck Report | <session>/artifacts/bottleneck-report.md |
-| Optimization Plan | <session>/artifacts/optimization-plan.md |
-| Benchmark Results | <session>/artifacts/benchmark-results.json |
-| Review Report | <session>/artifacts/review-report.md |
+---
 
-3. Include discussion summaries if discuss rounds were used
-4. Output pipeline summary: task count, duration, improvement metrics from benchmark results
+## Error Handling
 
-5. **Completion Action** (interactive):
-
-```
-AskUserQuestion({
-  questions: [{
-    question: "Team pipeline complete. What would you like to do?",
-    header: "Completion",
-    multiSelect: false,
-    options: [
-      { label: "Archive & Clean (Recommended)", description: "Archive session, clean up tasks and team resources" },
-      { label: "Keep Active", description: "Keep session active for follow-up work or inspection" },
-      { label: "Export Results", description: "Export deliverables to a specified location, then clean" }
-    ]
-  }]
-})
-```
-
-6. Handle user choice:
-
-| Choice | Steps |
-|--------|-------|
-| Archive & Clean | TaskList -> verify all completed -> update session status="completed" -> TeamDelete("perf-opt") -> output final summary with artifact paths |
-| Keep Active | Update session status="paused" -> output: "Session paused. Resume with: Skill(skill='team-perf-opt', args='resume')" |
-| Export Results | AskUserQuestion for target directory -> copy all artifacts -> Archive & Clean flow |
+| Scenario | Resolution |
+|----------|------------|
+| Teammate unresponsive | Send follow-up, 2x -> respawn |
+| Profiling tool not available | Fallback to static analysis methods |
+| Benchmark regression detected | Auto-create FIX task with regression details |
+| Review-fix cycle exceeds 3 iterations | Escalate to user with summary of remaining issues |
+| One branch IMPL fails | Mark that branch failed, other branches continue |
+| max_branches exceeded | Truncate to top N optimizations by priority at CP-2.5 |

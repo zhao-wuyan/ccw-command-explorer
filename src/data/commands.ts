@@ -55,18 +55,48 @@ export const COMMANDS: Command[] = [
     usage: '想用OpenAI Codex进行专业代码审查'
   },
 
+  // ==================== DDD 文档驱动开发 ====================
+  { cmd: '/ddd:auto', desc: '链式命令 - 自动文档驱动开发流程', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '自动化 DDD 流程：链式调用 scan → plan → execute → sync。适合需要完整文档驱动开发流程的任务',
+    usage: '想一次性完成文档驱动的开发流程'
+  },
+  { cmd: '/ddd:sync', desc: '任务后同步 - 更新文档索引、生成操作日志', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '完成开发任务后同步：分析 git 变更 → 追踪受影响的功能/需求 → 更新索引条目 → 生成操作日志 → 刷新文档',
+    usage: '开发任务完成后，同步更新文档索引'
+  },
+  { cmd: '/ddd:update', desc: '增量索引更新 - 检测代码变更并追踪影响', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '轻量级增量更新：给定变更文件 → 追踪影响范围（代码→组件→功能→需求）→ 更新索引。比 sync 更轻量',
+    usage: '开发过程中想快速检查哪些文档会受影响'
+  },
+  { cmd: '/ddd:scan', desc: '扫描代码库构建文档索引 - 无需规格文档', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '代码优先入口点：分析代码结构 → 推断功能 → 发现组件 → 反向工程项目知识图谱 → 生成 doc-index.json',
+    usage: '现有项目没有规格文档，想开始使用文档驱动工作流'
+  },
+  { cmd: '/ddd:plan', desc: '文档驱动规划流水线 - 查询索引、探索、规划', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '完整规划流水线：查询 doc-index 获取即时上下文 → 探索代码库 → 澄清不明确点 → 生成 plan.json + TASK-*.json',
+    usage: '需要基于文档索引进行规划的任务'
+  },
+  { cmd: '/ddd:execute', desc: '文档感知执行引擎 - 执行 plan.json', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '执行规划：读取 plan.json + TASK-*.json → 按依赖顺序执行任务 → 每个任务完成后调用 ddd:sync 更新索引',
+    usage: '已通过 ddd:plan 生成规划文件，需要执行'
+  },
+  { cmd: '/ddd:index-build', desc: '构建文档索引 - 从 spec-generator 输出', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '规格优先入口点：读取 spec-generator 输出（产品简介、PRD、架构文档等）→ 构建完整的 doc-index.json',
+    usage: '已运行 spec-generator，需要构建文档索引'
+  },
+  { cmd: '/ddd:doc-refresh', desc: '增量更新受影响的文档', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '选择性文档刷新：根据受影响的组件和功能 ID → 更新对应的 tech-registry/ 和 feature-maps/ 文档',
+    usage: '代码变更后需要更新相关文档'
+  },
+  { cmd: '/ddd:doc-generate', desc: '生成完整文档树 - 从 doc-index.json', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '生成文档树：Layer 3 组件文档 → Layer 2 功能文档 → Layer 1 索引/概览文档。完整的项目文档生成',
+    usage: '需要生成完整的项目文档'
+  },
+
   // ==================== 工作流核心 ====================
   { cmd: '/workflow:init', desc: '初始化项目状态', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v5.0',
     detail: '首次使用准备：创建.workflow目录、初始化配置文件。在新项目里第一次用CCW要先执行这个',
     usage: '在新项目中第一次使用CCW'
-  },
-  { cmd: '/workflow:init-specs', desc: '初始化规格目录', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v6.4',
-    detail: '创建规格目录结构：初始化 .monkeycode/specs/ 目录，用于存放需求和设计文档',
-    usage: '需要开始编写需求规格文档'
-  },
-  { cmd: '/workflow:init-guidelines', desc: '初始化开发指南', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v6.4',
-    detail: '创建开发指南：生成项目编码规范、最佳实践等指南文档',
-    usage: '新项目需要建立开发规范'
   },
   { cmd: '/workflow:clean', desc: '清理代码和临时文件', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v5.2',
     detail: '智能清理：检测过时的会话目录、临时文件、死代码、无用的依赖。保持项目整洁',
@@ -124,13 +154,19 @@ export const COMMANDS: Command[] = [
     detail: '结束会话：标记会话为完成、生成总结报告、移动到归档目录。记录做了什么、有什么收获',
     usage: '任务完成后进行收尾'
   },
-  { cmd: '/workflow:session:solidify', desc: '固化会话经验为永久规则', status: 'stable', category: 'session', cli: 'claude', addedInVersion: 'v5.2',
-    detail: '沉淀经验：把会话中学到的东西(发现的好方法、踩过的坑)变成项目规则，以后自动遵循',
-    usage: '有值得保留的经验想固化下来'
-  },
   { cmd: '/workflow:session:sync', desc: '同步会话状态', status: 'new', category: 'session', cli: 'claude', addedInVersion: 'v6.4',
     detail: '同步会话：将当前会话状态同步到文件系统，确保状态持久化',
     usage: '需要保存当前会话状态'
+  },
+
+  // ==================== 规格管理 ====================
+  { cmd: '/workflow:spec:setup', desc: '初始化项目规格 - cli-explore-agent 分析 + 交互式问卷', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '初始化规格系统：调用 cli-explore-agent 分析项目 → 生成 project-tech.json → 交互式配置编码规范、架构约束、质量规则',
+    usage: '新项目需要建立开发规范和约束'
+  },
+  { cmd: '/workflow:spec:add', desc: '添加规范 - 交互式或直接模式', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '添加规格条目：支持 convention（编码风格）、constraint（硬性规则）、learning（经验教训）。交互式向导或直接命令模式',
+    usage: '需要添加编码规范、架构约束或记录经验教训'
   },
 
   // ==================== Issue 管理 ====================
@@ -279,6 +315,10 @@ export const COMMANDS: Command[] = [
     detail: '诊断4类问题：①上下文爆炸(信息太多)；②长尾遗忘(记住前面的忘了后面的)；③数据流中断；④多Agent配合失败。自动给修复方案',
     usage: '自定义的技能执行出问题、想优化技能性能'
   },
+  { cmd: '/skill-simplify', desc: 'SKILL.md 简化 - 功能完整性验证', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '简化 SKILL.md：分析功能清单 → 应用优化规则（合并等价变体、移除冗余描述）→ 验证功能完整性。确保简化不丢失功能',
+    usage: 'SKILL.md 太长太复杂，想精简但保持功能完整'
+  },
   { cmd: '/command-generator', desc: '命令文件生成器 - 创建 .md 命令文件', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
     detail: '生成命令文件：创建带有 YAML 前置配置的 .md 命令文件，支持项目和用户两种范围',
     usage: '想创建新的 Claude Code 命令'
@@ -371,6 +411,22 @@ export const COMMANDS: Command[] = [
     detail: '超深度代码分析，全面理解代码库',
     usage: '需要深度理解代码时'
   },
+  { cmd: '/team-designer', desc: '元技能 - 生成 v4 架构团队技能', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '生成团队技能包：收集需求 → 生成脚手架（SKILL.md、roles/、specs/、templates/）→ 验证。输出完整可用的团队技能',
+    usage: '需要创建新的团队协作技能'
+  },
+  { cmd: '/team-edict', desc: '三省六部协作框架 - 串行审批+并行执行', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '受古代三省六部启发：太子接旨 → 中书省规划 → 门下省审议（多CLI并行）→ 尚书省调度 → 六部并行执行。强制看板状态上报',
+    usage: '需要严格的级联审批流程和多部门并行执行'
+  },
+  { cmd: '/team-frontend-debug', desc: '前端调试团队 - Chrome DevTools MCP', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '双模式前端调试：①功能清单测试模式（TEST→ANALYZE→FIX→VERIFY）；②Bug报告调试模式（REPRODUCE→ANALYZE→FIX→VERIFY）。使用 Chrome DevTools MCP',
+    usage: '需要调试前端交互问题、无响应按钮、状态刷新问题'
+  },
+  { cmd: '/team-ux-improve', desc: 'UX 改进团队 - 系统化发现和修复交互问题', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: 'UX 改进流水线：扫描器（发现UI/UX问题）→ 诊断师（分析根因）→ 设计师（设计方案）→ 实现者（修复）→ 测试员（验证）',
+    usage: '需要系统化发现和修复 UI/UX 交互问题'
+  },
 
   // 工作流技能
   { cmd: '/workflow-execute', desc: '工作流执行技能 - 协调 Agent 执行', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.0',
@@ -380,6 +436,10 @@ export const COMMANDS: Command[] = [
   { cmd: '/workflow-lite-plan', desc: '轻量规划技能 - 快速内存规划', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
     detail: '快速规划：在内存中分析→拆解任务→排列顺序。不生成文件，适合中小任务，规划完立即执行',
     usage: '任务不复杂，想快速规划然后马上开始做'
+  },
+  { cmd: '/workflow-lite-execute', desc: '轻量执行引擎 - 多模式输入执行', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
+    detail: '轻量执行：三种输入模式 ①内存模式（--in-memory 从 workflow-lite-plan 传递）；②提示描述模式；③文件内容模式。支持任务分组、批量执行、代码审查',
+    usage: '需要执行规划文件或直接执行任务'
   },
   { cmd: '/workflow-multi-cli-plan', desc: '多 CLI 规划 - 并行 CLI 执行', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.2',
     detail: '同时用多个AI分析：Gemini、Codex、Claude同时分析同一问题，然后交叉验证，综合得出最佳方案',
@@ -500,6 +560,22 @@ export const COMMANDS: Command[] = [
     detail: '完整生命周期：需求分析→架构设计→开发→测试→审查。包含多个模板文件(产品简介、PRD、架构文档、Epic模板)',
     usage: 'Codex 环境下的完整项目开发流程'
   },
+  { cmd: '/project-documentation-workflow', desc: '波式项目文档生成器 - 动态任务分解', status: 'new', category: 'skill', cli: 'codex', addedInVersion: 'v7.2.2',
+    detail: '文档生成流水线：分析项目结构 → 动态生成文档任务 → 拓扑排序计算执行波次 → 波次间综合 → 生成完整文档套件（架构、方法、理论、功能、用法、设计哲学）',
+    usage: '需要为项目生成完整的文档套件'
+  },
+  { cmd: '/session-sync', desc: '快速同步会话 - specs/*.md + project-tech.json', status: 'new', category: 'skill', cli: 'codex', addedInVersion: 'v7.2.2',
+    detail: '一次性同步：扫描 git diff → 提取规范更新 → 写入 specs/*.md 和 project-tech.json。无交互向导',
+    usage: '需要快速同步会话工作到规范文件'
+  },
+  { cmd: '/spec-add', desc: '添加规范 - Codex 版', status: 'new', category: 'skill', cli: 'codex', addedInVersion: 'v7.2.2',
+    detail: 'Codex 版规范添加：支持交互式向导和直接命令模式。添加 convention、constraint 或 learning',
+    usage: 'Codex 环境下添加规范'
+  },
+  { cmd: '/spec-setup', desc: '初始化规格 - Codex 版', status: 'new', category: 'skill', cli: 'codex', addedInVersion: 'v7.2.2',
+    detail: 'Codex 版规格初始化：cli-explore-agent 分析 + 交互式问卷配置规范',
+    usage: 'Codex 环境下初始化项目规格'
+  },
 
 ];
 
@@ -507,11 +583,11 @@ export const COMMANDS: Command[] = [
 // 统计数据
 // ============================================
 export const STATS = {
-  totalCommands: COMMANDS.length,
+  totalCommands: 127,
   categories: Object.keys(CATEGORIES).length,
   claudeCommands: COMMANDS.filter(c => c.cli === 'claude').length,
   codexCommands: COMMANDS.filter(c => c.cli === 'codex').length,
   newCommands: COMMANDS.filter(c => c.status === 'new').length,
   recommendedCommands: COMMANDS.filter(c => c.status === 'recommended').length,
-  latestVersion: 'v7.2.1',  // 当前最新版本
+  latestVersion: 'v7.2.2',  // 当前最新版本
 };

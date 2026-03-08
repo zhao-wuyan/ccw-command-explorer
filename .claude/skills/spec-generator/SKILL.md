@@ -1,7 +1,7 @@
 ---
 name: spec-generator
 description: Specification generator - 6 phase document chain producing product brief, PRD, architecture, and epics. Triggers on "generate spec", "create specification", "spec generator", "workflow:spec".
-allowed-tools: Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill
+allowed-tools: Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill
 ---
 
 # Spec Generator
@@ -14,20 +14,26 @@ Structured specification document generator producing a complete specification p
 Phase 0:   Specification Study (Read specs/ + templates/ - mandatory prerequisite)
            |
 Phase 1:   Discovery               -> spec-config.json + discovery-context.json
-           |
+           |                           (includes spec_type selection)
 Phase 1.5: Req Expansion           -> refined-requirements.json (interactive discussion + CLI gap analysis)
            |                           (-y auto mode: auto-expansion, skip interaction)
-Phase 2:   Product Brief            -> product-brief.md  (multi-CLI parallel analysis)
+Phase 2:   Product Brief            -> product-brief.md + glossary.json  (multi-CLI parallel analysis)
            |
 Phase 3:   Requirements (PRD)      -> requirements/  (_index.md + REQ-*.md + NFR-*.md)
-           |
+           |                           (RFC 2119 keywords, data model definitions)
 Phase 4:   Architecture            -> architecture/  (_index.md + ADR-*.md, multi-CLI review)
-           |
+           |                           (state machine, config model, error handling, observability)
 Phase 5:   Epics & Stories         -> epics/  (_index.md + EPIC-*.md)
            |
 Phase 6:   Readiness Check         -> readiness-report.md + spec-summary.md
-           |
-           Handoff to execution workflows
+           |                           (terminology + scope consistency validation)
+           ├── Pass (>=80%): Handoff to execution workflows
+           ├── Review (60-79%): Handoff with caveats
+           └── Fail (<60%): Phase 6.5 Auto-Fix (max 2 iterations)
+                 |
+Phase 6.5: Auto-Fix               -> Updated Phase 2-5 documents
+                 |
+                 └── Re-run Phase 6 validation
 ```
 
 ## Key Design Principles
@@ -38,6 +44,9 @@ Phase 6:   Readiness Check         -> readiness-report.md + spec-summary.md
 4. **Resumable Sessions**: `spec-config.json` tracks completed phases; `-c` flag resumes from last checkpoint
 5. **Template-Driven**: All documents generated from standardized templates with YAML frontmatter
 6. **Pure Documentation**: No code generation or execution - clean handoff to existing execution workflows
+7. **Spec Type Specialization**: Templates adapt to spec type (service/api/library/platform) via profiles for domain-specific depth
+8. **Iterative Quality**: Phase 6.5 auto-fix loop repairs issues found in readiness check (max 2 iterations)
+9. **Terminology Consistency**: glossary.json generated in Phase 2, injected into all subsequent phases
 
 ---
 
@@ -78,6 +87,7 @@ Phase 1: Discovery & Seed Analysis
    |- Parse input (text or file reference)
    |- Gemini CLI seed analysis (problem, users, domain, dimensions)
    |- Codebase exploration (conditional, if project detected)
+   |- Spec type selection: service|api|library|platform (interactive, -y defaults to service)
    |- User confirmation (interactive, -y skips)
    |- Output: spec-config.json, discovery-context.json (optional)
 
@@ -95,13 +105,17 @@ Phase 2: Product Brief
    |- Ref: phases/02-product-brief.md
    |- 3 parallel CLI analyses: Product (Gemini) + Technical (Codex) + User (Claude)
    |- Synthesize perspectives: convergent themes + conflicts
+   |- Generate glossary.json (terminology from product brief + CLI analysis)
    |- Interactive refinement (-y skips)
-   |- Output: product-brief.md (from template)
+   |- Output: product-brief.md (from template), glossary.json
 
 Phase 3: Requirements / PRD
    |- Ref: phases/03-requirements.md
    |- Gemini CLI: expand goals into functional + non-functional requirements
    |- Generate acceptance criteria per requirement
+   |- RFC 2119 behavioral constraints (MUST/SHOULD/MAY)
+   |- Core entity data model definitions
+   |- Glossary injection for terminology consistency
    |- User priority sorting: MoSCoW (interactive, -y auto-assigns)
    |- Output: requirements/ directory (_index.md + REQ-*.md + NFR-*.md, from template)
 
@@ -109,6 +123,12 @@ Phase 4: Architecture
    |- Ref: phases/04-architecture.md
    |- Gemini CLI: core components, tech stack, ADRs
    |- Codebase integration mapping (conditional)
+   |- State machine generation (ASCII diagrams for lifecycle entities)
+   |- Configuration model definition (fields, types, defaults, constraints)
+   |- Error handling strategy (per-component classification + recovery)
+   |- Observability specification (metrics, logs, health checks)
+   |- Spec type profile injection (templates/profiles/{type}-profile.md)
+   |- Glossary injection for terminology consistency
    |- Codex CLI: architecture challenge + review
    |- Interactive ADR decisions (-y auto-accepts)
    |- Output: architecture/ directory (_index.md + ADR-*.md, from template)
@@ -125,8 +145,19 @@ Phase 6: Readiness Check
    |- Ref: phases/06-readiness-check.md
    |- Cross-document validation (completeness, consistency, traceability)
    |- Quality scoring per dimension
+   |- Terminology consistency validation (glossary compliance)
+   |- Scope containment validation (PRD <= Brief scope)
    |- Output: readiness-report.md, spec-summary.md
    |- Handoff options: lite-plan, req-plan, plan, issue:new, export only, iterate
+
+Phase 6.5: Auto-Fix (conditional, triggered when Phase 6 score < 60%)
+   |- Ref: phases/06-5-auto-fix.md
+   |- Parse readiness-report.md for Error/Warning items
+   |- Group issues by originating Phase (2-5)
+   |- Re-generate affected sections via CLI with error context
+   |- Re-run Phase 6 validation
+   |- Max 2 iterations, then force handoff
+   |- Output: Updated Phase 2-5 documents
 
 Complete: Full specification package ready for execution
 
@@ -161,6 +192,7 @@ Bash(`mkdir -p "${workDir}"`);
 ├── spec-config.json              # Session configuration + phase state
 ├── discovery-context.json        # Codebase exploration results (optional)
 ├── refined-requirements.json     # Phase 1.5: Confirmed requirements after discussion
+├── glossary.json                 # Phase 2: Terminology glossary for cross-doc consistency
 ├── product-brief.md              # Phase 2: Product brief
 ├── requirements/                 # Phase 3: Detailed PRD (directory)
 │   ├── _index.md                 #   Summary, MoSCoW table, traceability, links
@@ -189,6 +221,9 @@ Bash(`mkdir -p "${workDir}"`);
   "complexity": "moderate",
   "depth": "standard",
   "focus_areas": [],
+  "spec_type": "service",
+  "iteration_count": 0,
+  "iteration_history": [],
   "seed_analysis": {
     "problem_statement": "...",
     "target_users": [],
@@ -217,6 +252,9 @@ Bash(`mkdir -p "${workDir}"`);
 5. **DO NOT STOP**: Continuous 6-phase pipeline until all phases complete or user exits
 6. **Respect -y Flag**: When auto mode, skip all AskUserQuestion calls, use recommended defaults
 7. **Respect -c Flag**: When continue mode, load spec-config.json and resume from checkpoint
+8. **Inject Glossary**: From Phase 3 onward, inject glossary.json terms into every CLI prompt
+9. **Load Profile**: Read templates/profiles/{spec_type}-profile.md and inject requirements into Phase 2-5 prompts
+10. **Iterate on Failure**: When Phase 6 score < 60%, auto-trigger Phase 6.5 (max 2 iterations)
 
 ## Reference Documents by Phase
 
@@ -224,6 +262,7 @@ Bash(`mkdir -p "${workDir}"`);
 | Document | Purpose | When to Use |
 |----------|---------|-------------|
 | [phases/01-discovery.md](phases/01-discovery.md) | Seed analysis and session setup | Phase start |
+| [templates/profiles/](templates/profiles/) | Spec type profiles | Spec type selection |
 | [specs/document-standards.md](specs/document-standards.md) | Frontmatter format for spec-config.json | Config generation |
 
 ### Phase 1.5: Requirement Expansion & Clarification
@@ -237,6 +276,7 @@ Bash(`mkdir -p "${workDir}"`);
 |----------|---------|-------------|
 | [phases/02-product-brief.md](phases/02-product-brief.md) | Multi-CLI analysis orchestration | Phase start |
 | [templates/product-brief.md](templates/product-brief.md) | Document template | Document generation |
+| [specs/glossary-template.json](specs/glossary-template.json) | Glossary schema | Glossary generation |
 
 ### Phase 3: Requirements
 | Document | Purpose | When to Use |
@@ -262,6 +302,12 @@ Bash(`mkdir -p "${workDir}"`);
 | [phases/06-readiness-check.md](phases/06-readiness-check.md) | Cross-document validation | Phase start |
 | [specs/quality-gates.md](specs/quality-gates.md) | Quality scoring criteria | Validation |
 
+### Phase 6.5: Auto-Fix
+| Document | Purpose | When to Use |
+|----------|---------|-------------|
+| [phases/06-5-auto-fix.md](phases/06-5-auto-fix.md) | Auto-fix workflow for readiness issues | When Phase 6 score < 60% |
+| [specs/quality-gates.md](specs/quality-gates.md) | Iteration exit criteria | Validation |
+
 ### Debugging & Troubleshooting
 | Issue | Solution Document |
 |-------|-------------------|
@@ -284,6 +330,8 @@ Bash(`mkdir -p "${workDir}"`);
 | Phase 4 | Architecture review fails | No | Skip review, proceed with initial analysis |
 | Phase 5 | Story generation fails | No | Generate epics without detailed stories |
 | Phase 6 | Validation CLI fails | No | Generate partial report with available data |
+| Phase 6.5 | Auto-fix CLI fails | No | Log failure, proceed to handoff with Review status |
+| Phase 6.5 | Max iterations reached | No | Force handoff, report remaining issues |
 
 ### CLI Fallback Chain
 

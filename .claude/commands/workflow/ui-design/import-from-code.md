@@ -2,7 +2,7 @@
 name: workflow:ui-design:import-from-code
 description: Import design system from code files (CSS/JS/HTML/SCSS) with automatic file discovery and parallel agent analysis
 argument-hint: "[--design-id <id>] [--session <id>] [--source <path>]"
-allowed-tools: Read,Write,Bash,Glob,Grep,Task,TodoWrite
+allowed-tools: Read,Write,Bash,Glob,Grep,Agent,TodoWrite
 auto-continue: true
 ---
 

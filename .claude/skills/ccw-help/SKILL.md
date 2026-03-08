@@ -77,7 +77,7 @@ CCW 命令帮助系统，提供命令搜索、推荐、文档查看、Skill/Team
 - **With-File Workflows**: Documented exploration with multi-CLI collaboration
   - `brainstorm-with-file`: Multi-perspective ideation → workflow-plan → workflow-execute
   - `debug-with-file`: Hypothesis-driven debugging (standalone)
-  - `analyze-with-file`: Collaborative analysis → workflow-lite-planex
+  - `analyze-with-file`: Collaborative analysis → workflow-lite-plan
   - `collaborative-plan-with-file`: Multi-agent planning → unified-execute
   - `roadmap-with-file`: Strategic requirement roadmap → team-planex
 - **Issue Workflow**: Batch issue discovery, planning, queueing, execution
@@ -131,7 +131,7 @@ Single source of truth: **[command.json](command.json)**
 
 | Skill | 内部流水线 | 触发词 |
 |-------|-----------|--------|
-| `workflow-lite-planex` | explore → plan → confirm → execute | "lite-plan", 快速任务 |
+| `workflow-lite-plan` | explore → plan → confirm → execute | "lite-plan", 快速任务 |
 | `workflow-plan` | session → context → convention → gen → verify | "workflow-plan", 正式规划 |
 | `workflow-execute` | session discovery → task processing → commit | "workflow-execute", 执行 |
 | `workflow-tdd-plan` | 6-phase TDD plan → verify | "tdd-plan", TDD 开发 |
@@ -146,10 +146,10 @@ Team Skills 使用 `team-worker` agent 架构，Coordinator 编排流水线，Wo
 | Skill | 用途 | 架构 |
 |-------|------|------|
 | `team-planex` | 规划+执行 wave pipeline | planner + executor, 适合清晰 issue/roadmap |
-| `team-lifecycle-v5` | 完整生命周期 (spec/impl/test) | team-worker agents with role-specs |
+| `team-lifecycle` | 完整生命周期 (spec/impl/test) | team-worker agents with role-specs |
 | `team-lifecycle-v4` | 优化版生命周期 | Optimized pipeline |
 | `team-lifecycle-v3` | 基础版生命周期 | All roles invoke unified skill |
-| `team-coordinate-v2` | 通用动态团队协调 | 运行时动态生成 role-specs |
+| `team-coordinate` | 通用动态团队协调 | 运行时动态生成 role-specs |
 | `team-coordinate` | 通用团队协调 v1 | Dynamic role generation |
 | `team-brainstorm` | 团队头脑风暴 | Multi-perspective analysis |
 | `team-frontend` | 前端开发团队 | Frontend specialists |
@@ -163,7 +163,7 @@ Team Skills 使用 `team-worker` agent 架构，Coordinator 编排流水线，Wo
 | `team-uidesign` | UI 设计团队 | Design system + prototyping |
 | `team-ultra-analyze` | 深度协作分析 | Deep collaborative analysis |
 | `team-executor` | 轻量执行 (恢复会话) | Resume existing sessions |
-| `team-executor-v2` | 轻量执行 v2 | Improved session resumption |
+| `team-executor` | 轻量执行 v2 | Improved session resumption |
 
 ### Standalone Skills (独立技能)
 
@@ -186,9 +186,9 @@ CCW 根据任务意图自动选择工作流级别（参考 [ccw.md](../../comman
 
 | 输入示例 | 类型 | 级别 | 流水线 |
 |---------|------|------|--------|
-| "Add API endpoint" | feature (low) | 2 | workflow-lite-planex → workflow-test-fix |
-| "Fix login timeout" | bugfix | 2 | workflow-lite-planex → workflow-test-fix |
-| "协作分析: 认证架构" | analyze-file | 3 | analyze-with-file → workflow-lite-planex |
+| "Add API endpoint" | feature (low) | 2 | workflow-lite-plan → workflow-test-fix |
+| "Fix login timeout" | bugfix | 2 | workflow-lite-plan → workflow-test-fix |
+| "协作分析: 认证架构" | analyze-file | 3 | analyze-with-file → workflow-lite-plan |
 | "重构 auth 模块" | refactor | 3 | workflow:refactor-cycle |
 | "multi-cli: API设计" | multi-cli | 3 | workflow-multi-cli-plan → workflow-test-fix |
 | "头脑风暴: 通知系统" | brainstorm | 4 | brainstorm-with-file → workflow-plan → workflow-execute |

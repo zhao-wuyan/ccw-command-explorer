@@ -216,7 +216,7 @@ const workflowConfig = {
   title: "Workflow Plan",               // Human-readable
   description: "5-phase planning...",   // One-line description
   triggers: ["workflow-plan"],          // Trigger phrases
-  allowedTools: ["Task", "AskUserQuestion", "TodoWrite", "Read", "Write", "Edit", "Bash", "Glob", "Grep", "Skill"],
+  allowedTools: ["Agent", "AskUserQuestion", "TodoWrite", "Read", "Write", "Edit", "Bash", "Glob", "Grep", "Skill"],
 
   // Source information
   source: {

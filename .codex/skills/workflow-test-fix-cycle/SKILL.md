@@ -208,7 +208,7 @@ Phase 2: Test-Cycle Execution (phases/02-test-cycle-execute.md)
   │       ├─ spawn_agent(@cli-planning-agent) → IMPL-fix-N.json
   │       ├─ spawn_agent(@test-fix-agent) → Apply fix & re-test
   │       └─ Re-test → Back to decision
-  └─ Completion: Final validation → Summary → Auto-complete session
+  └─ Completion: Final validation → Summary → Sync session state → Auto-complete session
 ```
 
 ## Core Rules
@@ -387,5 +387,6 @@ try {
 - `test-fix-agent` (~/.codex/agents/test-fix-agent.md) - Test execution, code fixes, criticality assignment
 
 **Follow-up**:
+- Session sync: `$session-sync -y "Test-fix cycle complete: {pass_rate}% pass rate"`
 - Session auto-complete on success
 - Issue creation for follow-up work (post-completion expansion)

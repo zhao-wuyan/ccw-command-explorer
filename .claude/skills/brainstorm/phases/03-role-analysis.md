@@ -301,6 +301,14 @@ const agentContext = {
   original_topic: original_topic,
   session_id: session_id
 };
+
+// Load role-specific template if exists
+let roleTemplate = null;
+try {
+  roleTemplate = Read(`templates/role-templates/${role_name}-template.md`);
+} catch (e) {
+  // No template, use generic analysis
+}
 ```
 
 **Step 3.3.3: Execute Conceptual Planning Agent**
@@ -362,6 +370,13 @@ UPDATE_MODE: ${update_mode}
    - Command: Read(${brainstorm_dir}/${role_name}/${role_name}-context.md)
    - Output: user_context_answers
 
+${roleTemplate ? `
+5. **load_role_template**
+   - Action: Load role-specific analysis template
+   - Command: Read(templates/role-templates/${role_name}-template.md)
+   - Output: role_specific_template
+` : ''}
+
 5. **${update_mode ? 'load_existing_analysis' : 'skip'}**
    ${update_mode ? `
    - Action: Load existing analysis for incremental update
@@ -378,6 +393,21 @@ ${featureListBlock}
 **Role Focus**: ${roleConfig[role_name].focus_area}
 **Template Integration**: Apply role template guidelines within framework structure
 ${feature_mode ? `**Feature Organization**: Organize analysis by feature points - each feature gets its own sub-document. Cross-cutting concerns go into analysis-cross-cutting.md.` : ''}
+**RFC 2119 Compliance**: Use RFC 2119 keywords (MUST, SHOULD, MAY, MUST NOT, SHOULD NOT) to define all behavioral constraints and recommendations. Every technical decision MUST be expressed with appropriate RFC keyword. Distinguish between absolute requirements (MUST) and recommendations (SHOULD).
+
+${roleTemplate ? `
+**ROLE-SPECIFIC TEMPLATE (MUST follow this structure)**:
+${roleTemplate}
+
+Your analysis MUST include all Required Sections from the template above.
+` : ''}
+
+**For system-architect role specifically**:
+- MUST define Data Model for 3-5 core entities with fields, types, constraints, relationships
+- MUST create State Machine for at least 1 entity with complex lifecycle (ASCII diagram + transition table)
+- MUST define Error Handling Strategy with error classification and recovery mechanisms
+- MUST specify Observability Requirements with metrics (at least 5), log events, and health checks
+- All constraints MUST use RFC 2119 keywords (MUST, SHOULD, MAY)
 
 ## Expected Deliverables
 ${feature_mode ? `

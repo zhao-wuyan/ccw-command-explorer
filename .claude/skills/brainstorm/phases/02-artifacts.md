@@ -117,6 +117,73 @@ AskUserQuestion({
 
 **⚠️ CRITICAL**: Questions MUST reference topic keywords. Generic "Project type?" violates dynamic generation.
 
+### Phase 1.5: Terminology & Boundary Definition
+
+**Goal**: Extract core terminology and define scope boundaries (Non-Goals)
+
+**Steps**:
+1. Analyze Phase 1 user responses and topic description
+2. Extract 5-10 core domain terms that will be used throughout the specification
+3. Generate terminology clarification questions if needed
+4. Define scope boundaries by identifying what is explicitly OUT of scope
+
+**Terminology Extraction**:
+```javascript
+// Based on Phase 1 context and user input
+const coreTerms = extractTerminology({
+  topic: session.topic,
+  userResponses: session.intent_context,
+  contextPackage: contextPackage // from Phase 0
+});
+
+// Generate terminology table
+const terminologyTable = coreTerms.map(term => ({
+  term: term.canonical,
+  definition: term.definition,
+  aliases: term.alternatives,
+  category: term.category // core|technical|business
+}));
+```
+
+**Non-Goals Definition**:
+```javascript
+AskUserQuestion({
+  questions: [{
+    question: "以下哪些是明确 NOT 包含在本次项目范围内的？（可多选）",
+    header: "范围边界 (Non-Goals)",
+    multiSelect: true,
+    options: [
+      { label: "移动端应用", description: "本次只做 Web 端，移动端后续考虑" },
+      { label: "多语言支持", description: "MVP 阶段只支持中文" },
+      { label: "第三方集成", description: "暂不集成外部系统" },
+      { label: "高级分析功能", description: "基础功能优先，分析功能 v2" },
+      { label: "其他（请在后续补充）", description: "用户自定义排除项" }
+    ]
+  }]
+});
+
+// If user selects "其他", follow up with:
+if (selectedNonGoals.includes("其他")) {
+  AskUserQuestion({
+    questions: [{
+      question: "请描述其他明确排除的功能或范围",
+      header: "补充 Non-Goals",
+      multiSelect: false,
+      freeText: true
+    }]
+  });
+}
+
+// Store to session
+session.terminology = terminologyTable;
+session.non_goals = selectedNonGoals.map(ng => ({
+  item: ng.label,
+  rationale: ng.description
+}));
+```
+
+**Output**: Updated `workflow-session.json` with `terminology` and `non_goals` fields
+
 ### Phase 2: Role Selection
 
 **Goal**: User selects roles from intelligent recommendations
@@ -303,11 +370,26 @@ After final clarification, extract implementable feature units from all Phase 1-
 ### Phase 5: Generate Specification
 
 **Steps**:
-1. Load all decisions: `intent_context` + `selected_roles` + `role_decisions` + `cross_role_decisions` + `additional_decisions` + `feature_list`
+1. Load all decisions: `intent_context` + `selected_roles` + `role_decisions` + `cross_role_decisions` + `additional_decisions` + `feature_list` + `terminology` + `non_goals`
 2. Transform Q&A to declarative: Questions → Headers, Answers → CONFIRMED/SELECTED statements
-3. Generate `guidance-specification.md`
-4. Update `workflow-session.json` (metadata only)
-5. Validate: No interrogative sentences, all decisions traceable
+3. Apply RFC 2119 keywords (MUST, SHOULD, MAY, MUST NOT, SHOULD NOT) to all behavioral requirements
+4. Generate `guidance-specification.md` with Concepts & Terminology and Non-Goals sections
+5. Update `workflow-session.json` (metadata only)
+6. Validate: No interrogative sentences, all decisions traceable, RFC keywords applied
+
+**RFC 2119 Compliance**:
+
+All behavioral requirements and constraints MUST be expressed using RFC 2119 keywords:
+- **MUST**: Absolute requirement, non-negotiable
+- **MUST NOT**: Absolute prohibition
+- **SHOULD**: Strong recommendation, may be ignored with valid reason
+- **SHOULD NOT**: Strong discouragement
+- **MAY**: Optional, implementer's choice
+
+Example transformations:
+- "用户需要登录" → "The system MUST authenticate users before granting access"
+- "建议使用缓存" → "The system SHOULD cache frequently accessed data"
+- "可以支持 OAuth" → "The system MAY support OAuth2 authentication"
 
 ## Question Guidelines
 
@@ -366,15 +448,43 @@ for (let i = 0; i < allQuestions.length; i += BATCH_SIZE) {
 **CONFIRMED Objectives**: [from topic + Phase 1]
 **CONFIRMED Success Criteria**: [from Phase 1 answers]
 
-## 2-N. [Role] Decisions
+## 2. Concepts & Terminology
+
+**Core Terms**: The following terms are used consistently throughout this specification.
+
+| Term | Definition | Aliases | Category |
+|------|------------|---------|----------|
+${session.terminology.map(t => `| ${t.term} | ${t.definition} | ${t.aliases.join(', ')} | ${t.category} |`).join('\n')}
+
+**Usage Rules**:
+- All documents MUST use the canonical term
+- Aliases are for reference only
+- New terms introduced in role analysis MUST be added to this glossary
+
+## 3. Non-Goals (Out of Scope)
+
+The following are explicitly OUT of scope for this project:
+
+${session.non_goals.map(ng => `- **${ng.item}**: ${ng.rationale}`).join('\n')}
+
+**Rationale**: These exclusions help maintain focus on core objectives and prevent scope creep.
+
+## 4-N. [Role] Decisions
 ### SELECTED Choices
-**[Question topic]**: [User's answer]
+**[Question topic]**: [User's answer with RFC 2119 keywords]
 - **Rationale**: [From option description]
-- **Impact**: [Implications]
+- **Impact**: [Implications with RFC keywords]
+- **Requirement Level**: [MUST/SHOULD/MAY based on criticality]
+
+**Example**:
+- The system MUST authenticate users within 200ms (P99)
+- The system SHOULD cache frequently accessed data
+- The system MAY support OAuth2 providers (Google, GitHub)
 
 ### Cross-Role Considerations
-**[Conflict resolved]**: [Resolution from Phase 4]
+**[Conflict resolved]**: [Resolution from Phase 4 with RFC keywords]
 - **Affected Roles**: [Roles involved]
+- **Decision**: [MUST/SHOULD/MAY statement]
 
 ## Cross-Role Integration
 **CONFIRMED Integration Points**: [API/Data/Auth from multiple roles]

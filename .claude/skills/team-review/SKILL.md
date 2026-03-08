@@ -1,264 +1,141 @@
 ---
 name: team-review
-description: "Unified team skill for code scanning, vulnerability review, optimization suggestions, and automated fix. 4-role team: coordinator, scanner, reviewer, fixer. Triggers on team-review."
-allowed-tools: Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet, Read, Write, Edit, Bash, Glob, Grep, Skill, mcp__ace-tool__search_context
+description: Unified team skill for code review. 3-role pipeline: scanner, reviewer, fixer. Triggers on "team-review".
+allowed-tools: TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)
 ---
 
 # Team Review
 
-Unified team skill: code scanning, vulnerability review, optimization suggestions, and automated fix. All team members invoke with `--role=xxx` to route to role-specific execution.
+Orchestrate multi-agent code review: scanner -> reviewer -> fixer. Toolchain + LLM scan, deep analysis with root cause enrichment, and automated fix with rollback-on-failure.
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  Skill(skill="team-review")                                 │
-│  args="<target>" or args="--role=xxx"                       │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ Role Router
-                ┌──── --role present? ────┐
-                │ NO                      │ YES
-                ↓                         ↓
-         Orchestration Mode         Role Dispatch
-         (auto → coordinator)      (route to role.md)
-                │
-           ┌────┴────┬───────────┬───────────┐
-           ↓         ↓           ↓           ↓
-      ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
-      │ coord  │ │scanner │ │reviewer│ │ fixer  │
-      │ (RC-*) │ │(SCAN-*)│ │(REV-*) │ │(FIX-*) │
-      └────────┘ └────────┘ └────────┘ └────────┘
+Skill(skill="team-review", args="task description")
+                    |
+         SKILL.md (this file) = Router
+                    |
+     +--------------+--------------+
+     |                             |
+  no --role flag              --role <name>
+     |                             |
+  Coordinator                  Worker
+  roles/coordinator/role.md    roles/<name>/role.md
+     |
+     +-- analyze -> dispatch -> spawn workers -> STOP
+                                    |
+                    +-------+-------+-------+
+                    v       v       v
+                [scan]  [review]  [fix]
+                team-worker agents, each loads roles/<role>/role.md
 ```
+
+## Role Registry
+
+| Role | Path | Prefix | Inner Loop |
+|------|------|--------|------------|
+| coordinator | [roles/coordinator/role.md](roles/coordinator/role.md) | — | — |
+| scanner | [roles/scanner/role.md](roles/scanner/role.md) | SCAN-* | false |
+| reviewer | [roles/reviewer/role.md](roles/reviewer/role.md) | REV-* | false |
+| fixer | [roles/fixer/role.md](roles/fixer/role.md) | FIX-* | true |
 
 ## Role Router
 
-### Input Parsing
+Parse `$ARGUMENTS`:
+- Has `--role <name>` -> Read `roles/<name>/role.md`, execute Phase 2-4
+- No `--role` -> Read `roles/coordinator/role.md`, execute entry router
 
-Parse `$ARGUMENTS` to extract `--role`. If absent → Orchestration Mode (auto route to coordinator).
+## Shared Constants
 
-### Role Registry
+- **Session prefix**: `RV`
+- **Session path**: `.workflow/.team/RV-<slug>-<date>/`
+- **Team name**: `review`
+- **CLI tools**: `ccw cli --mode analysis` (read-only), `ccw cli --mode write` (modifications)
+- **Message bus**: `mcp__ccw-tools__team_msg(session_id=<session-id>, ...)`
 
-| Role | File | Task Prefix | Type | Compact |
-|------|------|-------------|------|---------|
-| coordinator | [roles/coordinator/role.md](roles/coordinator/role.md) | RC-* | orchestrator | **⚠️ 压缩后必须重读** |
-| scanner | [roles/scanner/role.md](roles/scanner/role.md) | SCAN-* | read-only-analysis | 压缩后必须重读 |
-| reviewer | [roles/reviewer/role.md](roles/reviewer/role.md) | REV-* | read-only-analysis | 压缩后必须重读 |
-| fixer | [roles/fixer/role.md](roles/fixer/role.md) | FIX-* | code-generation | 压缩后必须重读 |
+## Worker Spawn Template
 
-> **⚠️ COMPACT PROTECTION**: 角色文件是执行文档，不是参考资料。当 context compression 发生后，角色指令仅剩摘要时，**必须立即 `Read` 对应 role.md 重新加载后再继续执行**。不得基于摘要执行任何 Phase。
+Coordinator spawns workers using this template:
 
-### Dispatch
-
-1. Extract `--role` from arguments
-2. If no `--role` → route to coordinator (Orchestration Mode)
-3. Look up role in registry → Read the role file → Execute its phases
-
-### Orchestration Mode
-
-When invoked without `--role`, coordinator auto-starts. User just provides target description.
-
-**Invocation**: `Skill(skill="team-review", args="<target-path>")`
-
-**Lifecycle**:
 ```
-User provides scan target
-  → coordinator Phase 1-3: Parse flags → TeamCreate → Create task chain
-  → coordinator Phase 4: spawn first batch workers (background) → STOP
-  → Worker executes → SendMessage callback → coordinator advances next step
-  → Loop until pipeline complete → Phase 5 report
+Agent({
+  subagent_type: "team-worker",
+  description: "Spawn <role> worker",
+  team_name: "review",
+  name: "<role>",
+  run_in_background: true,
+  prompt: `## Role Assignment
+role: <role>
+role_spec: .claude/skills/team-review/roles/<role>/role.md
+session: <session-folder>
+session_id: <session-id>
+team_name: review
+requirement: <task-description>
+inner_loop: <true|false>
+
+Read role_spec file to load Phase 2-4 domain instructions.
+Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).`
+})
 ```
 
-**User Commands** (wake paused coordinator):
+## User Commands
 
 | Command | Action |
 |---------|--------|
-| `check` / `status` | Output execution status graph, no advancement |
-| `resume` / `continue` | Check worker states, advance next step |
+| `check` / `status` | View pipeline status graph |
+| `resume` / `continue` | Advance to next step |
+| `--full` | Enable scan + review + fix pipeline |
+| `--fix` | Fix-only mode (skip scan/review) |
+| `-q` / `--quick` | Quick scan only |
+| `--dimensions=sec,cor,prf,mnt` | Custom dimensions |
+| `-y` / `--yes` | Skip confirmations |
 
----
+## Completion Action
 
-## Pipeline (CP-1 Linear)
-
-```
-coordinator dispatch
-  → SCAN-* (scanner: toolchain + LLM scan)
-  → REV-*  (reviewer: deep analysis + report)
-  → [user confirm]
-  → FIX-*  (fixer: plan + execute + verify)
-```
-
-### Cadence Control
-
-**Beat model**: Event-driven, each beat = coordinator wake → process → spawn → STOP.
+When pipeline completes, coordinator presents:
 
 ```
-Beat Cycle (single beat)
-═══════════════════════════════════════════════════════════
-  Event                   Coordinator              Workers
-───────────────────────────────────────────────────────────
-  callback/resume ──→ ┌─ handleCallback ─┐
-                      │  mark completed   │
-                      │  check pipeline   │
-                      ├─ handleSpawnNext ─┤
-                      │  find ready tasks │
-                      │  spawn workers ───┼──→ [Worker A] Phase 1-5
-                      └─ STOP (idle) ─────┘         │
-                                                     │
-  callback ←─────────────────────────────────────────┘
-  (next beat)              SendMessage + TaskUpdate(completed)
-═══════════════════════════════════════════════════════════
+AskUserQuestion({
+  questions: [{
+    question: "Review pipeline complete. What would you like to do?",
+    header: "Completion",
+    multiSelect: false,
+    options: [
+      { label: "Archive & Clean (Recommended)", description: "Archive session, clean up team" },
+      { label: "Keep Active", description: "Keep session for follow-up work" },
+      { label: "Export Results", description: "Export deliverables to target directory" }
+    ]
+  }]
+})
 ```
 
-**Pipeline beat view**:
+## Session Directory
 
 ```
-Review Pipeline (3 beats, linear with user checkpoint)
-──────────────────────────────────────────────────────────
-Beat  1         2         ⏸         3
-      │         │         │         │
-      SCAN → REV ──→ [confirm] → FIX
-      ▲                              ▲
-   pipeline                       pipeline
-    start                          done
-
-SCAN=scanner  REV=reviewer  FIX=fixer
+.workflow/.team/RV-<slug>-<date>/
+├── .msg/messages.jsonl     # Team message bus
+├── .msg/meta.json          # Session state + cross-role state
+├── wisdom/                 # Cross-task knowledge
+├── scan/                   # Scanner output
+├── review/                 # Reviewer output
+└── fix/                    # Fixer output
 ```
 
-**Checkpoints**:
+## Specs Reference
 
-| Trigger | Location | Behavior |
-|---------|----------|----------|
-| Review→Fix transition | REV-* complete | Pause, present review report, wait for user `resume` to confirm fix |
-| Quick mode (`-q`) | After SCAN-* | Pipeline ends after scan, no review/fix |
-| Fix-only mode (`--fix`) | Entry | Skip scan/review, go directly to fixer |
-
-**Stall Detection** (coordinator `handleCheck` executes):
-
-| Check | Condition | Resolution |
-|-------|-----------|------------|
-| Worker no response | in_progress task no callback | Report waiting task list, suggest user `resume` |
-| Pipeline deadlock | no ready + no running + has pending | Check blockedBy dependency chain, report blocking point |
-
-### Task Metadata Registry
-
-| Task ID | Role | Phase | Dependencies | Description |
-|---------|------|-------|-------------|-------------|
-| SCAN-001 | scanner | scan | (none) | Toolchain + LLM code scanning |
-| REV-001 | reviewer | review | SCAN-001 | Deep analysis and review report |
-| FIX-001 | fixer | fix | REV-001 + user confirm | Plan + execute + verify fixes |
-
----
-
-## Shared Infrastructure
-
-### Worker Phase 1: Task Discovery (shared by all workers)
-
-Every worker executes the same task discovery flow on startup:
-
-1. Call `TaskList()` to get all tasks
-2. Filter: subject matches this role's prefix + owner is this role + status is pending + blockedBy is empty
-3. No tasks → idle wait
-4. Has tasks → `TaskGet` for details → `TaskUpdate` mark in_progress
-
-**Resume Artifact Check** (prevent duplicate output after resume):
-- Check whether this task's output artifact already exists
-- Artifact complete → skip to Phase 5 report completion
-- Artifact incomplete or missing → normal Phase 2-4 execution
-
-### Worker Phase 5: Report (shared by all workers)
-
-Standard reporting flow after task completion:
-
-1. **Message Bus**: Call `mcp__ccw-tools__team_msg` to log message
-   - Parameters: operation="log", team="review", from=<role>, to="coordinator", type=<message-type>, summary="[<role>] <summary>", ref=<artifact-path>
-   - **CLI fallback**: When MCP unavailable → `ccw team log --team review --from <role> --to coordinator --type <type> --summary "[<role>] ..." --json`
-2. **SendMessage**: Send result to coordinator (content and summary both prefixed with `[<role>]`)
-3. **TaskUpdate**: Mark task completed
-4. **Loop**: Return to Phase 1 to check next task
-
-### Wisdom Accumulation (all roles)
-
-Cross-task knowledge accumulation. Coordinator creates `wisdom/` directory at session initialization.
-
-**Directory**:
-```
-<session-folder>/wisdom/
-├── learnings.md      # Patterns and insights
-├── decisions.md      # Architecture and design decisions
-├── conventions.md    # Codebase conventions
-└── issues.md         # Known risks and issues
-```
-
-**Worker Load** (Phase 2): Extract `Session: <path>` from task description, read wisdom directory files.
-**Worker Contribute** (Phase 4/5): Write this task's discoveries to corresponding wisdom files.
-
-### Role Isolation Rules
-
-| Allowed | Forbidden |
-|---------|-----------|
-| Process tasks with own prefix | Process tasks with other role prefixes |
-| SendMessage to coordinator | Communicate directly with other workers |
-| Use tools declared in Toolbox | Create tasks for other roles |
-| Delegate to commands/ files | Modify resources outside own responsibility |
-
-Coordinator additional restrictions: Do not write/modify code directly, do not call implementation subagents, do not execute analysis/test/review directly.
-
-| Component | Location |
-|-----------|----------|
-| Session directory | `.workflow/.team-review/<workflow_id>/` |
-| Shared memory | `shared-memory.json` in session dir |
-| Team config | `specs/team-config.json` |
-| Finding schema | `specs/finding-schema.json` |
-| Dimensions | `specs/dimensions.md` |
-
----
-
-## Coordinator Spawn Template
-
-When coordinator spawns workers, use Skill invocation:
-
-```
-Skill(skill="team-review", args="--role=scanner <target> <flags>")
-Skill(skill="team-review", args="--role=reviewer --input <scan-output> <flags>")
-Skill(skill="team-review", args="--role=fixer --input <fix-manifest> <flags>")
-```
-
-## Usage
-
-```bash
-# Via coordinator (auto pipeline)
-Skill(skill="team-review", args="src/auth/**")                    # scan + review
-Skill(skill="team-review", args="--full src/auth/**")             # scan + review + fix
-Skill(skill="team-review", args="--fix .review/review-*.json")    # fix only
-Skill(skill="team-review", args="-q src/auth/**")                 # quick scan only
-
-# Direct role invocation
-Skill(skill="team-review", args="--role=scanner src/auth/**")
-Skill(skill="team-review", args="--role=reviewer --input scan-result.json")
-Skill(skill="team-review", args="--role=fixer --input fix-manifest.json")
-
-# Flags (all modes)
---dimensions=sec,cor,perf,maint    # custom dimensions (default: all 4)
--y / --yes                         # skip confirmations
--q / --quick                       # quick scan mode
---full                             # full pipeline (scan → review → fix)
---fix                              # fix mode only
-```
+- [specs/pipelines.md](specs/pipelines.md) — Pipeline definitions and task registry
+- [specs/dimensions.md](specs/dimensions.md) — Review dimension definitions (SEC/COR/PRF/MNT)
+- [specs/finding-schema.json](specs/finding-schema.json) — Finding data schema
+- [specs/team-config.json](specs/team-config.json) — Team configuration
 
 ## Error Handling
 
 | Scenario | Resolution |
 |----------|------------|
 | Unknown --role value | Error with available role list |
-| Missing --role arg | Orchestration Mode → auto route to coordinator |
-| Role file not found | Error with expected file path (roles/<name>/role.md) |
-| Invalid flags | Warn and continue with defaults |
-| No target specified (no --role) | AskUserQuestion to clarify |
-
-## Execution Rules
-
-1. **Parse first**: Extract --role and flags from $ARGUMENTS before anything else
-2. **Progressive loading**: Read ONLY the matched role.md, not all four
-3. **Full delegation**: Role.md owns entire execution -- do not add logic here
-4. **Self-contained**: Each role.md includes its own message bus, task lifecycle, toolbox
-5. **DO NOT STOP**: Continuous execution until role completes all 5 phases
+| Role not found | Error with expected path (roles/<name>/role.md) |
+| CLI tool fails | Worker fallback to direct implementation |
+| Scanner finds 0 findings | Report clean, skip review + fix |
+| User declines fix | Delete FIX tasks, complete with review-only results |
+| Fast-advance conflict | Coordinator reconciles on next callback |
+| Completion action fails | Default to Keep Active |

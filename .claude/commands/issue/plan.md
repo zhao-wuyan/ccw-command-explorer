@@ -2,7 +2,7 @@
 name: plan
 description: Batch plan issue resolution using issue-plan-agent (explore + plan closed-loop)
 argument-hint: "[-y|--yes] --all-pending <issue-id>[,<issue-id>,...] [--batch-size 3]"
-allowed-tools: TodoWrite(*), Task(*), Skill(*), AskUserQuestion(*), Bash(*), Read(*), Write(*)
+allowed-tools: TodoWrite(*), Agent(*), Skill(*), AskUserQuestion(*), Bash(*), Read(*), Write(*)
 ---
 
 ## Auto Mode
@@ -222,7 +222,7 @@ for (let i = 0; i < agentTasks.length; i += MAX_PARALLEL) {
 
   // Collect results from this chunk
   for (const { taskId, batchIndex } of taskIds) {
-    const result = TaskOutput(task_id=taskId, block=true);
+    const result = TaskOutput({ task_id: taskId, block: true });
 
     // Extract JSON from potential markdown code blocks (agent may wrap in ```json...```)
     const jsonText = extractJsonFromMarkdown(result);

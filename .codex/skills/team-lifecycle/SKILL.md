@@ -457,6 +457,9 @@ TASK_COMPLETE:
 |   +-- decisions.md            # Architecture and design decisions
 |   +-- conventions.md          # Codebase conventions
 |   +-- issues.md               # Known risks and issues
++-- .msg/                       # Message bus (UI integration)
+|   +-- meta.json               # Pipeline metadata (stages, roles, team_name)
+|   +-- messages.jsonl          # NDJSON event log
 +-- shared-memory.json          # Cross-agent state
 ```
 
@@ -502,6 +505,56 @@ The state file replaces Claude's TaskCreate/TaskList/TaskGet/TaskUpdate system. 
   "gc_loop_count": 0
 }
 ```
+
+---
+
+## Message Bus (.msg/)
+
+The `.msg/` directory provides pipeline metadata for the frontend UI. This is the **same format** used by Claude version's `team_msg` tool with `type: "state_update"`.
+
+### meta.json
+
+Pipeline metadata read by the API for frontend display:
+
+```json
+{
+  "status": "active",
+  "pipeline_mode": "<mode>",
+  "pipeline_stages": ["role1", "role2", "..."],
+  "roles": ["coordinator", "role1", "role2", "..."],
+  "team_name": "lifecycle",
+  "role_state": {
+    "<role>": {
+      "status": "completed",
+      "task_id": "TASK-ID",
+      "_updated_at": "<ISO8601>"
+    }
+  },
+  "updated_at": "<ISO8601>"
+}
+```
+
+**pipeline_stages by mode**:
+
+| Mode | pipeline_stages |
+|------|-----------------|
+| spec-only | `["analyst", "writer", "reviewer"]` |
+| impl-only | `["planner", "executor", "tester", "reviewer"]` |
+| fe-only | `["planner", "fe-developer", "fe-qa"]` |
+| fullstack | `["planner", "executor", "fe-developer", "tester", "fe-qa", "reviewer"]` |
+| full-lifecycle | `["analyst", "writer", "planner", "executor", "tester", "reviewer"]` |
+| full-lifecycle-fe | `["analyst", "writer", "planner", "executor", "fe-developer", "tester", "fe-qa", "reviewer"]` |
+
+### messages.jsonl
+
+NDJSON event log (one JSON object per line):
+
+```json
+{"id":"MSG-001","ts":"<ISO8601>","from":"coordinator","to":"coordinator","type":"state_update","summary":"Session initialized","data":{...}}
+{"id":"MSG-002","ts":"<ISO8601>","from":"analyst","to":"coordinator","type":"impl_complete","summary":"RESEARCH-001 completed","data":{...}}
+```
+
+**Message types**: `state_update`, `impl_complete`, `impl_progress`, `test_result`, `review_result`, `error`, `shutdown`
 
 ---
 

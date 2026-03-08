@@ -29,9 +29,8 @@
       "display_name": "RD Planner",
       "responsibility_type": "Orchestration",
       "task_prefix": "PLAN",
-      "description": "Research, context gathering, task JSON generation via action-planning-agent",
+      "description": "Research, context gathering, task JSON generation via CLI planning tool",
       "commands": ["research", "create-plans"],
-      "subagents": ["cli-explore-agent", "action-planning-agent"],
       "cli_tools": [{"tool": "gemini", "mode": "analysis"}],
       "message_types": ["plan_ready", "plan_progress", "error"]
     },
@@ -42,7 +41,7 @@
       "task_prefix": "EXEC",
       "description": "Code implementation from IMPL-*.json tasks, wave-based parallel execution",
       "commands": ["implement"],
-      "subagents": ["code-developer"],
+      "cli_tools": [{"tool": "gemini", "mode": "write"}],
       "message_types": ["exec_complete", "exec_progress", "error"]
     },
     {

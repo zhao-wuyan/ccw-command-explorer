@@ -2,7 +2,7 @@
 name: generate
 description: Assemble UI prototypes by combining layout templates with design tokens (default animation support), pure assembler without new content generation
 argument-hint: [--design-id <id>] [--session <id>]
-allowed-tools: TodoWrite(*), Read(*), Write(*), Task(ui-design-agent), Bash(*)
+allowed-tools: TodoWrite(*), Read(*), Write(*), Agent(ui-design-agent), Bash(*)
 ---
 
 # Generate UI Prototypes (/workflow:ui-design:generate)
@@ -129,7 +129,7 @@ ELSE:
 
 ## Phase 2: Assembly (Agent)
 
-**Executor**: `Task(ui-design-agent)` grouped by `target × style` (max 10 layouts per agent, max 6 concurrent agents)
+**Executor**: `Agent(ui-design-agent)` grouped by `target × style` (max 10 layouts per agent, max 6 concurrent agents)
 
 **⚠️ Core Principle**: **Each agent processes ONLY ONE style** (but can process multiple layouts for that style)
 
@@ -204,7 +204,7 @@ TodoWrite({todos: [
 For each batch (up to 6 parallel agents per batch):
 For each agent group `{target, style_id, layout_ids[]}` in current batch:
 ```javascript
-Task(ui-design-agent): `
+Agent(ui-design-agent): `
   [LAYOUT_STYLE_ASSEMBLY]
   🎯 {target} × Style-{style_id} × Layouts-{layout_ids}
   ⚠️ CONSTRAINT: Use ONLY style-{style_id}/design-tokens.json (never mix styles)

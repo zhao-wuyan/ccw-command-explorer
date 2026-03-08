@@ -67,10 +67,9 @@ Edit(`${sessionFolder}/state.md`, {
 
 ```javascript
 mcp__ccw-tools__team_msg({
-  operation: "log", team: "roadmap-dev",
+  operation: "log", session_id: sessionId,
   from: "coordinator", to: "all",
   type: "phase_started",
-  summary: `[coordinator] Session resumed at phase ${pausedPhase}, step: ${pausedStep}`,
   ref: `${sessionFolder}/state.md`
 })
 ```

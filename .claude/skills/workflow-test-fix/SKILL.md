@@ -1,7 +1,7 @@
 ---
 name: workflow-test-fix
 description: Unified test-fix pipeline combining test generation (session, context, analysis, task gen) with iterative test-cycle execution (adaptive strategy, progressive testing, CLI fallback). Triggers on "workflow-test-fix", "workflow-test-fix", "test fix workflow".
-allowed-tools: Skill, Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Skill, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Workflow Test Fix

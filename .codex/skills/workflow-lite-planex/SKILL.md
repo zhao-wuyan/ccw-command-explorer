@@ -1,5 +1,5 @@
 ---
-name: workflow-lite-planex
+name: workflow-lite-plan
 description: Explore-first wave pipeline. Decomposes requirement into exploration angles, runs wave exploration via spawn_agents_on_csv, synthesizes findings into execution tasks with cross-phase context linking (E*→T*), then wave-executes via spawn_agents_on_csv.
 argument-hint: "[-y|--yes] [-c|--concurrency N] [--continue] \"requirement description\""
 allowed-tools: spawn_agents_on_csv, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
@@ -14,10 +14,10 @@ When `--yes` or `-y`: Auto-confirm decomposition, skip interactive validation, u
 ## Usage
 
 ```bash
-$workflow-lite-planex "Implement user authentication with OAuth, JWT, and 2FA"
-$workflow-lite-planex -c 4 "Refactor payment module with Stripe and PayPal"
-$workflow-lite-planex -y "Build notification system with email and SMS"
-$workflow-lite-planex --continue "auth-20260228"
+$workflow-lite-plan "Implement user authentication with OAuth, JWT, and 2FA"
+$workflow-lite-plan -c 4 "Refactor payment module with Stripe and PayPal"
+$workflow-lite-plan -y "Build notification system with email and SMS"
+$workflow-lite-plan --continue "auth-20260228"
 ```
 
 **Flags**:
@@ -304,7 +304,7 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
      })
 
      if (answer.Validation === "Modify") {
-       console.log(`Edit: ${sessionFolder}/explore.csv\nResume: $workflow-lite-planex --continue`)
+       console.log(`Edit: ${sessionFolder}/explore.csv\nResume: $workflow-lite-plan --continue`)
        return
      } else if (answer.Validation === "Cancel") {
        return
@@ -599,7 +599,7 @@ ${wt.map(t => `  - [${t.id}] ${t.title} (scope: ${t.scope}, from: ${t.context_fr
      })
 
      if (answer.Confirm === "Modify") {
-       console.log(`Edit: ${sessionFolder}/tasks.csv\nResume: $workflow-lite-planex --continue`)
+       console.log(`Edit: ${sessionFolder}/tasks.csv\nResume: $workflow-lite-plan --continue`)
        return
      } else if (answer.Confirm === "Cancel") {
        return
@@ -1134,8 +1134,8 @@ All agents across all phases share `discoveries.ndjson`. This eliminates redunda
 
 | Scenario | Recommended Approach |
 |----------|---------------------|
-| Complex feature (unclear architecture) | `$workflow-lite-planex` — explore first, then plan |
-| Simple known-pattern task | `$workflow-lite-planex` — skip exploration, direct execution |
-| Independent parallel tasks | `$workflow-lite-planex -c 8` — single wave, max parallelism |
-| Diamond dependency (A→B,C→D) | `$workflow-lite-planex` — 3 waves with context propagation |
-| Unknown codebase | `$workflow-lite-planex` — exploration phase is essential |
+| Complex feature (unclear architecture) | `$workflow-lite-plan` — explore first, then plan |
+| Simple known-pattern task | `$workflow-lite-plan` — skip exploration, direct execution |
+| Independent parallel tasks | `$workflow-lite-plan -c 8` — single wave, max parallelism |
+| Diamond dependency (A→B,C→D) | `$workflow-lite-plan` — 3 waves with context propagation |
+| Unknown codebase | `$workflow-lite-plan` — exploration phase is essential |

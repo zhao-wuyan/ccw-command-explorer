@@ -487,6 +487,40 @@ export const LEVEL_4_CASES: Case[] = [
       '适合需要正式文档的产品功能，保留完整需求→实现链路',
     ],
   },
+  {
+    id: 'L4-008',
+    title: '协作分析转轻量规划执行（推荐）',
+    level: 4,
+    category: '探索规划',
+    scenario: '先用 analyze-with-file 深度分析需求或问题，产出分析文档后自动流转到 workflow-lite-plan 制定执行计划并实现。适用于新功能开发、Bug 修复、技术方案评估等所有场景',
+    commands: [
+      { cmd: '/workflow:analyze-with-file', desc: '交互式协作分析 - 文档化讨论过程' },
+      { cmd: '/workflow-lite-plan', desc: '轻量规划 + 自动执行' },
+    ],
+    steps: [
+      { role: 'user', content: '/workflow:analyze-with-file "分析用户消息通知功能的需求和技术方案"', type: 'command' },
+      { role: 'system', content: '┌─ 交互式协作分析 ────────────────────────────┐\n│ 📋 Phase 1: Topic Understanding              │\n│ 🧠 分析维度: 架构, 实现, 业务价值             │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '📊 Phase 2: CLI Exploration\n\n  🔍 代码库探索:\n    - src/notification/ 目录结构分析\n    - 现有消息发送机制调研\n    - 发现: 已有 EmailService，可复用\n\n  🤖 CLI 分析 (Gemini):\n    - 消息队列选型建议\n    - 实时通知 vs 推送方案对比\n    - 多渠道适配器模式设计\n\n📁 探索文件: .workflow/.analysis/ANL-notification/explorations.json', type: 'response' },
+      { role: 'system', content: '💬 Phase 3: Interactive Discussion\n\n  📝 关键发现:\n  1. 需要支持站内信、邮件、短信、推送 4 种渠道\n  2. 高并发场景需要消息队列削峰\n  3. 用户偏好配置需要持久化\n\n  用户反馈: 优先实现站内信和邮件，后续扩展', type: 'response' },
+      { role: 'system', content: '📊 Phase 4: Synthesis & Conclusion\n\n  技术方案:\n  - 消息队列: BullMQ + Redis\n  - 渠道适配器: 统一接口，多实现\n  - 用户偏好: PostgreSQL 存储\n  - 实时通知: WebSocket\n\n  推荐任务:\n  1. Notification 数据模型\n  2. NotificationService 核心服务\n  3. Email/站内信适配器实现\n  4. WebSocket 实时通知\n  5. 用户偏好管理\n\n  优先级: 高\n  📁 结论文件: .workflow/.analysis/ANL-notification/conclusions.json', type: 'response' },
+      { role: 'system', content: '🚪 Next Step Selection\n\n  选择下一步:\n  [1] 执行任务 - 基于 analyze-with-file 结论启动 workflow-lite-plan\n  [2] 产出Issue - 将建议转化为 issue 跟踪\n  [3] 完成 - 分析已足够', type: 'choice' },
+      { role: 'user', content: '1', type: 'command' },
+      { role: 'system', content: '🔄 自动流转到 workflow-lite-plan...\n\n┌─ Workflow-Lite-Plan ──────────────────────────┐\n│ 📋 LP-Phase 1: 多角度探索 [跳过]              │\n│    (已从 analyze-with-file 继承上下文)       │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '📋 LP-Phase 2: 澄清需求\n\n  已收集信息:\n  - 技术方案: BullMQ + WebSocket + 适配器模式\n  - 约束: 优先实现站内信和邮件\n  - 范围: 数据模型、核心服务、2个渠道、实时通知\n\n  无需进一步澄清', type: 'response' },
+      { role: 'system', content: '📋 LP-Phase 3: 制定执行计划\n\n  生成任务:\n  TASK-001: Notification 数据模型 + 迁移\n  TASK-002: BullMQ 队列基础设施\n  TASK-003: NotificationService 核心服务\n  TASK-004: 站内信适配器实现\n  TASK-005: 邮件适配器实现 (复用 EmailService)\n  TASK-006: WebSocket 实时通知\n  TASK-007: 集成测试\n\n  📁 计划文件: .workflow/.lite-plan/notification/plan.json', type: 'response' },
+      { role: 'system', content: '✅ LP-Phase 4: 确认计划\n\n  是否执行计划?', type: 'choice' },
+      { role: 'user', content: '是', type: 'command' },
+      { role: 'system', content: '▶️ LP-Phase 5: 执行任务\n\n  ☑️ [1/7] 数据模型 + 迁移... ✓\n  ☑️ [2/7] BullMQ 队列... ✓\n  ☑️ [3/7] NotificationService... ✓\n  ☑️ [4/7] 站内信适配器... ✓\n  ☑️ [5/7] 邮件适配器... ✓\n  ☑️ [6/7] WebSocket 通知... ✓\n  ☑️ [7/7] 集成测试... ✓', type: 'response' },
+      { role: 'system', content: '✅ 完成！\n\n  📁 新增文件: 10 个\n  📊 测试覆盖: 15 个场景\n  🎯 功能完整: 站内信 + 邮件 + 实时通知\n\n💡 analyze-with-file 深度分析明确技术方案\n   workflow-lite-plan 基于分析结论快速实现\n   无缝衔接，避免信息丢失', type: 'result', highlight: true },
+    ],
+    tips: [
+      '推荐日常使用：新功能、Bug 修复、技术评估都适用',
+      'analyze-with-file 深度理解需求或问题本质',
+      'workflow-lite-plan 读取分析上下文，避免重复探索',
+      '从分析到执行自动流转，保持信息连续性',
+      '分析文档可复用，方便后续回顾或交接',
+    ],
+  },
 ];
 
 // ============================================

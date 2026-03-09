@@ -487,6 +487,39 @@ export const LEVEL_4_CASES: Case[] = [
       '适合需要正式文档的产品功能，保留完整需求→实现链路',
     ],
   },
+  {
+    id: 'L4-008',
+    title: '协作分析转轻量规划执行',
+    level: 4,
+    category: '探索规划',
+    scenario: '先用 analyze-with-file 深度分析问题，产出分析文档后自动流转到 workflow-lite-plan 制定执行计划并实现',
+    commands: [
+      { cmd: '/workflow:analyze-with-file', desc: '交互式协作分析 - 文档化讨论过程' },
+      { cmd: '/workflow-lite-plan', desc: '轻量规划 + 自动执行' },
+    ],
+    steps: [
+      { role: 'user', content: '/workflow:analyze-with-file "分析订单模块中库存不一致问题的根因"', type: 'command' },
+      { role: 'system', content: '┌─ 交互式协作分析 ────────────────────────────┐\n│ 📋 Phase 1: Topic Understanding              │\n│ 🧠 分析维度: 架构, 实现, 决策               │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '📊 Phase 2: CLI Exploration\n\n  🔍 代码库探索:\n    - src/order/service.ts: 订单创建逻辑\n    - src/inventory/service.ts: 库存扣减逻辑\n    - 发现: 订单和库存操作不在同一事务中\n\n  🤖 CLI 分析 (Gemini):\n    - 识别并发竞态条件\n    - 发现超时回滚后库存未恢复机制\n    - 缺少分布式事务处理\n\n📁 探索文件: .workflow/.analysis/ANL-order-inventory/inventory-inconsistency/explorations.json', type: 'response' },
+      { role: 'system', content: '💬 Phase 3: Interactive Discussion\n\n  📝 关键发现:\n  1. 订单创建成功后，库存扣减可能失败\n  2. 网络超时导致订单回滚，但库存未恢复\n  3. 缺少最终一致性补偿机制\n\n  用户反馈: 需要保证库存和订单状态一致，可以接受短暂的不一致', type: 'response' },
+      { role: 'system', content: '📊 Phase 4: Synthesis & Conclusion\n\n  根因分析:\n  - 缺少分布式事务或补偿机制\n  - 错误处理不完整，部分失败场景未覆盖\n\n  推荐方案:\n  1. 实现 TCC (Try-Confirm-Cancel) 模式\n  2. 添加补偿队列处理失败回滚\n  3. 引入 Saga 模式保证最终一致性\n\n  优先级: 高\n  📁 结论文件: .workflow/.analysis/ANL-order-inventory/conclusions.json', type: 'response' },
+      { role: 'system', content: '🚪 Next Step Selection\n\n  选择下一步:\n  [1] 执行任务 - 基于 analyze-with-file 结论启动 workflow-lite-plan\n  [2] 产出Issue - 将建议转化为 issue 跟踪\n  [3] 完成 - 分析已足够', type: 'choice' },
+      { role: 'user', content: '1', type: 'command' },
+      { role: 'system', content: '🔄 自动流转到 workflow-lite-plan...\n\n┌─ Workflow-Lite-Plan ──────────────────────────┐\n│ 📋 LP-Phase 1: 多角度探索 [跳过]              │\n│    (已从 analyze-with-file 继承上下文)       │\n└──────────────────────────────────────────────┘', type: 'response' },
+      { role: 'system', content: '📋 LP-Phase 2: 澄清需求\n\n  已收集信息:\n  - 根因: 缺少分布式事务/补偿机制\n  - 约束: 可接受短暂不一致，需保证最终一致性\n  - 方向: TCC 或 Saga 模式\n\n  无需进一步澄清', type: 'response' },
+      { role: 'system', content: '📋 LP-Phase 3: 制定执行计划\n\n  生成任务:\n  TASK-001: 实现 Try-Confirm-Cancel 接口定义\n  TASK-002: 库存 TCC 服务实现\n  TASK-003: 订单 TCC 服务实现\n  TASK-004: 补偿队列基础设施\n  TASK-005: 集成测试覆盖场景\n\n  📁 计划文件: .workflow/.lite-plan/order-inventory/plan.json', type: 'response' },
+      { role: 'system', content: '✅ LP-Phase 4: 确认计划\n\n  是否执行计划?', type: 'choice' },
+      { role: 'user', content: '是', type: 'command' },
+      { role: 'system', content: '▶️ LP-Phase 5: 执行任务\n\n  ☑️ [1/5] TCC 接口定义... ✓\n  ☑️ [2/5] 库存 TCC 服务... ✓\n  ☑️ [3/5] 订单 TCC 服务... ✓\n  ☑️ [4/5] 补偿队列... ✓\n  ☑️ [5/5] 集成测试... ✓', type: 'response' },
+      { role: 'system', content: '✅ 完成！\n\n  📁 新增文件: 8 个\n  📊 测试覆盖: 12 个场景\n  🔧 根因解决: 库存与订单一致性保证\n\n💡 analyze-with-file 深度分析定位根因\n   workflow-lite-plan 基于分析结论快速实现\n   无缝衔接，避免信息丢失', type: 'result', highlight: true },
+    ],
+    tips: [
+      'analyze-with-file 擅长深度分析和问题定位',
+      'workflow-lite-plan 读取分析上下文，避免重复探索',
+      '从分析到执行自动流转，保持信息连续性',
+      '适合需要深入理解问题后再实现的场景',
+    ],
+  },
 ];
 
 // ============================================

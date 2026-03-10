@@ -189,9 +189,9 @@ export const TIMELINE: TimelineItem[] = [
     title: '架构优化与文档驱动',
     desc: '当前最新版本',
     color: COLORS.primary,
-    commands: 127,
+    commands: 128,
     detail: {
-      version: 'v7.2.4',
+      version: 'v7.2.5',
       highlights: [
         '新 Skill: team-planex-v2 混合规划执行管道',
         '新 Skill: team-arch-opt 架构优化',
@@ -201,7 +201,7 @@ export const TIMELINE: TimelineItem[] = [
         '新 Skill: team-ux-improve UX 改进',
         '新 Skill: skill-simplify SKILL.md 简化',
         '新 Skill: workflow-lite-execute 轻量执行引擎',
-        '新命令: workflow:spec:setup、workflow:spec:add',
+        '新命令: workflow:spec:setup、workflow:spec:add、workflow:spec:load',
         '依赖循环、耦合内聚分析',
         '分层违规、God Class 检测'
       ],
@@ -218,6 +218,7 @@ export const TIMELINE: TimelineItem[] = [
         '/ddd:doc-generate',
         '/workflow:spec:setup',
         '/workflow:spec:add',
+        '/workflow:spec:load',
         '/team-designer',
         '/team-edict',
         '/team-frontend-debug',

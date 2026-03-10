@@ -50,7 +50,7 @@ export const TASK_PATTERNS: TaskPattern[] = [
   { type: 'ddd', keywords: /ddd|文档驱动|doc driven|文档索引|doc index|doc-index|代码文档化|documentation workflow|文档工作流/, level: 3, flow: 'ddd', desc: '文档驱动开发', emoji: '📚', weight: 88 },
 
   // v7.2.2 新增 - 规格管理
-  { type: 'spec-mgmt', keywords: /规格初始化|spec setup|项目规范|编码规范|架构约束|spec add|添加规范|convention|constraint|learning|经验教训/, level: 2, flow: 'spec-mgmt', desc: '规格管理', emoji: '📐', weight: 85 },
+  { type: 'spec-mgmt', keywords: /规格初始化|spec setup|项目规范|编码规范|架构约束|spec add|添加规范|spec load|加载规格|查看规格|浏览规范|convention|constraint|learning|经验教训/, level: 2, flow: 'spec-mgmt', desc: '规格管理', emoji: '📐', weight: 85 },
 
   // v7.2.2 新增 - 三省六部协作
   { type: 'edict', keywords: /三省六部|edict|级联审批|串行审批|并行执行|六部|中书省|门下省|尚书省|太子接旨|强制审批/, level: 4, flow: 'edict', desc: '三省六部协作', emoji: '🏛️', weight: 90 },
@@ -334,10 +334,11 @@ export const COMMAND_CHAINS: Record<string, CommandChain> = {
   'spec-mgmt': {
     flow: 'spec-mgmt',
     level: 2,
-    pipeline: ['workflow:spec:setup', 'workflow:spec:add'],
+    pipeline: ['workflow:spec:setup', 'workflow:spec:add', 'workflow:spec:load'],
     commands: [
       { cmd: '/workflow:spec:setup', desc: '初始化规格' },
       { cmd: '/workflow:spec:add', desc: '添加规范' },
+      { cmd: '/workflow:spec:load', desc: '加载规格' },
     ],
     tips: ['建立规范', '团队统一'],
   },

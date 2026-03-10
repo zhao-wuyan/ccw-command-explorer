@@ -168,6 +168,10 @@ export const COMMANDS: Command[] = [
     detail: '添加规格条目：支持 convention（编码风格）、constraint（硬性规则）、learning（经验教训）。交互式向导或直接命令模式',
     usage: '需要添加编码规范、架构约束或记录经验教训'
   },
+  { cmd: '/workflow:spec:load', desc: '交互式规格加载器 - 按关键词路由加载相关规格', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.5',
+    detail: '交互式规格浏览入口：菜单驱动 → 关键词匹配 → 加载并展示。支持按类型过滤（bug/pattern/decision/rule）、按标签过滤、关键词搜索，或加载全部规格',
+    usage: '需要查看项目规格、搜索特定类型的知识条目'
+  },
 
   // ==================== Issue 管理 ====================
   { cmd: '/issue:new', desc: '创建结构化 Issue', status: 'stable', category: 'issue', cli: 'claude', addedInVersion: 'v5.0',
@@ -583,11 +587,11 @@ export const COMMANDS: Command[] = [
 // 统计数据
 // ============================================
 export const STATS = {
-  totalCommands: 127,
+  totalCommands: 128,
   categories: Object.keys(CATEGORIES).length,
   claudeCommands: COMMANDS.filter(c => c.cli === 'claude').length,
   codexCommands: COMMANDS.filter(c => c.cli === 'codex').length,
   newCommands: COMMANDS.filter(c => c.status === 'new').length,
   recommendedCommands: COMMANDS.filter(c => c.status === 'recommended').length,
-  latestVersion: 'v7.2.4',  // 当前最新版本
+  latestVersion: 'v7.2.5',  // 当前最新版本
 };

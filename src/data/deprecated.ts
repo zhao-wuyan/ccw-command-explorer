@@ -72,4 +72,10 @@ export const DEPRECATED_COMMANDS: DeprecatedCommand[] = [
 
   // v7.2.3 废弃 - 命令清理
   { old: '/workflow:init', newCmd: '/workflow:spec:setup', reason: '项目初始化功能整合到规格管理系统', deprecatedInVersion: 'v7.2.3' },
+
+  // v7.2.7 废弃 - 版本清理（skill 目录中不存在）
+  { old: '/team-lifecycle-v3', newCmd: '/team-lifecycle-v4', reason: 'v3 版本已移除，请使用 v4 版本', deprecatedInVersion: 'v7.2.7' },
+  { old: '/team-lifecycle-v5', newCmd: '/team-lifecycle-v4', reason: 'v5 版本已移除，请使用 v4 版本', deprecatedInVersion: 'v7.2.7' },
+  { old: '/team-coordinate-v2', newCmd: '/team-coordinate', reason: 'v2 版本已移除，请使用无版本号的基础版本', deprecatedInVersion: 'v7.2.7' },
+  { old: '/team-executor-v2', newCmd: '/team-executor', reason: 'v2 版本已移除，请使用无版本号的基础版本', deprecatedInVersion: 'v7.2.7' },
 ];

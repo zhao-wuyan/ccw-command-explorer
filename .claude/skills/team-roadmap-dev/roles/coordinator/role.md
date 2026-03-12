@@ -284,7 +284,7 @@ Delegate to `commands/monitor.md`:
 
 | Scenario | Resolution |
 |----------|------------|
-| project-tech.json missing | Invoke /workflow:init automatically |
+| project-tech.json missing | Invoke /workflow:spec:setup  automatically |
 | User cancels roadmap discussion | Save session state, exit gracefully |
 | Planner fails | Retry once, then ask user for guidance |
 | Executor fails on plan | Mark plan as failed, continue with next |

@@ -148,7 +148,7 @@ AskUserQuestion({
 |----------|------------|
 | Unknown --role value | Error with role registry list |
 | Role file not found | Error with expected path (roles/{name}/role.md) |
-| project-tech.json missing | Coordinator invokes /workflow:init |
+| project-tech.json missing | Coordinator invokes /workflow:spec:setup  |
 | Phase verification fails with gaps | Coordinator triggers gap closure loop (max 3 iterations) |
 | Max gap closure iterations (3) | Report to user, ask for guidance |
 | Worker crash | Respawn worker, reassign task |

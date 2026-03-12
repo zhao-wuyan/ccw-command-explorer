@@ -85,7 +85,7 @@
   "init_prerequisite": {
     "required_files": [".workflow/project-tech.json"],
     "optional_files": [".workflow/specs/*.md"],
-    "init_command": "/workflow:init"
+    "init_command": "/workflow:spec:setup "
   },
   "_metadata": {
     "created_at": "2026-02-24",

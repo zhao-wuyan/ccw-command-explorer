@@ -319,6 +319,14 @@ export const COMMANDS: Command[] = [
     detail: '诊断4类问题：①上下文爆炸(信息太多)；②长尾遗忘(记住前面的忘了后面的)；③数据流中断；④多Agent配合失败。自动给修复方案',
     usage: '自定义的技能执行出问题、想优化技能性能'
   },
+  { cmd: '/skill-iter-tune', desc: '迭代式技能调优 - 执行-评估-改进反馈循环', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.7',
+    detail: '迭代调优流程：Claude 执行 skill → Gemini 评估质量 → Agent 应用改进。循环直到达到质量阈值或最大迭代次数。支持单 skill 和 skill 链两种模式',
+    usage: '需要通过迭代反馈优化 skill 质量，或调试 skill 执行问题'
+  },
+  { cmd: '/skill-iter-tune', desc: '迭代技能调优 - 执行-评估-改进循环', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.7',
+    detail: '迭代式技能优化：Claude执行技能→Gemini评估质量→Agent应用改进。循环直到达到质量阈值或最大迭代次数。支持单技能和技能链两种模式',
+    usage: '技能需要持续改进，想通过自动化反馈循环提升质量'
+  },
   { cmd: '/skill-simplify', desc: 'SKILL.md 简化 - 功能完整性验证', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
     detail: '简化 SKILL.md：分析功能清单 → 应用优化规则（合并等价变体、移除冗余描述）→ 验证功能完整性。确保简化不丢失功能',
     usage: 'SKILL.md 太长太复杂，想精简但保持功能完整'
@@ -343,33 +351,17 @@ export const COMMANDS: Command[] = [
     detail: '完整团队工作流：需求分析→文档编写→规划→执行→测试→审查。自动使用最新的 team-lifecycle 版本',
     usage: '大项目从0到1，需要完整的需求→设计→开发→测试流程'
   },
-  { cmd: '/team-lifecycle-v3', desc: '团队全生命周期 v3 - 8角色协作', status: 'stable', category: 'skill', cli: 'claude', addedInVersion: 'v6.3',
-    detail: '8个角色：协调者、分析师、作家、评论员、规划师、执行者、测试员、审查员。支持按需加载架构师和前端开发',
-    usage: '需要完整生命周期的团队协作开发'
-  },
   { cmd: '/team-lifecycle-v4', desc: '团队全生命周期 v4 - 优化节拍版', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
     detail: '相比v3优化：内联讨论子代理、共享探索工具，规格阶段节拍从12降到6。更高效的团队协作',
     usage: '需要更高效的生命周期开发流程'
-  },
-  { cmd: '/team-lifecycle-v5', desc: '团队全生命周期 v5 - 团队工作代理架构', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
-    detail: '最新架构：基于 team-worker 代理，所有工作角色共享单一代理定义，从角色规格文件加载 Phase 2-4。更灵活的角色定制',
-    usage: '需要最新的团队协作架构，支持自定义角色'
   },
   { cmd: '/team-coordinate', desc: '通用团队协调 - 动态角色生成', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
     detail: '通用协调技能：分析任务→生成角色→派发→执行→交付。只有协调者是内置的，所有工作角色在运行时动态生成',
     usage: '需要灵活的团队协作，角色根据任务动态生成'
   },
-  { cmd: '/team-coordinate-v2', desc: '通用团队协调 v2 - 角色规格文件架构', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
-    detail: 'v2架构：使用团队工作代理和角色规格文件。工作角色作为轻量级规格文件生成，通过 team-worker 代理派发',
-    usage: '需要基于角色规格的团队协调'
-  },
   { cmd: '/team-executor', desc: '轻量级会话执行 - 恢复并执行会话', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
     detail: '轻量执行：加载现有 team-coordinate 会话→协调状态→派发工作代理→执行→交付。无分析、无角色生成，纯执行',
     usage: '已有规划好的会话，需要恢复执行'
-  },
-  { cmd: '/team-executor-v2', desc: '轻量级会话执行 v2 - team-worker 代理', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
-    detail: 'v2架构：恢复 team-coordinate-v2 会话，通过 team-worker 代理执行。需要提供会话路径',
-    usage: '已有 v2 架构的会话，需要恢复执行'
   },
   { cmd: '/team-iterdev', desc: '团队迭代开发 - 生成器-批评者循环', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
     detail: '迭代开发团队：开发者-审查者循环（最多3轮）、任务账本实时进度、共享内存跨冲刺学习、动态流水线选择增量交付',
@@ -587,11 +579,11 @@ export const COMMANDS: Command[] = [
 // 统计数据
 // ============================================
 export const STATS = {
-  totalCommands: 128,
+  totalCommands: 126,
   categories: Object.keys(CATEGORIES).length,
   claudeCommands: COMMANDS.filter(c => c.cli === 'claude').length,
   codexCommands: COMMANDS.filter(c => c.cli === 'codex').length,
   newCommands: COMMANDS.filter(c => c.status === 'new').length,
   recommendedCommands: COMMANDS.filter(c => c.status === 'recommended').length,
-  latestVersion: 'v7.2.5',  // 当前最新版本
+  latestVersion: 'v7.2.7',  // 当前最新版本
 };

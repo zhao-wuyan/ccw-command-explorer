@@ -168,9 +168,9 @@ export const TIMELINE: TimelineItem[] = [
         '前端部署修复'
       ],
       newCommands: [
-        '/team-lifecycle-v5',
-        '/team-coordinate-v2',
-        '/team-executor-v2',
+        '/team-lifecycle-v4',
+        '/team-coordinate',
+        '/team-executor',
         '/team-ultra-analyze',
         '/team-brainstorm',
         '/team-quality-assurance',
@@ -189,9 +189,9 @@ export const TIMELINE: TimelineItem[] = [
     title: '架构优化与文档驱动',
     desc: '当前最新版本',
     color: COLORS.primary,
-    commands: 128,
+    commands: 126,
     detail: {
-      version: 'v7.2.5',
+      version: 'v7.2.7',
       highlights: [
         '新 Skill: team-planex-v2 混合规划执行管道',
         '新 Skill: team-arch-opt 架构优化',
@@ -200,10 +200,12 @@ export const TIMELINE: TimelineItem[] = [
         '新 Skill: team-frontend-debug 前端调试',
         '新 Skill: team-ux-improve UX 改进',
         '新 Skill: skill-simplify SKILL.md 简化',
+        '新 Skill: skill-iter-tune 迭代式技能调优',
         '新 Skill: workflow-lite-execute 轻量执行引擎',
         '新命令: workflow:spec:setup、workflow:spec:add、workflow:spec:load',
         '依赖循环、耦合内聚分析',
-        '分层违规、God Class 检测'
+        '分层违规、God Class 检测',
+        '废弃: team-lifecycle-v3/v5, team-coordinate-v2, team-executor-v2'
       ],
       newCommands: [
         '/team-planex-v2',
@@ -224,6 +226,7 @@ export const TIMELINE: TimelineItem[] = [
         '/team-frontend-debug',
         '/team-ux-improve',
         '/skill-simplify',
+        '/skill-iter-tune',
         '/workflow-lite-execute'
       ],
       usage: '重大更新！DDD 文档驱动开发流水线上线，用 /ddd:auto 一键完成规划→执行→同步！新增三省六部协作框架、前端调试团队、UX 改进团队等新技能！v7.2.3 新增 team-planex-v2 混合规划执行管道！'

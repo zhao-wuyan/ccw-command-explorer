@@ -332,21 +332,22 @@ CONSTRAINTS: Focus on ${dimensions.join(', ')}
 
 5. **Interactive Recommendation Review** (skip in auto mode):
 
-   Walk through each recommendation one-by-one for user confirmation:
+   Present all recommendations, then batch-confirm via **single AskUserQuestion call** (up to 4 questions):
 
    ```
-   For each recommendation (ordered by priority high→medium→low):
-     1. Present: action, rationale, priority, steps[] (numbered sub-steps)
-     2. AskUserQuestion (single-select, header: "建议#N"):
+   1. Display all recommendations with numbering (action, rationale, priority, steps[])
+   2. Single AskUserQuestion call — one question per recommendation (max 4, ordered by priority high→medium→low):
+      Each question (single-select, header: "建议#N"):
         - **确认** (label: "确认", desc: "Accept as-is") → review_status = "accepted"
-        - **修改** (label: "修改", desc: "Adjust scope/steps") → record modification → review_status = "modified"
-        - **删除** (label: "删除", desc: "Not needed") → record reason → review_status = "rejected"
-        - **跳过审议** (label: "跳过审议", desc: "Accept all remaining") → break loop
-     3. Record review decision to discussion.md Decision Log
-     4. Update conclusions.json recommendation.review_status
+        - **修改** (label: "修改", desc: "Adjust scope/steps") → review_status = "modified"
+        - **删除** (label: "删除", desc: "Not needed") → review_status = "rejected"
+   3. If >4 recommendations: batch in groups of 4 with additional AskUserQuestion calls
+   4. For "修改" selections: follow up to capture modification details
+   5. Record all review decisions to discussion.md Decision Log
+   6. Update conclusions.json recommendation.review_status for each
    ```
 
-   **After review loop**: Display summary of reviewed recommendations:
+   **After review**: Display summary of reviewed recommendations:
    - Accepted: N items | Modified: N items | Rejected: N items
    - Only accepted/modified recommendations proceed to next step
 

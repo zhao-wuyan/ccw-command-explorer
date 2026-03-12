@@ -289,7 +289,7 @@
     },
     {
       "name": "init-guidelines",
-      "command": "/workflow:init-guidelines",
+      "command": "/workflow:spec:setup -guidelines",
       "description": "Interactive wizard to fill specs/*.md based on project analysis",
       "arguments": "[--reset]",
       "category": "workflow",
@@ -300,7 +300,7 @@
     },
     {
       "name": "init-specs",
-      "command": "/workflow:init-specs",
+      "command": "/workflow:spec:setup -specs",
       "description": "Interactive wizard to create individual specs or personal constraints with scope selection",
       "arguments": "[--scope <global|project>] [--dimension <specs|personal>] [--category <general|exploration|planning|execution>]",
       "category": "workflow",
@@ -311,7 +311,7 @@
     },
     {
       "name": "init",
-      "command": "/workflow:init",
+      "command": "/workflow:spec:setup ",
       "description": "Initialize project-level state with intelligent project analysis using cli-explore-agent",
       "arguments": "[--regenerate] [--skip-specs]",
       "category": "workflow",

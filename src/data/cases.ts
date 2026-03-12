@@ -662,10 +662,10 @@ export const TEAM_CASES: Case[] = [
     category: '团队协作',
     scenario: '用 team-worker 代理架构实现实时推送通知系统',
     commands: [
-      { cmd: '/team-lifecycle-v5', desc: '团队全生命周期 v5 - team-worker 代理架构' },
+      { cmd: '/team-lifecycle-v4', desc: '团队全生命周期 v4 - 优化节拍版' },
     ],
     steps: [
-      { role: 'user', content: '/team-lifecycle-v5 "实现实时推送通知系统（WebSocket + 消息队列）"', type: 'command' },
+      { role: 'user', content: '/team-lifecycle-v4 "实现实时推送通知系统（WebSocket + 消息队列）"', type: 'command' },
       { role: 'system', content: '┌─ 团队全生命周期 v5 ─────────────────────────┐\n│ 🤖 team-worker 代理架构 (v5 新特性)          │\n│                                              │\n│  ✍️  Spec Writer  — 撰写规格文档              │\n│  📋 Planner      — 任务拆解与排期            │\n│  💻 Developer    — 代码实现 (×2 并发)        │\n│  🧪 Tester       — 编写与运行测试            │\n│  👀 Reviewer     — 代码审查                  │\n│                                              │\n│ ⚡ v5 特性: 每个 worker 独立 Agent，真正并行 │\n└──────────────────────────────────────────────┘', type: 'response' },
       { role: 'system', content: '✍️ [spec-writer] 撰写规格文档...\n📋 [planner] 任务拆解完成 (6 个 Wave 任务)...\n💻 [developer-1] + [developer-2] 并行执行 Wave 2...\n🧪 [tester] 测试套件: 50 个，覆盖率 93%...\n👀 [reviewer] 审查通过，修复 1 处 N+1 查询', type: 'note' },
       { role: 'system', content: '✅ 团队全生命周期 v5 完成！\n\n📊 执行统计:\n   - 实现任务: 6 个 (2 波并行)\n   - 测试: 50 个，覆盖率 93%\n   - 总耗时: 约 1.5 天 (vs v4 约 2 天)\n\n⚡ v5 team-worker 架构：真正并发，效率提升约 30%', type: 'result', highlight: true },
@@ -679,10 +679,10 @@ export const TEAM_CASES: Case[] = [
     category: '团队协作',
     scenario: '用角色规格文件动态组建团队执行数据库迁移',
     commands: [
-      { cmd: '/team-coordinate-v2', desc: '通用团队协调 v2 - 角色规格文件架构' },
+      { cmd: '/team-coordinate', desc: '通用团队协调 - 动态角色生成' },
     ],
     steps: [
-      { role: 'user', content: '/team-coordinate-v2 "将 MySQL 数据库迁移到 PostgreSQL，零停机迁移"', type: 'command' },
+      { role: 'user', content: '/team-coordinate "将 MySQL 数据库迁移到 PostgreSQL，零停机迁移"', type: 'command' },
       { role: 'system', content: '┌─ 团队协调 v2 ───────────────────────────────┐\n│ 📋 分析需求，动态生成角色规格...            │\n└──────────────────────────────────────────────┘', type: 'response' },
       { role: 'system', content: '🎭 动态生成专属角色团队:\n\n  .workflow/.team/db-migration/roles/\n  ├── db-analyst.md      # 数据库分析专家\n  ├── migration-dev.md   # 迁移工程师\n  ├── compat-tester.md   # 兼容性测试员\n  └── rollback-guard.md  # 回滚守卫\n\n  v2 特性: 角色行为由 .md 文件精确定义', type: 'response' },
       { role: 'system', content: '🔍 [db-analyst] 扫描 87 张表，发现 23 处 MySQL 专有语法...\n🔧 [migration-dev] 生成 3 阶段零停机迁移方案...\n🧪 [compat-tester] 312/312 兼容性测试通过...\n🛡️ [rollback-guard] 回滚演练通过，触发时 <30s 恢复', type: 'note' },

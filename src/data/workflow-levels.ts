@@ -39,6 +39,6 @@ export const WORKFLOW_LEVELS: WorkflowLevel[] = [
     desc: '大项目！多角色团队协作',
     useCase: '新功能设计、架构决策、复杂开发',
     color: COLORS.accent1,
-    commands: ['/team-lifecycle-v5', '/team-coordinate', '/team-planex']
+    commands: ['/team-lifecycle-v4', '/team-coordinate', '/team-planex']
   },
 ];

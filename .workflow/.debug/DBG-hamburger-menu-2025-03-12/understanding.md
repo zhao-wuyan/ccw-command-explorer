@@ -39,6 +39,19 @@
 
 - 在 `src/App.css` 中全局 `.floating-nav-card` 样式之后追加移动端 `@media (max-width: 768px)` 覆盖规则，确保最终级联结果为 `overflow: visible`（并同步恢复移动端预期的 `margin/top/border-radius`）。
 
+### Iteration 3 - Dropdown Visual Fix (2026-03-12T23:59:31+08:00)
+
+#### Symptom
+
+- 展开后的筛选下拉面板背景过于透明，覆盖在命令卡片上时可读性差。
+
+#### Fix Applied
+
+- 在移动端 `.filter-dropdown` 增加 `backdrop-filter: blur(10px)`。
+- 按主题分别提高面板背景不透明度：
+  - Dark：`rgba(255,255,255,0.1)`
+  - Light：`rgba(0,0,0,0.04)`
+
 ---
 
 ## Current Consolidated Understanding

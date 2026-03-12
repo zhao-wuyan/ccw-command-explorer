@@ -337,6 +337,7 @@
     right: 0;
     background: var(--card-bg);
     border: 1px solid var(--card-border);
+    backdrop-filter: blur(10px);
     border-radius: 12px;
     margin-top: 8px;
     padding: 12px;
@@ -345,6 +346,14 @@
     gap: 10px;
     box-shadow: 0 10px 40px var(--shadow-color);
     z-index: 100;
+  }
+
+  [data-theme="dark"] .filter-dropdown {
+    background: rgba(255,255,255,0.1);
+  }
+
+  [data-theme="light"] .filter-dropdown {
+    background: rgba(0,0,0,0.04);
   }
 
   .search-filter-row-card .filter-group {

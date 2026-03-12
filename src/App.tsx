@@ -13,11 +13,11 @@ import {
   analyzeIntent, TASK_PATTERNS, COMMAND_CHAINS
 } from './data';
 import type { IntentAnalysis } from './data';
-import type { Command, CommandCategory, TimelineItem, CLIType, ExperienceTip, ExperienceCategory, ExperienceTipCommand } from './data';
+import type { Command, CommandCategory, TimelineItem, CLIType, ExperienceTip, ExperienceCategory } from './data';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { ALL_CASES, CASES_BY_LEVEL, LEVEL_CONFIG } from './data/cases';
-import type { Case, CaseStep, CaseCommand } from './data/cases';
+import type { Case, CaseStep } from './data/cases';
 import { ThemeToggle } from './components/ThemeToggle';
 import { useColors } from './contexts/ColorsContext';
 import './App.css';
@@ -186,7 +186,7 @@ const shouldShowVersion = (version: string | undefined): boolean => {
 };
 
 // 相关命令徽章组件
-const RelatedCommandBadge = ({ cmd, cli, category }: { cmd: string; cli: CLIType; category: CommandCategory }) => {
+const RelatedCommandBadge = ({ cmd, category }: { cmd: string; category: CommandCategory }) => {
   const COLORS = useColors();
   const categoryColor = useCategoryColor(category);
   return (
@@ -405,7 +405,7 @@ const ExperienceDetailModal = ({ item, onClose }: {
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 13, color: COLORS.textDim, marginBottom: 8 }}>关联命令：</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {item.tip.commands.map((cmd, i) => (
+          {item.tip.commands.map((cmd) => (
             <code key={getCommandKey(cmd.cmd, cmd.cli)} style={{ fontSize: 13, color: item.category.color, backgroundColor: item.category.color + '15', padding: '4px 10px', borderRadius: 4 }}>
               {cmd.cmd}
             </code>
@@ -624,8 +624,8 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
                 <div>
                   <h4 style={{ color: COLORS.textMuted, marginBottom: 12, fontSize: 14 }}>相关命令</h4>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {relatedCommands.map((c, i) => (
-                      <RelatedCommandBadge key={getCommandKey(c.cmd, c.cli)} cmd={c.cmd} cli={c.cli} category={c.category} />
+                    {relatedCommands.map((c) => (
+                      <RelatedCommandBadge key={getCommandKey(c.cmd, c.cli)} cmd={c.cmd} category={c.category} />
                     ))}
                   </div>
                 </div>
@@ -1532,7 +1532,7 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
       <p style={{ fontSize: 14, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{caseItem.scenario}</p>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {caseItem.commands.map((cmd, i) => {
+        {caseItem.commands.map((cmd) => {
           const cmdInfo = findCommand(cmd.cmd, cmd.cli);
           return (
             <code
@@ -1673,7 +1673,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
         >
           <h4 style={{ color: COLORS.text, marginBottom: 12, fontSize: 14 }}>🔧 涉及命令 <span style={{ color: COLORS.textDim, fontWeight: 'normal' }}>(点击查看详情)</span></h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {caseItem.commands.map((cmd, i) => {
+            {caseItem.commands.map((cmd) => {
               const cmdInfo = findCommand(cmd.cmd, cmd.cli);
               return (
                 <div key={getCommandKey(cmd.cmd, cmd.cli)} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1739,7 +1739,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
                     onClick={(e) => {
                       e.stopPropagation();
                       if (onCommandClick) {
-                        onCommandClick(cmd.cmd);
+                        onCommandClick({ cmd: cmd.cmd, cli: cmd.cli });
                       }
                     }}
                     style={{
@@ -3125,7 +3125,7 @@ const ExperienceCard = ({
         </div>
       ) : (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {tip.commands.map((cmd, i) => (
+          {tip.commands.map((cmd) => (
             <code
               key={getCommandKey(cmd.cmd, cmd.cli)}
               onClick={() => onCommandClick({ cmd: cmd.cmd, cli: cmd.cli })}

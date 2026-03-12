@@ -20,20 +20,8 @@
         ]
       }
     ],
-    "SessionStart": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node -e 'const cp=require(\"child_process\");const payload=JSON.stringify({type:\"SESSION_CREATED\",timestamp:Date.now(),project:process.env.CLAUDE_PROJECT_DIR||process.cwd()});cp.spawnSync(\"curl\",[\"-s\",\"-X\",\"POST\",\"-H\",\"Content-Type: application/json\",\"-d\",payload,\"http://localhost:3456/api/hook\"],{stdio:\"inherit\",shell:true})'"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",

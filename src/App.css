@@ -363,10 +363,10 @@
   }
 }
 
-/* 非移动端隐藏筛选器下拉面板 */
-@media (min-width: 769px) {
+/* 移动端显示筛选器下拉面板 */
+@media (max-width: 768px) {
   .filter-dropdown {
-    display: none;
+    display: flex;
   }
 }
 
@@ -383,6 +383,15 @@
   border: 1px solid var(--card-border);
   box-shadow: 0 8px 32px var(--shadow-color);
   overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .floating-nav-card {
+    margin: 0 12px 16px;
+    top: 12px;
+    border-radius: 16px;
+    overflow: visible;
+  }
 }
 
 .tab-nav-inner-card {

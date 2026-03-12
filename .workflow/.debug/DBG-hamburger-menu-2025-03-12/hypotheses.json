@@ -1,0 +1,70 @@
+{
+  "iteration": 2,
+  "timestamp": "2026-03-12T23:44:00+08:00",
+  "bug": "移动端汉堡菜单点击后无法展开三个下拉框",
+  "hypotheses": [
+    {
+      "id": "H1",
+      "description": "父容器 overflow 裁剪导致下拉面板不可见",
+      "testable_condition": "移动端 computedStyle: .floating-nav-card overflow 是否为 hidden；下拉面板 DOM 是否存在但被裁剪",
+      "logging_point": "src/App.css:.floating-nav-card overflow 规则级联顺序",
+      "evidence_criteria": {
+        "confirm": "移动端最终 overflow=hidden 且下拉面板在 DOM 中但不可见/被裁剪",
+        "reject": "移动端最终 overflow=visible 且仍不可见"
+      },
+      "likelihood": 1,
+      "status": "confirmed",
+      "verdict_reason": "全局 `.floating-nav-card { overflow: hidden; }` 位于移动端规则之后，覆盖移动端 overflow 设置，导致下拉面板被裁剪；已在该全局规则之后追加移动端覆盖使最终 overflow=visible。",
+      "evidence": {
+        "global_rule": "src/App.css:374-386",
+        "mobile_override_added": "src/App.css:388-395"
+      }
+    },
+    {
+      "id": "H2",
+      "description": "filter-dropdown 的 display 被其他规则隐藏",
+      "testable_condition": "移动端 computedStyle: .filter-dropdown display 是否为 none",
+      "logging_point": "src/App.css:.filter-dropdown display 相关规则",
+      "evidence_criteria": {
+        "confirm": "display=none 或被更高优先级规则覆盖",
+        "reject": "display 正常但仍不可见"
+      },
+      "likelihood": 2,
+      "status": "rejected",
+      "verdict_reason": "CSS 中未发现 `.filter-dropdown` 的 display:none 规则；问题更符合父容器 overflow 裁剪。"
+    },
+    {
+      "id": "H3",
+      "description": "z-index/层叠上下文问题导致面板被遮挡",
+      "testable_condition": "移动端检查下拉面板元素是否位于其他元素下方（z-index 与 stacking context）",
+      "logging_point": "src/App.css:.filter-dropdown z-index 与其祖先 stacking context",
+      "evidence_criteria": {
+        "confirm": "面板渲染但被更高层元素覆盖",
+        "reject": "面板在最上层仍不可见"
+      },
+      "likelihood": 3,
+      "status": "inconclusive",
+      "verdict_reason": "未做运行时叠层验证；但在 overflow 修复后通常无需额外 z-index 调整。"
+    },
+    {
+      "id": "H4",
+      "description": "点击事件未生效导致 showFilterDropdown 未切换",
+      "testable_condition": "点击后 React state 是否从 false 变为 true；面板是否进入 DOM",
+      "logging_point": "src/App.tsx:filter-toggle-btn onClick",
+      "evidence_criteria": {
+        "confirm": "state 未变化或被立即重置",
+        "reject": "state 变化正常"
+      },
+      "likelihood": 4,
+      "status": "inconclusive",
+      "verdict_reason": "未做运行时 state 采样；当前修复聚焦在 CSS 裁剪根因。"
+    }
+  ],
+  "corrections": [
+    {
+      "wrong_assumption": "移动端 `.floating-nav-card { overflow: visible; }` 一定能覆盖全局样式",
+      "corrected_to": "由于 CSS 源码顺序，全局 `.floating-nav-card { overflow: hidden; }` 会覆盖更早出现的移动端规则",
+      "reason": "相同选择器/相同特异性下，后出现的规则优先生效"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-03-12T12:30:00Z",
+  "localVersion": "v7.2.7",
+  "previousPageVersion": "v7.2.5",
+  "syncResult": {
+    "added": [
+      {
+        "cmd": "/skill-iter-tune",
+        "desc": "迭代式技能调优 - 执行-评估-改进反馈循环",
+        "status": "new",
+        "category": "skill",
+        "cli": "claude",
+        "addedInVersion": "v7.2.7"
+      }
+    ],
+    "deprecated": [
+      {
+        "cmd": "/team-lifecycle-v3",
+        "reason": "v3 版本已移除，请使用 v4 版本",
+        "newCmd": "/team-lifecycle-v4"
+      },
+      {
+        "cmd": "/team-lifecycle-v5",
+        "reason": "v5 版本已移除，请使用 v4 版本",
+        "newCmd": "/team-lifecycle-v4"
+      },
+      {
+        "cmd": "/team-coordinate-v2",
+        "reason": "v2 版本已移除，请使用无版本号的基础版本",
+        "newCmd": "/team-coordinate"
+      },
+      {
+        "cmd": "/team-executor-v2",
+        "reason": "v2 版本已移除，请使用无版本号的基础版本",
+        "newCmd": "/team-executor"
+      }
+    ]
+  },
+  "filesUpdated": [
+    "src/data/commands.ts",
+    "src/data/deprecated.ts",
+    "src/data/timeline.ts",
+    "src/data/cases.ts",
+    "src/data/workflow-levels.ts"
+  ],
+  "stats": {
+    "totalCommands": 126,
+    "newCommands": "已更新",
+    "latestVersion": "v7.2.7"
+  }
+}

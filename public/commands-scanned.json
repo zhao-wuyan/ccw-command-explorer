@@ -1,11 +1,11 @@
 {
   "_metadata": {
     "version": "4.0.0",
-    "generated": "2026-03-10T10:20:41.572Z",
-    "total_commands": 147,
+    "generated": "2026-03-12T04:26:11.801Z",
+    "total_commands": 148,
     "sources": {
       "claude_commands": 55,
-      "claude_skills": 43,
+      "claude_skills": 44,
       "codex_prompts": 2,
       "codex_skills": 47
     }
@@ -976,6 +976,20 @@
       "cli": "claude",
       "source": ".claude/skills/skill-generator/SKILL.md",
       "allowed_tools": "Agent, AskUserQuestion, Read, Bash, Glob, Grep, Write"
+    },
+    {
+      "name": "skill-iter-tune",
+      "command": "/skill-iter-tune",
+      "description": "Iterative skill tuning via execute-evaluate-improve feedback loop. Uses ccw cli Claude to execute skill, Gemini to evaluate quality, and Agent to apply improvements. Iterates until quality threshold or max iterations. Triggers on \"skill iter tune\", \"iterative skill tuning\", \"tune skill\".",
+      "h1_description": "Iterative skill refinement through execute-evaluate-improve feedback loops. Each iteration runs the skill via Claude, evaluates output via Gemini, and applies improvements via Agent.",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": null,
+      "usage_scenario": "implementation",
+      "difficulty": "Advanced",
+      "cli": "claude",
+      "source": ".claude/skills/skill-iter-tune/SKILL.md",
+      "allowed_tools": "Skill, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "skill-simplify",

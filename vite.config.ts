@@ -13,4 +13,16 @@ export default defineConfig({
       }
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-framer': ['framer-motion'],
+          'vendor-lucide': ['lucide-react'],
+          'vendor-vercel': ['@vercel/analytics', '@vercel/speed-insights'],
+        },
+      },
+    },
+  },
 })

@@ -470,7 +470,7 @@
 .search-filter-row-card {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
   padding: 12px 16px 16px;
   flex-wrap: wrap;
   position: relative; /* 为移动端下拉面板提供定位基准 */
@@ -485,6 +485,13 @@
 .search-filter-row-card .filter-group {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
+}
+
+/* 桌面端筛选器容器 */
+.filter-scroll {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 /* GitHub 右上角按钮 - 在 header 区域顶部 */

@@ -37,11 +37,42 @@ After completing a development task, synchronize the document index with actual 
 - `doc-index.json` must exist
 - Git repository with committed or staged changes
 
+## Phase 0: Consistency Validation
+
+Before processing changes, verify that `doc-index.json` entries are consistent with actual code state.
+
+### 0.1 Validate Code Locations
+
+For each `technicalComponents[].codeLocations[]`:
+- Verify file exists on disk
+- If file was deleted/moved → flag for removal or update
+- If file exists → verify listed `symbols[]` still exist (quick grep/AST check)
+
+### 0.2 Validate Symbols
+
+For components with `codeLocations[].symbols[]`:
+- Check each symbol still exists in the referenced file
+- Detect new exported symbols not yet tracked
+- Report: `{N} stale symbols, {N} untracked symbols`
+
+### 0.3 Validation Report
+
+```
+Consistency Check:
+  Components validated: {N}
+  Files verified: {N}
+  Stale references: {N} (files missing or symbols removed)
+  Untracked symbols: {N} (new exports not in index)
+```
+
+If stale references found: warn and auto-fix during Phase 3 updates.
+If `--dry-run`: report only, no fixes.
+
 ## Phase 1: Change Detection
 
-### 0.1 Schema Version Check (TASK-006)
+### 1.0.1 Schema Version Check
 
-Before processing changes, verify doc-index schema compatibility:
+Before processing changes, verify doc-index.json schema compatibility:
 
 ```javascript
 const docIndex = JSON.parse(Read('.workflow/.doc-index/doc-index.json'));
@@ -201,6 +232,7 @@ For each affected component in `doc-index.json`:
 - Update `codeLocations` if file paths or line ranges changed
 - Update `symbols` if new exports were added
 - Add new `actionIds` entry
+- **Auto-update `responsibility`**: If symbols changed (new methods/exports added or removed), re-infer responsibility from current symbols list using Gemini analysis. This prevents stale descriptions (e.g., responsibility still says "登录、注册" after adding logout support)
 
 ### 3.2 Register New Components
 

@@ -1,3 +1,7 @@
+---
+role: coordinator
+---
+
 # Coordinator Role
 
 Orchestrate the team-coordinate workflow: task analysis, dynamic role-spec generation, task dispatching, progress monitoring, session state, and completion action. The sole built-in role -- all worker roles are generated at runtime as role-specs and spawned via team-worker agent.
@@ -33,6 +37,30 @@ Orchestrate the team-coordinate workflow: task analysis, dynamic role-spec gener
 
 ---
 
+## Message Types
+
+| Type | Direction | Trigger |
+|------|-----------|---------|
+| state_update | outbound | Session init, pipeline progress |
+| task_unblocked | outbound | Task ready for execution |
+| fast_advance | inbound | Worker skipped coordinator |
+| capability_gap | inbound | Worker needs new capability |
+| error | inbound | Worker failure |
+| impl_complete | inbound | Worker task done |
+| consensus_blocked | inbound | Discussion verdict conflict |
+
+## Message Bus Protocol
+
+All coordinator state changes MUST be logged to team_msg BEFORE SendMessage:
+
+1. `team_msg(operation="log", ...)` — log the event
+2. `SendMessage(...)` — communicate to worker/user
+3. `TaskUpdate(...)` — update task state
+
+Read state before every handler: `team_msg(operation="get_state", session_id=<session-id>)`
+
+---
+
 ## Command Execution Protocol
 
 When coordinator needs to execute a command (analyze-task, dispatch, monitor):
@@ -51,6 +79,20 @@ Phase 1 needs task analysis
   -> Execute Phase 4 (Output)
   -> Continue to Phase 2
 ```
+
+## Toolbox
+
+| Tool | Type | Purpose |
+|------|------|---------|
+| commands/analyze-task.md | Command | Task analysis and role design |
+| commands/dispatch.md | Command | Task chain creation |
+| commands/monitor.md | Command | Pipeline monitoring and handlers |
+| team-worker | Subagent | Worker spawning |
+| TeamCreate / TeamDelete | System | Team lifecycle |
+| TaskCreate / TaskList / TaskGet / TaskUpdate | System | Task lifecycle |
+| team_msg | System | Message bus operations |
+| SendMessage | System | Inter-agent communication |
+| AskUserQuestion | System | User interaction |
 
 ---
 

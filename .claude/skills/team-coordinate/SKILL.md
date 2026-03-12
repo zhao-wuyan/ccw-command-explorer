@@ -32,6 +32,18 @@ Universal team coordination skill: analyze task -> generate role-specs -> dispat
     ccw cli --mode write     - code generation and modification
 ```
 
+## Shared Constants
+
+| Constant | Value |
+|----------|-------|
+| Session prefix | `TC` |
+| Session path | `.workflow/.team/TC-<slug>-<date>/` |
+| Worker agent | `team-worker` |
+| Message bus | `mcp__ccw-tools__team_msg(session_id=<session-id>, ...)` |
+| CLI analysis | `ccw cli --mode analysis` |
+| CLI write | `ccw cli --mode write` |
+| Max roles | 5 |
+
 ## Role Router
 
 This skill is **coordinator-only**. Workers do NOT invoke this skill -- they are spawned as `team-worker` agents directly.
@@ -85,6 +97,9 @@ User provides task description
 |---------|--------|
 | `check` / `status` | Output execution status graph, no advancement |
 | `resume` / `continue` | Check worker states, advance next step |
+| `revise <TASK-ID> [feedback]` | Revise specific task with optional feedback |
+| `feedback <text>` | Inject feedback into active pipeline |
+| `improve [dimension]` | Auto-improve weakest quality dimension |
 
 ---
 
@@ -147,6 +162,17 @@ AskUserQuestion({
 | Archive & Clean | Update session status="completed" -> TeamDelete -> output final summary with artifact paths |
 | Keep Active | Update session status="paused" -> output: "Resume with: Skill(skill='team-coordinate', args='resume')" |
 | Export Results | AskUserQuestion(target path) -> copy artifacts to target -> Archive & Clean |
+
+---
+
+## Specs Reference
+
+| Spec | Purpose |
+|------|---------|
+| [specs/pipelines.md](specs/pipelines.md) | Dynamic pipeline model, task naming, dependency graph |
+| [specs/role-spec-template.md](specs/role-spec-template.md) | Template for dynamic role-spec generation |
+| [specs/quality-gates.md](specs/quality-gates.md) | Quality thresholds and scoring dimensions |
+| [specs/knowledge-transfer.md](specs/knowledge-transfer.md) | Context transfer protocols between roles |
 
 ---
 

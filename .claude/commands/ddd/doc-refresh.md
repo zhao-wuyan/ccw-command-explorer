@@ -163,7 +163,7 @@ ccw cli -p "PURPOSE: Update project overview docs after feature changes
 TASK:
 • Update README.md feature list
 • Update ARCHITECTURE.md if new components added
-• Update sessions/_index.md with new planning sessions
+• Update planning/_index.md with new planning sessions
 MODE: write
 CONTEXT: @.workflow/.doc-index/feature-maps/*.md @.workflow/.doc-index/doc-index.json
 EXPECTED: Updated overview docs with current project state

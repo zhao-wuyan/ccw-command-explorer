@@ -4,6 +4,22 @@
 
 Event-driven pipeline coordination with Spawn-and-Stop pattern. Role names are read from `team-session.json#roles`. Workers are spawned as `team-worker` agents with role-spec paths. Includes `handleComplete` for pipeline completion action and `handleAdapt` for mid-pipeline capability gap handling.
 
+## When to Use
+
+| Trigger | Condition |
+|---------|-----------|
+| Worker callback | Message contains [role-name] from session roles |
+| User command | "check", "status", "resume", "continue" |
+| Capability gap | Worker reports capability_gap |
+| Pipeline spawn | After dispatch, initial spawn needed |
+| Pipeline complete | All tasks done |
+
+## Strategy
+
+- **Delegation**: Inline execution with handler routing
+- **Beat model**: ONE_STEP_PER_INVOCATION — one handler then STOP
+- **Workers**: Spawned as team-worker via Agent() in background
+
 ## Constants
 
 | Constant | Value | Description |

@@ -81,3 +81,17 @@ message_types:
 ## Specs Reference
 
 - [role-spec-template.md](role-spec-template.md) — Template for generating dynamic role-specs
+- [quality-gates.md](quality-gates.md) — Quality thresholds and scoring dimensions
+- [knowledge-transfer.md](knowledge-transfer.md) — Context transfer protocols between roles
+
+## Quality Gate Integration
+
+Dynamic pipelines reference quality thresholds from [specs/quality-gates.md](quality-gates.md).
+
+| Gate Point | Trigger | Criteria Source |
+|------------|---------|----------------|
+| After artifact production | Producer role Phase 4 | Behavioral Traits in role-spec |
+| After validation tasks | Tester/analyst completion | quality-gates.md thresholds |
+| Pipeline completion | All tasks done | Aggregate scoring |
+
+Issue classification: Error (blocks) > Warning (proceed with justification) > Info (log for future).

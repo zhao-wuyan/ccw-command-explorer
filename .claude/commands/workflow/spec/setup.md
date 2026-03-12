@@ -471,70 +471,129 @@ For each category of collected answers, append rules to the corresponding spec M
 - Round 5 (quality): `category: execution` (testing phase)
 
 ```javascript
+const matter = require('gray-matter')  // YAML frontmatter parser
+
+// ── Frontmatter check & repair helper ──
+// Ensures target spec file has valid YAML frontmatter with keywords
+// Uses gray-matter for robust parsing (handles malformed frontmatter, missing fields)
+function ensureSpecFrontmatter(filePath, extraKeywords = []) {
+  const titleMap = {
+    'coding-conventions': 'Coding Conventions',
+    'architecture-constraints': 'Architecture Constraints',
+    'learnings': 'Learnings',
+    'quality-rules': 'Quality Rules'
+  }
+  const basename = filePath.split('/').pop().replace('.md', '')
+  const title = titleMap[basename] || basename
+  const defaultKw = filePath.includes('conventions') ? 'convention'
+    : filePath.includes('constraints') ? 'constraint' : 'quality'
+  const defaultFm = {
+    title,
+    readMode: 'optional',
+    priority: 'medium',
+    category: 'general',
+    scope: 'project',
+    dimension: 'specs',
+    keywords: [...new Set([defaultKw, ...extraKeywords])]
+  }
+
+  if (!file_exists(filePath)) {
+    // Case A: Create new file with frontmatter
+    const specDir = path.dirname(filePath)
+    if (!fs.existsSync(specDir)) {
+      fs.mkdirSync(specDir, { recursive: true })
+    }
+    Write(filePath, matter.stringify(`\n# ${title}\n\n`, defaultFm))
+    return
+  }
+
+  const raw = Read(filePath)
+  let parsed
+  try {
+    parsed = matter(raw)
+  } catch {
+    parsed = { data: {}, content: raw }
+  }
+
+  const hasFrontmatter = raw.trimStart().startsWith('---')
+
+  if (!hasFrontmatter) {
+    // Case B: File exists but no frontmatter → prepend
+    Write(filePath, matter.stringify(raw, defaultFm))
+    return
+  }
+
+  // Case C: Frontmatter exists → ensure keywords include extras
+  const existingKeywords = parsed.data.keywords || []
+  const newKeywords = [...new Set([...existingKeywords, defaultKw, ...extraKeywords])]
+
+  if (newKeywords.length !== existingKeywords.length) {
+    parsed.data.keywords = newKeywords
+    Write(filePath, matter.stringify(parsed.content, parsed.data))
+  }
+}
+
 // Helper: append rules to a spec MD file with category support
 // Uses .ccw/specs/ directory (same as frontend/backend spec-index-builder)
 function appendRulesToSpecFile(filePath, rules, defaultCategory = 'general') {
   if (rules.length === 0) return
 
-  // Ensure .ccw/specs/ directory exists
-  const specDir = path.dirname(filePath)
-  if (!fs.existsSync(specDir)) {
-    fs.mkdirSync(specDir, { recursive: true })
-  }
+  // Extract domain tags from rules for keyword accumulation
+  const ruleTags = rules
+    .map(r => r.match(/\[[\w]+:([\w-]+)\]/)?.[1])
+    .filter(Boolean)
 
-  // Check if file exists
-  if (!file_exists(filePath)) {
-    // Create file with frontmatter including category
-    const frontmatter = `---
-title: ${filePath.includes('conventions') ? 'Coding Conventions' : filePath.includes('constraints') ? 'Architecture Constraints' : 'Quality Rules'}
-readMode: optional
-priority: medium
-category: ${defaultCategory}
-scope: project
-dimension: specs
-keywords: [${defaultCategory}, ${filePath.includes('conventions') ? 'convention' : filePath.includes('constraints') ? 'constraint' : 'quality'}]
----
-
-# ${filePath.includes('conventions') ? 'Coding Conventions' : filePath.includes('constraints') ? 'Architecture Constraints' : 'Quality Rules'}
-
-`
-    Write(filePath, frontmatter)
-  }
+  // Ensure frontmatter exists and keywords include rule tags
+  ensureSpecFrontmatter(filePath, [...new Set(ruleTags)])
 
   const existing = Read(filePath)
-  // Append new rules as markdown list items after existing content
-  const newContent = existing.trimEnd() + '\n' + rules.map(r => `- ${r}`).join('\n') + '\n'
+  // Append new rules as markdown list items - rules are already in [type:tag] format from caller
+  const newContent = existing.trimEnd() + '\n' + rules.map(r => {
+    // If rule already has - prefix or [type:tag] format, use as-is
+    if (/^- /.test(r)) return r
+    if (/^\[[\w]+:[\w-]+\]/.test(r)) return `- ${r}`
+    return `- [rule:${defaultCategory}] ${r}`
+  }).join('\n') + '\n'
   Write(filePath, newContent)
 }
 
-// Write conventions (general category) - use .ccw/specs/ (same as frontend/backend)
-appendRulesToSpecFile('.ccw/specs/coding-conventions.md',
-  [...newCodingStyle, ...newNamingPatterns, ...newFileStructure, ...newDocumentation],
-  'general')
+// Helper: infer domain tag from rule content
+function inferTag(text) {
+  const t = text.toLowerCase()
+  if (/\b(api|http|rest|endpoint|routing)\b/.test(t)) return 'api'
+  if (/\b(security|auth|permission|xss|sql|sanitize)\b/.test(t)) return 'security'
+  if (/\b(database|db|sql|postgres|mysql)\b/.test(t)) return 'db'
+  if (/\b(react|component|hook|jsx|tsx)\b/.test(t)) return 'react'
+  if (/\b(performance|cache|lazy|async|slow)\b/.test(t)) return 'perf'
+  if (/\b(test|coverage|mock|jest|vitest)\b/.test(t)) return 'testing'
+  if (/\b(architecture|layer|module|dependency)\b/.test(t)) return 'arch'
+  if (/\b(naming|camel|pascal|prefix|suffix)\b/.test(t)) return 'naming'
+  if (/\b(file|folder|directory|structure)\b/.test(t)) return 'file'
+  if (/\b(doc|comment|jsdoc|readme)\b/.test(t)) return 'doc'
+  if (/\b(build|webpack|vite|compile)\b/.test(t)) return 'build'
+  if (/\b(deploy|ci|cd|docker)\b/.test(t)) return 'deploy'
+  if (/\b(lint|eslint|prettier|format)\b/.test(t)) return 'lint'
+  if (/\b(type|typescript|strict|any)\b/.test(t)) return 'typing'
+  return 'style' // fallback for coding conventions
+}
 
-// Write constraints (planning category)
+// Write conventions - infer domain tags from content
+appendRulesToSpecFile('.ccw/specs/coding-conventions.md',
+  [...newCodingStyle, ...newNamingPatterns, ...newFileStructure, ...newDocumentation]
+    .map(r => /^\[[\w]+:[\w-]+\]/.test(r) ? r : `[rule:${inferTag(r)}] ${r}`),
+  'style')
+
+// Write constraints - infer domain tags from content
 appendRulesToSpecFile('.ccw/specs/architecture-constraints.md',
-  [...newArchitecture, ...newTechStack, ...newPerformance, ...newSecurity],
-  'planning')
+  [...newArchitecture, ...newTechStack, ...newPerformance, ...newSecurity]
+    .map(r => /^\[[\w]+:[\w-]+\]/.test(r) ? r : `[rule:${inferTag(r)}] ${r}`),
+  'arch')
 
 // Write quality rules (execution category)
 if (newQualityRules.length > 0) {
   const qualityPath = '.ccw/specs/quality-rules.md'
-  if (!file_exists(qualityPath)) {
-    Write(qualityPath, `---
-title: Quality Rules
-readMode: required
-priority: high
-category: execution
-scope: project
-dimension: specs
-keywords: [execution, quality, testing, coverage, lint]
----
-
-# Quality Rules
-
-`)
-  }
+  // ensureSpecFrontmatter handles create/repair/keyword-update
+  ensureSpecFrontmatter(qualityPath, ['quality', 'testing', 'coverage', 'lint'])
   appendRulesToSpecFile(qualityPath,
     newQualityRules.map(q => `${q.rule} (scope: ${q.scope}, enforced by: ${q.enforced_by})`),
     'execution')
@@ -644,7 +703,8 @@ Next steps:
 
 ## Related Commands
 
-- `/workflow:spec:add` - Interactive wizard to create individual specs with scope selection
+- `/workflow:spec:add` - Add knowledge entries (bug/pattern/decision/rule) with unified [type:tag] format
+- `/workflow:spec:load` - Interactive spec loader with keyword/type/tag filtering
 - `/workflow:session:sync` - Quick-sync session work to specs and project-tech
 - `workflow-plan` skill - Start planning with initialized project context
 - `/workflow:status --project` - View project state and guidelines

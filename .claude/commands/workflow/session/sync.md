@@ -65,11 +65,14 @@ Analyze context and produce two update payloads. Use LLM reasoning (current agen
 ```javascript
 // ── Guidelines extraction ──
 // Scan git diff + session for:
-//   - New patterns adopted → convention
-//   - Restrictions discovered → constraint
-//   - Surprises / gotchas → learning
+//   - Debugging experiences → bug
+//   - Reusable code patterns → pattern
+//   - Architecture/design decisions → decision
+//   - Conventions, constraints, insights → rule
 //
-// Output: array of { type, category, text }
+// Output: array of { type, tag, text }
+//   type: 'bug' | 'pattern' | 'decision' | 'rule'
+//   tag: domain tag (api, routing, schema, security, etc.)
 // RULE: Only extract genuinely reusable insights. Skip trivial/obvious items.
 // RULE: Deduplicate against existing guidelines before adding.
 
@@ -118,7 +121,7 @@ console.log(`
 ── Sync Preview ──
 
 Guidelines (${guidelineUpdates.length} items):
-${guidelineUpdates.map(g => `  [${g.type}/${g.category}] ${g.text}`).join('\n') || '  (none)'}
+${guidelineUpdates.map(g => `  [${g.type}:${g.tag}] ${g.text}`).join('\n') || '  (none)'}
 
 Tech [${detectCategory(summary)}]:
   ${techEntry.title}
@@ -137,26 +140,102 @@ if (!autoYes) {
 ## Step 4: Write
 
 ```javascript
-// ── Update specs/*.md ──
-// Uses .ccw/specs/ directory (same as frontend/backend spec-index-builder)
-if (guidelineUpdates.length > 0) {
-  // Map guideline types to spec files
-  const specFileMap = {
-    convention: '.ccw/specs/coding-conventions.md',
-    constraint: '.ccw/specs/architecture-constraints.md',
-    learning: '.ccw/specs/coding-conventions.md' // learnings appended to conventions
+const matter = require('gray-matter')  // YAML frontmatter parser
+
+// ── Frontmatter check & repair helper ──
+// Ensures target spec file has valid YAML frontmatter with keywords
+// Uses gray-matter for robust parsing (handles malformed frontmatter, missing fields)
+function ensureFrontmatter(filePath, tag, type) {
+  const titleMap = {
+    'coding-conventions': 'Coding Conventions',
+    'architecture-constraints': 'Architecture Constraints',
+    'learnings': 'Learnings',
+    'quality-rules': 'Quality Rules'
+  }
+  const basename = filePath.split('/').pop().replace('.md', '')
+  const title = titleMap[basename] || basename
+  const defaultFm = {
+    title,
+    readMode: 'optional',
+    priority: 'medium',
+    scope: 'project',
+    dimension: 'specs',
+    keywords: [tag, type]
   }
 
+  if (!file_exists(filePath)) {
+    // Case A: Create new file with frontmatter
+    Write(filePath, matter.stringify(`\n# ${title}\n\n`, defaultFm))
+    return
+  }
+
+  const raw = Read(filePath)
+  let parsed
+  try {
+    parsed = matter(raw)
+  } catch {
+    parsed = { data: {}, content: raw }
+  }
+
+  const hasFrontmatter = raw.trimStart().startsWith('---')
+
+  if (!hasFrontmatter) {
+    // Case B: File exists but no frontmatter → prepend
+    Write(filePath, matter.stringify(raw, defaultFm))
+    return
+  }
+
+  // Case C: Frontmatter exists → ensure keywords include current tag
+  const existingKeywords = parsed.data.keywords || []
+  const newKeywords = [...new Set([...existingKeywords, tag, type])]
+
+  if (newKeywords.length !== existingKeywords.length) {
+    parsed.data.keywords = newKeywords
+    Write(filePath, matter.stringify(parsed.content, parsed.data))
+  }
+}
+
+// ── Update specs/*.md ──
+// Uses .ccw/specs/ directory - unified [type:tag] entry format
+if (guidelineUpdates.length > 0) {
+  // Map knowledge types to spec files
+  const specFileMap = {
+    bug: '.ccw/specs/learnings.md',
+    pattern: '.ccw/specs/coding-conventions.md',
+    decision: '.ccw/specs/architecture-constraints.md',
+    rule: null // determined by content below
+  }
+
+  const date = new Date().toISOString().split('T')[0]
+  const needsDate = { bug: true, pattern: true, decision: true, rule: false }
+
   for (const g of guidelineUpdates) {
-    const targetFile = specFileMap[g.type]
+    // For rule type, route by content and tag
+    let targetFile = specFileMap[g.type]
+    if (!targetFile) {
+      const isQuality = /\b(test|coverage|lint|eslint|质量|测试覆盖|pre-commit|tsc|type.check)\b/i.test(g.text)
+        || ['testing', 'quality', 'lint'].includes(g.tag)
+      const isConstraint = /\b(禁止|no|never|must not|forbidden|不得|不允许)\b/i.test(g.text)
+      if (isQuality) {
+        targetFile = '.ccw/specs/quality-rules.md'
+      } else if (isConstraint) {
+        targetFile = '.ccw/specs/architecture-constraints.md'
+      } else {
+        targetFile = '.ccw/specs/coding-conventions.md'
+      }
+    }
+
+    // Ensure frontmatter exists and keywords are up-to-date
+    ensureFrontmatter(targetFile, g.tag, g.type)
+
     const existing = Read(targetFile)
-    const ruleText = g.type === 'learning'
-      ? `- [${g.category}] ${g.text} (learned: ${new Date().toISOString().split('T')[0]})`
-      : `- [${g.category}] ${g.text}`
+    const entryLine = needsDate[g.type]
+      ? `- [${g.type}:${g.tag}] ${g.text} (${date})`
+      : `- [${g.type}:${g.tag}] ${g.text}`
 
     // Deduplicate: skip if text already in file
     if (!existing.includes(g.text)) {
-      const newContent = existing.trimEnd() + '\n' + ruleText + '\n'
+      const newContent = existing.trimEnd() + '\n' + entryLine + '\n'
       Write(targetFile, newContent)
     }
   }
@@ -198,4 +277,5 @@ Write(techPath, JSON.stringify(tech, null, 2))
 ## Related Commands
 
 - `/workflow:spec:setup` - Initialize project with specs scaffold
-- `/workflow:spec:add` - Interactive wizard to create individual specs with scope selection
+- `/workflow:spec:add` - Add knowledge entries (bug/pattern/decision/rule) with unified [type:tag] format
+- `/workflow:spec:load` - Interactive spec loader with keyword/type/tag filtering

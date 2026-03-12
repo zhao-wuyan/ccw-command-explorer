@@ -1,10 +1,10 @@
 {
   "_metadata": {
     "version": "4.0.0",
-    "generated": "2026-03-08T16:13:26.988Z",
-    "total_commands": 146,
+    "generated": "2026-03-10T10:20:41.572Z",
+    "total_commands": 147,
     "sources": {
-      "claude_commands": 54,
+      "claude_commands": 55,
       "claude_skills": 43,
       "codex_prompts": 2,
       "codex_skills": 47
@@ -28,12 +28,12 @@
     {
       "name": "add",
       "command": "/workflow:spec:add",
-      "description": "Add specs, conventions, constraints, or learnings to project guidelines interactively or automatically",
+      "description": "Add knowledge entries (bug fixes, code patterns, decisions, rules) to project specs interactively or automatically",
       "h1_description": "",
-      "arguments": "[-y|--yes] [--type <convention|constraint|learning>] [--category <category>] [--dimension <specs|personal>] [--scope <global|project>] [--interactive] \\\"rule text\\\"",
+      "arguments": "[-y|--yes] [--type <bug|pattern|decision|rule>] [--tag <tag>] [--dimension <specs|personal>] [--scope <global|project>] [--interactive] \\\"summary text\\\"",
       "category": "workflow",
       "subcategory": "workflow/spec",
-      "usage_scenario": "general",
+      "usage_scenario": "debugging",
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/commands/workflow/spec/add.md",
@@ -611,6 +611,20 @@
       "difficulty": "Beginner",
       "cli": "claude",
       "source": ".claude/commands/workflow/session/list.md",
+      "allowed_tools": ""
+    },
+    {
+      "name": "load",
+      "command": "/workflow:spec:load",
+      "description": "Interactive spec loader - ask what user needs, then load relevant specs by keyword routing",
+      "h1_description": "",
+      "arguments": "[--all] [--type <bug|pattern|decision|rule>] [--tag <tag>] [\\\"keyword query\\\"]",
+      "category": "workflow",
+      "subcategory": "workflow/spec",
+      "usage_scenario": "general",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/commands/workflow/spec/load.md",
       "allowed_tools": ""
     },
     {

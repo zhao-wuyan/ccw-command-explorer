@@ -48,8 +48,9 @@ doc-index.json → tech-registry/*.md (L3) → feature-maps/*.md (L2) → _index
 ├── tech-registry/              ← Component documentation (Layer 3)
 │   ├── _index.md
 │   └── {component-slug}.md
-└── sessions/
-    └── _index.md               ← Planning sessions index (Layer 1)
+└── planning/                   ← Planning sessions (Layer 1)
+    ├── _index.md               ← Planning sessions index
+    └── {task-slug}-{date}/     ← Individual session folders
 ```
 
 ## Phase 1: Load & Validate
@@ -87,147 +88,82 @@ IF docs already exist AND NOT --force:
   Ask user (unless -y → overwrite)
 ```
 
-## Phase 2: Layer 3 — Component Documentation
+## Phase 2: Layer 3 -- Component Documentation
 
-For each component in `technicalComponents[]`:
+For each component in `technicalComponents[]`, call the generate_ddd_docs endpoint:
 
 ```bash
-ccw cli -p "PURPOSE: Generate component documentation for {component.name}
-TASK:
-• Document component purpose and responsibility
-• List exported symbols (classes, functions, types)
-• Document dependencies (internal and external)
-• Include code examples for key APIs
-• Document integration points with other components
-MODE: write
-CONTEXT: @{component.codeLocations[].path}
-EXPECTED: Markdown file with: Overview, API Reference, Dependencies, Usage Examples
-CONSTRAINTS: Focus on public API | Include type signatures
-" --tool gemini --mode write --cd .workflow/.doc-index/tech-registry/
+for COMPONENT_ID in "${technicalComponents[@]}"; do
+  ccw tool exec generate_ddd_docs '{"strategy":"component","entityId":"'"$COMPONENT_ID"'","tool":"gemini"}'
+done
 ```
+
+The endpoint handles:
+- Loading the component entity from doc-index.json
+- Building YAML frontmatter (layer: 3, component_id, name, type, features, code_locations, generated_at)
+- Constructing the CLI prompt with code context paths
+- **Including Change History section**: Pull related entries from `doc-index.json.actions[]` where `affectedComponents` includes this component ID. Display as timeline (date, action type, description)
+- Writing output to `.workflow/.doc-index/tech-registry/{slug}.md`
+- Tool fallback (gemini -> qwen -> codex) on failure
 
 Output: `.workflow/.doc-index/tech-registry/{component-slug}.md`
 
-Frontmatter:
-```markdown
----
-layer: 3
-component_id: tech-{slug}
-name: ComponentName
-type: service|controller|model|...
-features: [feat-auth]
-code_locations:
-  - path: src/services/auth.ts
-    symbols: [AuthService, AuthService.login]
-generated_at: ISO8601
----
-```
+## Phase 3: Layer 2 -- Feature Documentation
 
-Sections: Responsibility, Code Locations, Related Requirements, Architecture Decisions, Dependencies (in/out)
-
-## Phase 3: Layer 2 — Feature Documentation
-
-For each feature in `features[]`:
+For each feature in `features[]`, call the generate_ddd_docs endpoint:
 
 ```bash
-ccw cli -p "PURPOSE: Generate feature documentation for {feature.name}
-TASK:
-• Describe feature purpose and business value
-• List requirements (from requirementIds)
-• Document components involved (from techComponentIds)
-• Include architecture decisions (from adrIds)
-• Provide integration guide
-MODE: write
-CONTEXT: @.workflow/.doc-index/tech-registry/{related-components}.md
-EXPECTED: Markdown file with: Overview, Requirements, Components, Architecture, Integration
-CONSTRAINTS: Reference Layer 3 component docs | Business-focused language
-" --tool gemini --mode write --cd .workflow/.doc-index/feature-maps/
+for FEATURE_ID in "${features[@]}"; do
+  ccw tool exec generate_ddd_docs '{"strategy":"feature","entityId":"'"$FEATURE_ID"'","tool":"gemini"}'
+done
 ```
+
+The endpoint handles:
+- Loading the feature entity from doc-index.json
+- Building YAML frontmatter (layer: 2, feature_id, name, epic_id, status, requirements, components, tags, generated_at)
+- Constructing the CLI prompt referencing Layer 3 component docs
+- **Including Change History section**: Pull related entries from `doc-index.json.actions[]` where `affectedFeatures` includes this feature ID. Display as timeline (date, action type, description)
+- Writing output to `.workflow/.doc-index/feature-maps/{slug}.md`
+- Tool fallback (gemini -> qwen -> codex) on failure
 
 Output: `.workflow/.doc-index/feature-maps/{feature-slug}.md`
 
-Frontmatter:
-```markdown
----
-layer: 2
-feature_id: feat-{slug}
-name: Feature Name
-epic_id: EPIC-NNN|null
-status: implemented|in-progress|planned|partial
-requirements: [REQ-001, REQ-002]
-components: [tech-auth-service, tech-user-model]
-depends_on_layer3: [tech-auth-service, tech-user-model]
-tags: [auth, security]
-generated_at: ISO8601
----
-```
-
-Sections: Overview, Requirements (with mapping status), Technical Components, Architecture Decisions, Change History
-
-## Phase 4: Layer 1 — Index & Overview Documentation
+## Phase 4: Layer 1 -- Index & Overview Documentation
 
 ### 4.1 Index Documents
 
-Generate catalog files:
+Generate catalog files for each subdirectory:
 
-- **feature-maps/_index.md** — Feature overview table with status
-- **tech-registry/_index.md** — Component registry table with types
-- **action-logs/_index.md** — Action history table (empty initially for new projects)
+```bash
+# Feature maps index
+ccw tool exec generate_ddd_docs '{"strategy":"index","entityId":"feature-maps","tool":"gemini"}'
+
+# Tech registry index
+ccw tool exec generate_ddd_docs '{"strategy":"index","entityId":"tech-registry","tool":"gemini"}'
+
+# Action logs index
+ccw tool exec generate_ddd_docs '{"strategy":"index","entityId":"action-logs","tool":"gemini"}'
+
+# Planning sessions index
+ccw tool exec generate_ddd_docs '{"strategy":"index","entityId":"planning","tool":"gemini"}'
+```
+
+Or generate all indexes at once (omit entityId):
+
+```bash
+ccw tool exec generate_ddd_docs '{"strategy":"index","tool":"gemini"}'
+```
 
 ### 4.2 README.md (unless --skip-overview)
 
 ```bash
-ccw cli -p "PURPOSE: Generate project README with overview and navigation
-TASK:
-• Project summary and purpose
-• Quick start guide
-• Navigation to features, components, and architecture
-• Link to doc-index.json
-MODE: write
-CONTEXT: @.workflow/.doc-index/doc-index.json @.workflow/.doc-index/feature-maps/_index.md
-EXPECTED: README.md with: Overview, Quick Start, Navigation, Links
-CONSTRAINTS: High-level only | Entry point for new developers
-" --tool gemini --mode write --cd .workflow/.doc-index/
+ccw tool exec generate_ddd_docs '{"strategy":"overview","tool":"gemini"}'
 ```
 
 ### 4.3 ARCHITECTURE.md (unless --skip-overview)
 
 ```bash
-ccw cli -p "PURPOSE: Generate architecture overview document
-TASK:
-• System design overview
-• Component relationships and dependencies
-• Key architecture decisions (from ADRs)
-• Technology stack
-MODE: write
-CONTEXT: @.workflow/.doc-index/doc-index.json @.workflow/.doc-index/tech-registry/*.md
-EXPECTED: ARCHITECTURE.md with: System Design, Component Diagram, ADRs, Tech Stack
-CONSTRAINTS: Architecture-focused | Reference component docs for details
-" --tool gemini --mode write --cd .workflow/.doc-index/
-```
-
-### 4.4 sessions/_index.md (unless --skip-overview)
-
-```bash
-ccw cli -p "PURPOSE: Generate planning sessions index
-TASK:
-• List all planning session folders chronologically
-• Link to each session's plan.json
-• Show session status and task count
-MODE: write
-CONTEXT: @.workflow/.doc-index/planning/*/plan.json
-EXPECTED: sessions/_index.md with: Session List, Links, Status
-CONSTRAINTS: Chronological order | Link to session folders
-" --tool gemini --mode write --cd .workflow/.doc-index/sessions/
-```
-
-Layer 1 frontmatter:
-```markdown
----
-layer: 1
-depends_on_layer2: [feat-auth, feat-orders]
-generated_at: ISO8601
----
+ccw tool exec generate_ddd_docs '{"strategy":"overview","entityId":"architecture","tool":"gemini"}'
 ```
 
 ## Phase 5: SCHEMA.md (unless --skip-schema)
@@ -235,17 +171,7 @@ generated_at: ISO8601
 ### 5.1 Generate Schema Documentation
 
 ```bash
-ccw cli -p "PURPOSE: Document doc-index.json schema structure and versioning
-TASK:
-• Document current schema structure (all fields)
-• Define versioning policy (semver: major.minor)
-• Document migration protocol for version upgrades
-• Provide examples for each schema section
-MODE: write
-CONTEXT: @.workflow/.doc-index/doc-index.json
-EXPECTED: SCHEMA.md with: Schema Structure, Versioning Policy, Migration Protocol, Examples
-CONSTRAINTS: Complete field documentation | Clear migration steps
-" --tool gemini --mode write --cd .workflow/.doc-index/
+ccw tool exec generate_ddd_docs '{"strategy":"schema","tool":"gemini"}'
 ```
 
 ### 5.2 Versioning Policy
@@ -284,7 +210,7 @@ Total: {N} documents generated
 | `-y, --yes` | Auto-confirm all decisions |
 | `--layer <3\|2\|1\|all>` | Generate specific layer only (default: all) |
 | `--force` | Overwrite existing documents |
-| `--skip-overview` | Skip README.md, ARCHITECTURE.md, sessions/_index.md |
+| `--skip-overview` | Skip README.md, ARCHITECTURE.md, planning/_index.md |
 | `--skip-schema` | Skip SCHEMA.md generation |
 
 ## Integration Points
@@ -293,3 +219,4 @@ Total: {N} documents generated
 - **Called by**: `/ddd:scan` (after index assembly), `/ddd:index-build` (after index assembly)
 - **Standalone**: Can be run independently on any project with existing doc-index.json
 - **Output**: Complete document tree in `.workflow/.doc-index/`
+- **Endpoint**: `ccw tool exec generate_ddd_docs` handles prompt construction, frontmatter, tool fallback, and file creation

@@ -16,6 +16,20 @@ Parse user task description -> detect required capabilities -> build dependency 
 
 If task context requires codebase knowledge, set `needs_research: true`. Phase 2 will spawn researcher worker.
 
+## When to Use
+
+| Trigger | Condition |
+|---------|-----------|
+| New task | Coordinator Phase 1 receives task description |
+| Re-analysis | User provides revised requirements |
+| Adapt | handleAdapt extends analysis for new capability |
+
+## Strategy
+
+- **Delegation**: Inline execution (coordinator processes directly)
+- **Mode**: Text-level analysis only (no codebase reading)
+- **Output**: `<session>/task-analysis.json`
+
 ## Phase 2: Context Loading
 
 | Input | Source | Required |

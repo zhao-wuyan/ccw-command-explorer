@@ -46,6 +46,7 @@ message_types:
 | `prefix` | Yes | Task prefix to filter (e.g., RESEARCH, DRAFT, IMPL) |
 | `inner_loop` | Yes | Whether team-worker loops through same-prefix tasks |
 | `CLI tools` | No | Array of CLI tool types this role may call |
+| `output_tag` | Yes | Output tag for all messages, e.g., `[researcher]` |
 | `message_types` | Yes | Message type mapping for team_msg |
 | `message_types.success` | Yes | Type string for successful completion |
 | `message_types.error` | Yes | Type string for errors (usually "error") |
@@ -62,6 +63,29 @@ message_types:
 | No pseudocode | Decision tables + text + tool calls only |
 | `<placeholder>` notation | Use angle brackets for variable substitution |
 | Reference CLI tools by name | team-worker resolves invocation from its delegation templates |
+
+## Generated Role-Spec Structure
+
+Every generated role-spec MUST include these blocks:
+
+### Identity Block (mandatory — first section of generated spec)
+
+```
+Tag: [<role_name>] | Prefix: <PREFIX>-*
+Responsibility: <one-line from task analysis>
+```
+
+### Boundaries Block (mandatory — after Identity)
+
+```
+### MUST
+- <3-5 rules derived from task analysis>
+
+### MUST NOT
+- Execute work outside assigned prefix
+- Modify artifacts from other roles
+- Skip Phase 4 verification
+```
 
 ## Behavioral Traits
 
@@ -92,6 +116,11 @@ Phase 4 must produce a verification summary with these fields:
 - Verification fails → retry Phase 3 (max 2 retries)
 - Still fails → report `partial_completion` with details, NOT `completed`
 - Update shared state via `team_msg(operation="log", type="state_update", data={...})` after verification passes
+
+Quality thresholds from [specs/quality-gates.md](quality-gates.md):
+- Pass >= 80%: report completed
+- Review 60-79%: report completed with warnings
+- Fail < 60%: retry Phase 3 (max 2)
 
 ### Error Protocol
 
@@ -139,48 +168,25 @@ Coordinator MAY reference these patterns when composing Phase 2-4 content for a 
 
 ## Knowledge Transfer Protocol
 
-How context flows between roles. Coordinator MUST reference this when composing Phase 2 of any role-spec.
+Full protocol: [specs/knowledge-transfer.md](knowledge-transfer.md)
 
-### Transfer Channels
+Generated role-specs Phase 2 MUST declare which upstream sources to load.
+Generated role-specs Phase 4 MUST include state update and artifact publishing.
 
-| Channel | Scope | Mechanism | When to Use |
-|---------|-------|-----------|-------------|
-| **Artifacts** | Producer -> Consumer | Write to `<session>/artifacts/<name>.md`, consumer reads in Phase 2 | Structured deliverables (reports, plans, specs) |
-| **State Updates** | Cross-role | `team_msg(operation="log", type="state_update", data={...})` / `team_msg(operation="get_state", session_id=<session-id>)` | Key findings, decisions, metadata (small, structured data) |
-| **Wisdom** | Cross-task | Append to `<session>/wisdom/{learnings,decisions,conventions,issues}.md` | Patterns, conventions, risks discovered during execution |
-| **context_accumulator** | Intra-role (inner loop) | In-memory array, passed to each subsequent task in same-prefix loop | Prior task summaries within same role's inner loop |
-| **Exploration cache** | Cross-role | `<session>/explorations/cache-index.json` + per-angle JSON | Codebase discovery results, prevents duplicate exploration |
+---
 
-### Phase 2 Context Loading (role-spec must specify)
+## Generated Role-Spec Validation
 
-Every generated role-spec Phase 2 MUST declare which upstream sources to load:
+Coordinator verifies before writing each role-spec:
 
-```
-1. Extract session path from task description
-2. Read upstream artifacts: <list which artifacts from which upstream role>
-3. Read cross-role state via `team_msg(operation="get_state", session_id=<session-id>)`
-4. Load wisdom files for accumulated knowledge
-5. For inner_loop roles: load context_accumulator from prior tasks
-6. Check exploration cache before running new explorations
-```
-
-### State Update Convention
-
-Cross-role state is managed via `team_msg` state updates instead of a separate file:
-
-- **Write state**: `team_msg(operation="log", session_id=<session-id>, from=<role>, type="state_update", data={ "<role_name>": { ... } })`
-- **Read state**: `team_msg(operation="get_state", session_id=<session-id>)`
-- **Namespaced keys**: Each role writes under its own namespace key in `data`
-- **Small data only**: Key findings, decision summaries, metadata. NOT full documents
-- **State stored in**: `.msg/meta.json` (auto-managed by team_msg)
-- **Example write**:
-  ```
-  team_msg(operation="log", session_id="TC-auth-2026-03-03", from="researcher", type="state_update", data={
-    "researcher": { "key_findings": [...], "scope": "..." }
-  })
-  ```
-- **Example read**:
-  ```
-  team_msg(operation="get_state", session_id="TC-auth-2026-03-03")
-  // Returns merged state from all state_update messages
-  ```
+| Check | Criteria |
+|-------|----------|
+| Frontmatter complete | All required fields present (role, prefix, inner_loop, output_tag, message_types, CLI tools) |
+| Identity block | Tag, prefix, responsibility defined |
+| Boundaries | MUST and MUST NOT rules present |
+| Phase 2 | Context loading sources specified |
+| Phase 3 | Execution goal clear, not prescriptive about tools |
+| Phase 4 | Behavioral Traits copied verbatim |
+| Error Handling | Table with 3+ scenarios |
+| Line count | Target ~80 lines (max 120) |
+| No built-in overlap | No Phase 1/5, no message bus code, no consensus handling |

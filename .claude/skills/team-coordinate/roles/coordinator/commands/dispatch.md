@@ -4,6 +4,20 @@
 
 Create task chains from dynamic dependency graphs. Builds pipelines from the task-analysis.json produced by Phase 1. Workers are spawned as team-worker agents with role-spec paths.
 
+## When to Use
+
+| Trigger | Condition |
+|---------|-----------|
+| After analysis | Phase 1 complete, task-analysis.json exists |
+| After adapt | handleAdapt created new roles, needs new tasks |
+| Re-dispatch | Pipeline restructuring (rare) |
+
+## Strategy
+
+- **Delegation**: Inline execution (coordinator processes directly)
+- **Inputs**: task-analysis.json + team-session.json
+- **Output**: TaskCreate calls with dependency chains
+
 ## Phase 2: Context Loading
 
 | Input | Source | Required |

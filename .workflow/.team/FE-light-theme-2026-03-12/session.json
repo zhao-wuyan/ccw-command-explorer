@@ -1,0 +1,13 @@
+{
+  "session_id": "FE-light-theme-2026-03-12",
+  "team_name": "frontend",
+  "requirement": "添加颜色主题，在现有暗黑模式设计基础上添加浅色模式",
+  "pipeline_mode": "feature",
+  "pipeline_stages": ["analyst", "architect", "qa", "developer"],
+  "roles": ["coordinator", "analyst", "architect", "developer", "qa"],
+  "industry": "tech",
+  "constraints": ["保留现有暗黑模式", "保留品牌色", "支持系统偏好检测"],
+  "created_at": "2026-03-12T00:00:00Z",
+  "status": "active",
+  "completion_action": "interactive"
+}

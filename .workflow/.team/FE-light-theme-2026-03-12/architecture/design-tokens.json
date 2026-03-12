@@ -1,0 +1,68 @@
+{
+  "version": "1.0.0",
+  "themes": {
+    "dark": {
+      "colors": {
+        "bg": { "value": "#0a0a0f", "description": "主背景色" },
+        "bg-gradient1": { "value": "#1a1a2e", "description": "渐变背景1" },
+        "bg-gradient2": { "value": "#16213e", "description": "渐变背景2" },
+        "primary": { "value": "#6366f1", "description": "主品牌色" },
+        "primary-light": { "value": "#818cf8", "description": "主品牌色浅色" },
+        "secondary": { "value": "#10b981", "description": "次要色" },
+        "secondary-light": { "value": "#34d399", "description": "次要色浅色" },
+        "warning": { "value": "#f59e0b", "description": "警告色" },
+        "warning-light": { "value": "#fbbf24", "description": "警告色浅色" },
+        "danger": { "value": "#ef4444", "description": "危险色" },
+        "danger-light": { "value": "#f87171", "description": "危险色浅色" },
+        "text": { "value": "#ffffff", "description": "主文字色" },
+        "text-muted": { "value": "#94a3b8", "description": "次要文字色" },
+        "text-dim": { "value": "#64748b", "description": "暗淡文字色" },
+        "accent1": { "value": "#ec4899", "description": "强调色1 (粉)" },
+        "accent2": { "value": "#8b5cf6", "description": "强调色2 (紫)" },
+        "accent3": { "value": "#06b6d4", "description": "强调色3 (青)" },
+        "accent4": { "value": "#84cc16", "description": "强调色4 (绿)" },
+        "accent5": { "value": "#f97316", "description": "强调色5 (橙)" },
+        "card-bg": { "value": "rgba(255,255,255,0.05)", "description": "卡片背景" },
+        "card-border": { "value": "rgba(255,255,255,0.1)", "description": "卡片边框" },
+        "code-bg": { "value": "rgba(0,0,0,0.3)", "description": "代码背景" },
+        "scrollbar-thumb": { "value": "#6366f1", "description": "滚动条颜色" },
+        "scrollbar-thumb-hover": { "value": "#818cf8", "description": "滚动条悬停颜色" }
+      }
+    },
+    "light": {
+      "colors": {
+        "bg": { "value": "#f8fafc", "description": "主背景色 (slate-50)" },
+        "bg-gradient1": { "value": "#f1f5f9", "description": "渐变背景1 (slate-100)" },
+        "bg-gradient2": { "value": "#e2e8f0", "description": "渐变背景2 (slate-200)" },
+        "primary": { "value": "#4f46e5", "description": "主品牌色 (indigo-600)" },
+        "primary-light": { "value": "#6366f1", "description": "主品牌色浅色 (indigo-500)" },
+        "secondary": { "value": "#059669", "description": "次要色 (emerald-600)" },
+        "secondary-light": { "value": "#10b981", "description": "次要色浅色 (emerald-500)" },
+        "warning": { "value": "#d97706", "description": "警告色 (amber-600)" },
+        "warning-light": { "value": "#f59e0b", "description": "警告色浅色 (amber-500)" },
+        "danger": { "value": "#dc2626", "description": "危险色 (red-600)" },
+        "danger-light": { "value": "#ef4444", "description": "危险色浅色 (red-500)" },
+        "text": { "value": "#0f172a", "description": "主文字色 (slate-900)" },
+        "text-muted": { "value": "#475569", "description": "次要文字色 (slate-600)" },
+        "text-dim": { "value": "#94a3b8", "description": "暗淡文字色 (slate-400)" },
+        "accent1": { "value": "#ec4899", "description": "强调色1 (粉) - 保持不变" },
+        "accent2": { "value": "#8b5cf6", "description": "强调色2 (紫) - 保持不变" },
+        "accent3": { "value": "#06b6d4", "description": "强调色3 (青) - 保持不变" },
+        "accent4": { "value": "#84cc16", "description": "强调色4 (绿) - 保持不变" },
+        "accent5": { "value": "#f97316", "description": "强调色5 (橙) - 保持不变" },
+        "card-bg": { "value": "rgba(0,0,0,0.03)", "description": "卡片背景" },
+        "card-border": { "value": "rgba(0,0,0,0.08)", "description": "卡片边框" },
+        "code-bg": { "value": "rgba(0,0,0,0.06)", "description": "代码背景" },
+        "scrollbar-thumb": { "value": "#6366f1", "description": "滚动条颜色" },
+        "scrollbar-thumb-hover": { "value": "#4f46e5", "description": "滚动条悬停颜色" }
+      }
+    }
+  },
+  "typography": {
+    "font-family": "'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    "code-font-family": "'JetBrains Mono', 'Fira Code', Consolas, monospace"
+  },
+  "transitions": {
+    "theme-switch": "0.3s ease"
+  }
+}

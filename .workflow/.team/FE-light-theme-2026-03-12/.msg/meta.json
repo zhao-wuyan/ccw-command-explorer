@@ -1,0 +1,13 @@
+{
+  "session_id": "FE-light-theme-2026-03-12",
+  "team_name": "frontend",
+  "status": "active",
+  "pipeline_mode": "feature",
+  "pipeline_stages": ["analyst", "architect", "qa", "developer"],
+  "roles": ["coordinator", "analyst", "architect", "developer", "qa"],
+  "industry": "tech",
+  "constraints": ["保留现有暗黑模式", "保留品牌色", "支持系统偏好检测"],
+  "gc_rounds": 0,
+  "max_gc_rounds": 2,
+  "current_stage": "analyst"
+}

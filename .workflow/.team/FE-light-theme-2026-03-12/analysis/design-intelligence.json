@@ -1,0 +1,98 @@
+{
+  "_source": "llm-general-knowledge",
+  "industry": "tech",
+  "detected_stack": "react",
+  "existing_design_system": {
+    "color_palette": {
+      "dark_mode": {
+        "bg": "#0a0a0f",
+        "bg_gradient1": "#1a1a2e",
+        "bg_gradient2": "#16213e",
+        "primary": "#6366f1",
+        "primary_light": "#818cf8",
+        "secondary": "#10b981",
+        "secondary_light": "#34d399",
+        "warning": "#f59e0b",
+        "warning_light": "#fbbf24",
+        "danger": "#ef4444",
+        "danger_light": "#f87171",
+        "text": "#ffffff",
+        "text_muted": "#94a3b8",
+        "text_dim": "#64748b",
+        "accent1": "#ec4899",
+        "accent2": "#8b5cf6",
+        "accent3": "#06b6d4",
+        "accent4": "#84cc16",
+        "accent5": "#f97316",
+        "card_bg": "rgba(255,255,255,0.05)",
+        "card_border": "rgba(255,255,255,0.1)"
+      }
+    },
+    "typography": {
+      "font_family": "'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+      "code_font": "'JetBrains Mono', 'Fira Code', Consolas, monospace"
+    },
+    "effects": {
+      "glass_effect": "backdrop-filter: blur(10px)",
+      "animations": ["fadeIn", "pulse", "glow"]
+    }
+  },
+  "design_system": {
+    "light_mode_proposal": {
+      "bg": "#f8fafc",
+      "bg_gradient1": "#f1f5f9",
+      "bg_gradient2": "#e2e8f0",
+      "primary": "#4f46e5",
+      "primary_light": "#6366f1",
+      "secondary": "#059669",
+      "secondary_light": "#10b981",
+      "warning": "#d97706",
+      "warning_light": "#f59e0b",
+      "danger": "#dc2626",
+      "danger_light": "#ef4444",
+      "text": "#0f172a",
+      "text_muted": "#475569",
+      "text_dim": "#94a3b8",
+      "card_bg": "rgba(0,0,0,0.03)",
+      "card_border": "rgba(0,0,0,0.08)",
+      "shadow": "rgba(0,0,0,0.1)"
+    }
+  },
+  "ux_guidelines": {
+    "theme_switch": {
+      "persistence": "localStorage with key 'theme'",
+      "system_preference": "prefers-color-scheme media query",
+      "transition": "smooth color transition (0.3s ease)"
+    },
+    "accessibility": {
+      "wcag_aa": true,
+      "contrast_ratio_min": 4.5,
+      "focus_indicators": "visible on keyboard navigation"
+    }
+  },
+  "stack_guidelines": {
+    "react": {
+      "theme_context": "React Context for theme state",
+      "css_strategy": "CSS variables with data-theme attribute",
+      "component_pattern": "ThemeToggle component with icon switch"
+    }
+  },
+  "recommendations": {
+    "style": [
+      "Keep brand colors (primary, secondary, accents) consistent across themes",
+      "Use CSS variables for all color references",
+      "Implement smooth transitions between themes"
+    ],
+    "anti_patterns": [
+      "Hardcoded color values in components",
+      "Inline styles with color values",
+      "Forgetting to update both CSS and JS color constants"
+    ],
+    "must_have": [
+      "Theme toggle button with sun/moon icons",
+      "localStorage persistence for user preference",
+      "System preference detection as default",
+      "CSS variable system for easy theme switching"
+    ]
+  }
+}

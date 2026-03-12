@@ -1,4 +1,8 @@
-:root {
+/* ============================================
+   暗黑模式 (默认)
+   ============================================ */
+:root,
+[data-theme="dark"] {
   --bg: #0a0a0f;
   --bg-gradient1: #1a1a2e;
   --bg-gradient2: #16213e;
@@ -20,6 +24,62 @@
   --accent5: #f97316;
   --card-bg: rgba(255,255,255,0.05);
   --card-border: rgba(255,255,255,0.1);
+  --code-bg: rgba(0,0,0,0.3);
+  --glass-bg: rgba(255,255,255,0.05);
+  --glass-border: rgba(255,255,255,0.1);
+  --shadow-color: rgba(0,0,0,0.5);
+}
+
+/* ============================================
+   浅色模式
+   ============================================ */
+[data-theme="light"] {
+  --bg: #ffffff;
+  --bg-gradient1: #f8fafc;
+  --bg-gradient2: #f1f5f9;
+  --primary: #4f46e5;
+  --primary-light: #6366f1;
+  --secondary: #059669;
+  --secondary-light: #10b981;
+  --warning: #d97706;
+  --warning-light: #f59e0b;
+  --danger: #dc2626;
+  --danger-light: #ef4444;
+  --text: #0f172a;
+  --text-muted: #374151;
+  --text-dim: #6b7280;
+  --accent1: #db2777;
+  --accent2: #7c3aed;
+  --accent3: #0891b2;
+  --accent4: #65a30d;
+  --accent5: #ea580c;
+  --card-bg: rgba(0,0,0,0.02);
+  --card-border: rgba(0,0,0,0.1);
+  --code-bg: rgba(0,0,0,0.05);
+  --glass-bg: rgba(0,0,0,0.02);
+  --glass-border: rgba(0,0,0,0.08);
+  --shadow-color: rgba(0,0,0,0.08);
+}
+
+/* 平滑主题过渡 */
+html {
+  transition: background-color 0.3s ease;
+}
+
+*,
+*::before,
+*::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+}
+
+/* 减少动画 (用户偏好) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation-duration: 0.01ms !important;
+  }
 }
 
 * {
@@ -68,7 +128,7 @@ body {
 /* 代码样式 */
 code {
   font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-  background: rgba(0,0,0,0.3);
+  background: var(--code-bg);
   padding: 2px 8px;
   border-radius: 6px;
   font-size: 0.9em;
@@ -110,7 +170,7 @@ a:hover {
 }
 
 .glass-effect {
-  background: rgba(255,255,255,0.05);
+  background: var(--glass-bg);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--glass-border);
 }

@@ -23,6 +23,7 @@ export const COLORS = {
   accent5: '#f97316',
   cardBg: 'rgba(255,255,255,0.05)',
   cardBorder: 'rgba(255,255,255,0.1)',
+  codeBg: 'rgba(0,0,0,0.3)',
 };
 
 // ============================================

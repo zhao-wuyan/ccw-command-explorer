@@ -18,6 +18,8 @@ import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { ALL_CASES, CASES_BY_LEVEL, LEVEL_CONFIG } from './data/cases';
 import type { Case, CaseStep } from './data/cases';
+import { ThemeToggle } from './components/ThemeToggle';
+import { useColors } from './contexts/ColorsContext';
 import './App.css';
 
 // 图标映射
@@ -38,6 +40,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 
 // 状态徽章
 const StatusBadge = ({ status }: { status: string }) => {
+  const COLORS = useColors();
   const config: Record<string, { bg: string; color: string; text: string }> = {
     new: { bg: COLORS.secondary + '30', color: COLORS.secondary, text: 'NEW' },
     stable: { bg: COLORS.primary + '30', color: COLORS.primaryLight, text: '稳定' },
@@ -85,23 +88,26 @@ const CLIBadge = ({ cli }: { cli: CLIType }) => {
 };
 
 // 版本徽章组件
-const VersionBadge = ({ version }: { version: string }) => (
-  <span
-    style={{
-      fontSize: 10,
-      padding: '2px 6px',
-      borderRadius: 4,
-      backgroundColor: COLORS.primary + '20',
-      color: COLORS.primaryLight,
-      fontWeight: 600,
-      fontFamily: 'monospace',
-      border: `1px solid ${COLORS.primary}30`,
-    }}
-    title={`Added in ${version}`}
-  >
-    {version}
-  </span>
-);
+const VersionBadge = ({ version }: { version: string }) => {
+  const COLORS = useColors();
+  return (
+    <span
+      style={{
+        fontSize: 10,
+        padding: '2px 6px',
+        borderRadius: 4,
+        backgroundColor: COLORS.primary + '20',
+        color: COLORS.primaryLight,
+        fontWeight: 600,
+        fontFamily: 'monospace',
+        border: `1px solid ${COLORS.primary}30`,
+      }}
+      title={`Added in ${version}`}
+    >
+      {version}
+    </span>
+  );
+};
 
 // 判断版本号是否 >= v7.0（只显示 v7.0 及以上版本）
 const shouldShowVersion = (version: string | undefined): boolean => {
@@ -114,6 +120,7 @@ const shouldShowVersion = (version: string | undefined): boolean => {
 
 // 命令卡片组件
 const CommandCard = ({ command, onClick }: { command: Command; onClick: () => void }) => {
+  const COLORS = useColors();
   const category = CATEGORIES[command.category];
   const [isHovered, setIsHovered] = useState(false);
   const showVersion = shouldShowVersion(command.addedInVersion);
@@ -127,7 +134,7 @@ const CommandCard = ({ command, onClick }: { command: Command; onClick: () => vo
       onHoverEnd={() => setIsHovered(false)}
       onClick={onClick}
       style={{
-        backgroundColor: isHovered ? 'rgba(255,255,255,0.08)' : COLORS.cardBg,
+        backgroundColor: isHovered ? (COLORS.bg === '#ffffff' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)') : COLORS.cardBg,
         borderRadius: 12,
         padding: '16px 20px',
         border: `1px solid ${isHovered ? category.color + '60' : COLORS.cardBorder}`,
@@ -149,7 +156,7 @@ const CommandCard = ({ command, onClick }: { command: Command; onClick: () => vo
             fontSize: 15,
             color: category.color,
             fontWeight: 600,
-            backgroundColor: 'rgba(0,0,0,0.4)',
+            backgroundColor: COLORS.codeBg,
             padding: '4px 12px',
             borderRadius: 6,
           }}
@@ -217,52 +224,57 @@ const SidePanelItem = ({
   color: string;
   isActive: boolean;
   onClick: () => void;
-}) => (
-  <button
-    onClick={onClick}
-    style={{
-      display: 'block',
-      width: '100%',
-      textAlign: 'left',
-      background: isActive ? color + '20' : 'transparent',
-      border: `1px solid ${isActive ? color + '60' : color + '20'}`,
-      borderRadius: 8,
-      padding: '8px 10px',
-      cursor: 'pointer',
-      transition: 'all 0.15s',
-      marginBottom: 6,
-    }}
-    onMouseEnter={(e) => {
-      if (!isActive) {
-        e.currentTarget.style.background = color + '15';
-        e.currentTarget.style.borderColor = color + '40';
-      }
-    }}
-    onMouseLeave={(e) => {
-      if (!isActive) {
-        e.currentTarget.style.background = 'transparent';
-        e.currentTarget.style.borderColor = color + '20';
-      }
-    }}
-  >
-    <div style={{ fontSize: 12, color: isActive ? color : COLORS.text, fontWeight: isActive ? 600 : 400,
-      whiteSpace: 'normal', overflow: 'visible', wordBreak: 'break-all', lineHeight: 1.4 }}>
-      {label}
-    </div>
-    {sub && (
-      <div style={{ fontSize: 11, color: COLORS.textDim, marginTop: 2,
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {sub}
+}) => {
+  const COLORS = useColors();
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'block',
+        width: '100%',
+        textAlign: 'left',
+        background: isActive ? color + '20' : 'transparent',
+        border: `1px solid ${isActive ? color + '60' : color + '20'}`,
+        borderRadius: 8,
+        padding: '8px 10px',
+        cursor: 'pointer',
+        transition: 'all 0.15s',
+        marginBottom: 6,
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.background = color + '15';
+          e.currentTarget.style.borderColor = color + '40';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.borderColor = color + '20';
+        }
+      }}
+    >
+      <div style={{ fontSize: 12, color: isActive ? color : COLORS.text, fontWeight: isActive ? 600 : 400,
+        whiteSpace: 'normal', overflow: 'visible', wordBreak: 'break-all', lineHeight: 1.4 }}>
+        {label}
+      </div>
+      {sub && (
+        <div style={{ fontSize: 11, color: COLORS.textDim, marginTop: 2,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {sub}
       </div>
     )}
   </button>
-);
+  );
+};
 
 // 经验详情弹窗（position: fixed，自然覆盖一切）
 const ExperienceDetailModal = ({ item, onClose }: {
   item: { category: ExperienceCategory; tip: ExperienceTip };
   onClose: () => void;
-}) => (
+}) => {
+  const COLORS = useColors();
+  return (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -270,10 +282,10 @@ const ExperienceDetailModal = ({ item, onClose }: {
     style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(0,0,0,0.85)',
+      backgroundColor: COLORS.bg === '#ffffff' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.85)',
       display: 'flex',
       justifyContent: 'center',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       zIndex: 200,
       padding: 20,
       overflow: 'auto',
@@ -288,7 +300,7 @@ const ExperienceDetailModal = ({ item, onClose }: {
       style={{
         width: '100%',
         maxWidth: 700,
-        backgroundColor: '#1a1a2e',
+        backgroundColor: COLORS.modalBg,
         borderRadius: 20,
         padding: 30,
         border: `2px solid ${item.category.color}40`,
@@ -334,10 +346,13 @@ const ExperienceDetailModal = ({ item, onClose }: {
       )}
     </motion.div>
   </motion.div>
-);
+  );
+};
 
 // 命令详情弹窗
 const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => void }) => {
+  const COLORS = useColors();
+  const isLight = COLORS.bg === '#ffffff';
   const category = CATEGORIES[command.category];
   const relatedCommands = COMMANDS.filter(
     c => c.category === command.category && c.cmd !== command.cmd
@@ -384,7 +399,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.8)',
+        backgroundColor: isLight ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.8)',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -418,7 +433,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
               flexDirection: 'column',
             }}>
               <div style={{
-                backgroundColor: 'rgba(18,18,38,0.95)',
+                backgroundColor: COLORS.panelBg,
                 borderRadius: 14,
                 padding: '14px 12px',
                 border: `1px solid ${COLORS.accent3}30`,
@@ -454,7 +469,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* 命令详情主体：高度随内容，最高 90vh 可滚动 */}
             <div style={{
-              backgroundColor: '#1a1a2e',
+              backgroundColor: COLORS.modalBg,
               borderRadius: 20,
               padding: 30,
               overflow: 'auto',
@@ -499,7 +514,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
               </div>
 
               {command.detail && (
-                <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 16, marginBottom: 20, borderLeft: `4px solid ${category.color}` }}>
+                <div style={{ backgroundColor: COLORS.codeBg, borderRadius: 12, padding: 16, marginBottom: 20, borderLeft: `4px solid ${category.color}` }}>
                   <h4 style={{ color: COLORS.text, marginBottom: 8, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <BookOpen size={16} style={{ color: category.color }} />
                     详细说明
@@ -518,7 +533,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
               )}
 
               {command.level && (
-                <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                <div style={{ backgroundColor: COLORS.codeBg, borderRadius: 12, padding: 16, marginBottom: 20 }}>
                   <h4 style={{ color: COLORS.text, marginBottom: 8, fontSize: 14 }}>💡 适用场景</h4>
                   <p style={{ color: COLORS.textMuted, fontSize: 14, margin: 0 }}>{WORKFLOW_LEVELS[command.level - 1].useCase}</p>
                 </div>
@@ -529,7 +544,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
                   <h4 style={{ color: COLORS.textMuted, marginBottom: 12, fontSize: 14 }}>相关命令</h4>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {relatedCommands.map((c, i) => (
-                      <code key={i} style={{ fontSize: 13, color: CATEGORIES[c.category].color, backgroundColor: 'rgba(0,0,0,0.3)', padding: '4px 10px', borderRadius: 4 }}>
+                      <code key={i} style={{ fontSize: 13, color: CATEGORIES[c.category].color, backgroundColor: COLORS.codeBg, padding: '4px 10px', borderRadius: 4 }}>
                         {c.cmd}
                       </code>
                     ))}
@@ -551,7 +566,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
               flexDirection: 'column',
             }}>
               <div style={{
-                backgroundColor: 'rgba(18,18,38,0.95)',
+                backgroundColor: COLORS.panelBg,
                 borderRadius: 14,
                 padding: '14px 12px',
                 border: `1px solid ${COLORS.accent1}30`,
@@ -593,7 +608,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
         >
           {/* 命令详情主体 */}
           <div style={{
-            backgroundColor: '#1a1a2e',
+            backgroundColor: COLORS.modalBg,
             borderRadius: 20,
             padding: 20,
             border: `2px solid ${category.color}40`,
@@ -620,7 +635,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
               </span>
             </div>
             {command.detail && (
-              <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 10, padding: 12, marginBottom: 12, borderLeft: `3px solid ${category.color}` }}>
+              <div style={{ backgroundColor: COLORS.codeBg, borderRadius: 10, padding: 12, marginBottom: 12, borderLeft: `3px solid ${category.color}` }}>
                 <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0, lineHeight: 1.6 }}>{command.detail}</p>
               </div>
             )}
@@ -634,7 +649,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
           {/* 移动端：案例面板 */}
           {hasCases && (
             <div style={{
-              backgroundColor: 'rgba(18,18,38,0.95)',
+              backgroundColor: COLORS.panelBg,
               borderRadius: 14,
               padding: '12px 14px',
               border: `1px solid ${COLORS.accent3}30`,
@@ -670,7 +685,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
           {/* 移动端：经验面板 */}
           {hasExps && (
             <div style={{
-              backgroundColor: 'rgba(18,18,38,0.95)',
+              backgroundColor: COLORS.panelBg,
               borderRadius: 14,
               padding: '12px 14px',
               border: `1px solid ${COLORS.accent1}30`,
@@ -718,9 +733,11 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
 };
 
 // 时间线组件
-const TimelineSection = ({ onVersionClick }: { onVersionClick: (version: TimelineItem) => void }) => (
+const TimelineSection = ({ onVersionClick }: { onVersionClick: (version: TimelineItem) => void }) => {
+  const COLORS = useColors();
+  return (
   <div style={{ marginBottom: 40 }}>
-    <h2 style={{ fontSize: 28, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+    <h2 style={{ fontSize: 28, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10, color: COLORS.text }}>
       <Clock size={28} style={{ color: COLORS.primary }} />
       项目成长地图
       <span style={{ fontSize: 14, color: COLORS.textDim, fontWeight: 'normal' }}>(点击查看详情)</span>
@@ -758,7 +775,8 @@ const TimelineSection = ({ onVersionClick }: { onVersionClick: (version: Timelin
               borderRadius: 14,
               fontSize: 13,
               fontWeight: 'bold',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              color: '#fff',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
               zIndex: 1,
             }}
           >
@@ -787,12 +805,15 @@ const TimelineSection = ({ onVersionClick }: { onVersionClick: (version: Timelin
       ))}
     </div>
   </div>
-);
+  );
+};
 
 // 4级工作流组件
-const WorkflowLevelsSection = () => (
+const WorkflowLevelsSection = () => {
+  const COLORS = useColors();
+  return (
   <div style={{ marginBottom: 40 }}>
-    <h2 style={{ fontSize: 28, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+    <h2 style={{ fontSize: 28, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10, color: COLORS.text }}>
       <Target size={28} style={{ color: COLORS.accent1 }} />
       4级工作流系统 - 按难度选命令
     </h2>
@@ -827,8 +848,8 @@ const WorkflowLevelsSection = () => (
               flexShrink: 0,
             }}
           >
-            <span style={{ fontSize: 14, color: COLORS.text, opacity: 0.8 }}>Level</span>
-            <span style={{ fontSize: 32, color: COLORS.text, fontWeight: 'bold' }}>{level.level}</span>
+            <span style={{ fontSize: 14, color: '#fff', opacity: 0.9 }}>Level</span>
+            <span style={{ fontSize: 32, color: '#fff', fontWeight: 'bold' }}>{level.level}</span>
           </div>
           <div style={{ flex: 1, minWidth: 250 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
@@ -844,10 +865,13 @@ const WorkflowLevelsSection = () => (
       ))}
     </div>
   </div>
-);
+  );
+};
 
 // 老奶奶指南组件
-const GrandmaGuide = () => (
+const GrandmaGuide = () => {
+  const COLORS = useColors();
+  return (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -906,7 +930,7 @@ const GrandmaGuide = () => (
                 fontSize: 18,
                 color: COLORS.secondary,
                 fontWeight: 600,
-                backgroundColor: 'rgba(0,0,0,0.3)',
+                backgroundColor: COLORS.codeBg,
                 padding: '4px 12px',
                 borderRadius: 6,
               }}
@@ -947,10 +971,12 @@ const GrandmaGuide = () => (
       </p>
     </div>
   </motion.div>
-);
+  );
+};
 
 // 废弃命令组件
 const DeprecatedCommands = ({ searchQuery }: { searchQuery: string }) => {
+  const COLORS = useColors();
   // 过滤废弃命令
   const filteredDeprecated = useMemo(() => {
     if (!searchQuery) return DEPRECATED_COMMANDS;
@@ -984,7 +1010,7 @@ const DeprecatedCommands = ({ searchQuery }: { searchQuery: string }) => {
       >
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
+            <tr style={{ backgroundColor: COLORS.codeBg }}>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 13, color: COLORS.textDim, fontWeight: 600, width: '30%' }}>旧命令</th>
               <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 13, color: COLORS.textDim, fontWeight: 600, width: '10%' }}></th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 13, color: COLORS.textDim, fontWeight: 600, width: '30%' }}>替代命令</th>
@@ -1375,8 +1401,10 @@ const CaseStepItem = ({ step, index, onCommandClick }: { step: CaseStep; index: 
 
 // 案例卡片组件
 const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onClick: () => void; onCommandClick?: (cmd: string) => void }) => {
+  const COLORS = useColors();
   const levelConfig = LEVEL_CONFIG[String(caseItem.level)] || LEVEL_CONFIG['2'];
   const [isHovered, setIsHovered] = useState(false);
+  const isLight = COLORS.bg === '#ffffff';
 
   return (
     <motion.div
@@ -1388,7 +1416,7 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
       onHoverEnd={() => setIsHovered(false)}
       onClick={onClick}
       style={{
-        backgroundColor: isHovered ? 'rgba(255,255,255,0.08)' : COLORS.cardBg,
+        backgroundColor: isHovered ? (isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)') : COLORS.cardBg,
         borderRadius: 16,
         padding: '20px 24px',
         border: `1px solid ${isHovered ? levelConfig.color + '60' : COLORS.cardBorder}`,
@@ -1430,7 +1458,7 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
               }}
               style={{
                 fontSize: 12,
-                backgroundColor: cmdInfo ? levelConfig.color + '15' : 'rgba(0,0,0,0.3)',
+                backgroundColor: cmdInfo ? levelConfig.color + '15' : COLORS.codeBg,
                 padding: '4px 10px',
                 borderRadius: 4,
                 color: cmdInfo ? levelConfig.color : COLORS.secondary,
@@ -1460,6 +1488,8 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
 
 // 案例详情弹窗
 const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onClose: () => void; onCommandClick?: (cmd: string) => void }) => {
+  const COLORS = useColors();
+  const isLight = COLORS.bg === '#ffffff';
   const levelConfig = LEVEL_CONFIG[String(caseItem.level)] || LEVEL_CONFIG['2'];
 
   return (
@@ -1470,7 +1500,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.85)',
+        backgroundColor: isLight ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.85)',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -1486,7 +1516,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
         exit={{ scale: 0.9, y: 20 }}
         onClick={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: '#1a1a2e',
+          backgroundColor: COLORS.modalBg,
           borderRadius: 20,
           padding: 30,
           maxWidth: 800,
@@ -1534,7 +1564,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
         {/* 场景描述 */}
         <div
           style={{
-            backgroundColor: 'rgba(0,0,0,0.3)',
+            backgroundColor: COLORS.codeBg,
             borderRadius: 12,
             padding: 16,
             marginBottom: 20,
@@ -1547,7 +1577,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
         {/* 涉及命令 */}
         <div
           style={{
-            backgroundColor: 'rgba(0,0,0,0.3)',
+            backgroundColor: COLORS.codeBg,
             borderRadius: 12,
             padding: 16,
             marginBottom: 20,
@@ -1568,7 +1598,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
                     }}
                     style={{
                       fontSize: 14,
-                      backgroundColor: cmdInfo ? levelConfig.color + '20' : 'rgba(0,0,0,0.3)',
+                      backgroundColor: cmdInfo ? levelConfig.color + '20' : COLORS.codeBg,
                       padding: '6px 12px',
                       borderRadius: 6,
                       color: cmdInfo ? levelConfig.color : COLORS.textMuted,
@@ -1601,7 +1631,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
         {caseItem.commands.length > 1 && (
           <div
             style={{
-              backgroundColor: 'rgba(0,0,0,0.3)',
+              backgroundColor: COLORS.codeBg,
               borderRadius: 12,
               padding: 16,
               marginBottom: 20,
@@ -1671,7 +1701,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
             {caseItem.prerequisites && caseItem.prerequisites.length > 0 && (
               <div
                 style={{
-                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  backgroundColor: COLORS.codeBg,
                   borderRadius: 12,
                   padding: 16,
                 }}
@@ -1690,7 +1720,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
             {caseItem.successCriteria && caseItem.successCriteria.length > 0 && (
               <div
                 style={{
-                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  backgroundColor: COLORS.codeBg,
                   borderRadius: 12,
                   padding: 16,
                 }}
@@ -1724,7 +1754,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
                 alignItems: 'center',
                 gap: 8,
                 padding: '10px 16px',
-                backgroundColor: 'rgba(0,0,0,0.3)',
+                backgroundColor: COLORS.codeBg,
                 borderRadius: 8,
               }}>
                 <Clock size={16} style={{ color: COLORS.textDim }} />
@@ -1738,7 +1768,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
                 alignItems: 'center',
                 gap: 8,
                 padding: '10px 16px',
-                backgroundColor: 'rgba(0,0,0,0.3)',
+                backgroundColor: COLORS.codeBg,
                 borderRadius: 8,
               }}>
                 <Target size={16} style={{ color: COLORS.textDim }} />
@@ -1760,7 +1790,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
         {/* 交互步骤 */}
         <div
           style={{
-            backgroundColor: 'rgba(0,0,0,0.3)',
+            backgroundColor: COLORS.codeBg,
             borderRadius: 12,
             padding: 20,
             marginBottom: 20,
@@ -2086,6 +2116,7 @@ const RecommenderSection = ({
 }: {
   onCommandClick: (cmd: Command) => void;
 }) => {
+  const COLORS = useColors();
   const [input, setInput] = useState('');
   const [analysisResult, setAnalysisResult] = useState<IntentAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -2145,7 +2176,7 @@ const RecommenderSection = ({
       transition={{ duration: 0.2 }}
       style={{ marginBottom: 40 }}
     >
-      <h2 style={{ fontSize: 28, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <h2 style={{ fontSize: 28, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10, color: COLORS.text }}>
         <SearchIcon size={28} style={{ color: llmConfig.enabled ? COLORS.accent2 : COLORS.accent3 }} />
         {llmConfig.enabled ? 'LLM 智能推荐' : '命令匹配推荐'}
       </h2>
@@ -2173,7 +2204,7 @@ const RecommenderSection = ({
             placeholder="例如：修复登录超时问题、添加用户认证功能、重构支付模块..."
             style={{
               flex: 1,
-              background: 'rgba(0,0,0,0.3)',
+              background: COLORS.codeBg,
               border: `1px solid ${COLORS.cardBorder}`,
               borderRadius: 12,
               padding: '14px 18px',
@@ -2359,7 +2390,7 @@ const RecommenderSection = ({
               <div style={{
                 marginTop: 16,
                 padding: 16,
-                background: 'rgba(0,0,0,0.2)',
+                background: COLORS.cardBg,
                 borderRadius: 12,
               }}>
                 <div style={{ marginBottom: 16 }}>
@@ -2373,7 +2404,7 @@ const RecommenderSection = ({
                     placeholder="例如: https://api.openai.com/v1"
                     style={{
                       width: '100%',
-                      background: 'rgba(0,0,0,0.3)',
+                      background: COLORS.codeBg,
                       border: `1px solid ${COLORS.cardBorder}`,
                       borderRadius: 8,
                       padding: '10px 14px',
@@ -2395,7 +2426,7 @@ const RecommenderSection = ({
                     placeholder="sk-..."
                     style={{
                       width: '100%',
-                      background: 'rgba(0,0,0,0.3)',
+                      background: COLORS.codeBg,
                       border: `1px solid ${COLORS.cardBorder}`,
                       borderRadius: 8,
                       padding: '10px 14px',
@@ -2420,7 +2451,7 @@ const RecommenderSection = ({
                     placeholder="例如: gpt-4o, claude-3-5-sonnet-latest"
                     style={{
                       width: '100%',
-                      background: 'rgba(0,0,0,0.3)',
+                      background: COLORS.codeBg,
                       border: `1px solid ${COLORS.cardBorder}`,
                       borderRadius: 8,
                       padding: '10px 14px',
@@ -2519,7 +2550,7 @@ const RecommenderSection = ({
               gap: 16,
               marginBottom: 24,
               padding: '16px 20px',
-              background: 'rgba(0,0,0,0.3)',
+              background: COLORS.codeBg,
               borderRadius: 12,
             }}>
               <span style={{ fontSize: 32 }}>{analysisResult.pattern.emoji}</span>
@@ -2556,7 +2587,7 @@ const RecommenderSection = ({
                     <code style={{
                       fontSize: 13,
                       color: COLORS.accent3,
-                      background: 'rgba(0,0,0,0.3)',
+                      background: COLORS.codeBg,
                       padding: '2px 8px',
                       borderRadius: 4,
                     }}>
@@ -2601,7 +2632,7 @@ const RecommenderSection = ({
                   <div style={{
                     marginTop: 8,
                     padding: '8px 12px',
-                    background: 'rgba(0,0,0,0.2)',
+                    background: COLORS.cardBg,
                     borderRadius: 8,
                   }}>
                     <div style={{ fontSize: 11, color: COLORS.textDim, marginBottom: 6 }}>
@@ -2612,7 +2643,7 @@ const RecommenderSection = ({
                         <span key={i} style={{
                           fontSize: 11,
                           padding: '4px 8px',
-                          background: 'rgba(0,0,0,0.3)',
+                          background: COLORS.codeBg,
                           borderRadius: 4,
                           color: COLORS.textMuted,
                           display: 'flex',
@@ -2809,7 +2840,7 @@ const RecommenderSection = ({
       <div style={{
         marginTop: 24,
         padding: '16px 20px',
-        background: 'rgba(0,0,0,0.2)',
+        background: COLORS.cardBg,
         borderRadius: 12,
         display: 'flex',
         alignItems: 'flex-start',
@@ -2842,13 +2873,14 @@ const CasesSection = ({
   onSelectCase: (caseItem: Case) => void;
   onCommandClick?: (cmd: string) => void;
 }) => {
+  const COLORS = useColors();
   const filteredCases = selectedLevel === 'all'
     ? ALL_CASES
     : CASES_BY_LEVEL[selectedLevel] || [];
 
   return (
     <div style={{ marginBottom: 40 }}>
-      <h2 style={{ fontSize: 28, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <h2 style={{ fontSize: 28, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10, color: COLORS.text }}>
         <Play size={28} style={{ color: COLORS.accent3 }} />
         使用案例
         <span style={{ fontSize: 14, color: COLORS.textDim, fontWeight: 'normal' }}>
@@ -2863,7 +2895,7 @@ const CasesSection = ({
           whileTap={{ scale: 0.98 }}
           onClick={() => onSelectLevel('all')}
           style={{
-            backgroundColor: selectedLevel === 'all' ? COLORS.primary + '30' : COLORS.cardBg,
+            backgroundColor: selectedLevel === 'all' ? COLORS.primary + '20' : COLORS.cardBg,
             border: `1px solid ${selectedLevel === 'all' ? COLORS.primary : COLORS.cardBorder}`,
             borderRadius: 20,
             padding: '10px 20px',
@@ -2924,17 +2956,19 @@ const CasesSection = ({
 };
 
 // 经验指南卡片组件
-const ExperienceCard = ({ 
-  tip, 
+const ExperienceCard = ({
+  tip,
   categoryColor,
-  onCommandClick 
-}: { 
-  tip: ExperienceTip; 
+  onCommandClick
+}: {
+  tip: ExperienceTip;
   categoryColor: string;
   onCommandClick: (cmd: string) => void;
 }) => {
+  const COLORS = useColors();
   const [isHovered, setIsHovered] = useState(false);
   const isSequence = tip.commandType === 'sequence';
+  const isLight = COLORS.bg === '#ffffff';
 
   return (
     <motion.div
@@ -2946,7 +2980,7 @@ const ExperienceCard = ({
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       style={{
-        backgroundColor: isHovered ? 'rgba(255,255,255,0.08)' : COLORS.cardBg,
+        backgroundColor: isHovered ? (isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)') : COLORS.cardBg,
         borderRadius: 12,
         padding: '16px 20px',
         border: `1px solid ${isHovered ? categoryColor + '60' : COLORS.cardBorder}`,
@@ -3088,6 +3122,8 @@ const ExperienceSection = ({
 
 // 版本详情弹窗
 const VersionDetailModal = ({ version, onClose }: { version: TimelineItem; onClose: () => void }) => {
+  const COLORS = useColors();
+  const isLight = COLORS.bg === '#ffffff';
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -3096,7 +3132,7 @@ const VersionDetailModal = ({ version, onClose }: { version: TimelineItem; onClo
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.85)',
+        backgroundColor: isLight ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.85)',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -3111,7 +3147,7 @@ const VersionDetailModal = ({ version, onClose }: { version: TimelineItem; onClo
         exit={{ scale: 0.9, y: 20 }}
         onClick={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: '#1a1a2e',
+          backgroundColor: COLORS.modalBg,
           borderRadius: 20,
           padding: 30,
           maxWidth: 700,
@@ -3158,7 +3194,7 @@ const VersionDetailModal = ({ version, onClose }: { version: TimelineItem; onClo
         {/* 亮点 */}
         <div
           style={{
-            backgroundColor: 'rgba(0,0,0,0.3)',
+            backgroundColor: COLORS.codeBg,
             borderRadius: 12,
             padding: 16,
             marginBottom: 20,
@@ -3180,7 +3216,7 @@ const VersionDetailModal = ({ version, onClose }: { version: TimelineItem; onClo
         {/* 新增命令 */}
         <div
           style={{
-            backgroundColor: 'rgba(0,0,0,0.3)',
+            backgroundColor: COLORS.codeBg,
             borderRadius: 12,
             padding: 16,
             marginBottom: 20,
@@ -3257,6 +3293,9 @@ const TABS: { key: TabType; label: string; icon: React.ReactNode; desc: string }
 
 // 主应用
 function App() {
+  // 获取主题感知的颜色
+  const COLORS = useColors();
+
   const [activeTab, setActiveTab] = useState<TabType>('commands'); // 默认显示命令
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CommandCategory | 'all'>('all');
@@ -3299,16 +3338,19 @@ function App() {
 
       {/* 头部 */}
       <header className="header">
-        {/* GitHub 右上角按钮 */}
-        <a
-          href="https://github.com/zhao-wuyan/ccw-command-explorer"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="github-corner-btn"
-        >
-          <Github size={18} />
-          <span>GitHub</span>
-        </a>
+        {/* 右上角按钮组 */}
+        <div className="header-actions">
+          <ThemeToggle />
+          <a
+            href="https://github.com/zhao-wuyan/ccw-command-explorer"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="github-corner-btn"
+          >
+            <Github size={18} />
+            <span>GitHub</span>
+          </a>
+        </div>
         <div className="header-content">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
@@ -3586,7 +3628,7 @@ function App() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {/* npm 安装 */}
-                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 16 }}>
+                    <div style={{ background: COLORS.codeBg, borderRadius: 12, padding: 16 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                         <span style={{
                           backgroundColor: COLORS.secondary,
@@ -3605,7 +3647,7 @@ function App() {
                       </div>
                       <code style={{
                         display: 'block',
-                        background: 'rgba(0,0,0,0.4)',
+                        background: COLORS.codeBg,
                         padding: '12px 16px',
                         borderRadius: 8,
                         color: COLORS.secondary,
@@ -3617,7 +3659,7 @@ function App() {
                     </div>
 
                     {/* npm 更新 */}
-                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 16 }}>
+                    <div style={{ background: COLORS.codeBg, borderRadius: 12, padding: 16 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                         <span style={{
                           backgroundColor: COLORS.accent1,
@@ -3635,7 +3677,7 @@ function App() {
                       </div>
                       <code style={{
                         display: 'block',
-                        background: 'rgba(0,0,0,0.4)',
+                        background: COLORS.codeBg,
                         padding: '12px 16px',
                         borderRadius: 8,
                         color: COLORS.secondary,
@@ -3647,13 +3689,13 @@ function App() {
                     </div>
 
                     {/* 安装后目录结构 */}
-                    <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 12, padding: 16 }}>
+                    <div style={{ background: COLORS.cardBg, borderRadius: 12, padding: 16 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                         <span style={{ color: COLORS.textMuted, fontSize: 14 }}>📁 安装目录结构</span>
                       </div>
                       <code style={{
                         display: 'block',
-                        background: 'rgba(0,0,0,0.3)',
+                        background: COLORS.codeBg,
                         padding: '12px 16px',
                         borderRadius: 8,
                         color: COLORS.textMuted,
@@ -3693,7 +3735,7 @@ function App() {
                       <span style={{ color: COLORS.primary, fontSize: 18, fontWeight: 'bold' }}>1.</span>
                       <div>
                         <p style={{ color: COLORS.text, marginBottom: 4 }}>安装工作流文件到系统（全局安装）</p>
-                        <code style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
+                        <code style={{ background: COLORS.codeBg, padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
                           ccw install -m Global
                         </code>
                       </div>
@@ -3702,7 +3744,7 @@ function App() {
                       <span style={{ color: COLORS.primary, fontSize: 18, fontWeight: 'bold' }}>2.</span>
                       <div>
                         <p style={{ color: COLORS.text, marginBottom: 4 }}>在项目目录中启动 Claude Code 或 Codex</p>
-                        <code style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
+                        <code style={{ background: COLORS.codeBg, padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
                           claude / codex
                         </code>
                       </div>
@@ -3711,7 +3753,7 @@ function App() {
                       <span style={{ color: COLORS.primary, fontSize: 18, fontWeight: 'bold' }}>3.</span>
                       <div>
                         <p style={{ color: COLORS.text, marginBottom: 4 }}>验证安装是否成功</p>
-                        <code style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
+                        <code style={{ background: COLORS.codeBg, padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
                           /workflow:session:list
                         </code>
                       </div>
@@ -3720,7 +3762,7 @@ function App() {
                       <span style={{ color: COLORS.primary, fontSize: 18, fontWeight: 'bold' }}>4.</span>
                       <div>
                         <p style={{ color: COLORS.text, marginBottom: 4 }}>使用 /ccw 命令让 AI 帮你选择工作流</p>
-                        <code style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
+                        <code style={{ background: COLORS.codeBg, padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
                           /ccw 帮我实现用户登录功能
                         </code>
                       </div>
@@ -3729,7 +3771,7 @@ function App() {
                       <span style={{ color: COLORS.primary, fontSize: 18, fontWeight: 'bold' }}>5.</span>
                       <div>
                         <p style={{ color: COLORS.text, marginBottom: 4 }}>或者使用具体的工作流命令</p>
-                        <code style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
+                        <code style={{ background: COLORS.codeBg, padding: '8px 12px', borderRadius: 6, color: COLORS.secondary, fontSize: 13 }}>
                           /workflow:lite-plan "任务描述"
                         </code>
                       </div>

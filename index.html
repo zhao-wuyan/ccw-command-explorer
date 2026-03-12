@@ -5,6 +5,25 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ccw-command-explorer</title>
+    <!-- FOUC 预防：在 DOM 加载前应用主题 -->
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('theme');
+          var theme;
+          if (stored === 'light' || stored === 'dark') {
+            theme = stored;
+          } else {
+            // system or null
+            theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+          }
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          // localStorage 访问失败时使用暗黑模式
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

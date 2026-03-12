@@ -5,7 +5,7 @@ import {
   Lightbulb, TestTube, FlaskConical, Search as SearchIcon, Palette,
   Wrench, X, Clock, Target, Sparkles, BookOpen, Info, Bot, Play,
   ChevronRight, Terminal, MessageSquare, CheckCircle, AlertTriangle,
-  Lightbulb as TipIcon, Cpu, Settings as SettingsIcon, Github
+  Lightbulb as TipIcon, Cpu, Settings as SettingsIcon, Github, SlidersHorizontal
 } from 'lucide-react';
 import {
   COMMANDS, CATEGORIES, TIMELINE, WORKFLOW_LEVELS, GRANDMA_COMMANDS,
@@ -3393,6 +3393,7 @@ function App() {
   const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
   const [selectedVersion, setSelectedVersion] = useState<TimelineItem | null>(null);
   const [selectedCaseLevel, setSelectedCaseLevel] = useState<string>('all');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
 
   // 过滤命令
@@ -3498,10 +3499,13 @@ function App() {
               <Search size={20} style={{ color: COLORS.textDim }} />
               <input
                 type="text"
+                id="search-commands"
+                name="search-commands"
                 placeholder="搜索命令..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
+                autoComplete="off"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="clear-btn">
@@ -3510,52 +3514,125 @@ function App() {
               )}
             </div>
 
-            {/* 分类筛选 */}
-            <div className="filter-group">
-              <Filter size={18} style={{ color: COLORS.textDim }} />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value as CommandCategory | 'all')}
-                className="filter-select"
-              >
-                <option value="all">全部分类</option>
-                {Object.entries(CATEGORIES).map(([key, value]) => (
-                  <option key={key} value={key}>{value.label}</option>
-                ))}
-              </select>
-            </div>
+            {/* 移动端汉堡菜单按钮 */}
+            <button
+              className={`filter-toggle-btn ${showFilterDropdown ? 'active' : ''}`}
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              aria-label="筛选"
+            >
+              <SlidersHorizontal size={20} />
+            </button>
 
-            {/* 等级筛选 */}
-            <div className="filter-group">
-              <Target size={18} style={{ color: COLORS.textDim }} />
-              <select
-                value={selectedLevel}
-                onChange={(e) => setSelectedLevel(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                className="filter-select"
-              >
-                <option value="all">全部等级</option>
-                {WORKFLOW_LEVELS.map(level => (
-                  <option key={level.level} value={level.level}>
-                    Level {level.level} - {level.emoji}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* 筛选器下拉面板 */}
+            <AnimatePresence>
+              {showFilterDropdown && (
+                <motion.div
+                  className="filter-dropdown"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  {/* 分类筛选 */}
+                  <div className="filter-group">
+                    <Filter size={18} style={{ color: COLORS.textDim }} />
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value as CommandCategory | 'all')}
+                      className="filter-select"
+                    >
+                      <option value="all">全部分类</option>
+                      {Object.entries(CATEGORIES).map(([key, value]) => (
+                        <option key={key} value={key}>{value.label}</option>
+                      ))}
+                    </select>
+                  </div>
 
-            {/* CLI 筛选 */}
-            <div className="filter-group">
-              <span style={{ fontSize: 12, fontWeight: 600, color: selectedCLI === 'all' ? COLORS.textMuted : CLI_CONFIG[selectedCLI].color }}>
-                {selectedCLI === 'all' ? '★' : CLI_CONFIG[selectedCLI].shortLabel}
-              </span>
-              <select
-                value={selectedCLI}
-                onChange={(e) => setSelectedCLI(e.target.value as CLIType | 'all')}
-                className="filter-select"
-              >
-                <option value="all">全部 CLI</option>
-                <option value="claude">Claude Code</option>
-                <option value="codex">Codex</option>
-              </select>
+                  {/* 等级筛选 */}
+                  <div className="filter-group">
+                    <Target size={18} style={{ color: COLORS.textDim }} />
+                    <select
+                      value={selectedLevel}
+                      onChange={(e) => setSelectedLevel(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                      className="filter-select"
+                    >
+                      <option value="all">全部等级</option>
+                      {WORKFLOW_LEVELS.map(level => (
+                        <option key={level.level} value={level.level}>
+                          Level {level.level} - {level.emoji}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* CLI 筛选 */}
+                  <div className="filter-group">
+                    <span style={{ fontSize: 12, fontWeight: 600, color: selectedCLI === 'all' ? COLORS.textMuted : CLI_CONFIG[selectedCLI].color }}>
+                      {selectedCLI === 'all' ? '★' : CLI_CONFIG[selectedCLI].shortLabel}
+                    </span>
+                    <select
+                      value={selectedCLI}
+                      onChange={(e) => setSelectedCLI(e.target.value as CLIType | 'all')}
+                      className="filter-select"
+                    >
+                      <option value="all">全部 CLI</option>
+                      <option value="claude">Claude Code</option>
+                      <option value="codex">Codex</option>
+                    </select>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* 桌面端筛选器横向排列 */}
+            <div className="filter-scroll desktop-only">
+              {/* 分类筛选 */}
+              <div className="filter-group">
+                <Filter size={18} style={{ color: COLORS.textDim }} />
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value as CommandCategory | 'all')}
+                  className="filter-select"
+                >
+                  <option value="all">全部分类</option>
+                  {Object.entries(CATEGORIES).map(([key, value]) => (
+                    <option key={key} value={key}>{value.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 等级筛选 */}
+              <div className="filter-group">
+                <Target size={18} style={{ color: COLORS.textDim }} />
+                <select
+                  value={selectedLevel}
+                  onChange={(e) => setSelectedLevel(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                  className="filter-select"
+                >
+                  <option value="all">全部等级</option>
+                  {WORKFLOW_LEVELS.map(level => (
+                    <option key={level.level} value={level.level}>
+                      Level {level.level} - {level.emoji}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* CLI 筛选 */}
+              <div className="filter-group">
+                <span style={{ fontSize: 12, fontWeight: 600, color: selectedCLI === 'all' ? COLORS.textMuted : CLI_CONFIG[selectedCLI].color }}>
+                  {selectedCLI === 'all' ? '★' : CLI_CONFIG[selectedCLI].shortLabel}
+                </span>
+                <select
+                  value={selectedCLI}
+                  onChange={(e) => setSelectedCLI(e.target.value as CLIType | 'all')}
+                  className="filter-select"
+                >
+                  <option value="all">全部 CLI</option>
+                  <option value="claude">Claude Code</option>
+                  <option value="codex">Codex</option>
+                </select>
+              </div>
             </div>
           </div>
         )}

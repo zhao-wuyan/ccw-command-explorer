@@ -199,7 +199,29 @@
 }
 
 /* 响应式 */
+/* 默认隐藏移动端元素，显示桌面端元素 */
+.mobile-only {
+  display: none;
+}
+
+.desktop-only {
+  display: flex;
+}
+
+/* 汉堡菜单按钮 - 桌面端隐藏 */
+.filter-toggle-btn {
+  display: none;
+}
+
 @media (max-width: 768px) {
+  .mobile-only {
+    display: flex;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
   .title {
     font-size: 32px;
   }
@@ -242,31 +264,109 @@
     margin: 0 12px 16px;
     top: 12px;
     border-radius: 16px;
+    overflow: visible;
   }
 
   .tab-nav-inner-card {
-    flex-wrap: wrap;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 12px;
+  }
+
+  .tab-nav-inner-card::-webkit-scrollbar {
+    display: none;
   }
 
   .tab-btn {
-    flex: 1;
-    min-width: calc(50% - 8px);
-    justify-content: center;
-    padding: 10px 12px;
+    flex: 0 0 auto;
+    min-width: auto;
+    white-space: nowrap;
+    padding: 10px 16px;
   }
 
   .search-filter-row-card {
-    flex-direction: column;
+    position: relative;
+    flex-direction: row;
     align-items: stretch;
+    gap: 8px;
+    padding: 10px 12px 14px;
   }
 
   .search-filter-row-card .search-box {
+    flex: 1;
     max-width: none;
     min-width: auto;
+    padding: 10px 14px;
+  }
+
+  /* 汉堡菜单按钮 */
+  .filter-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .filter-toggle-btn:hover {
+    color: var(--text);
+    border-color: var(--primary);
+  }
+
+  .filter-toggle-btn.active {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--primary)15;
+  }
+
+  /* 筛选器下拉面板 */
+  .filter-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    margin-top: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 10px 40px var(--shadow-color);
+    z-index: 100;
   }
 
   .search-filter-row-card .filter-group {
-    justify-content: space-between;
+    padding: 10px 14px;
+    justify-content: flex-start;
+  }
+
+  .search-filter-row-card .filter-select {
+    min-width: 80px;
+    flex: 1;
+  }
+
+    /* 筛选器下拉面板 - 移动端才显示 */
+  .filter-dropdown {
+    display: flex;
+  }
+}
+
+/* 非移动端隐藏筛选器下拉面板 */
+@media (min-width: 769px) {
+  .filter-dropdown {
+    display: none;
   }
 }
 
@@ -355,6 +455,7 @@
   gap: 12px;
   padding: 12px 16px 16px;
   flex-wrap: wrap;
+  position: relative; /* 为移动端下拉面板提供定位基准 */
 }
 
 .search-filter-row-card .search-box {

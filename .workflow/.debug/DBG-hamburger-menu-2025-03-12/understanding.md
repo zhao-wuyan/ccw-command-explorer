@@ -48,9 +48,10 @@
 #### Fix Applied
 
 - 在移动端 `.filter-dropdown` 增加 `backdrop-filter: blur(10px)`。
-- 按主题分别提高面板背景不透明度：
-  - Dark：`rgba(255,255,255,0.1)`
-  - Light：`rgba(0,0,0,0.04)`
+- 将面板基础背景从 `var(--card-bg)` 调整为 `var(--bg)`（避免使用透明的卡片变量作为覆盖层背景）。
+- 按主题分别设置更接近“不透明”的面板背景：
+  - Dark：`rgba(22,22,27,0.98)`
+  - Light：`rgba(250,250,252,0.98)`
 
 ---
 

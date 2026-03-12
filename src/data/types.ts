@@ -61,12 +61,17 @@ export interface WorkflowLevel {
 // 经验指南类型定义
 // ============================================
 
+export interface ExperienceTipCommand {
+  cmd: string;
+  cli: CLIType;
+}
+
 export interface ExperienceTip {
   id: string;
   title: string;
   scenario: string;
   recommendation: string;
-  commands: string[];
+  commands: ExperienceTipCommand[];  // 改为对象数组，包含 cmd 和 cli
   commandType: 'select' | 'sequence';  // select=多选一, sequence=按顺序执行
   reason: string;
   tips?: string[];

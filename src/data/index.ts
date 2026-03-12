@@ -12,6 +12,7 @@ export type {
   TimelineItem,
   WorkflowLevel,
   ExperienceTip,
+  ExperienceTipCommand,
   ExperienceCategory,
   TaskPattern,
   CommandChain,

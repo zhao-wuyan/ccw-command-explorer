@@ -323,10 +323,6 @@ export const COMMANDS: Command[] = [
     detail: '迭代调优流程：Claude 执行 skill → Gemini 评估质量 → Agent 应用改进。循环直到达到质量阈值或最大迭代次数。支持单 skill 和 skill 链两种模式',
     usage: '需要通过迭代反馈优化 skill 质量，或调试 skill 执行问题'
   },
-  { cmd: '/skill-iter-tune', desc: '迭代技能调优 - 执行-评估-改进循环', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.7',
-    detail: '迭代式技能优化：Claude执行技能→Gemini评估质量→Agent应用改进。循环直到达到质量阈值或最大迭代次数。支持单技能和技能链两种模式',
-    usage: '技能需要持续改进，想通过自动化反馈循环提升质量'
-  },
   { cmd: '/skill-simplify', desc: 'SKILL.md 简化 - 功能完整性验证', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
     detail: '简化 SKILL.md：分析功能清单 → 应用优化规则（合并等价变体、移除冗余描述）→ 验证功能完整性。确保简化不丢失功能',
     usage: 'SKILL.md 太长太复杂，想精简但保持功能完整'

@@ -1,8 +1,11 @@
 // ============================================
 // 经验指南 - 场景决策树
 // ============================================
-import type { ExperienceCategory } from './types';
+import type { ExperienceCategory, ExperienceTipCommand } from './types';
 import { COLORS } from './constants';
+
+// 辅助函数：创建命令引用
+const cmd = (c: string, cli: 'claude' | 'codex' = 'claude'): ExperienceTipCommand => ({ cmd: c, cli });
 
 export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
   {
@@ -16,7 +19,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: 'Roadmap vs Plan 如何选择？',
         scenario: '有一个需求，需要规划成开发任务',
         recommendation: '根据需求的清晰度和复杂度选择一个',
-        commands: ['/workflow:roadmap-with-file', '/workflow-plan', '/workflow-lite-plan'],
+        commands: [cmd('/workflow:roadmap-with-file'), cmd('/workflow-plan'), cmd('/workflow-lite-plan')],
         commandType: 'select',
         reason: 'Roadmap 适合需求模糊、需要逐步细化的场景；Plan 适合需求明确、需要详细规划的场景',
         tips: [
@@ -30,7 +33,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '三种干活方式如何选？',
         scenario: '知道要做什么，但不确定用哪种工作流推进',
         recommendation: '按"先想清楚"到"直接开干"的程度选择',
-        commands: ['/workflow:roadmap-with-file', '/wave-plan-pipeline', '/csv-wave-pipeline'],
+        commands: [cmd('/workflow:roadmap-with-file'), cmd('/wave-plan-pipeline'), cmd('/csv-wave-pipeline', 'codex')],
         commandType: 'select',
         reason: '三种方式对应不同的准备程度：路线图对齐范围、探索再施工降低风险、直接排班最高效率',
         tips: [
@@ -44,7 +47,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '简单任务批量处理流程',
         scenario: '多个简单任务需要批量处理',
         recommendation: '直接使用轻量规划，内置执行',
-        commands: ['/workflow-lite-plan'],
+        commands: [cmd('/workflow-lite-plan')],
         commandType: 'select',
         reason: '简单任务用轻量工具，规划和执行一体化，无需额外步骤',
         tips: [
@@ -58,7 +61,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: 'CSV批量任务流水线',
         scenario: '已有任务列表(CSV格式)，需要批量执行',
         recommendation: '直接使用 CSV 流水线',
-        commands: ['/csv-wave-pipeline'],
+        commands: [cmd('/csv-wave-pipeline', 'codex')],
         commandType: 'select',
         reason: '适合已有任务清单的场景，直接导入执行',
         tips: [
@@ -72,7 +75,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '复杂单任务处理流程',
         scenario: '一个明确的复杂需求点，需要深度分析',
         recommendation: '按顺序执行：分析 → 规划',
-        commands: ['/workflow:analyze-with-file', '/workflow:collaborative-plan-with-file'],
+        commands: [cmd('/workflow:analyze-with-file'), cmd('/workflow:collaborative-plan-with-file')],
         commandType: 'sequence',
         reason: '复杂需求需要先分析冲突点、理解依赖关系，再规划',
         tips: [
@@ -94,7 +97,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '效率优先选择哪个？',
         scenario: '追求最快完成开发任务',
         recommendation: '根据任务数量和复杂度选择一个',
-        commands: ['/workflow-lite-plan', '/team-planex', '/parallel-dev-cycle'],
+        commands: [cmd('/workflow-lite-plan'), cmd('/team-planex'), cmd('/parallel-dev-cycle', 'codex')],
         commandType: 'select',
         reason: '效率优先需要平衡并行度和上下文切换成本',
         tips: [
@@ -108,7 +111,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: 'TDD开发流程',
         scenario: '需要高质量、可测试的代码',
         recommendation: '按顺序执行：规划 → 执行',
-        commands: ['/workflow-tdd', '/workflow-execute'],
+        commands: [cmd('/workflow-tdd'), cmd('/workflow-execute')],
         commandType: 'sequence',
         reason: 'TDD需要严格遵循Red-Green-Refactor循环',
         tips: [
@@ -121,7 +124,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '多终端并行开发',
         scenario: '有多个终端可用，想同时推进多个任务',
         recommendation: '使用 Codex 多终端能力',
-        commands: ['/parallel-dev-cycle'],
+        commands: [cmd('/parallel-dev-cycle', 'codex')],
         commandType: 'select',
         reason: 'Codex支持多终端并行执行，Claude Code单线程',
         tips: [
@@ -142,7 +145,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: 'Analyze vs Brainstorm 选择？',
         scenario: '需要深入理解代码或设计',
         recommendation: '根据目标选择一个',
-        commands: ['/workflow:analyze-with-file', '/workflow:brainstorm-with-file', '/brainstorm'],
+        commands: [cmd('/workflow:analyze-with-file'), cmd('/workflow:brainstorm-with-file'), cmd('/brainstorm')],
         commandType: 'select',
         reason: 'Analyze侧重理解现有代码，Brainstorm侧重创意发散',
         tips: [
@@ -156,7 +159,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '深度代码分析流程',
         scenario: '需要全面理解代码库架构',
         recommendation: '选择合适的深度分析工具',
-        commands: ['/team-ultra-analyze', '/workflow:analyze-with-file'],
+        commands: [cmd('/team-ultra-analyze'), cmd('/workflow:analyze-with-file')],
         commandType: 'select',
         reason: '深度分析可以多角色并行协作，或交互式逐步探索',
         tips: [
@@ -177,7 +180,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '主动发现问题选择哪个？',
         scenario: '想主动发现项目中的隐患',
         recommendation: '根据关注点选择一个扫描方式',
-        commands: ['/issue:discover', '/issue:discover-by-prompt', '/issue-manage'],
+        commands: [cmd('/issue:discover'), cmd('/issue:discover-by-prompt'), cmd('/issue-manage')],
         commandType: 'select',
         reason: '主动发现比被动修复成本更低',
         tips: [
@@ -191,7 +194,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: 'Issue 从发现到执行流程',
         scenario: '发现了很多问题，如何系统化解决',
         recommendation: '按顺序执行：规划 → 排队 → 执行',
-        commands: ['/issue:plan', '/issue:queue', '/issue:execute'],
+        commands: [cmd('/issue:plan'), cmd('/issue:queue'), cmd('/issue:execute')],
         commandType: 'sequence',
         reason: '批量处理效率更高，避免重复切换上下文',
         tips: [
@@ -205,7 +208,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: 'Issue Discover → CSV 流水线批量执行',
         scenario: '用 codex issue-discover 分析完问题后，想批量执行修复',
         recommendation: '将 discovery 产物文件路径传给 csv-wave-pipeline',
-        commands: ['/issue-discover', '/csv-wave-pipeline <discovery-issues.jsonl路径>'],
+        commands: [cmd('/issue-discover', 'codex'), cmd('/csv-wave-pipeline <discovery-issues.jsonl路径>', 'codex')],
         commandType: 'sequence',
         reason: 'csv-wave-pipeline 接收需求描述（可以是文件路径），AI 会自动读取并分解执行',
         tips: [
@@ -228,7 +231,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '测试流程选择哪个？',
         scenario: '代码写完了需要补测试或修复失败测试',
         recommendation: '根据测试需求和复杂度选择一个',
-        commands: ['/workflow-test-fix', '/team-testing', '/workflow:integration-test-cycle'],
+        commands: [cmd('/workflow-test-fix'), cmd('/team-testing'), cmd('/workflow:integration-test-cycle')],
         commandType: 'select',
         reason: '自动化程度越高，生成和修复失败测试的效率越高',
         tips: [
@@ -242,7 +245,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '提升测试覆盖率流程',
         scenario: '测试覆盖率不够，需要补充',
         recommendation: '按顺序执行：扫描 → 测试 → 报告',
-        commands: ['/team-quality-assurance'],
+        commands: [cmd('/team-quality-assurance')],
         commandType: 'select',
         reason: '自动化能更快达到覆盖率目标',
         tips: [
@@ -264,7 +267,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '审查范围选择哪个？',
         scenario: '代码写完了需要审查',
         recommendation: '根据改动范围选择一个',
-        commands: ['/review-cycle', '/cli:codex-review', '/review-code'],
+        commands: [cmd('/review-cycle'), cmd('/cli:codex-review'), cmd('/review-code')],
         commandType: 'select',
         reason: '不同范围和工具偏好需要不同方式',
         tips: [
@@ -278,7 +281,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '审查后自动修复流程',
         scenario: '审查发现问题后想自动修复',
         recommendation: '按顺序执行：审查 → 修复',
-        commands: ['/review-cycle'],
+        commands: [cmd('/review-cycle')],
         commandType: 'select',
         reason: '审查和修复合为一体，减少上下文切换',
         tips: [
@@ -299,7 +302,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '一句话决策',
         scenario: '快速选择命令',
         recommendation: '记住这几点就够了',
-        commands: ['/ccw'],
+        commands: [cmd('/ccw')],
         commandType: 'select',
         reason: '/ccw 会帮你做决策',
         tips: [
@@ -317,7 +320,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '按复杂度选Level',
         scenario: '根据任务复杂度选择',
         recommendation: '选择一个适合的Level',
-        commands: ['/workflow:debug-with-file', '/workflow-lite-plan', '/workflow-plan', '/brainstorm'],
+        commands: [cmd('/workflow:debug-with-file'), cmd('/workflow-lite-plan'), cmd('/workflow-plan'), cmd('/brainstorm')],
         commandType: 'select',
         reason: '复杂度匹配避免过度设计或准备不足',
         tips: [

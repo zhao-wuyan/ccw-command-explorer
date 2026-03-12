@@ -2,6 +2,8 @@
 // CCW 命令使用案例
 // ============================================
 
+import type { CLIType } from './types';
+
 export type CaseLevel = 1 | 2 | 3 | 4 | 'skill' | 'issue' | 'team' | 'ui' | 'memory' | 'session' | 'multi-cli';
 
 export interface CaseStep {
@@ -13,6 +15,7 @@ export interface CaseStep {
 
 export interface CaseCommand {
   cmd: string;
+  cli?: CLIType;  // 可选，向后兼容
   desc: string;
 }
 

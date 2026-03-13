@@ -2796,8 +2796,10 @@ const RecommenderSection = ({
                 {(analysisResult.chains?.[selectedChainIndex]?.commands || analysisResult.chain.commands).map((cmd, i) => {
                   // 使用模糊匹配查找命令
                   const cmdInfo = COMMANDS.find(c => c.cmd === cmd.cmd || c.cmd.includes(cmd.cmd.replace('/', '')));
+                  // 使用 selectedChainIndex + cmd.cmd + i 组合作为唯一 key，确保切换命令链时正确重新渲染
+                  const uniqueKey = `${selectedChainIndex}-${cmd.cmd}-${i}`;
                   return (
-                    <span key={cmdInfo ? getCommandKey(cmdInfo.cmd, cmdInfo.cli) : i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span key={uniqueKey} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}

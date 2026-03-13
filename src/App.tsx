@@ -2163,7 +2163,7 @@ ${ccwContext}
           },
           pattern,
           confidence: parsed.confidence || 0.8,
-          matchedKeyword: parsed.reason?.substring(0, 50),
+          matchedKeyword: parsed.reason,  // 不再截断，显示完整分析依据
           isDefaultFallback: false,
           allMatches: [],
         };
@@ -2662,30 +2662,35 @@ const RecommenderSection = ({
                 {analysisResult.matchedKeyword && (
                   <div style={{
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     gap: 8,
                     marginBottom: 8,
                     padding: '8px 12px',
                     background: COLORS.accent3 + '10',
                     borderRadius: 8,
                     borderLeft: `3px solid ${COLORS.accent3}`,
+                    flexWrap: 'wrap',
                   }}>
-                    <SearchIcon size={14} style={{ color: COLORS.accent3 }} />
-                    <span style={{ fontSize: 12, color: COLORS.textMuted }}>{llmConfig.enabled ? 'LLM 分析依据:' : '匹配关键词:'}</span>
+                    <SearchIcon size={14} style={{ color: COLORS.accent3, flexShrink: 0, marginTop: 3 }} />
+                    <span style={{ fontSize: 12, color: COLORS.textMuted, flexShrink: 0 }}>{llmConfig.enabled ? 'LLM 分析依据:' : '匹配关键词:'}</span>
                     <code style={{
                       fontSize: 13,
                       color: COLORS.accent3,
                       background: COLORS.codeBg,
-                      padding: '2px 8px',
+                      padding: '4px 8px',
                       borderRadius: 4,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      flex: 1,
+                      minWidth: 200,
                     }}>
-                      "{analysisResult.matchedKeyword}"
+                      {analysisResult.matchedKeyword}
                     </code>
                     {/* 显示置信度 */}
                     <span style={{
                       fontSize: 11,
                       color: COLORS.textDim,
-                      marginLeft: 8,
+                      flexShrink: 0,
                     }}>
                       置信度: {Math.round(analysisResult.confidence * 100)}%
                     </span>

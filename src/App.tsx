@@ -2350,7 +2350,7 @@ const RecommenderSection = ({
               key={i}
               onClick={() => {
                 setInput(example);
-                setTimeout(handleAnalyze, 100);
+                // 不自动触发分析，让用户自己点击按钮
               }}
               style={{
                 background: 'transparent',

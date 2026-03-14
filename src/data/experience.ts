@@ -33,12 +33,12 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '三种干活方式如何选？',
         scenario: '知道要做什么，但不确定用哪种工作流推进',
         recommendation: '按"先想清楚"到"直接开干"的程度选择',
-        commands: [cmd('/workflow:roadmap-with-file'), cmd('/wave-plan-pipeline'), cmd('/csv-wave-pipeline', 'codex')],
+        commands: [cmd('/workflow:roadmap-with-file'), cmd('/workflow-wave-plan'), cmd('/csv-wave-pipeline', 'codex')],
         commandType: 'select',
         reason: '三种方式对应不同的准备程度：路线图对齐范围、探索再施工降低风险、直接排班最高效率',
         tips: [
           '/workflow:roadmap-with-file - 需要先对齐范围/里程碑/验收，沉淀可追踪的任务清单（issue）',
-          '/wave-plan-pipeline - 不熟代码库、怕改错地方，先并发探索（架构/集成点/约束）再动手，探索结果自动喂给实施任务',
+          '/workflow-wave-plan - 不熟代码库、怕改错地方，先并发探索（架构/集成点/约束）再动手，探索结果自动喂给实施任务',
           '/csv-wave-pipeline - 已经知道要改什么，直接拆 tasks.csv 按依赖分 Wave 并发执行',
         ],
       },
@@ -307,7 +307,7 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         reason: '/ccw 会帮你做决策',
         tips: [
           '需求0-1、模糊 → /workflow:roadmap-with-file',
-          '不熟代码库、先探索再动手 → /wave-plan-pipeline（explore.csv→tasks.csv→Wave执行）',
+          '不熟代码库、先探索再动手 → /workflow-wave-plan（explore.csv→tasks.csv→Wave执行）',
           '需求明确、直接并发推进 → /csv-wave-pipeline（tasks.csv→按依赖Wave执行）',
           '需求明确、复杂 → /workflow-plan 或 /workflow:analyze-with-file',
           '简单任务、大量 → /workflow-lite-plan 或 /csv-wave-pipeline',

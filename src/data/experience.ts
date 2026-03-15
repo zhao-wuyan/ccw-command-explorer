@@ -298,6 +298,23 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
     color: COLORS.accent1,
     tips: [
       {
+        id: 'codex-dev-workflow',
+        title: 'Codex 开发工作流（$ 前缀命令）',
+        scenario: '使用 Codex CLI 开发，需要快速选择合适的 skill',
+        recommendation: '根据任务类型选择一个',
+        commands: [cmd('/analyze-with-file', 'codex'), cmd('/roadmap-with-file', 'codex'), cmd('/parallel-dev-cycle', 'codex'), cmd('/debug-with-file', 'codex')],
+        commandType: 'select',
+        reason: 'Codex 使用 $ 前缀命令，本经验专门针对 Codex 环境整理',
+        tips: [
+          '$analyze-with-file --depth=quick - 小需求：快速分析后直接实现',
+          '$analyze-with-file - 分析项目：深度理解、多角度分析',
+          '$roadmap-with-file - 写需求文档：战略规划、issue 分解（MVP→Optimized）',
+          '$parallel-dev-cycle - 大需求编码：4代理并行（RA/EP/CD/VAS）',
+          '$debug-with-file - 修改 BUG：假设驱动调试，记录探索过程',
+          '提示：Claude Code 用户对应 /workflow:analyze-with-file、/workflow:roadmap-with-file 等',
+        ],
+      },
+      {
         id: 'quick-decision',
         title: '一句话决策',
         scenario: '快速选择命令',

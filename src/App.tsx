@@ -3054,17 +3054,27 @@ const CasesSection = ({
 // 经验指南卡片组件
 const ExperienceCard = ({
   tip,
+  category,
   categoryColor,
-  onCommandClick
+  onCommandClick,
+  onCardClick
 }: {
   tip: ExperienceTip;
+  category?: ExperienceCategory;
   categoryColor: string;
   onCommandClick: (cmdRef: { cmd: string; cli: CLIType }) => void;
+  onCardClick?: () => void;
 }) => {
   const COLORS = useColors();
   const [isHovered, setIsHovered] = useState(false);
   const isSequence = tip.commandType === 'sequence';
   const isLight = COLORS.bg === '#ffffff';
+
+  const handleCardClick = () => {
+    if (onCardClick && category) {
+      onCardClick();
+    }
+  };
 
   return (
     <motion.div
@@ -3075,12 +3085,13 @@ const ExperienceCard = ({
       whileHover={{ scale: 1.02, y: -2 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
+      onClick={handleCardClick}
       style={{
         backgroundColor: isHovered ? (isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)') : COLORS.cardBg,
         borderRadius: 12,
         padding: '16px 20px',
         border: `1px solid ${isHovered ? categoryColor + '60' : COLORS.cardBorder}`,
-        cursor: 'default',
+        cursor: onCardClick ? 'pointer' : 'default',
         transition: 'all 0.2s ease',
       }}
     >
@@ -3163,9 +3174,11 @@ const ExperienceCard = ({
 
 // 经验指南区域组件
 const ExperienceSection = ({
-  onCommandClick
+  onCommandClick,
+  onCardClick
 }: {
   onCommandClick: (cmdRef: { cmd: string; cli: CLIType }) => void;
+  onCardClick?: (item: { category: ExperienceCategory; tip: ExperienceTip }) => void;
 }) => {
   return (
     <div style={{ marginBottom: 40 }}>
@@ -3174,7 +3187,7 @@ const ExperienceSection = ({
         经验指南
       </h2>
       <p style={{ color: COLORS.textMuted, marginBottom: 24, fontSize: 15 }}>
-        点击命令可查看详情 - 来自实战经验的命令选择建议
+        点击卡片查看详情，点击命令可快速选择 - 来自实战经验的命令选择建议
       </p>
 
       {EXPERIENCE_GUIDE.map((category) => (
@@ -3204,8 +3217,10 @@ const ExperienceSection = ({
                 <ExperienceCard
                   key={tip.id}
                   tip={tip}
+                  category={category}
                   categoryColor={category.color}
                   onCommandClick={onCommandClick}
+                  onCardClick={onCardClick ? () => onCardClick({ category, tip }) : undefined}
                 />
               ))}
             </AnimatePresence>
@@ -3402,6 +3417,7 @@ function App() {
   const [selectedCaseLevel, setSelectedCaseLevel] = useState<string>('all');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
+  const [activeExpItem, setActiveExpItem] = useState<{ category: ExperienceCategory; tip: ExperienceTip } | null>(null);
 
   // 过滤命令
   const filteredCommands = useMemo(() => {
@@ -3723,6 +3739,7 @@ function App() {
                     setSelectedCommand(command);
                   }
                 }}
+                onCardClick={(item) => setActiveExpItem(item)}
               />
             </motion.div>
           )}
@@ -4040,6 +4057,17 @@ function App() {
           <CaseDetail
             caseItem={selectedCase}
             onClose={() => setSelectedCase(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* 经验详情弹窗 */}
+      <AnimatePresence>
+        {activeExpItem && (
+          <ExperienceDetailModal
+            key={activeExpItem.tip.id}
+            item={activeExpItem}
+            onClose={() => setActiveExpItem(null)}
           />
         )}
       </AnimatePresence>

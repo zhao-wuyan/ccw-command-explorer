@@ -45,7 +45,7 @@ When coordinator needs to execute a command (analyze, dispatch, monitor):
 | Interrupted session | Active/paused session exists in .workflow/.team/ux-improve-* | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume/adapt/complete: load `commands/monitor.md`, execute matched handler, STOP.
+For callback/check/resume/adapt/complete: load `@commands/monitor.md`, execute matched handler, STOP.
 
 ## Phase 0: Session Resume Check
 
@@ -62,13 +62,16 @@ TEXT-LEVEL ONLY. No source code reading.
    - `<project-path>` (required)
    - `--framework react|vue` (optional, auto-detect if omitted)
 2. If project path missing -> AskUserQuestion for path
-3. Delegate to `commands/analyze.md` -> output scope context
+3. Delegate to `@commands/analyze.md` -> output scope context
 4. Store: project_path, framework, pipeline_mode, issue_signals
 
 ## Phase 2: Create Team + Initialize Session
 
-1. Generate session ID: `ux-improve-<timestamp>`
-2. Create session folder structure:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-ux-improve`
+2. Generate session ID: `ux-improve-<timestamp>`
+3. Create session folder structure:
    ```
    .workflow/.team/ux-improve-<timestamp>/
    ├── .msg/
@@ -76,20 +79,20 @@ TEXT-LEVEL ONLY. No source code reading.
    ├── explorations/
    └── wisdom/contributions/
    ```
-3. **Wisdom Initialization**: Copy `~  or <project>/.claude/skills/team-ux-improve/wisdom/` to `<session>/wisdom/`
-4. Initialize `.msg/meta.json` via team_msg state_update with pipeline metadata
-5. TeamCreate(team_name="ux-improve")
-6. Do NOT spawn workers yet - deferred to Phase 4
+4. **Wisdom Initialization**: Copy `<skill_root>/wisdom/` to `<session>/wisdom/`
+5. Initialize `.msg/meta.json` via team_msg state_update with pipeline metadata
+6. TeamCreate(team_name="ux-improve")
+7. Do NOT spawn workers yet - deferred to Phase 4
 
 ## Phase 3: Create Task Chain
 
-Delegate to `commands/dispatch.md`. Standard pipeline:
+Delegate to `@commands/dispatch.md`. Standard pipeline:
 
 SCAN-001 -> DIAG-001 -> DESIGN-001 -> IMPL-001 -> TEST-001
 
 ## Phase 4: Spawn-and-Stop
 
-Delegate to `commands/monitor.md#handleSpawnNext`:
+Delegate to `@commands/monitor.md#handleSpawnNext`:
 1. Find ready tasks (pending + blockedBy resolved)
 2. Spawn team-worker agents (see SKILL.md Spawn Template)
 3. Output status summary
@@ -110,7 +113,7 @@ Delegate to `commands/monitor.md#handleSpawnNext`:
 
 3. **Wisdom Consolidation**: Check `<session>/wisdom/contributions/` for worker contributions
    - If contributions exist -> AskUserQuestion to merge to permanent wisdom
-   - If approved -> copy to `~  or <project>/.claude/skills/team-ux-improve/wisdom/`
+   - If approved -> copy to `<skill_root>/wisdom/`
 
 4. Calculate: completed_tasks, total_issues_found, issues_fixed, test_pass_rate
 5. Output pipeline summary with [coordinator] prefix

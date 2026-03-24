@@ -40,13 +40,13 @@ When coordinator needs to execute a command:
 | Interrupted session | Active/paused session exists in `.workflow/.team/PEX-*` | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume: load `commands/monitor.md` and execute the appropriate handler, then STOP.
+For callback/check/resume: load `@commands/monitor.md` and execute the appropriate handler, then STOP.
 
 ### handleAdd
 
 1. Parse new input (Issue IDs / `--text` / `--plan`)
 2. Get current max PLAN-* sequence from `TaskList`
-3. `TaskCreate` new PLAN-00N task (owner: planner)
+3. `TaskCreate` new PLAN-00N task, then `TaskUpdate` to set owner: planner
 4. If planner already sent `all_planned` (check team_msg) -> `SendMessage` to planner to re-enter loop
 5. STOP
 
@@ -67,7 +67,7 @@ For callback/check/resume: load `commands/monitor.md` and execute the appropriat
 
 TEXT-LEVEL ONLY. No source code reading.
 
-1. Delegate to commands/analyze.md -> produces task-analysis.json
+1. Delegate to @commands/analyze.md -> produces task-analysis.json
 2. Parse arguments: Extract input type (Issue IDs / --text / --plan) and optional flags (--exec, -y)
 3. Determine execution method (see specs/pipelines.md Selection Decision Table):
    - Explicit `--exec` flag -> use specified method
@@ -78,12 +78,15 @@ TEXT-LEVEL ONLY. No source code reading.
 
 ## Phase 2: Create Team + Initialize Session
 
-1. Generate session ID: `PEX-<slug>-<date>`
-2. Create session folder: `.workflow/.team/<session-id>/`
-3. Create subdirectories: `artifacts/solutions/`, `wisdom/`
-4. Call `TeamCreate` with team name (default: "planex")
-5. Initialize wisdom files (learnings.md, decisions.md, conventions.md, issues.md)
-6. Initialize meta.json with pipeline metadata:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-planex`
+2. Generate session ID: `PEX-<slug>-<date>`
+3. Create session folder: `.workflow/.team/<session-id>/`
+4. Create subdirectories: `artifacts/solutions/`, `wisdom/`
+5. Call `TeamCreate` with team name (default: "planex")
+6. Initialize wisdom files (learnings.md, decisions.md, conventions.md, issues.md)
+7. Initialize meta.json with pipeline metadata:
 ```typescript
 mcp__ccw-tools__team_msg({
   operation: "log", session_id: "<id>", from: "coordinator",
@@ -101,14 +104,14 @@ mcp__ccw-tools__team_msg({
 
 ## Phase 3: Create Task Chain
 
-Delegate to `commands/dispatch.md`:
+Delegate to `@commands/dispatch.md`:
 1. Read `roles/coordinator/commands/dispatch.md`
 2. Execute its workflow to create PLAN-001 task
 3. PLAN-001 contains input info + execution method in description
 
 ## Phase 4: Spawn-and-Stop
 
-1. Load `commands/monitor.md`
+1. Load `@commands/monitor.md`
 2. Execute `handleSpawnNext` to find ready tasks and spawn planner worker
 3. Output status summary
 4. STOP (idle, wait for worker callback)

@@ -43,7 +43,7 @@ When coordinator needs to execute a specific phase:
 | Interrupted session | Active session in .workflow/.team/TLV4-* | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume/adapt/complete: load commands/monitor.md, execute handler, STOP.
+For callback/check/resume/adapt/complete: load @commands/monitor.md, execute handler, STOP.
 
 ## Phase 0: Session Resume Check
 
@@ -64,19 +64,22 @@ TEXT-LEVEL ONLY. No source code reading.
 
 1. Parse task description
 2. Clarify if ambiguous (AskUserQuestion: scope, deliverables, constraints)
-3. Delegate to commands/analyze.md
+3. Delegate to @commands/analyze.md
 4. Output: task-analysis.json
 5. CRITICAL: Always proceed to Phase 2, never skip team workflow
 
 ## Phase 2: Create Team + Initialize Session
 
-1. Generate session ID: TLV4-<slug>-<date>
-2. Create session folder structure
-3. TeamCreate with team name
-4. Read specs/pipelines.md -> select pipeline
-5. Register roles in team-session.json
-6. Initialize shared infrastructure (wisdom/*.md, explorations/cache-index.json)
-7. Initialize pipeline via team_msg state_update:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-lifecycle-v4`
+2. Generate session ID: TLV4-<slug>-<date>
+3. Create session folder structure
+4. TeamCreate with team name
+5. Read specs/pipelines.md -> select pipeline
+6. Register roles in team-session.json
+7. Initialize shared infrastructure (wisdom/*.md, explorations/cache-index.json)
+8. Initialize pipeline via team_msg state_update:
    ```
    mcp__ccw-tools__team_msg({
      operation: "log", session_id: "<id>", from: "coordinator",
@@ -84,15 +87,15 @@ TEXT-LEVEL ONLY. No source code reading.
      data: { pipeline_mode: "<mode>", pipeline_stages: [...], team_name: "<name>" }
    })
    ```
-8. Write team-session.json
-9. Spawn resident supervisor (if pipeline has CHECKPOINT tasks AND `supervision !== false`):
+9. Write team-session.json
+10. Spawn resident supervisor (if pipeline has CHECKPOINT tasks AND `supervision !== false`):
    - Use SKILL.md Supervisor Spawn Template (subagent_type: "team-supervisor")
    - Wait for "[supervisor] Ready" callback before proceeding to Phase 3
    - Record supervisor in active_workers with `resident: true` flag
 
 ## Phase 3: Create Task Chain
 
-Delegate to commands/dispatch.md:
+Delegate to @commands/dispatch.md:
 1. Read dependency graph from task-analysis.json
 2. Read specs/pipelines.md for selected pipeline's task registry
 3. Topological sort tasks
@@ -101,7 +104,7 @@ Delegate to commands/dispatch.md:
 
 ## Phase 4: Spawn-and-Stop
 
-Delegate to commands/monitor.md#handleSpawnNext:
+Delegate to @commands/monitor.md#handleSpawnNext:
 1. Find ready tasks (pending + blockedBy resolved)
 2. Spawn team-worker agents (see SKILL.md Spawn Template)
 3. Output status summary

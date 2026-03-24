@@ -46,14 +46,8 @@ export const TASK_PATTERNS: TaskPattern[] = [
   // 需求澄清检测 - 检测需要讨论和补充的需求（提升权重确保优先匹配）
   { type: 'clarify-needed', keywords: /初步方案|方案不足|帮我补|补漏|不足之处|可能有问题|你看一下|有哪些要|需要理解|帮我完善|补充方案/, level: 3, flow: 'analyze-to-plan', desc: '需求需澄清', emoji: '💬', weight: 91 },
 
-  // v7.2.2 新增 - DDD 文档驱动开发
-  { type: 'ddd', keywords: /ddd|文档驱动|doc driven|文档索引|doc index|doc-index|代码文档化|documentation workflow|文档工作流/, level: 3, flow: 'ddd', desc: '文档驱动开发', emoji: '📚', weight: 88 },
-
   // v7.2.2 新增 - 规格管理
   { type: 'spec-mgmt', keywords: /规格初始化|spec setup|项目规范|编码规范|架构约束|spec add|添加规范|spec load|加载规格|查看规格|浏览规范|convention|constraint|learning|经验教训/, level: 2, flow: 'spec-mgmt', desc: '规格管理', emoji: '📐', weight: 85 },
-
-  // v7.2.2 新增 - 三省六部协作
-  { type: 'edict', keywords: /三省六部|edict|级联审批|串行审批|并行执行|六部|中书省|门下省|尚书省|太子接旨|强制审批/, level: 4, flow: 'edict', desc: '三省六部协作', emoji: '🏛️', weight: 90 },
 
   // v7.2.2 新增 - 前端调试
   { type: 'frontend-debug', keywords: /前端调试|chrome debug|devtools|前端问题|无响应按钮|状态刷新|交互问题|按钮不工作|UI不响应|前端bug|浏览器调试/, level: 3, flow: 'frontend-debug', desc: '前端调试', emoji: '🐛', weight: 88 },
@@ -316,20 +310,6 @@ export const COMMAND_CHAINS: Record<string, CommandChain> = {
     tips: ['完整探索', '正式规划', '执行验证'],
   },
 
-  // v7.2.2 新增 - DDD 文档驱动
-  'ddd': {
-    flow: 'ddd',
-    level: 3,
-    pipeline: ['ddd:scan', 'ddd:plan', 'ddd:execute', 'ddd:sync'],
-    commands: [
-      { cmd: '/ddd:scan', desc: '扫描构建索引' },
-      { cmd: '/ddd:plan', desc: '文档驱动规划' },
-      { cmd: '/ddd:execute', desc: '执行任务' },
-      { cmd: '/ddd:sync', desc: '同步更新' },
-    ],
-    tips: ['代码优先', '自动索引', '文档驱动'],
-  },
-
   // v7.2.2 新增 - 规格管理
   'spec-mgmt': {
     flow: 'spec-mgmt',
@@ -341,17 +321,6 @@ export const COMMAND_CHAINS: Record<string, CommandChain> = {
       { cmd: '/workflow:spec:load', desc: '加载规格' },
     ],
     tips: ['建立规范', '团队统一'],
-  },
-
-  // v7.2.2 新增 - 三省六部
-  'edict': {
-    flow: 'edict',
-    level: 4,
-    pipeline: ['team-edict'],
-    commands: [
-      { cmd: '/team-edict', desc: '三省六部协作' },
-    ],
-    tips: ['级联审批', '并行执行', '看板上报'],
   },
 
   // v7.2.2 新增 - 前端调试

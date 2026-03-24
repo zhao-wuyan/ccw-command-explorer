@@ -2,7 +2,7 @@
 name: csv-wave-pipeline
 description: Requirement planning to wave-based CSV execution pipeline. Decomposes requirement into dependency-sorted CSV tasks, computes execution waves, runs wave-by-wave via spawn_agents_on_csv with cross-wave context propagation.
 argument-hint: "[-y|--yes] [-c|--concurrency N] [--continue] \"requirement description\""
-allowed-tools: spawn_agents_on_csv, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
+allowed-tools: spawn_agents_on_csv, Read, Write, Edit, Bash, Glob, Grep, request_user_input
 ---
 
 ## Auto Mode
@@ -322,23 +322,23 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
        waveTasks.forEach(t => console.log(`  - [${t.id}] ${t.title}`))
      }
 
-     const answer = AskUserQuestion({
+     const answer = request_user_input({
        questions: [{
+         header: "验证",
+         id: "validation",
          question: "Approve task breakdown?",
-         header: "Validation",
-         multiSelect: false,
          options: [
-           { label: "Approve", description: "Proceed with wave execution" },
+           { label: "Approve(Recommended)", description: "Proceed with wave execution" },
            { label: "Modify", description: `Edit ${sessionFolder}/tasks.csv manually, then --continue` },
            { label: "Cancel", description: "Abort" }
          ]
        }]
      })  // BLOCKS
 
-     if (answer.Validation === "Modify") {
+     if (answer.answers.validation.answers[0] === "Modify") {
        console.log(`Edit: ${sessionFolder}/tasks.csv\nResume: $csv-wave-pipeline --continue`)
        return
-     } else if (answer.Validation === "Cancel") {
+     } else if (answer.answers.validation.answers[0] === "Cancel") {
        return
      }
    }
@@ -711,20 +711,20 @@ ${[...new Set(tasks.flatMap(t => (t.files_modified || '').split(';')).filter(Boo
 
    ```javascript
    if (!AUTO_YES && failed.length > 0) {
-     const answer = AskUserQuestion({
+     const answer = request_user_input({
        questions: [{
+         header: "下一步",
+         id: "next_step",
          question: `${failed.length} tasks failed. Next action?`,
-         header: "Next Step",
-         multiSelect: false,
          options: [
-           { label: "Retry Failed", description: `Re-execute ${failed.length} failed tasks with updated context` },
+           { label: "Retry Failed(Recommended)", description: `Re-execute ${failed.length} failed tasks with updated context` },
            { label: "View Report", description: "Display context.md" },
            { label: "Done", description: "Complete session" }
          ]
        }]
      })  // BLOCKS
 
-     if (answer['Next Step'] === "Retry Failed") {
+     if (answer.answers.next_step.answers[0] === "Retry Failed(Recommended)") {
        // Reset failed tasks to pending, re-run Phase 2 for their waves
        for (const task of failed) {
          updateMasterCsvRow(sessionFolder, task.id, { status: 'pending', error: '' })
@@ -735,7 +735,7 @@ ${[...new Set(tasks.flatMap(t => (t.files_modified || '').split(';')).filter(Boo
        }
        // Re-execute Phase 2 (loop will skip already-completed tasks)
        // → goto Phase 2
-     } else if (answer['Next Step'] === "View Report") {
+     } else if (answer.answers.next_step.answers[0] === "View Report") {
        console.log(Read(`${sessionFolder}/context.md`))
      }
    }

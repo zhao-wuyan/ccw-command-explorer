@@ -159,42 +159,35 @@ Schema:
 ```javascript
 if (!autoMode) {
   // Confirm problem statement and select depth
-  AskUserQuestion({
+  request_user_input({
     questions: [
       {
-        question: `Problem statement: "${seedAnalysis.problem_statement}" - Is this accurate?`,
         header: "Problem",
-        multiSelect: false,
+        id: "problem",
+        question: `Problem statement: "${seedAnalysis.problem_statement}" - Is this accurate?`,
         options: [
-          { label: "Accurate", description: "Proceed with this problem statement" },
+          { label: "Accurate(Recommended)", description: "Proceed with this problem statement" },
           { label: "Needs adjustment", description: "I'll refine the problem statement" }
         ]
       },
       {
-        question: "What specification depth do you need?",
         header: "Depth",
-        multiSelect: false,
+        id: "depth",
+        question: "What specification depth do you need?",
         options: [
+          { label: "Standard(Recommended)", description: "Balanced detail for most projects" },
           { label: "Light", description: "Quick overview - key decisions only" },
-          { label: "Standard (Recommended)", description: "Balanced detail for most projects" },
           { label: "Comprehensive", description: "Maximum detail for complex/critical projects" }
         ]
       },
       {
-        question: "Which areas should we focus on?",
-        header: "Focus",
-        multiSelect: true,
-        options: seedAnalysis.dimensions.map(d => ({ label: d, description: `Explore ${d} in depth` }))
-      },
-      {
-        question: "What type of specification is this?",
         header: "Spec Type",
-        multiSelect: false,
+        id: "spec_type",
+        question: "What type of specification is this?",
         options: [
-          { label: "Service (Recommended)", description: "Long-running service with lifecycle, state machine, observability" },
+          { label: "Service(Recommended)", description: "Long-running service with lifecycle, state machine, observability" },
           { label: "API", description: "REST/GraphQL API with endpoints, auth, rate limiting" },
-          { label: "Library/SDK", description: "Reusable package with public API surface, examples" },
-          { label: "Platform", description: "Multi-component system, uses Service profile" }
+          { label: "Library/SDK", description: "Reusable package with public API surface, examples" }
         ]
       }
     ]

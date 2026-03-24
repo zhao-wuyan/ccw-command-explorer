@@ -123,24 +123,24 @@ CONSTRAINTS: Be genuinely critical. Focus on requirements that would block imple
 if (!autoMode) {
   // Present requirements grouped by initial priority
   // Allow user to adjust MoSCoW labels
-  AskUserQuestion({
+  request_user_input({
     questions: [
       {
-        question: "Review the Must-Have requirements. Any that should be reprioritized?",
         header: "Must-Have",
-        multiSelect: false,
+        id: "must_have",
+        question: "Review the Must-Have requirements. Any that should be reprioritized?",
         options: [
-          { label: "All correct", description: "Must-have requirements are accurate" },
+          { label: "All correct(Recommended)", description: "Must-have requirements are accurate" },
           { label: "Too many", description: "Some should be Should/Could" },
           { label: "Missing items", description: "Some Should requirements should be Must" }
         ]
       },
       {
-        question: "What is the target MVP scope?",
         header: "MVP Scope",
-        multiSelect: false,
+        id: "mvp_scope",
+        question: "What is the target MVP scope?",
         options: [
-          { label: "Must-Have only (Recommended)", description: "MVP includes only Must requirements" },
+          { label: "Must-Have only(Recommended)", description: "MVP includes only Must requirements" },
           { label: "Must + key Should", description: "Include critical Should items in MVP" },
           { label: "Comprehensive", description: "Include all Must and Should" }
         ]

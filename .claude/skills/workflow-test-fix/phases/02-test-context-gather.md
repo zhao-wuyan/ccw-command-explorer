@@ -346,6 +346,7 @@ Execute complete context-search-agent workflow for implementation planning:
 ### Phase 1: Initialization & Pre-Analysis
 1. **Project State Loading**:
    - Run: \`ccw spec load --category execution\` to load project context, tech stack, and guidelines.
+   - Run: \`ccw spec load --category test\` to load test framework conventions, coverage targets, and fixtures.
    - If files don't exist, proceed with fresh analysis.
 2. **Detection**: Check for existing context-package (early exit if valid)
 3. **Foundation**: Initialize CodexLens, get project structure, load docs

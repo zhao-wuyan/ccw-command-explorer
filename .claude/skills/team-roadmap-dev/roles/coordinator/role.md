@@ -65,14 +65,14 @@ When coordinator is invoked, detect invocation type:
 | Detection | Condition | Handler |
 |-----------|-----------|---------|
 | Worker callback | Message contains role tag [planner], [executor], [verifier] | -> handleCallback |
-| Resume mode | Arguments contain `--resume` | -> commands/resume.md: load session, re-enter monitor |
+| Resume mode | Arguments contain `--resume` | -> @commands/resume.md: load session, re-enter monitor |
 | Status check | Arguments contain "check" or "status" | -> handleCheck |
 | Manual resume | Arguments contain "resume" or "continue" | -> handleResume |
 | Pipeline complete | All tasks have status "completed" | -> handleComplete |
 | Interrupted session | Active/paused session exists | -> Phase 0 (Session Resume Check) |
 | New session | None of above | -> Phase 1 (Init Prerequisites) |
 
-For callback/check/resume/complete: load `commands/monitor.md` and execute matched handler, then STOP.
+For callback/check/resume/complete: load `@commands/monitor.md` and execute matched handler, then STOP.
 
 ### Router Implementation
 
@@ -86,7 +86,7 @@ For callback/check/resume/complete: load `commands/monitor.md` and execute match
 
 3. **Route to handler**:
    - For monitor handlers: Read `commands/monitor.md`, execute matched handler, STOP
-   - For --resume: Read `commands/resume.md`, execute resume flow
+   - For --resume: Read `@commands/resume.md`, execute resume flow
    - For Phase 0: Execute Session Resume Check
    - For Phase 1: Execute Init Prerequisites below
 
@@ -139,7 +139,7 @@ mcp__ccw-tools__team_msg({
   from: "coordinator",
   to: <target-role>,
   type: <message-type>,
-  ref: <artifact-path>
+  data: { ref: <artifact-path> }
 })
 ```
 
@@ -160,7 +160,7 @@ Bash("ccw team log --session-id <session-id> --from coordinator --type <type> --
 **Workflow**:
 
 1. Parse arguments for flags: `--resume`, `--yes`, task description
-2. If `--resume` present -> load commands/resume.md and execute resume flow
+2. If `--resume` present -> load @commands/resume.md and execute resume flow
 3. Ensure project-tech.json exists:
 
 | Condition | Action |
@@ -178,7 +178,7 @@ Bash("ccw team log --session-id <session-id> --from coordinator --type <type> --
 
 **Objective**: Discuss roadmap with user and generate phase plan.
 
-Delegate to `commands/roadmap-discuss.md`:
+Delegate to `@commands/roadmap-discuss.md`:
 
 | Step | Action |
 |------|--------|
@@ -198,9 +198,13 @@ Delegate to `commands/roadmap-discuss.md`:
 
 **Workflow**:
 
-1. Call `TeamCreate({ team_name: "roadmap-dev" })`
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-roadmap-dev`
 
-2. Initialize meta.json with pipeline metadata:
+2. Call `TeamCreate({ team_name: "roadmap-dev" })`
+
+3. Initialize meta.json with pipeline metadata:
 ```typescript
 // Use team_msg to write pipeline metadata to .msg/meta.json
 mcp__ccw-tools__team_msg({
@@ -218,8 +222,8 @@ mcp__ccw-tools__team_msg({
 })
 ```
 
-3. Spawn worker roles (see SKILL.md Coordinator Spawn Template)
-4. Load `commands/dispatch.md` for task chain creation
+4. Spawn worker roles (see SKILL.md Coordinator Spawn Template)
+5. Load `@commands/dispatch.md` for task chain creation
 
 | Step | Action |
 |------|--------|
@@ -242,7 +246,7 @@ mcp__ccw-tools__team_msg({
 - User can use "check" / "resume" to manually advance
 - Coordinator does one operation per invocation, then STOPS
 
-Delegate to `commands/monitor.md`:
+Delegate to `@commands/monitor.md`:
 
 | Step | Action |
 |------|--------|

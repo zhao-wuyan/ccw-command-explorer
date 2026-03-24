@@ -23,28 +23,6 @@ export const COMMANDS: Command[] = [
     usage: '有固定的工作流程想反复使用'
   },
 
-  // ==================== IDAW 任务管理 ====================
-  { cmd: '/idaw:add', desc: '任务队列入口 - 手动描述或从 issue 批量导入，攒好再统一执行', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.1.0',
-    detail: 'IDAW（Iterative Development Automated Workflow）的任务入口。支持两种创建方式：① 直接描述需求（手动创建）；② 从 ccw issue 系统导入（--from-issue）。任务类型（bugfix/feature/refactor/tdd 等）可手动指定，也可在执行时自动推断。创建的任务以 IDAW-001.json 格式保存到 .workflow/.idaw/tasks/，等待 /idaw:run 串行执行。',
-    usage: '攒好一批待处理任务（bugfix、feature、重构等），先 add 进队列，再统一交给 /idaw:run 批量执行。也适合将 issue 系统里的问题单批量转为可执行任务。'
-  },
-  { cmd: '/idaw:run', desc: '批量执行任务队列 - 自动 Skill 链映射 + 失败 CLI 诊断 + 每任务 git 检查点', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.1.0',
-    detail: 'IDAW 的核心执行命令。按优先级串行处理所有 pending 任务，每个任务完整流程：① 根据任务类型自动映射 Skill 链（bugfix → workflow-lite-plan + workflow-test-fix；feature-complex → workflow-plan + workflow-execute + workflow-test-fix 等 10 种类型）；② 对 bugfix/complex 任务先触发 Gemini CLI 预分析获取上下文；③ 串行执行链中每个 Skill；④ Skill 失败时自动触发 CLI 诊断 + 重试一次；⑤ 任务完成后自动 git commit 打检查点。支持 --dry-run 预览执行计划，-y 全自动无人值守模式。',
-    usage: '已用 /idaw:add 积累了一批任务，现在要统一执行。特别适合「下班前挂着跑」或「一次性清掉积压任务」的场景——每个任务完成都有 git 检查点，失败了可以用 /idaw:resume 续跑，不怕中途中断。'
-  },
-  { cmd: '/idaw:run-coordinate', desc: '后台 CLI 协调执行 - 上下文隔离，hook 驱动，适合长链或大量任务', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.1.0',
-    detail: '/idaw:run 的外部 CLI 变体，执行模型改为后台 hook 驱动：通过 ccw cli 在后台启动每个 Skill，等待 hook 回调后再推进下一步，而非在主进程阻塞。核心优势：每个 CLI 调用获得独立的上下文窗口，任务再多也不会膨胀主进程上下文；支持指定 --tool（claude/gemini/qwen）；状态文件额外记录 prompts_used 便于追溯。错误恢复同样支持 CLI 诊断 + 重试，任务完成后 git checkpoint。',
-    usage: '任务链较长（如 feature-complex: plan + execute + test-fix）、或同时积压多个上下文重的任务时，用 coordinate 模式避免主进程上下文压力。也适合需要用 Gemini 等特定 CLI 工具执行任务的场景。'
-  },
-  { cmd: '/idaw:resume', desc: '续跑中断会话 - 从断点恢复，跳过或重试中断任务，无需重跑已完成部分', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.1.0',
-    detail: '恢复 status 为 running 的 IDAW 会话（默认找最近一个，也可指定 session-id）。对中断时处于 in_progress 状态的任务，提供 Retry（重置为 pending 重跑）或 Skip（标记跳过继续）两种处理方式；-y 模式下自动 Skip。找到剩余 pending 任务后，复用 /idaw:run 完整执行逻辑（Skill 链 + CLI 诊断 + git checkpoint）继续推进，会话进度文件中追加 Resumed 标记。',
-    usage: 'IDAW 执行中途因网络/系统原因中断、或手动 Ctrl+C 打断后，用此命令从断点继续，无需重跑已完成的任务。'
-  },
-  { cmd: '/idaw:status', desc: '查看任务队列和会话执行进度（只读）', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v7.1.0',
-    detail: '只读命令，不触发任何执行。无参数时显示：全部任务的状态表（ID、标题、类型、优先级、状态）+ 最新会话的概要统计。传入 session-id 时显示该会话详情：每个任务的状态、git commit hash、以及 progress.md 的完整执行日志。',
-    usage: '/idaw:run 跑完后查看哪些任务成功/失败；或在执行过程中另开终端随时检查进度；也可在用 /idaw:resume 前先确认哪些任务还剩余。'
-  },
-
   // ==================== CLI 工具 ====================
   { cmd: '/cli:cli-init', desc: '初始化 CLI 工具配置 (Gemini/Qwen)', status: 'stable', category: 'main', cli: 'claude', addedInVersion: 'v6.2',
     detail: '首次配置：为Gemini和Qwen创建配置文件(.gemini/、.qwen/)，设置API密钥、模型选择等',
@@ -55,49 +33,7 @@ export const COMMANDS: Command[] = [
     usage: '想用OpenAI Codex进行专业代码审查'
   },
 
-  // ==================== DDD 文档驱动开发 ====================
-  { cmd: '/ddd:auto', desc: '链式命令 - 自动文档驱动开发流程', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
-    detail: '自动化 DDD 流程：链式调用 scan → plan → execute → sync。适合需要完整文档驱动开发流程的任务',
-    usage: '想一次性完成文档驱动的开发流程'
-  },
-  { cmd: '/ddd:sync', desc: '任务后同步 - 更新文档索引、生成操作日志', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
-    detail: '完成开发任务后同步：分析 git 变更 → 追踪受影响的功能/需求 → 更新索引条目 → 生成操作日志 → 刷新文档',
-    usage: '开发任务完成后，同步更新文档索引'
-  },
-  { cmd: '/ddd:update', desc: '增量索引更新 - 检测代码变更并追踪影响', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
-    detail: '轻量级增量更新：给定变更文件 → 追踪影响范围（代码→组件→功能→需求）→ 更新索引。比 sync 更轻量',
-    usage: '开发过程中想快速检查哪些文档会受影响'
-  },
-  { cmd: '/ddd:scan', desc: '扫描代码库构建文档索引 - 无需规格文档', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
-    detail: '代码优先入口点：分析代码结构 → 推断功能 → 发现组件 → 反向工程项目知识图谱 → 生成 doc-index.json',
-    usage: '现有项目没有规格文档，想开始使用文档驱动工作流'
-  },
-  { cmd: '/ddd:plan', desc: '文档驱动规划流水线 - 查询索引、探索、规划', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
-    detail: '完整规划流水线：查询 doc-index 获取即时上下文 → 探索代码库 → 澄清不明确点 → 生成 plan.json + TASK-*.json',
-    usage: '需要基于文档索引进行规划的任务'
-  },
-  { cmd: '/ddd:execute', desc: '文档感知执行引擎 - 执行 plan.json', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
-    detail: '执行规划：读取 plan.json + TASK-*.json → 按依赖顺序执行任务 → 每个任务完成后调用 ddd:sync 更新索引',
-    usage: '已通过 ddd:plan 生成规划文件，需要执行'
-  },
-  { cmd: '/ddd:index-build', desc: '构建文档索引 - 从 spec-generator 输出', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
-    detail: '规格优先入口点：读取 spec-generator 输出（产品简介、PRD、架构文档等）→ 构建完整的 doc-index.json',
-    usage: '已运行 spec-generator，需要构建文档索引'
-  },
-  { cmd: '/ddd:doc-refresh', desc: '增量更新受影响的文档', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
-    detail: '选择性文档刷新：根据受影响的组件和功能 ID → 更新对应的 tech-registry/ 和 feature-maps/ 文档',
-    usage: '代码变更后需要更新相关文档'
-  },
-  { cmd: '/ddd:doc-generate', desc: '生成完整文档树 - 从 doc-index.json', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.2.2',
-    detail: '生成文档树：Layer 3 组件文档 → Layer 2 功能文档 → Layer 1 索引/概览文档。完整的项目文档生成',
-    usage: '需要生成完整的项目文档'
-  },
-
   // ==================== 工作流核心 ====================
-  { cmd: '/team-planex-v2', desc: 'PlanEx 管道 v2 - CSV Wave 规划+执行混合模式', status: 'new', category: 'skill', cli: 'codex', addedInVersion: 'v7.2.3',
-    detail: '混合团队技能：Planner 分解需求为 Issues + Solutions，Executor 通过 CLI 工具实现。支持 Issue IDs、文本输入、计划文件输入。使用 CSV Wave 并行执行，支持依赖排序和上下文传播',
-    usage: '需求规划执行一体化，适合批量 Issue 处理'
-  },
   { cmd: '/workflow:clean', desc: '清理代码和临时文件', status: 'stable', category: 'workflow', cli: 'claude', addedInVersion: 'v5.2',
     detail: '智能清理：检测过时的会话目录、临时文件、死代码、无用的依赖。保持项目整洁',
     usage: '项目做了很久，想清理不需要的文件'
@@ -407,10 +343,6 @@ export const COMMANDS: Command[] = [
     detail: '生成团队技能包：收集需求 → 生成脚手架（SKILL.md、roles/、specs/、templates/）→ 验证。输出完整可用的团队技能',
     usage: '需要创建新的团队协作技能'
   },
-  { cmd: '/team-edict', desc: '三省六部协作框架 - 串行审批+并行执行', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
-    detail: '受古代三省六部启发：太子接旨 → 中书省规划 → 门下省审议（多CLI并行）→ 尚书省调度 → 六部并行执行。强制看板状态上报',
-    usage: '需要严格的级联审批流程和多部门并行执行'
-  },
   { cmd: '/team-frontend-debug', desc: '前端调试团队 - Chrome DevTools MCP', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
     detail: '双模式前端调试：①功能清单测试模式（TEST→ANALYZE→FIX→VERIFY）；②Bug报告调试模式（REPRODUCE→ANALYZE→FIX→VERIFY）。使用 Chrome DevTools MCP',
     usage: '需要调试前端交互问题、无响应按钮、状态刷新问题'
@@ -418,6 +350,16 @@ export const COMMANDS: Command[] = [
   { cmd: '/team-ux-improve', desc: 'UX 改进团队 - 系统化发现和修复交互问题', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.2',
     detail: 'UX 改进流水线：扫描器（发现UI/UX问题）→ 诊断师（分析根因）→ 设计师（设计方案）→ 实现者（修复）→ 测试员（验证）',
     usage: '需要系统化发现和修复 UI/UX 交互问题'
+  },
+
+  // 新增技能工具
+  { cmd: '/delegation-check', desc: '委托冲突检查 - 验证命令/代理内容分离', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.20',
+    detail: '检查命令委托提示与代理角色定义是否遵循内容分离原则。检测 7 维冲突：角色重定义、领域泄露、质量门重复、输出格式冲突、流程覆盖、范围权限冲突、缺失契约',
+    usage: '审查 workflow skill 质量，检查命令与代理的职责边界'
+  },
+  { cmd: '/prompt-generator', desc: '提示词生成器 - 创建/转换命令、技能、代理', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.20',
+    detail: '四种模式：① 创建命令 - 新建编排工作流；② 创建技能 - 渐进式加载的 SKILL.md；③ 创建代理 - 角色定义+领域知识；④ 转换 - 现有文件重风格（零内容丢失）',
+    usage: '想创建新的命令/技能/代理，或转换现有文件风格'
   },
 
   // 工作流技能
@@ -460,6 +402,24 @@ export const COMMANDS: Command[] = [
   { cmd: '/workflow-tdd-plan', desc: 'TDD 规划技能 - 6阶段规划+Red-Green-Refactor任务链', status: 'stable', category: 'tdd', cli: 'claude', addedInVersion: 'v7.0.8',
     detail: '统一 TDD 工作流：6阶段 TDD 规划 + Red-Green-Refactor 任务链生成 + 4阶段验证。触发词：workflow-tdd-plan、workflow-tdd-verify',
     usage: 'TDD 开发前规划测试用例，生成完整的 Red→Green→Refactor 执行任务链'
+  },
+
+  // 新增工作流工具
+  { cmd: '/wf-composer', desc: '工作流模板设计器 - 自然语言生成可复用 JSON 模板', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.20',
+    detail: '语义工作流设计：解析自然语言 → 分解为节点 → 映射执行器（skill/cli/agent）→ 自动注入检查点 → 确认并保存为 workflow-template.json',
+    usage: '想把常用的工作流程固化成可复用的模板'
+  },
+  { cmd: '/wf-player', desc: '工作流模板执行器 - 加载模板并按 DAG 顺序执行', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.20',
+    detail: '模板执行引擎：加载 JSON 模板 → 绑定变量 → DAG 拓扑排序 → 执行节点（支持 checkpoint 暂停恢复）→ 完成归档',
+    usage: '有准备好的工作流模板需要执行'
+  },
+  { cmd: '/workflow-lite-test-review', desc: '轻量测试审查 - lite-execute 后的收敛验证+测试', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.20',
+    detail: '后执行审查流水线：收敛验证（对照计划检查实现）→ 运行测试 → 生成检查清单 → 自动修复失败（最多3轮）→ 报告输出',
+    usage: 'lite-execute 完成后进行测试验证和收敛检查'
+  },
+  { cmd: '/workflow-tune', desc: '工作流调优 - 测试命令执行效果并生成优化建议', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.20',
+    detail: '命令效果测试：解析命令链 → 生成测试任务 → 逐步执行（claude）→ 质量分析（gemini）→ 综合评估 → 优化建议报告',
+    usage: '想测试命令/技能的执行效果并获取优化建议'
   },
 
   // ==================== Codex 预检清单 (Prompts) ====================
@@ -575,11 +535,11 @@ export const COMMANDS: Command[] = [
 // 统计数据
 // ============================================
 export const STATS = {
-  totalCommands: 126,
+  totalCommands: 116,
   categories: Object.keys(CATEGORIES).length,
   claudeCommands: COMMANDS.filter(c => c.cli === 'claude').length,
   codexCommands: COMMANDS.filter(c => c.cli === 'codex').length,
   newCommands: COMMANDS.filter(c => c.status === 'new').length,
   recommendedCommands: COMMANDS.filter(c => c.status === 'recommended').length,
-  latestVersion: 'v7.2.7',  // 当前最新版本
+  latestVersion: 'v7.2.20',  // 当前最新版本
 };

@@ -98,6 +98,10 @@ Skill(skill="review-cycle", args="-y src/auth/**")                              
 | module | [phases/review-module.md](phases/review-module.md) | review-module-cycle.md | Module-based review: path patterns → 7-dimension parallel analysis → aggregation → deep-dive → completion |
 | fix | [phases/review-fix.md](phases/review-fix.md) | review-cycle-fix.md | Automated fix: export file → intelligent batching → parallel planning → execution → completion |
 
+## Project Context
+
+Run `ccw spec load --category review` for review standards, checklists, and approval gates.
+
 ## Core Rules
 
 1. **Mode Detection First**: Parse input to determine session/module/fix mode before anything else

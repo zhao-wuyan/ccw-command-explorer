@@ -4,17 +4,18 @@ description: Lightweight planning skill - task analysis, multi-angle exploration
 allowed-tools: Skill, Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
 ---
 
-# Workflow-Lite-Plan
-
+<purpose>
 Planning pipeline: explore → clarify → plan → confirm → handoff to lite-execute.
+Produces exploration results, a structured plan (plan.json), independent task files (.task/TASK-*.json), and hands off to lite-execute for implementation.
+</purpose>
 
----
+<process>
 
-## Context Isolation
+## 1. Context Isolation
 
 > **CRITICAL**: If invoked from analyze-with-file (via "执行任务"), the analyze-with-file session is **COMPLETE** and all its phase instructions are FINISHED and MUST NOT be referenced. Only follow LP-Phase 1-5 defined in THIS document. Phase numbers are INDEPENDENT of any prior workflow.
 
-## Input
+## 2. Input
 
 ```
 <task-description>         Task description or path to .md file (required)
@@ -27,7 +28,7 @@ Planning pipeline: explore → clarify → plan → confirm → handoff to lite-
 
 **Note**: Workflow preferences (`autoYes`, `forceExplore`) must be initialized at skill start. If not provided by caller, skill will prompt user for workflow mode selection.
 
-## Output Artifacts
+## 3. Output Artifacts
 
 | Artifact | Description |
 |----------|-------------|
@@ -39,31 +40,22 @@ Planning pipeline: explore → clarify → plan → confirm → handoff to lite-
 
 **Output Directory**: `.workflow/.lite-plan/{task-slug}-{YYYY-MM-DD}/`
 
-**Agent Usage**: Low → Direct Claude planning (no agent) | Medium/High → `cli-lite-planning-agent`
+**Agent Usage**: All complexities → `cli-lite-planning-agent`
 
 **Schema Reference**: `~/.ccw/workflows/cli-templates/schemas/plan-overview-base-schema.json`
 
-## Auto Mode Defaults
-
-When `workflowPreferences.autoYes === true` (entire plan+execute workflow):
-- **Clarification**: Skipped | **Plan Confirmation**: Allow & Execute | **Execution**: Auto | **Review**: Skip
-
-Auto mode authorizes the complete plan-and-execute workflow with a single confirmation. No further prompts.
-
-## Phase Summary
+## 4. Phase Summary
 
 | Phase | Core Action | Output |
 |-------|-------------|--------|
 | LP-0 | Initialize workflowPreferences | autoYes, forceExplore |
 | LP-1 | Complexity assessment → parallel cli-explore-agents (1-4) | exploration-*.json + manifest |
 | LP-2 | Aggregate + dedup clarification_needs → multi-round AskUserQuestion | clarificationContext (in-memory) |
-| LP-3 | Low: Direct Claude planning / Medium+High: cli-lite-planning-agent | plan.json + .task/TASK-*.json |
+| LP-3 | cli-lite-planning-agent | plan.json + .task/TASK-*.json |
 | LP-4 | Display plan → AskUserQuestion (Confirm + Execution + Review) | userSelection |
 | LP-5 | Build executionContext → Skill("lite-execute") | handoff (Mode 1) |
 
-## Implementation
-
-### LP-Phase 0: Workflow Preferences Initialization
+## 5. LP-Phase 0: Workflow Preferences Initialization
 
 ```javascript
 if (typeof workflowPreferences === 'undefined' || workflowPreferences === null) {
@@ -74,7 +66,7 @@ if (typeof workflowPreferences === 'undefined' || workflowPreferences === null) 
 }
 ```
 
-### LP-Phase 1: Intelligent Multi-Angle Exploration
+## 6. LP-Phase 1: Intelligent Multi-Angle Exploration
 
 **Session Setup** (MANDATORY):
 ```javascript
@@ -93,7 +85,7 @@ bash(`mkdir -p ${sessionFolder} && test -d ${sessionFolder} && echo "SUCCESS: ${
 TodoWrite({ todos: [
   { content: `LP-Phase 1: Exploration [${complexity}] ${selectedAngles.length} angles`, status: "in_progress", activeForm: `Exploring: ${selectedAngles.join(', ')}` },
   { content: "LP-Phase 2: Clarification", status: "pending" },
-  { content: `LP-Phase 3: Planning [${planningStrategy}]`, status: "pending" },
+  { content: "LP-Phase 3: Planning [cli-lite-planning-agent]", status: "pending" },
   { content: "LP-Phase 4: Confirmation", status: "pending" },
   { content: "LP-Phase 5: Execution", status: "pending" }
 ]})
@@ -102,9 +94,24 @@ TodoWrite({ todos: [
 **Exploration Decision Logic**:
 ```javascript
 const hasPriorAnalysis = /##\s*Prior Analysis/i.test(task_description)
+const hasHandoffSpec = /```json:handoff-spec/i.test(task_description)
+
+// Parse structured handoff from analyze-with-file (if present)
+let handoffSpec = null
+if (hasHandoffSpec) {
+  const specMatch = task_description.match(/```json:handoff-spec\s*\n([\s\S]*?)\n```/)
+  if (specMatch) {
+    handoffSpec = JSON.parse(specMatch[1])
+    // handoffSpec contains: { source, session_id, session_folder, summary,
+    //   implementation_scope[], code_anchors[], key_files[], key_findings[], decision_context[] }
+    // implementation_scope[]: { objective, rationale, priority, target_files[], acceptance_criteria[], change_summary }
+    console.log(`[Handoff] From ${handoffSpec.source} session ${handoffSpec.session_id}`)
+    console.log(`[Handoff] ${handoffSpec.implementation_scope.length} scoped items with acceptance criteria`)
+  }
+}
 
 needsExploration = workflowPreferences.forceExplore ? true
-  : hasPriorAnalysis ? false
+  : (hasPriorAnalysis || hasHandoffSpec) ? false
   : (task.mentions_specific_files ||
      task.requires_codebase_context ||
      task.needs_architecture_understanding ||
@@ -112,6 +119,7 @@ needsExploration = workflowPreferences.forceExplore ? true
 
 if (!needsExploration) {
   // manifest absent; LP-Phase 3 loads with safe fallback
+  // If handoffSpec exists, it provides pre-scoped implementation context
   proceed_to_next_phase()
 }
 ```
@@ -146,12 +154,7 @@ function selectAngles(taskDescription, count) {
 
 const selectedAngles = selectAngles(task_description, complexity === 'High' ? 4 : (complexity === 'Medium' ? 3 : 1))
 
-// Direct Claude planning ONLY for: Low + no prior analysis + single angle
-const planningStrategy = (
-  complexity === 'Low' && !hasPriorAnalysis && selectedAngles.length <= 1
-) ? 'Direct Claude Planning' : 'cli-lite-planning-agent'
-
-console.log(`Exploration Plan: ${complexity} | ${selectedAngles.join(', ')} | ${planningStrategy}`)
+console.log(`Exploration Plan: ${complexity} | ${selectedAngles.join(', ')} | cli-lite-planning-agent`)
 ```
 
 **Launch Parallel Explorations**:
@@ -248,9 +251,7 @@ console.log(`Exploration complete: ${explorationManifest.explorations.map(e => e
 
 **Output**: `exploration-{angle}.json` (1-4 files) + `explorations-manifest.json`
 
----
-
-### LP-Phase 2: Clarification (Optional, Multi-Round)
+## 7. LP-Phase 2: Clarification (Optional, Multi-Round)
 
 **Skip if**: No exploration or `clarification_needs` is empty across all explorations
 
@@ -307,9 +308,7 @@ if (workflowPreferences.autoYes) {
 
 **Output**: `clarificationContext` (in-memory)
 
----
-
-### LP-Phase 3: Planning
+## 8. LP-Phase 3: Planning
 
 **IMPORTANT**: LP-Phase 3 is **planning only** — NO code execution. All execution happens in LP-Phase 5 via lite-execute.
 
@@ -324,43 +323,7 @@ taskFiles.forEach(taskPath => {
 })
 ```
 
-**Low Complexity** — Direct planning by Claude:
-```javascript
-const schema = Bash(`cat ~/.ccw/workflows/cli-templates/schemas/plan-overview-base-schema.json`)
-
-const manifest = file_exists(`${sessionFolder}/explorations-manifest.json`)
-  ? JSON.parse(Read(`${sessionFolder}/explorations-manifest.json`))
-  : { explorations: [] }
-manifest.explorations.forEach(exp => {
-  console.log(`\n### Exploration: ${exp.angle}\n${Read(exp.path)}`)
-})
-
-// Generate tasks — MUST incorporate exploration insights
-// Field names: convergence.criteria (not acceptance), files[].change (not modification_points), test (not verification)
-const tasks = [
-  {
-    id: "TASK-001", title: "...", description: "...", depends_on: [],
-    convergence: { criteria: ["..."] },
-    files: [{ path: "...", change: "..." }],
-    implementation: ["..."], test: "..."
-  }
-]
-
-const taskDir = `${sessionFolder}/.task`
-Bash(`mkdir -p "${taskDir}"`)
-tasks.forEach(task => Write(`${taskDir}/${task.id}.json`, JSON.stringify(task, null, 2)))
-
-const plan = {
-  summary: "...", approach: "...",
-  task_ids: tasks.map(t => t.id), task_count: tasks.length,
-  complexity: "Low", estimated_time: "...", recommended_execution: "Agent",
-  _metadata: { timestamp: getUtc8ISOString(), source: "direct-planning", planning_mode: "direct", plan_type: "feature" }
-}
-Write(`${sessionFolder}/plan.json`, JSON.stringify(plan, null, 2))
-// MUST continue to LP-Phase 4 — DO NOT execute code here
-```
-
-**Medium/High Complexity** — Invoke cli-lite-planning-agent:
+**Invoke cli-lite-planning-agent**:
 
 ```javascript
 Task(
@@ -376,9 +339,6 @@ Generate implementation plan and write plan.json.
 - ${sessionFolder}/planning-context.md (evidence + understanding)
 - ${sessionFolder}/plan.json (plan overview — NO embedded tasks[])
 - ${sessionFolder}/.task/TASK-*.json (independent task files, one per task)
-
-## Schema Reference
-Execute: cat ~/.ccw/workflows/cli-templates/schemas/plan-overview-base-schema.json
 
 ## Project Context (MANDATORY)
 Execute: ccw spec load --category planning
@@ -398,6 +358,28 @@ Total: ${manifest.exploration_count} | Angles: ${manifest.explorations.map(e => 
 Manifest: ${sessionFolder}/explorations-manifest.json`
   : `No exploration files. Task Description contains "## Prior Analysis" — use as primary planning context.`}
 
+## Structured Handoff Spec (from analyze-with-file)
+${handoffSpec ? `
+**Source**: ${handoffSpec.source} session ${handoffSpec.session_id}
+**CRITICAL**: Use implementation_scope as PRIMARY input for task generation.
+Each scope item maps to one or more tasks. Acceptance criteria become convergence.criteria.
+
+${JSON.stringify(handoffSpec.implementation_scope, null, 2)}
+
+**Code Anchors** (implementation targets):
+${JSON.stringify(handoffSpec.code_anchors?.slice(0, 8), null, 2)}
+
+**Key Findings** (context):
+${JSON.stringify(handoffSpec.key_findings?.slice(0, 5), null, 2)}
+
+**Task Generation Rules when handoffSpec present**:
+1. Each implementation_scope item → 1 task (group only if tightly coupled)
+2. scope.acceptance_criteria[] → task.convergence.criteria[]
+3. scope.target_files[] → task.files[] with change from scope.change_summary
+4. scope.objective → task.title, scope.rationale → task.description context
+5. scope.priority → task ordering (high first)
+` : 'No structured handoff spec — use task description and explorations as input.'}
+
 ## User Clarifications
 ${JSON.stringify(clarificationContext) || "None"}
 
@@ -407,7 +389,6 @@ ${complexity}
 ## Requirements
 - _metadata.exploration_angles: ${JSON.stringify(manifest.explorations.map(e => e.angle))}
 - Two-layer output: plan.json (task_ids[], NO tasks[]) + .task/TASK-*.json
-- Follow plan-overview-base-schema.json for plan.json, task-schema.json for .task/*.json
 - Field names: files[].change (not modification_points), convergence.criteria (not acceptance)
 
 ## Task Grouping Rules
@@ -420,9 +401,9 @@ ${complexity}
 7. **Prefer parallel**: Most tasks should be independent
 
 ## Execution
-1. Read schema → 2. ccw spec load → 3. Read ALL exploration files → 4. Synthesize + generate
-5. Write: planning-context.md, .task/TASK-*.json, plan.json (task_ids[], NO tasks[])
-6. Return brief completion summary
+1. ccw spec load → 2. Read ALL exploration files → 3. Synthesize + generate
+4. Write: planning-context.md, .task/TASK-*.json, plan.json (task_ids[], NO tasks[])
+5. Return brief completion summary
 `
 )
 ```
@@ -431,9 +412,7 @@ ${complexity}
 
 // TodoWrite: Phase 3 → completed, Phase 4 → in_progress
 
----
-
-### LP-Phase 4: Task Confirmation & Execution Selection
+## 9. LP-Phase 4: Task Confirmation & Execution Selection
 
 **Display Plan**:
 ```javascript
@@ -455,8 +434,8 @@ ${tasks.map((t, i) => `${i+1}. ${t.title} (${t.scope || t.files?.[0]?.path || ''
 let userSelection
 
 if (workflowPreferences.autoYes) {
-  console.log(`[Auto] Allow & Execute | Auto | Skip`)
-  userSelection = { confirmation: "Allow", execution_method: "Auto", code_review_tool: "Skip" }
+  console.log(`[Auto] Allow & Execute | Auto | Skip + Skip`)
+  userSelection = { confirmation: "Allow", execution_method: "Auto", code_review_tool: "Skip", convergence_review_tool: "Skip" }
 } else {
   // "Other" in Execution allows specifying CLI tools from ~/.claude/cli-tools.json
   userSelection = AskUserQuestion({
@@ -482,14 +461,25 @@ if (workflowPreferences.autoYes) {
         ]
       },
       {
-        question: "Code review after execution?",
-        header: "Review",
+        question: "Code review after execution? (runs in lite-execute)",
+        header: "Code Review",
         multiSelect: false,
         options: [
-          { label: "Gemini Review", description: "Gemini CLI review" },
-          { label: "Codex Review", description: "Git-aware review (prompt OR --uncommitted)" },
+          { label: "Gemini Review", description: "Gemini CLI: git diff quality review" },
+          { label: "Codex Review", description: "Codex CLI: git-aware code review (--mode review)" },
           { label: "Agent Review", description: "@code-reviewer agent" },
-          { label: "Skip", description: "No review" }
+          { label: "Skip", description: "No code review" }
+        ]
+      },
+      {
+        question: "Convergence review in test-review phase?",
+        header: "Convergence Review",
+        multiSelect: false,
+        options: [
+          { label: "Agent", description: "Agent: verify convergence criteria against implementation" },
+          { label: "Gemini", description: "Gemini CLI: convergence verification" },
+          { label: "Codex", description: "Codex CLI: convergence verification" },
+          { label: "Skip", description: "Skip convergence review, run tests only" }
         ]
       }
     ]
@@ -497,11 +487,9 @@ if (workflowPreferences.autoYes) {
 }
 ```
 
-// TodoWrite: Phase 4 → completed `[${userSelection.execution_method} + ${userSelection.code_review_tool}]`, Phase 5 → in_progress
+// TodoWrite: Phase 4 → completed `[${userSelection.execution_method} | CR:${userSelection.code_review_tool} | CVR:${userSelection.convergence_review_tool}]`, Phase 5 → in_progress
 
----
-
-### LP-Phase 5: Handoff to Execution
+## 10. LP-Phase 5: Handoff to Execution
 
 **CRITICAL**: lite-plan NEVER executes code directly. ALL execution goes through lite-execute.
 
@@ -526,6 +514,7 @@ executionContext = {
   clarificationContext: clarificationContext || null,
   executionMethod: userSelection.execution_method,
   codeReviewTool: userSelection.code_review_tool,
+  convergenceReviewTool: userSelection.convergence_review_tool,
   originalUserInput: task_description,
   executorAssignments: executorAssignments,  // { taskId: { executor, reason } } — overrides executionMethod
   session: {
@@ -553,7 +542,7 @@ TodoWrite({ todos: [
   { content: "LP-Phase 1: Exploration", status: "completed" },
   { content: "LP-Phase 2: Clarification", status: "completed" },
   { content: "LP-Phase 3: Planning", status: "completed" },
-  { content: `LP-Phase 4: Confirmed [${userSelection.execution_method}]`, status: "completed" },
+  { content: `LP-Phase 4: Confirmed [${userSelection.execution_method} | CR:${userSelection.code_review_tool} | CVR:${userSelection.convergence_review_tool}]`, status: "completed" },
   { content: `LP-Phase 5: Handoff → lite-execute`, status: "completed" },
   { content: `LE-Phase 1: Task Loading [${taskCount} tasks]`, status: "in_progress", activeForm: "Loading tasks" }
 ]})
@@ -562,7 +551,7 @@ Skill("lite-execute")
 // executionContext passed as global variable (Mode 1: In-Memory Plan)
 ```
 
-## Session Folder Structure
+## 11. Session Folder Structure
 
 ```
 .workflow/.lite-plan/{task-slug}-{YYYY-MM-DD}/
@@ -570,18 +559,58 @@ Skill("lite-execute")
 ├── explorations-manifest.json        # Exploration index
 ├── planning-context.md               # Evidence paths + understanding
 ├── plan.json                         # Plan overview (task_ids[])
+├── code-review.md                    # Generated by lite-execute Step 4
+├── test-checklist.json               # Generated by lite-test-review
+├── test-review.md                    # Generated by lite-test-review
 └── .task/
     ├── TASK-001.json
     ├── TASK-002.json
     └── ...
 ```
 
-## Error Handling
+## Chain: lite-plan → lite-execute → lite-test-review
+
+```
+lite-plan (LP-Phase 1-5)
+  └─ Skill("lite-execute")     ← executionContext (global)
+       ├─ Step 1-3: Task Execution
+       ├─ Step 4: Code Review (quality/correctness/security)
+       └─ Step 5: Skill("lite-test-review")  ← testReviewContext (global)
+            ├─ TR-Phase 1: Detect test framework
+            ├─ TR-Phase 2: Convergence verification (plan criteria)
+            ├─ TR-Phase 3-4: Run tests + Auto-fix
+            └─ TR-Phase 5: Report + Sync specs
+```
+
+## 12. Error Handling
 
 | Error | Resolution |
 |-------|------------|
 | Exploration agent failure | Skip exploration, continue with task description only |
-| Planning agent failure | Fallback to direct planning by Claude |
+| Planning agent failure | Retry with reduced complexity or suggest breaking task |
 | Clarification timeout | Use exploration findings as-is |
 | Confirmation timeout | Save context, display resume instructions |
 | Modify loop > 3 times | Suggest breaking task or using /workflow-plan |
+
+</process>
+
+<auto_mode>
+When `workflowPreferences.autoYes === true` (entire plan+execute workflow):
+- **Clarification**: Skipped | **Plan Confirmation**: Allow & Execute | **Execution**: Auto | **Review**: Skip
+
+Auto mode authorizes the complete plan-and-execute workflow with a single confirmation. No further prompts.
+</auto_mode>
+
+<success_criteria>
+- [ ] Workflow preferences (autoYes, forceExplore) initialized at LP-Phase 0
+- [ ] Complexity assessed and exploration angles selected appropriately
+- [ ] Parallel exploration agents launched with run_in_background=false
+- [ ] Explorations manifest built from auto-discovered files
+- [ ] Clarification needs aggregated, deduped, and presented in batches of 4
+- [ ] Plan generated via cli-lite-planning-agent
+- [ ] Plan output as two-layer: plan.json (task_ids[]) + .task/TASK-*.json
+- [ ] User confirmation collected (or auto-approved in auto mode)
+- [ ] executionContext fully built with all artifacts and session references
+- [ ] Handoff to lite-execute via Skill("lite-execute") with executionContext
+- [ ] No code execution in planning phases -- all execution deferred to lite-execute
+</success_criteria>

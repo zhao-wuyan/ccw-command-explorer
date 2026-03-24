@@ -18,7 +18,8 @@ Multi-dimension tech debt scanner. Scan codebase across 5 dimensions (code, arch
 | .msg/meta.json | <session>/.msg/meta.json | Yes |
 
 1. Extract session path and scan scope from task description
-2. Read .msg/meta.json for team context
+2. Load debug specs: Run `ccw spec load --category debug` for known issues, workarounds, and root-cause notes
+3. Read .msg/meta.json for team context
 3. Detect project type and framework:
 
 | Signal File | Project Type |

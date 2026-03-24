@@ -44,7 +44,7 @@ When coordinator needs to execute a specific phase:
 | Interrupted session | Active session in .workflow/.team/BRS-* | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume/consensus/adapt/complete: load commands/monitor.md, execute handler, STOP.
+For callback/check/resume/consensus/adapt/complete: load @commands/monitor.md, execute handler, STOP.
 
 ## Phase 0: Session Resume Check
 
@@ -78,11 +78,14 @@ TEXT-LEVEL ONLY. No source code reading.
 
 ## Phase 2: Create Team + Initialize Session
 
-1. Generate session ID: `BRS-<topic-slug>-<date>`
-2. Create session folder structure: ideas/, critiques/, synthesis/, evaluation/, wisdom/, .msg/
-3. TeamCreate with team name `brainstorm`
-4. Write session.json with pipeline, angles, gc_round=0, max_gc_rounds=2
-5. Initialize meta.json via team_msg state_update:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-brainstorm`
+2. Generate session ID: `BRS-<topic-slug>-<date>`
+3. Create session folder structure: ideas/, critiques/, synthesis/, evaluation/, wisdom/, .msg/
+4. TeamCreate with team name `brainstorm`
+5. Write session.json with pipeline, angles, gc_round=0, max_gc_rounds=2
+6. Initialize meta.json via team_msg state_update:
    ```
    mcp__ccw-tools__team_msg({
      operation: "log", session_id: "<id>", from: "coordinator",
@@ -90,18 +93,18 @@ TEXT-LEVEL ONLY. No source code reading.
      data: { pipeline_mode: "<mode>", pipeline_stages: ["ideator","challenger","synthesizer","evaluator"], team_name: "brainstorm", topic: "<topic>", angles: [...], gc_round: 0 }
    })
    ```
-6. Write session.json
+7. Write session.json
 
 ## Phase 3: Create Task Chain
 
-Delegate to commands/dispatch.md:
+Delegate to @commands/dispatch.md:
 1. Read pipeline mode and angles from session.json
-2. Create tasks for selected pipeline with correct blockedBy
+2. Create tasks for selected pipeline, then set dependencies via TaskUpdate({ addBlockedBy })
 3. Update session.json with task count
 
 ## Phase 4: Spawn-and-Stop
 
-Delegate to commands/monitor.md#handleSpawnNext:
+Delegate to @commands/monitor.md#handleSpawnNext:
 1. Find ready tasks (pending + blockedBy resolved)
 2. Spawn team-worker agents (see SKILL.md Spawn Template)
 3. Output status summary

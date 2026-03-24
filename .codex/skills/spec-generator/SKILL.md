@@ -1,7 +1,7 @@
 ---
 name: spec-generator
 description: Specification generator - 7 phase document chain producing product brief, PRD, architecture, epics, and issues. Agent-delegated heavy phases (2-5, 6.5) with Codex review gates. Triggers on "generate spec", "create specification", "spec generator", "workflow:spec".
-allowed-tools: Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill
+allowed-tools: Agent, request_user_input, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill
 ---
 
 # Spec Generator
@@ -260,7 +260,7 @@ Bash(`mkdir -p "${workDir}"`);
 3. **Auto-Continue**: All phases run autonomously; check TaskList to execute next pending phase
 4. **Parse Every Output**: Extract required data from each phase for next phase context
 5. **DO NOT STOP**: Continuous 7-phase pipeline until all phases complete or user exits
-6. **Respect -y Flag**: When auto mode, skip all AskUserQuestion calls, use recommended defaults
+6. **Respect -y Flag**: When auto mode, skip all request_user_input calls, use recommended defaults
 7. **Respect -c Flag**: When continue mode, load spec-config.json and resume from checkpoint
 8. **Inject Glossary**: From Phase 3 onward, inject glossary.json terms into every CLI prompt
 9. **Load Profile**: Read templates/profiles/{spec_type}-profile.md and inject requirements into Phase 2-5 prompts

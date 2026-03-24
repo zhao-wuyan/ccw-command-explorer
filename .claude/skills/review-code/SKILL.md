@@ -40,6 +40,8 @@ Multi-dimensional code review skill that analyzes code across 6 key dimensions a
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+**Project Context**: Run `ccw spec load --category review` for review standards, checklists, and approval gates.
+
 ## Key Design Principles
 
 1. **多维度审查**: 覆盖正确性、可读性、性能、安全性、测试覆盖、架构一致性六大维度

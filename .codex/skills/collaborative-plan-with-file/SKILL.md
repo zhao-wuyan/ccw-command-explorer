@@ -197,7 +197,7 @@ Use built-in tools directly to understand the task scope and identify sub-domain
    - Run: `ccw spec load --category planning` (if spec system available)
 2. **Extract task keywords** — Identify key terms and concepts from the task description
 3. **Identify ambiguities** — List any unclear points or multiple possible interpretations
-4. **Clarify with user** — If ambiguities found, use AskUserQuestion for clarification
+4. **Clarify with user** — If ambiguities found, use request_user_input for clarification
 5. **Identify sub-domains** — Split into 2-{maxDomains} parallelizable focus areas based on task complexity
 6. **Assess complexity** — Evaluate overall task complexity (Low/Medium/High)
 
@@ -283,14 +283,14 @@ Display identified sub-domains and confirm before starting.
 
 ```javascript
 if (!autoMode) {
-  AskUserQuestion({
+  request_user_input({
     questions: [{
+      header: "确认规划",
+      id: "confirm",
       question: `已识别 ${subDomains.length} 个子领域:\n${subDomains.map((s, i) =>
         `${i+1}. ${s.focus_area}: ${s.description}`).join('\n')}\n\n确认开始规划?`,
-      header: "Confirm",
-      multiSelect: false,
       options: [
-        { label: "开始规划", description: "逐域进行规划" },
+        { label: "开始规划(Recommended)", description: "逐域进行规划" },
         { label: "调整拆分", description: "修改子领域划分" },
         { label: "取消", description: "退出规划" }
       ]
@@ -683,15 +683,14 @@ Present session statistics and next steps.
 // - Execution command for next step
 
 if (!autoMode) {
-  AskUserQuestion({
+  request_user_input({
     questions: [{
+      header: "下一步",
+      id: "next_step",
       question: `规划完成:\n- ${subDomains.length} 个子领域\n- ${allTasks.length} 个任务\n- ${allConflicts.length} 个冲突\n\n下一步:`,
-      header: "Next Step",
-      multiSelect: false,
       options: [
-        { label: "Execute Plan", description: "使用 unified-execute 执行计划" },
+        { label: "Execute Plan(Recommended)", description: "使用 unified-execute 执行计划" },
         { label: "Review Conflicts", description: "查看并解决冲突" },
-        { label: "Export", description: "导出 plan.md" },
         { label: "Done", description: "保存产物，稍后执行" }
       ]
     }]

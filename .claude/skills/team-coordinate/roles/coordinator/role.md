@@ -110,7 +110,7 @@ When coordinator is invoked, first detect the invocation type:
 | Interrupted session | Active/paused session exists in `.workflow/.team/TC-*` | -> Phase 0 (Resume Check) |
 | New session | None of above | -> Phase 1 (Task Analysis) |
 
-For callback/check/resume/adapt/complete: load `commands/monitor.md` and execute the appropriate handler, then STOP.
+For callback/check/resume/adapt/complete: load `@commands/monitor.md` and execute the appropriate handler, then STOP.
 
 ### Router Implementation
 
@@ -144,7 +144,7 @@ For callback/check/resume/adapt/complete: load `commands/monitor.md` and execute
 4. Detect fast-advance orphans (in_progress without recent activity) -> reset to pending
 5. Determine remaining pipeline from reconciled state
 6. Rebuild team if disbanded (TeamCreate + spawn needed workers only)
-7. Create missing tasks with correct blockedBy dependencies
+7. Create missing tasks, set dependencies via TaskUpdate({ addBlockedBy })
 8. Verify dependency chain integrity
 9. Update session file with reconciled state
 10. Kick first executable task's worker -> Phase 4
@@ -166,7 +166,7 @@ For callback/check/resume/adapt/complete: load `commands/monitor.md` and execute
    - What deliverables are expected? (documents, code, analysis reports)
    - Any constraints? (timeline, technology, style)
 
-3. **Delegate to `commands/analyze-task.md`**:
+3. **Delegate to `@commands/analyze-task.md`**:
    - Signal detection: scan keywords -> infer capabilities
    - Artifact inference: each capability -> default output type (.md)
    - Dependency graph: build DAG of work streams
@@ -203,15 +203,19 @@ Regardless of complexity score or role count, coordinator MUST:
 
 **Workflow**:
 
-1. **Check `needs_research` flag** from task-analysis.json:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-coordinate`
+
+2. **Check `needs_research` flag** from task-analysis.json:
    - If `true`: **Spawn researcher worker first** to gather codebase context
      - Wait for researcher callback
      - Merge research findings into task context
      - Update task-analysis.json with enriched context
 
-2. **Generate session ID**: `TC-<slug>-<date>` (slug from first 3 meaningful words of task)
+3. **Generate session ID**: `TC-<slug>-<date>` (slug from first 3 meaningful words of task)
 
-3. **Create session folder structure**:
+4. **Create session folder structure**:
    ```
    .workflow/.team/<session-id>/
    +-- role-specs/
@@ -222,11 +226,11 @@ Regardless of complexity score or role count, coordinator MUST:
    +-- .msg/
    ```
 
-4. **Call TeamCreate** with team name derived from session ID
+5. **Call TeamCreate** with team name derived from session ID
 
-5. **Read `specs/role-spec-template.md`** for Behavioral Traits + Reference Patterns
+6. **Read `specs/role-spec-template.md`** for Behavioral Traits + Reference Patterns
 
-6. **For each role in task-analysis.json#roles**:
+7. **For each role in task-analysis.json#roles**:
    - Fill YAML frontmatter: role, prefix, inner_loop, additional_members, message_types
    - **Compose Phase 2-4 content** (NOT copy from template):
      - Phase 2: Derive input sources and context loading steps from **task description + upstream dependencies**
@@ -235,14 +239,14 @@ Regardless of complexity score or role count, coordinator MUST:
      - Reference Patterns may guide phase structure, but task description determines specific content
    - Write generated role-spec to `<session>/role-specs/<role-name>.md`
 
-7. **Register roles** in team-session.json#roles (with `role_spec` path instead of `role_file`)
+8. **Register roles** in team-session.json#roles (with `role_spec` path instead of `role_file`)
 
-8. **Initialize shared infrastructure**:
+9. **Initialize shared infrastructure**:
    - `wisdom/learnings.md`, `wisdom/decisions.md`, `wisdom/issues.md` (empty with headers)
    - `explorations/cache-index.json` (`{ "entries": [] }`)
    - `discussions/` (empty directory)
 
-9. **Initialize pipeline metadata** via team_msg:
+10. **Initialize pipeline metadata** via team_msg:
 ```typescript
 // 使用 team_msg 将 pipeline 元数据写入 .msg/meta.json
 // 注意: 此处为动态角色，执行时需将 <placeholders> 替换为 task-analysis.json 中生成的实际角色列表
@@ -261,7 +265,7 @@ mcp__ccw-tools__team_msg({
 })
 ```
 
-10. **Write team-session.json** with: session_id, task_description, status="active", roles, pipeline (empty), active_workers=[], completion_action="interactive", created_at
+11. **Write team-session.json** with: session_id, task_description, status="active", roles, pipeline (empty), active_workers=[], completion_action="interactive", created_at
 
 **Success**: Session created, role-spec files generated, shared infrastructure initialized.
 
@@ -271,10 +275,10 @@ mcp__ccw-tools__team_msg({
 
 **Objective**: Dispatch tasks based on dependency graph with proper dependencies.
 
-Delegate to `commands/dispatch.md` which creates the full task chain:
+Delegate to `@commands/dispatch.md` which creates the full task chain:
 1. Reads dependency_graph from task-analysis.json
 2. Topological sorts tasks
-3. Creates tasks via TaskCreate with correct blockedBy
+3. Creates tasks via TaskCreate, then sets dependencies via TaskUpdate({ addBlockedBy })
 4. Assigns owner based on role mapping from task-analysis.json
 5. Includes `Session: <session-folder>` in every task description
 6. Sets InnerLoop flag for multi-task roles
@@ -291,7 +295,7 @@ Delegate to `commands/dispatch.md` which creates the full task chain:
 **Design**: Spawn-and-Stop + Callback pattern, with worker fast-advance.
 
 **Workflow**:
-1. Load `commands/monitor.md`
+1. Load `@commands/monitor.md`
 2. Find tasks with: status=pending, blockedBy all resolved, owner assigned
 3. For each ready task -> spawn team-worker (see SKILL.md Coordinator Spawn Template)
 4. Output status summary with execution graph

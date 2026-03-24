@@ -67,14 +67,17 @@ TEXT-LEVEL ONLY. No source code reading.
    - Test mode: base URL, feature list
    - Debug mode: bug description, URL, reproduction steps
 3. Clarify if ambiguous (AskUserQuestion)
-4. Delegate to commands/analyze.md
+4. Delegate to @commands/analyze.md
 5. Output: task-analysis.json
 6. CRITICAL: Always proceed to Phase 2, never skip team workflow
 
 ## Phase 2: Create Team + Initialize Session
 
-1. Generate session ID: TFD-<slug>-<date>
-2. Create session folder structure:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-frontend-debug`
+2. Generate session ID: TFD-<slug>-<date>
+3. Create session folder structure:
    ```
    .workflow/.team/TFD-<slug>-<date>/
    ├── team-session.json
@@ -91,16 +94,16 @@ TEXT-LEVEL ONLY. No source code reading.
 
 ## Phase 3: Create Task Chain
 
-Delegate to commands/dispatch.md:
+Delegate to @commands/dispatch.md:
 1. Read dependency graph from task-analysis.json
 2. Read specs/pipelines.md for debug-pipeline task registry
 3. Topological sort tasks
-4. Create tasks via TaskCreate with blockedBy
+4. Create tasks via TaskCreate, then set blockedBy via TaskUpdate
 5. Update team-session.json
 
 ## Phase 4: Spawn-and-Stop
 
-Delegate to commands/monitor.md#handleSpawnNext:
+Delegate to @commands/monitor.md#handleSpawnNext:
 1. Find ready tasks (pending + blockedBy resolved)
 2. Spawn team-worker agents (see SKILL.md Spawn Template)
 3. Output status summary

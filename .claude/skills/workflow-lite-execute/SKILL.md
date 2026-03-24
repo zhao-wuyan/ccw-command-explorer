@@ -1,6 +1,6 @@
 ---
 name: workflow-lite-execute
-description: Lightweight execution engine - multi-mode input, task grouping, batch execution, code review, and project state sync
+description: Lightweight execution engine - multi-mode input, task grouping, batch execution, chain to test-review
 allowed-tools: Skill, Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
 ---
 
@@ -74,7 +74,7 @@ function selectExecutionOptions() {
   const autoYes = workflowPreferences?.autoYes ?? false
 
   if (autoYes) {
-    return { execution_method: "Auto", code_review_tool: "Skip" }
+    return { execution_method: "Auto", code_review_tool: "Skip", convergence_review_tool: "Skip" }
   }
 
   return AskUserQuestion({
@@ -90,14 +90,25 @@ function selectExecutionOptions() {
         ]
       },
       {
-        question: "Enable code review after execution?",
+        question: "Code review after execution? (runs here in lite-execute)",
         header: "Code Review",
         multiSelect: false,
         options: [
-          { label: "Skip", description: "No review" },
-          { label: "Gemini Review", description: "Gemini CLI tool" },
-          { label: "Codex Review", description: "Git-aware review (prompt OR --uncommitted)" },
-          { label: "Agent Review", description: "Current agent review" }
+          { label: "Gemini Review", description: "Gemini CLI: git diff quality review" },
+          { label: "Codex Review", description: "Codex CLI: git-aware code review (--mode review)" },
+          { label: "Agent Review", description: "@code-reviewer agent" },
+          { label: "Skip", description: "No code review" }
+        ]
+      },
+      {
+        question: "Convergence review in test-review phase?",
+        header: "Convergence Review",
+        multiSelect: false,
+        options: [
+          { label: "Agent", description: "Agent: verify convergence criteria" },
+          { label: "Gemini", description: "Gemini CLI: convergence verification" },
+          { label: "Codex", description: "Codex CLI: convergence verification" },
+          { label: "Skip", description: "Skip convergence review, run tests only" }
         ]
       }
     ]
@@ -117,7 +128,8 @@ if (executionContext) {
   console.log(`
   Execution Strategy (from lite-plan):
    Method: ${executionContext.executionMethod}
-   Review: ${executionContext.codeReviewTool}
+   Code Review: ${executionContext.codeReviewTool}
+   Convergence Review: ${executionContext.convergenceReviewTool}
    Tasks: ${getTasks(executionContext.planObject).length}
    Complexity: ${executionContext.planObject.complexity}
 ${executionContext.executorAssignments ? `   Assignments: ${JSON.stringify(executionContext.executorAssignments)}` : ''}
@@ -367,62 +379,123 @@ ${(t.test?.success_metrics || []).length > 0 ? `**Success metrics**: ${t.test.su
 }
 ```
 
-### Step 4: Code Review (Optional)
+### Step 4: Code Review
 
-> **CHECKPOINT**: Verify Phase 2 review protocol is in active memory. If only a summary remains, re-read `phases/02-lite-execute.md` now.
+**Skip if**: `codeReviewTool === 'Skip'`
 
-**Skip Condition**: Only run if `codeReviewTool !== "Skip"`
+**Resolve review tool**: From `executionContext.codeReviewTool` (Mode 1) or `userSelection.code_review_tool` (Mode 2/3).
 
-**Review Criteria** (all tools use same standard):
-- **Convergence Criteria**: Verify each criterion from task convergence.criteria
-- **Test Checklist** (Medium/High): Check unit, integration, success_metrics from task test
-- **Code Quality**: Analyze quality, identify issues, suggest improvements
-- **Plan Alignment**: Validate implementation matches planned approach and risk mitigations
-
-**Shared Prompt Template**:
-```
-PURPOSE: Code review for implemented changes against plan convergence criteria and test requirements
-TASK: • Verify plan convergence criteria fulfillment • Check test requirements (unit, integration, success_metrics) • Analyze code quality • Identify issues • Suggest improvements • Validate plan adherence and risk mitigations
-MODE: analysis
-CONTEXT: @**/* @{plan.json} @{.task/*.json} [@{exploration.json}] | Memory: Review lite-execute changes against plan requirements including test checklist
-EXPECTED: Quality assessment with: convergence criteria verification, test checklist validation, issue identification, recommendations. Explicitly check each convergence criterion and test item from .task/*.json.
-CONSTRAINTS: Focus on plan convergence criteria, test requirements, and plan adherence | analysis=READ-ONLY
-```
-
-**Tool-Specific Execution** (apply shared prompt template above):
-
-| Tool | Command | Notes |
-|------|---------|-------|
-| Agent Review | Current agent reads plan.json + applies review criteria directly | No CLI call |
-| Gemini Review | `ccw cli -p "[template]" --tool gemini --mode analysis` | Recommended |
-| Qwen Review | `ccw cli -p "[template]" --tool qwen --mode analysis` | Alternative |
-| Codex Review (A) | `ccw cli -p "[template]" --tool codex --mode review` | With prompt, for complex reviews |
-| Codex Review (B) | `ccw cli --tool codex --mode review --uncommitted` | No prompt, quick review |
-
-> Codex: `-p` prompt and target flags (`--uncommitted`/`--base`/`--commit`) are **mutually exclusive**.
-
-**Multi-Round Review**:
 ```javascript
-const reviewId = `${sessionId}-review`
-const reviewResult = Bash(`ccw cli -p "[template]" --tool gemini --mode analysis --id ${reviewId}`)
-if (hasUnresolvedIssues(reviewResult)) {
-  Bash(`ccw cli -p "Clarify concerns" --resume ${reviewId} --tool gemini --mode analysis --id ${reviewId}-followup`)
+const codeReviewTool = executionContext?.codeReviewTool || userSelection?.code_review_tool || 'Skip'
+const resolvedTool = (() => {
+  if (!codeReviewTool || codeReviewTool === 'Skip') return 'skip'
+  if (/gemini/i.test(codeReviewTool)) return 'gemini'
+  if (/codex/i.test(codeReviewTool)) return 'codex'
+  return 'agent'
+})()
+
+if (resolvedTool === 'skip') {
+  console.log('[Code Review] Skipped')
+} else {
+  // proceed with review
 }
 ```
 
-**Artifact Substitution**: Replace `@{plan.json}` → `@${executionContext.session.artifacts.plan}`, `[@{exploration.json}]` → exploration files from artifacts (if exists).
+**Agent Code Review** (resolvedTool === 'agent'):
 
-### Step 5: Auto-Sync Project State
+```javascript
+Agent({
+  subagent_type: "code-reviewer",
+  run_in_background: false,
+  description: `Code review: ${planObject.summary}`,
+  prompt: `## Code Review — Post-Execution Quality Check
 
-**Trigger**: After all executions complete (regardless of code review)
+**Goal**: ${originalUserInput}
+**Plan Summary**: ${planObject.summary}
 
-**Operation**: `/workflow:session:sync -y "{summary}"`
+### Changed Files
+Run \`git diff --name-only HEAD~${getTasks(planObject).length}..HEAD\` to identify changes.
 
-Summary priority: `originalUserInput` → `planObject.summary` → git log auto-infer.
+### Review Focus
+1. **Code quality**: Readability, naming, structure, dead code
+2. **Correctness**: Logic errors, off-by-one, null handling, edge cases
+3. **Patterns**: Consistency with existing codebase conventions
+4. **Security**: Injection, XSS, auth bypass, secrets exposure
+5. **Performance**: Unnecessary loops, N+1 queries, missing indexes
 
-### Step 6: Post-Completion Expansion
+### Instructions
+1. Run git diff to see actual changes
+2. Read changed files for full context
+3. For each issue found: severity (Critical/High/Medium/Low) + file:line + description + fix suggestion
+4. Return structured review: issues[], summary, overall verdict (PASS/WARN/FAIL)`
+})
+```
 
-Ask user whether to expand into issues (test/enhance/refactor/doc). Selected items call `/issue:new "{summary} - {dimension}"`.
+**CLI Code Review — Codex** (resolvedTool === 'codex'):
+
+```javascript
+const reviewId = `${sessionId}-code-review`
+Bash(`ccw cli -p "Review code changes for quality, correctness, security, and pattern compliance. Focus: ${planObject.summary}" --tool codex --mode review --id ${reviewId}`, { run_in_background: true })
+// STOP - wait for hook callback
+```
+
+**CLI Code Review — Gemini** (resolvedTool === 'gemini'):
+
+```javascript
+const reviewId = `${sessionId}-code-review`
+Bash(`ccw cli -p "PURPOSE: Post-execution code quality review for: ${planObject.summary}
+TASK: • Run git diff to identify all changes • Review each changed file for quality, correctness, security • Check pattern compliance with existing codebase • Identify potential bugs, edge cases, performance issues
+MODE: analysis
+CONTEXT: @**/* | Memory: lite-execute completed, reviewing code quality
+EXPECTED: Per-file review with severity levels (Critical/High/Medium/Low), file:line references, fix suggestions, overall verdict
+CONSTRAINTS: Read-only | Focus on code quality not convergence" --tool gemini --mode analysis --rule analysis-review-code-quality --id ${reviewId}`, { run_in_background: true })
+// STOP - wait for hook callback
+```
+
+**Write review artifact** (if session folder exists):
+```javascript
+if (executionContext?.session?.folder) {
+  Write(`${executionContext.session.folder}/code-review.md`, codeReviewOutput)
+}
+```
+
+### Step 5: Chain to Test Review & Post-Completion
+
+**Resolve convergence review tool**: From `executionContext.convergenceReviewTool` (Mode 1) or `userSelection.convergence_review_tool` (Mode 2/3).
+
+```javascript
+function resolveConvergenceTool(ctx, selection) {
+  const raw = ctx?.convergenceReviewTool || selection?.convergence_review_tool || 'skip'
+  if (!raw || raw === 'Skip') return 'skip'
+  if (/gemini/i.test(raw)) return 'gemini'
+  if (/codex/i.test(raw)) return 'codex'
+  return 'agent'
+}
+```
+
+**Build testReviewContext and handoff**:
+
+```javascript
+testReviewContext = {
+  planObject: planObject,
+  taskFiles: executionContext?.taskFiles
+    || getTasks(planObject).map(t => ({ id: t.id, path: `${executionContext?.session?.folder}/.task/${t.id}.json` })),
+  convergenceReviewTool: resolveConvergenceTool(executionContext, userSelection),
+  executionResults: previousExecutionResults,
+  originalUserInput: originalUserInput,
+  session: executionContext?.session || {
+    id: 'standalone',
+    folder: executionContext?.session?.folder || '.',
+    artifacts: { plan: null, task_dir: null }
+  }
+}
+
+// Chain to lite-test-review (Mode 1: In-Memory)
+Skill("lite-test-review")
+// testReviewContext passed as global variable
+```
+
+**After test-review returns**: Ask user whether to expand into issues (enhance/refactor/doc). Selected items call `/issue:new "{summary} - {dimension}"`.
 
 ## Error Handling
 
@@ -460,7 +533,8 @@ Ask user whether to expand into issues (test/enhance/refactor/doc). Selected ite
   explorationManifest: {...} | null,
   clarificationContext: {...} | null,
   executionMethod: "Agent" | "Codex" | "Auto",
-  codeReviewTool: "Skip" | "Gemini Review" | "Agent Review" | string,
+  codeReviewTool: "Skip" | "Gemini Review" | "Codex Review" | "Agent Review",
+  convergenceReviewTool: "Skip" | "Agent" | "Gemini" | "Codex",
   originalUserInput: string,
   executorAssignments: {            // per-task override, priority over executionMethod
     [taskId]: { executor: "gemini" | "codex" | "agent", reason: string }

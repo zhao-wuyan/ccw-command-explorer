@@ -70,7 +70,8 @@ Worker completed. Process and advance.
      Fix-Verify Task Creation:
      ```
      TaskCreate({ subject: "TDFIX-fix-<round>", description: "PURPOSE: Fix regressions | Session: <session>" })
-     TaskCreate({ subject: "TDVAL-recheck-<round>", description: "...", blockedBy: ["TDFIX-fix-<round>"] })
+     TaskCreate({ subject: "TDVAL-recheck-<round>", description: "..." })
+     TaskUpdate({ taskId: "TDVAL-recheck-<round>", addBlockedBy: ["TDFIX-fix-<round>"] })
      ```
 
 7. -> handleSpawnNext

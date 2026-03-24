@@ -85,16 +85,17 @@ const dimensions = ['security', 'architecture', 'quality', 'action-items', 'perf
 
 dimensions.forEach(dimension => {
   const agentId = spawn_agent({
+    agent_type: "cli_explore_agent",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Read review state: ${reviewStateJsonPath}
-3. Get target files: Read resolved_files from review-state.json
-4. Validate file access: bash(ls -la ${targetFiles.join(' ')})
-5. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-dimension-results-schema.json (get output schema reference)
-6. Execute: ccw spec load --category "exploration execution" (technology stack and constraints)
+1. Read review state: ${reviewStateJsonPath}
+2. Get target files: Read resolved_files from review-state.json
+3. Validate file access: bash(ls -la ${targetFiles.join(' ')})
+4. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-dimension-results-schema.json (get output schema reference)
+5. Execute: ccw spec load --category "exploration execution" (technology stack and constraints)
+6. Execute: ccw spec load --category review (review standards and checklists)
 
 ---
 
@@ -123,7 +124,7 @@ Use **Deep Scan mode** for this review:
 
 ## Expected Deliverables
 
-**Schema Reference**: Schema obtained in MANDATORY FIRST STEPS step 5, follow schema exactly
+**Schema Reference**: Schema obtained in MANDATORY FIRST STEPS step 4, follow schema exactly
 
 1. Dimension Results JSON: ${outputDir}/dimensions/${dimension}.json
 
@@ -206,17 +207,18 @@ const dimensions = ['security', 'architecture', 'quality', 'action-items', 'perf
 
 dimensions.forEach(dimension => {
   const agentId = spawn_agent({
+    agent_type: "cli_explore_agent",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Read session metadata: ${sessionMetadataPath}
-3. Read completed task summaries: bash(find ${summariesDir} -name "IMPL-*.md" -type f)
-4. Get changed files: bash(cd ${workflowDir} && git log --since="${sessionCreatedAt}" --name-only --pretty=format: | sort -u)
-5. Read review state: ${reviewStateJsonPath}
-6. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-dimension-results-schema.json (get output schema reference)
-7. Execute: ccw spec load --category "exploration execution" (technology stack and constraints)
+1. Read session metadata: ${sessionMetadataPath}
+2. Read completed task summaries: bash(find ${summariesDir} -name "IMPL-*.md" -type f)
+3. Get changed files: bash(cd ${workflowDir} && git log --since="${sessionCreatedAt}" --name-only --pretty=format: | sort -u)
+4. Read review state: ${reviewStateJsonPath}
+5. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-dimension-results-schema.json (get output schema reference)
+6. Execute: ccw spec load --category "exploration execution" (technology stack and constraints)
+7. Execute: ccw spec load --category review (review standards and checklists)
 
 ---
 
@@ -245,7 +247,7 @@ Use **Deep Scan mode** for this review:
 
 ## Expected Deliverables
 
-**Schema Reference**: Schema obtained in MANDATORY FIRST STEPS step 6, follow schema exactly
+**Schema Reference**: Schema obtained in MANDATORY FIRST STEPS step 5, follow schema exactly
 
 1. Dimension Results JSON: ${outputDir}/dimensions/${dimension}.json
 
@@ -324,17 +326,18 @@ reviewAgents.forEach(id => close_agent({ id }));
 ```javascript
 // Spawn deep-dive agent
 const deepDiveAgentId = spawn_agent({
+  agent_type: "cli_explore_agent",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Read original finding: ${dimensionJsonPath}
-3. Read affected file: ${file}
-4. Identify related code: bash(grep -r "import.*${basename(file)}" ${projectDir}/src --include="*.ts")
-5. Read test files: bash(find ${projectDir}/tests -name "*${basename(file, '.ts')}*" -type f)
-6. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-deep-dive-results-schema.json (get output schema reference)
-7. Execute: ccw spec load --category "exploration execution" (technology stack and constraints for remediation)
+1. Read original finding: ${dimensionJsonPath}
+2. Read affected file: ${file}
+3. Identify related code: bash(grep -r "import.*${basename(file)}" ${projectDir}/src --include="*.ts")
+4. Read test files: bash(find ${projectDir}/tests -name "*${basename(file, '.ts')}*" -type f)
+5. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-deep-dive-results-schema.json (get output schema reference)
+6. Execute: ccw spec load --category "exploration execution" (technology stack and constraints for remediation)
+7. Execute: ccw spec load --category review (review standards and checklists)
 
 ---
 
@@ -369,7 +372,7 @@ Then apply **Deep Scan mode** for semantic analysis:
 
 ## Expected Deliverables
 
-**Schema Reference**: Schema obtained in MANDATORY FIRST STEPS step 6, follow schema exactly
+**Schema Reference**: Schema obtained in MANDATORY FIRST STEPS step 5, follow schema exactly
 
 1. Deep-Dive Results JSON: ${outputDir}/iterations/iteration-${iteration}-finding-${findingId}.json
 

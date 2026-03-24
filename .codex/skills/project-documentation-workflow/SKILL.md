@@ -2,7 +2,7 @@
 name: project-documentation-workflow
 description: Wave-based comprehensive project documentation generator with dynamic task decomposition. Analyzes project structure and generates appropriate documentation tasks, computes optimal execution waves via topological sort, produces complete documentation suite including architecture, methods, theory, features, usage, and design philosophy.
 argument-hint: "[-y|--yes] [-c|--concurrency N] [--continue] \"project path or description\""
-allowed-tools: spawn_agents_on_csv, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
+allowed-tools: spawn_agents_on_csv, Read, Write, Edit, Bash, Glob, Grep, request_user_input
 ---
 
 ## Auto Mode
@@ -295,8 +295,18 @@ ${waveDistribution.map(w => `║   Wave ${w.wave}: ${w.tasks} tasks${' '.repeat(
     }
   }
   
-  const confirm = AskUserQuestion("Proceed with this task breakdown?")
-  if (!confirm) {
+  const answer = request_user_input({
+    questions: [{
+      header: "确认任务",
+      id: "confirm_tasks",
+      question: "Proceed with this task breakdown?",
+      options: [
+        { label: "Proceed(Recommended)", description: "Start wave execution with this task breakdown" },
+        { label: "Cancel", description: "Abort and modify tasks manually" }
+      ]
+    }]
+  })
+  if (answer.answers.confirm_tasks.answers[0] !== "Proceed(Recommended)") {
     console.log("Aborted. Use --continue to resume with modified tasks.")
     return
   }

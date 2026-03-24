@@ -133,17 +133,16 @@ CONSTRAINTS: Focus on issues that would block execution planning. Be specific ab
 ```javascript
 if (!autoMode) {
   // Present Epic overview table and dependency diagram
-  AskUserQuestion({
+  request_user_input({
     questions: [
       {
-        question: "Review the Epic breakdown. Any adjustments needed?",
         header: "Epics",
-        multiSelect: false,
+        id: "epics",
+        question: "Review the Epic breakdown. Any adjustments needed?",
         options: [
-          { label: "Looks good", description: "Epic structure is appropriate" },
+          { label: "Looks good(Recommended)", description: "Epic structure is appropriate" },
           { label: "Merge epics", description: "Some epics should be combined" },
-          { label: "Split epic", description: "An epic is too large, needs splitting" },
-          { label: "Adjust MVP", description: "Change which epics are in MVP" }
+          { label: "Split epic", description: "An epic is too large, needs splitting" }
         ]
       }
     ]

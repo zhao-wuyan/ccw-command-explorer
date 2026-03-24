@@ -40,18 +40,28 @@ MAX_ROUNDS = pipeline_mode === 'deep' ? 5
 
 Triggered when a worker sends completion message (via SendMessage callback).
 
-1. Parse message to identify role and task ID:
+1. Parse message to identify role, then resolve completed tasks:
 
-| Message Pattern | Role Detection |
-|----------------|---------------|
-| `[explorer]` or task ID `EXPLORE-*` | explorer |
-| `[analyst]` or task ID `ANALYZE-*` | analyst |
-| `[discussant]` or task ID `DISCUSS-*` | discussant |
-| `[synthesizer]` or task ID `SYNTH-*` | synthesizer |
+   **Role detection** (from message tag at start of body):
 
-2. Mark task as completed:
+   | Message starts with | Role | Handler |
+   |---------------------|------|---------|
+   | `[explorer]` | explorer | handleCallback |
+   | `[analyst]` | analyst | handleCallback |
+   | `[discussant]` | discussant | handleCallback |
+   | `[synthesizer]` | synthesizer | handleCallback |
+   | `[supervisor]` | supervisor | Log checkpoint result, verify CHECKPOINT task completed, proceed to handleSpawnNext |
+
+   **Task ID resolution** (do NOT parse from message — use TaskList):
+   - Call `TaskList()` and find tasks matching the detected role's prefix
+   - Tasks with status `completed` that were not previously tracked = newly completed tasks
+   - This is reliable even when a worker reports multiple tasks (inner_loop) or when message format varies
+
+2. Verify task completion (worker already marks completed in Phase 5):
 
 ```
+TaskGet({ taskId: "<task-id>" })
+// If still "in_progress" (worker failed to mark) → fallback:
 TaskUpdate({ taskId: "<task-id>", status: "completed" })
 ```
 
@@ -112,7 +122,7 @@ ELSE:
 |----------|--------|
 | "Continue deeper" | Create new DISCUSS-`<N+1>` task (pending, no blockedBy). Record decision in discussion.md. Proceed to handleSpawnNext |
 | "Adjust direction" | AskUserQuestion for new focus. Create ANALYZE-fix-`<N>` task (pending). Create DISCUSS-`<N+1>` task (pending, blockedBy ANALYZE-fix-`<N>`). Record direction change in discussion.md. Proceed to handleSpawnNext |
-| "Done" | Create SYNTH-001 task (pending, blockedBy last DISCUSS). Record decision in discussion.md. Proceed to handleSpawnNext |
+| "Done" | Check if SYNTH-001 already exists (from dispatch): if yes, ensure blockedBy is updated to reference last DISCUSS task; if no, create SYNTH-001 (pending, blockedBy last DISCUSS). Record decision in discussion.md. Proceed to handleSpawnNext |
 
 **Dynamic task creation templates**:
 
@@ -160,8 +170,11 @@ InnerLoop: false"
 TaskUpdate({ taskId: "ANALYZE-fix-<N>", owner: "analyst" })
 ```
 
-SYNTH-001 (created dynamically in deep mode):
+SYNTH-001 (created dynamically — check existence first):
 ```
+// Guard: only create if SYNTH-001 doesn't exist yet (dispatch may have pre-created it)
+const existingSynth = TaskList().find(t => t.subject === 'SYNTH-001')
+if (!existingSynth) {
 TaskCreate({
   subject: "SYNTH-001",
   description: "PURPOSE: Integrate all analysis into final conclusions | Success: Executive summary with recommendations
@@ -179,6 +192,8 @@ CONSTRAINTS: Pure integration, no new exploration
 ---
 InnerLoop: false"
 })
+}
+// Always update blockedBy to reference the last DISCUSS task (whether pre-existing or newly created)
 TaskUpdate({ taskId: "SYNTH-001", addBlockedBy: ["<last-DISCUSS-task-id>"], owner: "synthesizer" })
 ```
 
@@ -211,10 +226,10 @@ Find and spawn the next ready tasks.
 
 | Task Prefix | Role | Role Spec |
 |-------------|------|-----------|
-| `EXPLORE-*` | explorer | `~  or <project>/.claude/skills/team-ultra-analyze/role-specs/explorer.md` |
-| `ANALYZE-*` | analyst | `~  or <project>/.claude/skills/team-ultra-analyze/role-specs/analyst.md` |
-| `DISCUSS-*` | discussant | `~  or <project>/.claude/skills/team-ultra-analyze/role-specs/discussant.md` |
-| `SYNTH-*` | synthesizer | `~  or <project>/.claude/skills/team-ultra-analyze/role-specs/synthesizer.md` |
+| `EXPLORE-*` | explorer | `<skill_root>/roles/explorer/role.md` |
+| `ANALYZE-*` | analyst | `<skill_root>/roles/analyst/role.md` |
+| `DISCUSS-*` | discussant | `<skill_root>/roles/discussant/role.md` |
+| `SYNTH-*` | synthesizer | `<skill_root>/roles/synthesizer/role.md` |
 
 3. Spawn team-worker for each ready task:
 
@@ -227,7 +242,7 @@ Agent({
   run_in_background: true,
   prompt: `## Role Assignment
 role: <role>
-role_spec: ~  or <project>/.claude/skills/team-ultra-analyze/role-specs/<role>.md
+role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
 session_id: <session-id>
 team_name: ultra-analyze
@@ -298,11 +313,11 @@ Triggered when all pipeline tasks are completed.
 | deep | All EXPLORE + ANALYZE + all DISCUSS-N + SYNTH-001 completed |
 
 1. Verify all tasks completed. If any not completed, return to handleSpawnNext
-2. If all completed, transition to coordinator Phase 5
+2. If all completed, **inline-execute coordinator Phase 5** (shutdown workers → report → completion action). Do NOT STOP here — continue directly into Phase 5 within the same turn.
 
 ## Phase 4: State Persistence
 
-After every handler execution:
+After every handler execution **except handleComplete**:
 
 1. Update session.json with current state:
    - `discussion_round`: current round count
@@ -310,6 +325,8 @@ After every handler execution:
    - `active_tasks`: list of in-progress task IDs
 2. Verify task list consistency (no orphan tasks, no broken dependencies)
 3. **STOP** and wait for next event
+
+> **handleComplete exception**: handleComplete does NOT STOP — it transitions directly to coordinator Phase 5.
 
 ## Error Handling
 

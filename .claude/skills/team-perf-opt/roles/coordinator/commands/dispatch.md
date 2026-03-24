@@ -27,7 +27,6 @@ Every task description uses structured format for clarity:
 ```
 TaskCreate({
   subject: "<TASK-ID>",
-  owner: "<role>",
   description: "PURPOSE: <what this task achieves> | Success: <measurable completion criteria>
 TASK:
   - <step 1: specific action>
@@ -44,9 +43,9 @@ CONSTRAINTS: <scope limits, focus areas>
 ---
 InnerLoop: <true|false>
 BranchId: <B01|A|none>",
-  blockedBy: [<dependency-list>],
   status: "pending"
 })
+TaskUpdate({ taskId: "<TASK-ID>", addBlockedBy: [<dependency-list>], owner: "<role>" })
 ```
 
 ### Mode Router
@@ -106,9 +105,9 @@ EXPECTED: <session>/artifacts/optimization-plan.md | Priority-ordered with impro
 CONSTRAINTS: Focus on highest-impact optimizations | Risk assessment required | Non-overlapping file targets per OPT-ID
 ---
 InnerLoop: false",
-  blockedBy: ["PROFILE-001"],
   status: "pending"
 })
+TaskUpdate({ taskId: "STRATEGY-001", addBlockedBy: ["PROFILE-001"] })
 ```
 
 **IMPL-001** (optimizer, Stage 3):
@@ -130,9 +129,9 @@ EXPECTED: Modified source files + validation passing | Optimizations applied wit
 CONSTRAINTS: Preserve existing behavior | Minimal changes per optimization | Follow code conventions
 ---
 InnerLoop: true",
-  blockedBy: ["STRATEGY-001"],
   status: "pending"
 })
+TaskUpdate({ taskId: "IMPL-001", addBlockedBy: ["STRATEGY-001"] })
 ```
 
 **BENCH-001** (benchmarker, Stage 4 - parallel):
@@ -154,9 +153,9 @@ EXPECTED: <session>/artifacts/benchmark-results.json | Per-metric comparison wit
 CONSTRAINTS: Must compare against baseline | Flag any regressions
 ---
 InnerLoop: false",
-  blockedBy: ["IMPL-001"],
   status: "pending"
 })
+TaskUpdate({ taskId: "BENCH-001", addBlockedBy: ["IMPL-001"] })
 ```
 
 **REVIEW-001** (reviewer, Stage 4 - parallel):
@@ -178,9 +177,9 @@ EXPECTED: <session>/artifacts/review-report.md | Per-dimension findings with sev
 CONSTRAINTS: Focus on optimization changes only | Provide specific file:line references
 ---
 InnerLoop: false",
-  blockedBy: ["IMPL-001"],
   status: "pending"
 })
+TaskUpdate({ taskId: "REVIEW-001", addBlockedBy: ["IMPL-001"] })
 ```
 
 ---
@@ -207,11 +206,16 @@ For each target index `i` (0-based), with prefix char `P = pipeline_prefix_chars
 // Create session subdirectory for this pipeline
 Bash("mkdir -p <session>/artifacts/pipelines/<P>")
 
-TaskCreate({ subject: "PROFILE-<P>01", ... })      // blockedBy: []
-TaskCreate({ subject: "STRATEGY-<P>01", ... })      // blockedBy: ["PROFILE-<P>01"]
-TaskCreate({ subject: "IMPL-<P>01", ... })           // blockedBy: ["STRATEGY-<P>01"]
-TaskCreate({ subject: "BENCH-<P>01", ... })          // blockedBy: ["IMPL-<P>01"]
-TaskCreate({ subject: "REVIEW-<P>01", ... })         // blockedBy: ["IMPL-<P>01"]
+TaskCreate({ subject: "PROFILE-<P>01", ... })
+TaskCreate({ subject: "STRATEGY-<P>01", ... })
+TaskCreate({ subject: "IMPL-<P>01", ... })
+TaskCreate({ subject: "BENCH-<P>01", ... })
+TaskCreate({ subject: "REVIEW-<P>01", ... })
+// Then set dependencies via TaskUpdate:
+TaskUpdate({ taskId: "STRATEGY-<P>01", addBlockedBy: ["PROFILE-<P>01"] })
+TaskUpdate({ taskId: "IMPL-<P>01", addBlockedBy: ["STRATEGY-<P>01"] })
+TaskUpdate({ taskId: "BENCH-<P>01", addBlockedBy: ["IMPL-<P>01"] })
+TaskUpdate({ taskId: "REVIEW-<P>01", addBlockedBy: ["IMPL-<P>01"] })
 ```
 
 Task descriptions follow same template as single mode, with additions:
@@ -295,9 +299,9 @@ CONSTRAINTS: Only implement this branch's optimization | Do not touch files outs
 ---
 InnerLoop: false
 BranchId: B{NN}",
-  blockedBy: ["STRATEGY-001"],
   status: "pending"
 })
+TaskUpdate({ taskId: "IMPL-B{NN}", addBlockedBy: ["STRATEGY-001"] })
 
 TaskCreate({
   subject: "BENCH-B{NN}",
@@ -316,9 +320,9 @@ CONSTRAINTS: Only benchmark this branch's metrics
 ---
 InnerLoop: false
 BranchId: B{NN}",
-  blockedBy: ["IMPL-B{NN}"],
   status: "pending"
 })
+TaskUpdate({ taskId: "BENCH-B{NN}", addBlockedBy: ["IMPL-B{NN}"] })
 
 TaskCreate({
   subject: "REVIEW-B{NN}",
@@ -337,9 +341,9 @@ CONSTRAINTS: Only review this branch's changes
 ---
 InnerLoop: false
 BranchId: B{NN}",
-  blockedBy: ["IMPL-B{NN}"],
   status: "pending"
 })
+TaskUpdate({ taskId: "REVIEW-B{NN}", addBlockedBy: ["IMPL-B{NN}"] })
 ```
 
 7. Update session.json:
@@ -355,7 +359,7 @@ Verify task chain integrity:
 | Check | Method | Expected |
 |-------|--------|----------|
 | Task count correct | TaskList count | single: 5, auto/fan-out: 2 (pre-CP-2.5), independent: 5*M |
-| Dependencies correct | Trace dependency graph | Acyclic, correct blockedBy |
+| Dependencies correct | Trace dependency graph | Acyclic, correct addBlockedBy |
 | No circular dependencies | Trace dependency graph | Acyclic |
 | Task IDs use correct prefixes | Pattern check | Match naming rules per mode |
 | Structured descriptions complete | Each has PURPOSE/TASK/CONTEXT/EXPECTED/CONSTRAINTS | All present |

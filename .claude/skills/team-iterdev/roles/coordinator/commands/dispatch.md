@@ -227,7 +227,7 @@ Verify task chain integrity:
 | Check | Method | Expected |
 |-------|--------|----------|
 | Task count correct | TaskList count | patch: 2, sprint: 4, multi: 5+ |
-| Dependencies correct | Trace blockedBy graph | Acyclic, correct ordering |
+| Dependencies correct | Trace addBlockedBy graph | Acyclic, correct ordering |
 | No circular dependencies | Trace full graph | Acyclic |
 | Structured descriptions | Each has PURPOSE/TASK/CONTEXT/EXPECTED | All present |
 

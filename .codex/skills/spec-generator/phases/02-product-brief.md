@@ -174,18 +174,18 @@ const synthesis = {
 ```javascript
 if (!autoMode) {
   // Present synthesis summary to user
-  // AskUserQuestion with:
+  // request_user_input with:
   // - Confirm vision statement
   // - Resolve any conflicts between perspectives
   // - Adjust scope if needed
-  AskUserQuestion({
+  request_user_input({
     questions: [
       {
-        question: "Review the synthesized product brief. Any adjustments needed?",
         header: "Review",
-        multiSelect: false,
+        id: "review",
+        question: "Review the synthesized product brief. Any adjustments needed?",
         options: [
-          { label: "Looks good", description: "Proceed to PRD generation" },
+          { label: "Looks good(Recommended)", description: "Proceed to PRD generation" },
           { label: "Adjust scope", description: "Narrow or expand the scope" },
           { label: "Revise vision", description: "Refine the vision statement" }
         ]

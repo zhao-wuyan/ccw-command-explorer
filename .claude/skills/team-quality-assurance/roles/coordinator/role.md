@@ -43,7 +43,7 @@ When coordinator needs to execute a specific phase:
 | Interrupted session | Active session in .workflow/.team/QA-* | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume/adapt/complete: load commands/monitor.md, execute handler, STOP.
+For callback/check/resume/adapt/complete: load @commands/monitor.md, execute handler, STOP.
 
 ## Phase 0: Session Resume Check
 
@@ -69,19 +69,22 @@ TEXT-LEVEL ONLY. No source code reading.
 | No explicit flag and no keyword match | full (default) |
 
 3. Clarify if ambiguous (AskUserQuestion: scope, deliverables, constraints)
-4. Delegate to commands/analyze.md
+4. Delegate to @commands/analyze.md
 5. Output: task-analysis.json
 6. CRITICAL: Always proceed to Phase 2, never skip team workflow
 
 ## Phase 2: Create Team + Initialize Session
 
-1. Generate session ID: QA-<slug>-<date>
-2. Create session folder structure
-3. TeamCreate with team name "quality-assurance"
-4. Read specs/pipelines.md -> select pipeline based on mode
-5. Register roles in session.json
-6. Initialize shared infrastructure (wisdom/*.md)
-7. Initialize pipeline via team_msg state_update:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-quality-assurance`
+2. Generate session ID: QA-<slug>-<date>
+3. Create session folder structure
+4. TeamCreate with team name "quality-assurance"
+5. Read specs/pipelines.md -> select pipeline based on mode
+6. Register roles in session.json
+7. Initialize shared infrastructure (wisdom/*.md)
+8. Initialize pipeline via team_msg state_update:
    ```
    mcp__ccw-tools__team_msg({
      operation: "log", session_id: "<id>", from: "coordinator",
@@ -100,21 +103,21 @@ TEXT-LEVEL ONLY. No source code reading.
      }
    })
    ```
-8. Write session.json
+9. Write session.json
 
 ## Phase 3: Create Task Chain
 
-Delegate to commands/dispatch.md:
+Delegate to @commands/dispatch.md:
 1. Read dependency graph from task-analysis.json
 2. Read specs/pipelines.md for selected pipeline's task registry
 3. Topological sort tasks
-4. Create tasks via TaskCreate with blockedBy
+4. Create tasks via TaskCreate, then TaskUpdate with addBlockedBy
 5. Update session.json
 
 ## Phase 4: Spawn-and-Stop
 
-Delegate to commands/monitor.md#handleSpawnNext:
-1. Find ready tasks (pending + blockedBy resolved)
+Delegate to @commands/monitor.md#handleSpawnNext:
+1. Find ready tasks (pending + all addBlockedBy dependencies resolved)
 2. Spawn team-worker agents (see SKILL.md Spawn Template)
 3. Output status summary
 4. STOP

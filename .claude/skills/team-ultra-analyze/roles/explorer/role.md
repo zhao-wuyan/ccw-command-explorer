@@ -18,7 +18,8 @@ Explore codebase structure through cli-explore-agent, collecting structured cont
 | Task description | From task subject/description | Yes |
 | Session path | Extracted from task description | Yes |
 
-1. Extract session path, topic, perspective, dimensions from task description:
+1. Load debug specs: Run `ccw spec load --category debug` for known issues and root-cause notes
+2. Extract session path, topic, perspective, dimensions from task description:
 
 | Field | Pattern | Default |
 |-------|---------|---------|

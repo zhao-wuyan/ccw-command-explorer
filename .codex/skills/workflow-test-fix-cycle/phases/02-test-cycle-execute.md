@@ -85,12 +85,13 @@ return "conservative";
 ```javascript
 // Spawn agent for failure analysis
 const analysisAgentId = spawn_agent({
+  agent_type: "cli_planning_agent",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-planning-agent.md (MUST read first)
-2. Run: `ccw spec load --category planning`
+1. Run: `ccw spec load --category planning`
+2. Run: `ccw spec load --category test` (test framework, coverage targets, conventions)
 
 ---
 
@@ -151,12 +152,13 @@ close_agent({ id: analysisAgentId });
 ```javascript
 // Spawn agent for test execution/fixing
 const fixAgentId = spawn_agent({
+  agent_type: "test_fix_agent",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/test-fix-agent.md (MUST read first)
-2. Run: `ccw spec load --category execution`
+1. Run: `ccw spec load --category execution`
+2. Run: `ccw spec load --category test` (test framework, coverage targets, conventions)
 
 ---
 

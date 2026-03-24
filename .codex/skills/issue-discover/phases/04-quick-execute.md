@@ -44,7 +44,7 @@ executableFindings = allFindings.filter(f =>
 ```
 
 - 如果 0 个可执行 findings → 提示 "No executable findings (all below threshold)"，建议用户走 "Export to Issues" 路径
-- 如果超过 10 个 findings → ASK_USER 确认是否全部执行或选择子集 (Auto mode: 全部执行)
+- 如果超过 10 个 findings → request_user_input 确认是否全部执行或选择子集 (Auto mode: 全部执行)
 
 **同文件聚合**:
 
@@ -154,23 +154,26 @@ Quick Execute Summary:
 - File conflicts: {conflicts.length}
 ```
 
-ASK_USER:
+request_user_input:
 
 ```javascript
-ASK_USER([{
-  id: "confirm_execute",
-  type: "select",
-  prompt: `${tasks.length} tasks ready. Start execution?`,
-  options: [
-    { label: "Start Execution", description: "Execute all tasks" },
-    { label: "Adjust Filter", description: "Change confidence/priority threshold" },
-    { label: "Cancel", description: "Skip execution, return to post-phase options" }
-  ]
-}]);
+request_user_input({
+  questions: [{
+    header: "Confirm",
+    id: "confirm_execute",
+    question: `${tasks.length} tasks ready. Start execution?`,
+    options: [
+      { label: "Start Execution (Recommended)", description: "Execute all tasks" },
+      { label: "Adjust Filter", description: "Change confidence/priority threshold" },
+      { label: "Cancel", description: "Skip execution, return to post-phase options" }
+    ]
+  }]
+});
+// answer.answers.confirm_execute.answers[0] → selected label
 // Auto mode: Start Execution
 ```
 
-- "Adjust Filter" → 重新 ASK_USER 输入 confidence 和 priority 阈值，返回 Step 4.1
+- "Adjust Filter" → 重新 request_user_input 输入 confidence 和 priority 阈值，返回 Step 4.1
 - "Cancel" → 退出 Phase 4
 
 ### Step 4.5: Direct Inline Execution
@@ -192,7 +195,7 @@ for each task in sortedTasks:
   6. Update .task/TASK-{id}.json _execution status
   7. If failed:
      - Auto mode: Skip & Continue
-     - Interactive: ASK_USER → Retry / Skip / Abort
+     - Interactive: request_user_input → Retry / Skip / Abort
 ```
 
 **可选 auto-commit**: 每个成功 task 后 `git add {files} && git commit -m "fix: {task.title}"`
@@ -209,17 +212,19 @@ for each task in sortedTasks:
 // 计算未执行 findings
 const remainingFindings = allFindings.filter(f => !executedFindingIds.has(f.id))
 
-ASK_USER([{
-  id: "post_quick_execute",
-  type: "select",
-  prompt: `Quick Execute: ${completedCount}/${tasks.length} succeeded. ${remainingFindings.length} findings not executed.`,
-  options: [
-    { label: "Retry Failed", description: `Re-execute ${failedCount} failed tasks` },
-    { label: "Export Remaining", description: `Export ${remainingFindings.length} remaining findings to issues` },
-    { label: "View Events", description: "Display execution-events.md" },
-    { label: "Done", description: "End workflow" }
-  ]
-}]);
+request_user_input({
+  questions: [{
+    header: "Post Execute",
+    id: "post_quick_execute",
+    question: `Quick Execute: ${completedCount}/${tasks.length} succeeded. ${remainingFindings.length} findings not executed.`,
+    options: [
+      { label: "Done (Recommended)", description: "End workflow" },
+      { label: "Retry Failed", description: `Re-execute ${failedCount} failed tasks` },
+      { label: "Export Remaining", description: `Export ${remainingFindings.length} remaining findings to issues` }
+    ]
+  }]
+});
+// answer.answers.post_quick_execute.answers[0] → selected label
 // Auto mode: Done
 ```
 
@@ -231,11 +236,11 @@ ASK_USER([{
 |---------|---------|
 | 0 个可执行 findings | 提示 "No executable findings"，建议 Export to Issues |
 | 只有 1 个 finding | 正常生成 1 个 TASK-001.json，简化确认对话 |
-| 超过 10 个 findings | ASK_USER 确认全部执行或选择子集 |
+| 超过 10 个 findings | request_user_input 确认全部执行或选择子集 |
 | finding 缺少 recommendation | criteria 退化为 "Review and fix {category} in {file}:{line}" |
 | finding 缺少 confidence | 默认 confidence=0.5，不满足过滤阈值 → 排除 |
 | discovery 输出不存在 | 报错 "No discoveries found. Run discover first." |
-| .task/ 目录已存在 | ASK_USER 追加 (TASK-{max+1}) 或覆盖 |
+| .task/ 目录已存在 | request_user_input 追加 (TASK-{max+1}) 或覆盖 |
 | 执行中文件被外部修改 | convergence verification 检测到差异，标记为 FAIL |
 | 所有 tasks 执行失败 | 建议 "Export to Issues → issue-resolve" 完整路径 |
 | finding 来自不同 perspective 但同文件 | 仍合并为一个 task，convergence.criteria 保留各自标准 |

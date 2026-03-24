@@ -80,12 +80,12 @@ Cross-reference the task description against these documents for completeness.
   const focusDirective = getAgentFocusDirective('ra', state)
 
   return spawn_agent({
+    agent_type: "requirements_analyst",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/requirements-analyst.md
-2. Read: ${projectRoot}/.workflow/project-tech.json (if exists)
+1. Read: ${projectRoot}/.workflow/project-tech.json (if exists)
 3. Read: ${projectRoot}/.workflow/specs/*.md (if exists)
 4. Read: ${projectRoot}/.workflow/.cycle/${cycleId}.progress/coordination/feedback.md (if exists)
 
@@ -163,12 +163,12 @@ PHASE_RESULT:
 ```javascript
 function spawnEPAgent(cycleId, state, progressDir) {
   return spawn_agent({
+    agent_type: "exploration_planner",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/exploration-planner.md
-2. Read: ${projectRoot}/.workflow/project-tech.json
+1. Read: ${projectRoot}/.workflow/project-tech.json
 3. Read: ${projectRoot}/.workflow/specs/*.md
 4. Read: ${progressDir}/ra/requirements.md
 
@@ -242,12 +242,12 @@ PHASE_RESULT:
 ```javascript
 function spawnCDAgent(cycleId, state, progressDir) {
   return spawn_agent({
+    agent_type: "code_developer",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/code-developer.md
-2. Read: ${progressDir}/ep/plan.json
+1. Read: ${progressDir}/ep/plan.json
 3. Read: ${progressDir}/ra/requirements.md
 
 ---
@@ -320,12 +320,12 @@ PHASE_RESULT:
 ```javascript
 function spawnVASAgent(cycleId, state, progressDir) {
   return spawn_agent({
+    agent_type: "validation_archivist",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/validation-archivist.md
-2. Read: ${progressDir}/cd/changes.log
+1. Read: ${progressDir}/cd/changes.log
 
 ---
 

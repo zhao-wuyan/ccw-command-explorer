@@ -253,24 +253,20 @@ Write(`${workDir}/spec-config.json`, JSON.stringify(specConfig, null, 2));
 ### Step 7: Handoff Options
 
 ```javascript
-AskUserQuestion({
+const answer = request_user_input({
   questions: [
     {
-      question: `${createdIssues.length} issues created from ${epicWaves.length} Epics. What would you like to do next?`,
       header: "Next Step",
-      multiSelect: false,
+      id: "next_step",
+      question: `${createdIssues.length} issues created from ${epicWaves.length} Epics. What would you like to do next?`,
       options: [
         {
-          label: "Execute via team-planex",
+          label: "Execute via team-planex(Recommended)",
           description: `Execute all ${createdIssues.length} issues with coordinated team workflow`
         },
         {
           label: "Wave 1 only",
           description: `Execute ${wave1.length} MVP issues first`
-        },
-        {
-          label: "View issues",
-          description: "Browse created issues before deciding"
         },
         {
           label: "Done",
@@ -282,7 +278,8 @@ AskUserQuestion({
 });
 
 // Based on user selection:
-if (selection === "Execute via team-planex") {
+const selection = answer.answers.next_step.answers[0];
+if (selection === "Execute via team-planex(Recommended)") {
   const issueIds = createdIssues.map(i => i.issue_id).join(',');
   Skill({ skill: "team-planex", args: `--issues ${issueIds}` });
 }
@@ -292,8 +289,8 @@ if (selection === "Wave 1 only") {
   Skill({ skill: "team-planex", args: `--issues ${wave1Ids}` });
 }
 
-if (selection === "View issues") {
-  Bash(`ccw issue list --tag spec:${specConfig.session_id}`);
+if (selection === "Done") {
+  // Export complete, handle manually
 }
 ```
 

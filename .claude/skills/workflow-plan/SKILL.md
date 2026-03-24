@@ -4,18 +4,20 @@ description: Unified planning skill - 4-phase planning workflow, plan verificati
 allowed-tools: Skill, Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
 ---
 
-# Workflow Plan
+<purpose>
+Unified planning skill combining 4-phase planning workflow, plan quality verification, and interactive replanning. Produces IMPL_PLAN.md, task JSONs, verification reports, and manages plan lifecycle through session-level artifact updates. Routes by mode (plan | verify | replan) and acts as a pure orchestrator: executes phases, parses outputs, and passes context.
+</purpose>
 
-Unified planning skill combining 4-phase planning workflow, plan quality verification, and interactive replanning. Produces IMPL_PLAN.md, task JSONs, verification reports, and manages plan lifecycle through session-level artifact updates.
+<process>
 
-## Architecture Overview
+## 1. Architecture Overview
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │  Workflow Plan Orchestrator (SKILL.md)                            │
 │  → Route by mode: plan | verify | replan                         │
 │  → Pure coordinator: Execute phases, parse outputs, pass context │
-└──────────────────────────────┬───────────────────────────────────┘
+└──────────────────────────────────┬───────────────────────────────┘
                                 │
         ┌───────────────────────┼───────────────────────┐
         ↓                       ↓                       ↓
@@ -38,7 +40,7 @@ Unified planning skill combining 4-phase planning workflow, plan quality verific
               └───────────┘─── Review ──→ Display session status inline
 ```
 
-## Key Design Principles
+## 2. Key Design Principles
 
 1. **Pure Orchestrator**: SKILL.md routes and coordinates only; execution detail lives in phase files
 2. **Progressive Phase Loading**: Read phase docs ONLY when that phase is about to execute
@@ -47,7 +49,7 @@ Unified planning skill combining 4-phase planning workflow, plan quality verific
 5. **Auto-Continue**: After each phase completes, automatically execute next pending phase
 6. **Accumulated State**: planning-notes.md carries context across phases for N+1 decisions
 
-## Interactive Preference Collection
+## 3. Interactive Preference Collection
 
 Before dispatching to phase execution, collect workflow preferences via AskUserQuestion:
 
@@ -99,7 +101,7 @@ if (autoYes) {
 
 **workflowPreferences** is passed to phase execution as context variable, referenced as `workflowPreferences.autoYes`, `workflowPreferences.interactive` within phases.
 
-## Mode Detection
+## 4. Mode Detection
 
 ```javascript
 const args = $ARGUMENTS
@@ -113,7 +115,7 @@ function detectMode(args) {
 }
 ```
 
-## Compact Recovery (Phase Persistence)
+## 5. Compact Recovery (Phase Persistence)
 
 Multi-phase planning (Phase 1-4/5/6) spans long conversations. Uses **双重保险**: TodoWrite 跟踪 active phase 保护其不被压缩，sentinel 作为兜底。
 
@@ -121,7 +123,7 @@ Multi-phase planning (Phase 1-4/5/6) spans long conversations. Uses **双重保�
 > The phase currently marked `in_progress` is the active execution phase — preserve its FULL content.
 > Only compress phases marked `completed` or `pending`.
 
-## Execution Flow
+## 6. Execution Flow
 
 ### Plan Mode (default)
 
@@ -130,23 +132,23 @@ Input Parsing:
    └─ Convert user input to structured format (GOAL/SCOPE/CONTEXT)
 
 Phase 1: Session Discovery
-   └─ Ref: phases/01-session-discovery.md
+   └─ Ref: Read("phases/01-session-discovery.md")
       └─ Output: sessionId (WFS-xxx), planning-notes.md
 
 Phase 2: Context Gathering
-   └─ Ref: phases/02-context-gathering.md
+   └─ Ref: Read("phases/02-context-gathering.md")
       ├─ Tasks attached: Analyze structure → Identify integration → Generate package
       └─ Output: contextPath + conflictRisk
 
 Phase 3: Conflict Resolution (conditional: conflictRisk ≥ medium)
    └─ Decision (conflictRisk check):
-      ├─ conflictRisk ≥ medium → Ref: phases/03-conflict-resolution.md
+      ├─ conflictRisk ≥ medium → Ref: Read("phases/03-conflict-resolution.md")
       │   ├─ Tasks attached: Detect conflicts → Present to user → Apply strategies
       │   └─ Output: Modified brainstorm artifacts
       └─ conflictRisk < medium → Skip to Phase 4
 
 Phase 4: Task Generation
-   └─ Ref: phases/04-task-generation.md
+   └─ Ref: Read("phases/04-task-generation.md")
       └─ Output: IMPL_PLAN.md, task JSONs, TODO_LIST.md
 
 Plan Confirmation (User Decision Gate):
@@ -160,7 +162,7 @@ Plan Confirmation (User Decision Gate):
 
 ```
 Phase 5: Plan Verification
-   └─ Ref: phases/05-plan-verify.md
+   └─ Ref: Read("phases/05-plan-verify.md")
       └─ Output: PLAN_VERIFICATION.md with quality gate recommendation
 ```
 
@@ -168,7 +170,7 @@ Phase 5: Plan Verification
 
 ```
 Phase 6: Interactive Replan
-   └─ Ref: phases/06-replan.md
+   └─ Ref: Read("phases/06-replan.md")
       └─ Output: Updated IMPL_PLAN.md, task JSONs, TODO_LIST.md
 ```
 
@@ -176,19 +178,19 @@ Phase 6: Interactive Replan
 
 | Phase | Document | Purpose | Mode | Compact |
 |-------|----------|---------|------|---------|
-| 1 | [phases/01-session-discovery.md](phases/01-session-discovery.md) | Create or discover workflow session | plan | TodoWrite 驱动 |
-| 2 | [phases/02-context-gathering.md](phases/02-context-gathering.md) | Gather project context and analyze codebase | plan | TodoWrite 驱动 |
-| 3 | [phases/03-conflict-resolution.md](phases/03-conflict-resolution.md) | Detect and resolve conflicts (conditional) | plan | TodoWrite 驱动 |
-| 4 | [phases/04-task-generation.md](phases/04-task-generation.md) | Generate implementation plan and task JSONs | plan | TodoWrite 驱动 + 🔄 sentinel |
-| 5 | [phases/05-plan-verify.md](phases/05-plan-verify.md) | Read-only verification with quality gate | verify | TodoWrite 驱动 |
-| 6 | [phases/06-replan.md](phases/06-replan.md) | Interactive replanning with boundary clarification | replan | TodoWrite 驱动 |
+| 1 | phases/01-session-discovery.md | Create or discover workflow session | plan | TodoWrite 驱动 |
+| 2 | phases/02-context-gathering.md | Gather project context and analyze codebase | plan | TodoWrite 驱动 |
+| 3 | phases/03-conflict-resolution.md | Detect and resolve conflicts (conditional) | plan | TodoWrite 驱动 |
+| 4 | phases/04-task-generation.md | Generate implementation plan and task JSONs | plan | TodoWrite 驱动 + 🔄 sentinel |
+| 5 | phases/05-plan-verify.md | Read-only verification with quality gate | verify | TodoWrite 驱动 |
+| 6 | phases/06-replan.md | Interactive replanning with boundary clarification | replan | TodoWrite 驱动 |
 
 **Compact Rules**:
 1. **TodoWrite `in_progress`** → 保留完整内容，禁止压缩
 2. **TodoWrite `completed`** → 可压缩为摘要
 3. **🔄 sentinel fallback** → Phase 4 包含 compact sentinel；若 compact 后仅存 sentinel 而无完整 Step 协议，必须立即 `Read("phases/04-task-generation.md")` 恢复
 
-## Core Rules
+## 7. Core Rules
 
 1. **Start Immediately**: First action is mode detection + TodoWrite initialization, second action is phase execution
 2. **No Preliminary Analysis**: Do not read files, analyze structure, or gather context before Phase 1
@@ -199,7 +201,7 @@ Phase 6: Interactive Replan
 7. **Progressive Phase Loading**: Read phase docs ONLY when that phase is about to execute
 8. **DO NOT STOP**: Continuous multi-phase workflow. After executing all attached tasks, immediately collapse them and execute next phase
 
-## Input Processing
+## 8. Input Processing
 
 **Convert User Input to Structured Format**:
 
@@ -228,7 +230,7 @@ Phase 6: Interactive Replan
    - Extract goal, scope, requirements
    - Format into structured description
 
-## Data Flow
+## 9. Data Flow
 
 ### Plan Mode
 
@@ -290,7 +292,7 @@ Phase 6: Mode detection → Clarification → Impact analysis → Backup → App
     ↓ Output: Updated artifacts + change summary
 ```
 
-## TodoWrite Pattern
+## 10. TodoWrite Pattern
 
 **Core Concept**: Dynamic task attachment and collapse for real-time visibility into workflow execution.
 
@@ -349,7 +351,7 @@ Phase 6: Mode detection → Clarification → Impact analysis → Backup → App
 
 **Note**: See individual Phase descriptions for detailed TodoWrite Update examples.
 
-## Post-Phase Updates
+## 11. Post-Phase Updates
 
 After each phase completes, update planning-notes.md:
 
@@ -360,7 +362,7 @@ After each phase completes, update planning-notes.md:
 
 See phase files for detailed update code.
 
-## Error Handling
+## 12. Error Handling
 
 - **Parsing Failure**: If output parsing fails, retry command once, then report error
 - **Validation Failure**: If validation fails, report which file/data is missing
@@ -368,7 +370,7 @@ See phase files for detailed update code.
 - **Session Not Found** (verify/replan): Report error with available sessions list
 - **Task Not Found** (replan): Report error with available tasks list
 
-## Coordinator Checklist
+## 13. Coordinator Checklist
 
 ### Plan Mode
 - **Pre-Phase**: Convert user input to structured format (GOAL/SCOPE/CONTEXT)
@@ -403,7 +405,7 @@ See phase files for detailed update code.
 - Initialize TodoWrite with replan-specific tasks
 - Execute Phase 6 through all sub-phases (clarification → impact → backup → apply → verify)
 
-## Structure Template Reference
+## 14. Structure Template Reference
 
 **Minimal Structure**:
 ```
@@ -421,7 +423,7 @@ REQUIREMENTS: [Specific technical requirements]
 CONSTRAINTS: [Limitations or boundaries]
 ```
 
-## Related Skills
+## 15. Related Skills
 
 **Prerequisite Skills**:
 - `brainstorm` skill - Optional: Generate role-based analyses before planning
@@ -439,3 +441,26 @@ CONSTRAINTS: [Limitations or boundaries]
 - Display session status inline - Review task breakdown and current progress
 - `Skill(skill="workflow-execute")` - Begin implementation of generated tasks (skill: workflow-execute)
 - `workflow-plan` skill (replan phase) - Modify plan (can also invoke via replan mode)
+
+</process>
+
+<auto_mode>
+When `workflowPreferences.autoYes` is true (triggered by `-y` or `--yes` flag, or user selecting "Auto" mode):
+- Skip all confirmation prompts, use default values
+- Auto-select "Verify Plan Quality" at Plan Confirmation Gate
+- Auto-continue to execution if verification returns PROCEED
+- Skip interactive clarification in replan mode (use safe defaults)
+</auto_mode>
+
+<success_criteria>
+- [ ] Mode correctly detected from skill trigger (plan / verify / replan)
+- [ ] TodoWrite initialized and updated after each phase with attachment/collapse pattern
+- [ ] All phases executed in sequence with proper data passing between phases
+- [ ] Phase documents loaded progressively via Read() only when phase is about to execute
+- [ ] planning-notes.md updated after each phase with accumulated context
+- [ ] Phase 3 conditionally executed based on conflictRisk assessment
+- [ ] Plan Confirmation Gate presented with correct options after Phase 4
+- [ ] All output artifacts generated: IMPL_PLAN.md, task JSONs, TODO_LIST.md
+- [ ] Compact recovery works: in_progress phases preserved, completed phases compressible
+- [ ] Error handling covers parsing failures, validation failures, and missing sessions/tasks
+</success_criteria>

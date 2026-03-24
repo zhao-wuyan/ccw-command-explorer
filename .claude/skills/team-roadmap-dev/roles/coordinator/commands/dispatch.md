@@ -150,7 +150,7 @@ mcp__ccw-tools__team_msg({
   operation: "log", session_id: sessionId,
   from: "coordinator", to: "all",
   type: "phase_started",
-  ref: `${sessionFolder}/roadmap.md`
+  data: { ref: `${sessionFolder}/roadmap.md` }
 })
 ```
 

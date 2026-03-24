@@ -1,7 +1,7 @@
 ---
 name: parallel-dev-cycle
 description: Multi-agent parallel development cycle with requirement analysis, exploration planning, code development, and validation. Orchestration runs inline in main flow (no separate orchestrator agent). Supports continuous iteration with markdown progress documentation. Triggers on "parallel-dev-cycle".
-allowed-tools: spawn_agent, wait, send_input, close_agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Parallel Dev Cycle

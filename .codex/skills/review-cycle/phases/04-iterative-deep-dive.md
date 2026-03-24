@@ -79,18 +79,18 @@ const deepDiveAgents = [];
 
 selectedFindings.forEach(finding => {
   const agentId = spawn_agent({
+    agent_type: "cli_explore_agent",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Read original finding: ${dimensionJsonPath}
-3. Read affected file: ${finding.file}
-4. Identify related code: bash(grep -r "import.*${basename(finding.file)}" ${projectDir}/src --include="*.ts")
-5. Read test files: bash(find ${projectDir}/tests -name "*${basename(finding.file, '.ts')}*" -type f)
-6. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-deep-dive-results-schema.json (get output schema reference)
-7. Read: ${projectRoot}/.workflow/project-tech.json (technology stack and architecture context)
-8. Read: ${projectRoot}/.workflow/specs/*.md (user-defined constraints for remediation compliance)
+1. Read original finding: ${dimensionJsonPath}
+2. Read affected file: ${finding.file}
+3. Identify related code: bash(grep -r "import.*${basename(finding.file)}" ${projectDir}/src --include="*.ts")
+4. Read test files: bash(find ${projectDir}/tests -name "*${basename(finding.file, '.ts')}*" -type f)
+5. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-deep-dive-results-schema.json (get output schema reference)
+6. Read: ${projectRoot}/.workflow/project-tech.json (technology stack and architecture context)
+7. Read: ${projectRoot}/.workflow/specs/*.md (user-defined constraints for remediation compliance)
 
 ---
 
@@ -125,7 +125,7 @@ Then apply **Deep Scan mode** for semantic analysis:
 
 ## Expected Deliverables
 
-**Schema Reference**: Schema obtained in MANDATORY FIRST STEPS step 6, follow schema exactly
+**Schema Reference**: Schema obtained in MANDATORY FIRST STEPS step 5, follow schema exactly
 
 1. Deep-Dive Results JSON: ${outputDir}/iterations/iteration-${iteration}-finding-${finding.id}.json
 
@@ -190,18 +190,18 @@ const deepDiveAgents = [];
 
 selectedFindings.forEach(finding => {
   const agentId = spawn_agent({
+    agent_type: "cli_explore_agent",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Read original finding: ${dimensionJsonPath}
-3. Read affected file: ${finding.file}
-4. Identify related code: bash(grep -r "import.*${basename(finding.file)}" ${workflowDir}/src --include="*.ts")
-5. Read test files: bash(find ${workflowDir}/tests -name "*${basename(finding.file, '.ts')}*" -type f)
-6. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-deep-dive-results-schema.json (get output schema reference)
-7. Read: ${projectRoot}/.workflow/project-tech.json (technology stack and architecture context)
-8. Read: ${projectRoot}/.workflow/specs/*.md (user-defined constraints for remediation compliance)
+1. Read original finding: ${dimensionJsonPath}
+2. Read affected file: ${finding.file}
+3. Identify related code: bash(grep -r "import.*${basename(finding.file)}" ${workflowDir}/src --include="*.ts")
+4. Read test files: bash(find ${workflowDir}/tests -name "*${basename(finding.file, '.ts')}*" -type f)
+5. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-deep-dive-results-schema.json (get output schema reference)
+6. Read: ${projectRoot}/.workflow/project-tech.json (technology stack and architecture context)
+7. Read: ${projectRoot}/.workflow/specs/*.md (user-defined constraints for remediation compliance)
 
 ---
 
@@ -237,7 +237,7 @@ Then apply **Deep Scan mode** for semantic analysis:
 
 ## Expected Deliverables
 
-**Schema Reference**: Schema obtained in MANDATORY FIRST STEPS step 6, follow schema exactly
+**Schema Reference**: Schema obtained in MANDATORY FIRST STEPS step 5, follow schema exactly
 
 1. Deep-Dive Results JSON: ${outputDir}/iterations/iteration-${iteration}-finding-${finding.id}.json
 

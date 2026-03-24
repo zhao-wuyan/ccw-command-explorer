@@ -4,11 +4,13 @@ description: Unified test-fix pipeline combining test generation (session, conte
 allowed-tools: Skill, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep
 ---
 
-# Workflow Test Fix
+<purpose>
+Unified test-fix orchestrator that combines **test planning generation** (Phase 1-4) with **iterative test-cycle execution** (Phase 5) into a single end-to-end pipeline. Creates test sessions with progressive L0-L3 test layers, generates test tasks, then executes them with adaptive fix cycles until pass rate >= 95% or max iterations reached. Triggered via skill name routing for full pipeline or execute-only modes.
+</purpose>
 
-Unified test-fix orchestrator that combines **test planning generation** (Phase 1-4) with **iterative test-cycle execution** (Phase 5) into a single end-to-end pipeline. Creates test sessions with progressive L0-L3 test layers, generates test tasks, then executes them with adaptive fix cycles until pass rate >= 95% or max iterations reached.
+<process>
 
-## Architecture Overview
+## 1. Architecture Overview
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
@@ -45,7 +47,7 @@ Task Pipeline (generated in Phase 4, executed in Phase 5):
 └──────────────┘   └─────────────────┘   └─────────────────┘   └──────────────┘
 ```
 
-## Key Design Principles
+## 2. Key Design Principles
 
 1. **Unified Pipeline**: Generation and execution are one continuous workflow - no manual handoff
 2. **Pure Orchestrator**: SKILL.md coordinates only - delegates all execution detail to phase files
@@ -56,14 +58,14 @@ Task Pipeline (generated in Phase 4, executed in Phase 5):
 7. **Quality Gate**: Pass rate >= 95% (criticality-aware) terminates the fix loop
 8. **Phase File Hygiene**: Phase files reference `workflowPreferences.*` for preferences, no CLI flag parsing
 
-## Usage
+## 3. Usage
 
 Full pipeline and execute-only modes are triggered by skill name routing (see Mode Detection). Workflow preferences (auto mode) are collected interactively via AskUserQuestion before dispatching to phases.
 
 **Full pipeline** (workflow-test-fix): Task description or session ID as arguments → interactive preference collection → generate + execute pipeline
 **Execute only** (workflow-test-fix): Auto-discovers active session → interactive preference collection → execution loop
 
-## Interactive Preference Collection
+## 4. Interactive Preference Collection
 
 Before dispatching to phase execution, collect workflow preferences via AskUserQuestion:
 
@@ -97,7 +99,7 @@ if (autoYes) {
 
 **workflowPreferences** is passed to phase execution as context variable, referenced as `workflowPreferences.autoYes` within phases.
 
-## Compact Recovery (Phase Persistence)
+## 5. Compact Recovery (Phase Persistence)
 
 Multi-phase test-fix pipeline (Phase 1-5) spans long conversations, especially Phase 5 fix loops. Uses **双重保险**: TodoWrite 跟踪 active phase 保护其不被压缩，sentinel 作为兜底。
 
@@ -105,7 +107,7 @@ Multi-phase test-fix pipeline (Phase 1-5) spans long conversations, especially P
 > The phase currently marked `in_progress` is the active execution phase — preserve its FULL content.
 > Only compress phases marked `completed` or `pending`.
 
-## Execution Flow
+## 6. Execution Flow
 
 ```
 Entry Point Detection:
@@ -113,23 +115,23 @@ Entry Point Detection:
    └─ /workflow-test-fix → Execution Only (Phase 5)
 
 Phase 1: Session Start (session-start)
-   └─ Ref: phases/01-session-start.md
+   └─ Read("phases/01-session-start.md")
       ├─ Step 1.0: Detect input mode (session | prompt)
       ├─ Step 1.1: Create test session → testSessionId
       └─ Output: testSessionId, MODE
 
 Phase 2: Test Context Gather (test-context-gather)
-   └─ Ref: phases/02-test-context-gather.md
+   └─ Read("phases/02-test-context-gather.md")
       ├─ Step 1.2: Gather test context → contextPath
       └─ Output: contextPath
 
 Phase 3: Test Concept Enhanced (test-concept-enhanced)
-   └─ Ref: phases/03-test-concept-enhanced.md
+   └─ Read("phases/03-test-concept-enhanced.md")
       ├─ Step 1.3: Test analysis (Gemini) → TEST_ANALYSIS_RESULTS.md
       └─ Output: TEST_ANALYSIS_RESULTS.md
 
 Phase 4: Test Task Generate (test-task-generate)
-   └─ Ref: phases/04-test-task-generate.md
+   └─ Read("phases/04-test-task-generate.md")
       ├─ Step 1.4: Generate test tasks → IMPL_PLAN.md, IMPL-*.json, TODO_LIST.md
       └─ Output: testSessionId, 4+ task JSONs
 
@@ -137,7 +139,7 @@ Summary Output (inline after Phase 4):
    └─ Display summary, auto-continue to Phase 5
 
 Phase 5: Test Cycle Execution (test-cycle-execute)
-   └─ Ref: phases/05-test-cycle-execute.md
+   └─ Read("phases/05-test-cycle-execute.md")
       ├─ Step 2.1: Discovery (load session, tasks, iteration state)
       ├─ Step 2.2: Execute initial tasks (IMPL-001 → 001.3 → 001.5 → 002)
       ├─ Step 2.3: Fix loop (if pass_rate < 95%)
@@ -153,18 +155,18 @@ Phase 5: Test Cycle Execution (test-cycle-execute)
 
 | Phase | Document | Purpose | Compact |
 |-------|----------|---------|---------|
-| 1 | [phases/01-session-start.md](phases/01-session-start.md) | Detect input mode, create test session | TodoWrite 驱动 |
-| 2 | [phases/02-test-context-gather.md](phases/02-test-context-gather.md) | Gather test context (coverage/codebase) | TodoWrite 驱动 |
-| 3 | [phases/03-test-concept-enhanced.md](phases/03-test-concept-enhanced.md) | Gemini analysis, L0-L3 test requirements | TodoWrite 驱动 |
-| 4 | [phases/04-test-task-generate.md](phases/04-test-task-generate.md) | Generate task JSONs and IMPL_PLAN.md | TodoWrite 驱动 |
-| 5 | [phases/05-test-cycle-execute.md](phases/05-test-cycle-execute.md) | Execute tasks, iterative fix cycles, completion | TodoWrite 驱动 + 🔄 sentinel |
+| 1 | phases/01-session-start.md | Detect input mode, create test session | TodoWrite 驱动 |
+| 2 | phases/02-test-context-gather.md | Gather test context (coverage/codebase) | TodoWrite 驱动 |
+| 3 | phases/03-test-concept-enhanced.md | Gemini analysis, L0-L3 test requirements | TodoWrite 驱动 |
+| 4 | phases/04-test-task-generate.md | Generate task JSONs and IMPL_PLAN.md | TodoWrite 驱动 |
+| 5 | phases/05-test-cycle-execute.md | Execute tasks, iterative fix cycles, completion | TodoWrite 驱动 + 🔄 sentinel |
 
 **Compact Rules**:
 1. **TodoWrite `in_progress`** → 保留完整内容，禁止压缩
 2. **TodoWrite `completed`** → 可压缩为摘要
 3. **🔄 sentinel fallback** → Phase 5 包含 compact sentinel；若 compact 后仅存 sentinel 而无完整 Step 协议，必须立即 `Read("phases/05-test-cycle-execute.md")` 恢复
 
-## Core Rules
+## 7. Core Rules
 
 1. **Start Immediately**: First action is TaskCreate initialization, second action is Phase 1 (or Phase 5 for execute-only entry)
 2. **No Preliminary Analysis**: Do not read files or gather context before starting the phase
@@ -176,7 +178,7 @@ Phase 5: Test Cycle Execution (test-cycle-execute)
 8. **Progressive Loading**: Read phase doc ONLY when that phase is about to execute
 9. **Entry Point Routing**: `workflow-test-fix` skill → Phase 1-5; `workflow-test-fix` skill → Phase 5 only
 
-## Input Processing
+## 8. Input Processing
 
 ### test-fix-gen Entry (Full Pipeline)
 ```
@@ -194,7 +196,7 @@ Arguments → Parse flags:
   └─ (no args)                  → auto-discover active test session
 ```
 
-## Data Flow
+## 9. Data Flow
 
 ```
 User Input (session ID | description | file path)
@@ -223,7 +225,7 @@ Phase 5: Test Cycle Execution ────────────────�
     ↓ 2.4: Completion → summary → session archive
 ```
 
-## Summary Output (after Phase 4)
+## 10. Summary Output (after Phase 4)
 
 After Phase 4 completes, display the following summary before auto-continuing to Phase 5:
 
@@ -255,7 +257,7 @@ Review artifacts:
 **CRITICAL - Next Step**: Auto-continue to Phase 5: Test Cycle Execution.
 Pass `testSessionId` to Phase 5 for test execution pipeline. Do NOT wait for user confirmation — the unified pipeline continues automatically.
 
-## Test Strategy Overview
+## 11. Test Strategy Overview
 
 Progressive Test Layers (L0-L3):
 
@@ -273,7 +275,7 @@ Progressive Test Layers (L0-L3):
 - Pass Rate Gate: >= 95% (criticality-aware) or 100%
 - Max Fix Iterations: 10 (default, adjustable)
 
-## Strategy Engine (Phase 5)
+## 12. Strategy Engine (Phase 5)
 
 | Strategy | Trigger | Behavior |
 |----------|---------|----------|
@@ -283,7 +285,7 @@ Progressive Test Layers (L0-L3):
 
 Selection logic and CLI fallback chain (Gemini → Qwen → Codex) are detailed in Phase 5.
 
-## Agent Roles
+## 13. Agent Roles
 
 | Agent | Used In | Responsibility |
 |-------|---------|---------------|
@@ -292,7 +294,7 @@ Selection logic and CLI fallback chain (Gemini → Qwen → Codex) are detailed 
 | **@test-fix-agent** | Phase 5 | Test execution, code fixes, criticality assignment |
 | **@cli-planning-agent** | Phase 5 (fix loop) | CLI analysis, root cause extraction, fix task generation |
 
-## TodoWrite Pattern
+## 14. TodoWrite Pattern
 
 **Core Concept**: Dynamic task tracking with attachment/collapse for real-time visibility.
 
@@ -344,7 +346,7 @@ Selection logic and CLI fallback chain (Gemini → Qwen → Codex) are detailed 
 ]
 ```
 
-## Session File Structure
+## 15. Session File Structure
 
 ```
 .workflow/active/WFS-test-{session}/
@@ -370,7 +372,7 @@ Selection logic and CLI fallback chain (Gemini → Qwen → Codex) are detailed 
     └── iteration-summaries/
 ```
 
-## Error Handling
+## 16. Error Handling
 
 ### Phase 1-4 (Generation)
 
@@ -393,13 +395,13 @@ Selection logic and CLI fallback chain (Gemini → Qwen → Codex) are detailed 
 | Regression detected | Rollback last fix, switch to surgical strategy |
 | Stuck tests detected | Continue with alternative strategy, document |
 
-## Commit Strategy (Phase 5)
+## 17. Commit Strategy (Phase 5)
 
 Automatic commits at key checkpoints:
 1. **After successful iteration** (pass rate increased): `test-cycle: iteration N - strategy (pass: old% → new%)`
 2. **Before rollback** (regression detected): `test-cycle: rollback iteration N - regression detected`
 
-## Completion Conditions
+## 18. Completion Conditions
 
 | Condition | Pass Rate | Action |
 |-----------|-----------|--------|
@@ -407,36 +409,36 @@ Automatic commits at key checkpoints:
 | **Partial Success** | >= 95%, all failures low criticality | Auto-approve with review note |
 | **Failure** | < 95% after max iterations | Failure report, mark blocked |
 
-## Post-Completion Expansion
+## 19. Post-Completion Expansion
 
 **Auto-sync**: Execute `/workflow:session:sync -y "{summary}"` to update specs/*.md + project-tech.
 
 After completion, ask user if they want to expand into issues (test/enhance/refactor/doc). Selected items call `/issue:new "{summary} - {dimension}"`.
 
-## Coordinator Checklist
+## 20. Coordinator Checklist
 
 ### Phase 1 (session-start)
 - [ ] Detect input type (session ID / description / file path)
 - [ ] Initialize TaskCreate before any execution
-- [ ] Read Phase 1 doc, execute Steps 1.0 + 1.1
+- [ ] Read("phases/01-session-start.md"), execute Steps 1.0 + 1.1
 - [ ] Parse testSessionId from step output, store in memory
 
 ### Phase 2 (test-context-gather)
-- [ ] Read Phase 2 doc, execute Step 1.2
+- [ ] Read("phases/02-test-context-gather.md"), execute Step 1.2
 - [ ] Parse contextPath from step output, store in memory
 
 ### Phase 3 (test-concept-enhanced)
-- [ ] Read Phase 3 doc, execute Step 1.3
+- [ ] Read("phases/03-test-concept-enhanced.md"), execute Step 1.3
 - [ ] Verify TEST_ANALYSIS_RESULTS.md created
 
 ### Phase 4 (test-task-generate)
-- [ ] Read Phase 4 doc, execute Step 1.4
+- [ ] Read("phases/04-test-task-generate.md"), execute Step 1.4
 - [ ] Verify all Phase 1-4 outputs (4 task JSONs, IMPL_PLAN.md, TODO_LIST.md)
 - [ ] Display Summary output (inline)
 - [ ] Collapse Phase 1-4 tasks, auto-continue to Phase 5
 
 ### Phase 5 (test-cycle-execute)
-- [ ] Read Phase 5 doc
+- [ ] Read("phases/05-test-cycle-execute.md")
 - [ ] Load session, tasks, iteration state
 - [ ] Execute initial tasks sequentially
 - [ ] Calculate pass rate from test-results.json
@@ -446,7 +448,7 @@ After completion, ask user if they want to expand into issues (test/enhance/refa
 - [ ] Generate completion summary
 - [ ] Offer post-completion expansion
 
-## Related Skills
+## 21. Related Skills
 
 **Prerequisite Skills**:
 - `workflow-plan` skill or `workflow-execute` skill - Complete implementation (Session Mode source)
@@ -456,3 +458,25 @@ After completion, ask user if they want to expand into issues (test/enhance/refa
 - Display session status inline - Review workflow state
 - `review-cycle` skill - Post-implementation review
 - `/issue:new` - Create follow-up issues
+
+</process>
+
+<auto_mode>
+When `-y` or `--yes` is detected in $ARGUMENTS or propagated via ccw:
+- Skip all AskUserQuestion confirmations
+- Use default values for all workflow preferences (`workflowPreferences = { autoYes: true }`)
+- Auto-continue through all phases without user interaction
+- Phase 1→2→3→4→Summary→5 executes as a fully automatic pipeline
+</auto_mode>
+
+<success_criteria>
+- [ ] Input type correctly detected (session ID / description / file path)
+- [ ] All 5 phases execute in sequence (full pipeline) or Phase 5 only (execute-only)
+- [ ] Phase documents loaded progressively via Read() only when phase executes
+- [ ] TaskCreate/TaskUpdate tracking maintained throughout with attachment/collapse pattern
+- [ ] All phase outputs parsed and passed to subsequent phases (testSessionId, contextPath, etc.)
+- [ ] Summary displayed after Phase 4 with all task and threshold details
+- [ ] Phase 5 fix loop iterates with adaptive strategy until pass rate >= 95% or max iterations
+- [ ] Completion summary generated with final pass rate and session archived
+- [ ] Post-completion expansion offered to user
+</success_criteria>

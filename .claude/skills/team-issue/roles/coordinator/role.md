@@ -49,7 +49,7 @@ When coordinator needs to execute a specific phase:
 | Interrupted session | Active session in .workflow/.team/TISL-* | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume/consensus/adapt/complete: load `commands/monitor.md`, execute handler, STOP.
+For callback/check/resume/consensus/adapt/complete: load `@commands/monitor.md`, execute handler, STOP.
 
 ## Phase 0: Session Resume Check
 
@@ -95,14 +95,17 @@ TEXT-LEVEL ONLY. No source code reading.
 
 ## Phase 2: Create Team + Initialize Session
 
-1. Generate session ID: `TISL-<issue-slug>-<date>`
-2. Create session folder structure:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-issue`
+2. Generate session ID: `TISL-<issue-slug>-<date>`
+3. Create session folder structure:
    ```
    Bash("mkdir -p .workflow/.team/TISL-<slug>-<date>/{explorations,solutions,audits,queue,builds,wisdom,.msg}")
    ```
-3. TeamCreate with team name `issue`
-4. Write session.json with pipeline_mode, issue_ids, execution_method, fix_cycles=0, max_fix_cycles=2
-5. Initialize meta.json via team_msg state_update:
+4. TeamCreate with team name `issue`
+5. Write session.json with pipeline_mode, issue_ids, execution_method, fix_cycles=0, max_fix_cycles=2
+6. Initialize meta.json via team_msg state_update:
    ```
    mcp__ccw-tools__team_msg({
      operation: "log", session_id: "<id>", from: "coordinator",
@@ -110,18 +113,18 @@ TEXT-LEVEL ONLY. No source code reading.
      data: { pipeline_mode: "<mode>", pipeline_stages: ["explorer","planner","reviewer","integrator","implementer"], team_name: "issue", issue_ids: [...], fix_cycles: 0 }
    })
    ```
-6. Initialize wisdom files (learnings.md, decisions.md, conventions.md, issues.md)
+7. Initialize wisdom files (learnings.md, decisions.md, conventions.md, issues.md)
 
 ## Phase 3: Create Task Chain
 
-Delegate to commands/dispatch.md:
+Delegate to @commands/dispatch.md:
 1. Read pipeline mode and issue IDs from session.json
 2. Create tasks for selected pipeline with correct blockedBy
 3. Update session.json with task count
 
 ## Phase 4: Spawn-and-Stop
 
-Delegate to commands/monitor.md#handleSpawnNext:
+Delegate to @commands/monitor.md#handleSpawnNext:
 1. Find ready tasks (pending + blockedBy resolved)
 2. Spawn team-worker agents (see SKILL.md Spawn Template)
 3. Output status summary

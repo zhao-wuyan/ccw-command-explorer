@@ -54,7 +54,7 @@ When coordinator is invoked, detect invocation type:
 | Interrupted session | Active/paused session exists | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume/complete: load `commands/monitor.md` and execute matched handler, then STOP.
+For callback/check/resume/complete: load `@commands/monitor.md` and execute matched handler, then STOP.
 
 ### Router Implementation
 
@@ -94,16 +94,19 @@ Triggered when an active/paused session is detected on coordinator entry.
 
 ## Phase 2: Session & Team Setup
 
-1. Create session directory with artifacts/, explorations/, wisdom/, discussions/ subdirs
-2. Write session.json with extended fields (parallel_mode, max_branches, branches, fix_cycles)
-3. Initialize meta.json with pipeline metadata via team_msg
-4. Call `TeamCreate({ team_name: "perf-opt" })`
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-perf-opt`
+2. Create session directory with artifacts/, explorations/, wisdom/, discussions/ subdirs
+3. Write session.json with extended fields (parallel_mode, max_branches, branches, fix_cycles)
+4. Initialize meta.json with pipeline metadata via team_msg
+5. Call `TeamCreate({ team_name: "perf-opt" })`
 
 ---
 
 ## Phase 3: Create Task Chain
 
-Execute `commands/dispatch.md` inline (Command Execution Protocol).
+Execute `@commands/dispatch.md` inline (Command Execution Protocol).
 
 ---
 
@@ -112,14 +115,14 @@ Execute `commands/dispatch.md` inline (Command Execution Protocol).
 ### Initial Spawn
 
 Find first unblocked task and spawn its worker using SKILL.md Worker Spawn Template with:
-- `role_spec: ~  or <project>/.claude/skills/team-perf-opt/roles/<role>/role.md`
+- `role_spec: <skill_root>/roles/<role>/role.md`
 - `team_name: perf-opt`
 
 **STOP** after spawning. Wait for worker callback.
 
 ### Coordination (via monitor.md handlers)
 
-All subsequent coordination handled by `commands/monitor.md`.
+All subsequent coordination handled by `@commands/monitor.md`.
 
 ---
 

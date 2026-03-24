@@ -44,7 +44,7 @@ When coordinator needs to execute a command (analyze, dispatch, monitor):
 | Interrupted session | Active/paused session exists in .workflow/.team/TD-* | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume/complete: load `commands/monitor.md`, execute matched handler, STOP.
+For callback/check/resume/complete: load `@commands/monitor.md`, execute matched handler, STOP.
 
 ## Phase 0: Session Resume Check
 
@@ -70,19 +70,22 @@ TEXT-LEVEL ONLY. No source code reading.
 3. Ask for missing parameters (skip if auto mode):
    - AskUserQuestion: Tech Debt Target (自定义 / 全项目扫描 / 完整治理 / 定向修复)
 4. Store: mode, scope, focus, constraints
-5. Delegate to commands/analyze.md -> output task-analysis context
+5. Delegate to @commands/analyze.md -> output task-analysis context
 
 ## Phase 2: Create Team + Initialize Session
 
-1. Generate session ID: `TD-<slug>-<YYYY-MM-DD>`
-2. Create session folder structure (scan/, assessment/, plan/, fixes/, validation/, wisdom/)
-3. Initialize .msg/meta.json via team_msg state_update with pipeline metadata
-4. TeamCreate(team_name="tech-debt")
-5. Do NOT spawn workers yet - deferred to Phase 4
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-tech-debt`
+2. Generate session ID: `TD-<slug>-<YYYY-MM-DD>`
+3. Create session folder structure (scan/, assessment/, plan/, fixes/, validation/, wisdom/)
+4. Initialize .msg/meta.json via team_msg state_update with pipeline metadata
+5. TeamCreate(team_name="tech-debt")
+6. Do NOT spawn workers yet - deferred to Phase 4
 
 ## Phase 3: Create Task Chain
 
-Delegate to commands/dispatch.md. Task chain by mode:
+Delegate to @commands/dispatch.md. Task chain by mode:
 
 | Mode | Task Chain |
 |------|------------|
@@ -92,7 +95,7 @@ Delegate to commands/dispatch.md. Task chain by mode:
 
 ## Phase 4: Spawn-and-Stop
 
-Delegate to commands/monitor.md#handleSpawnNext:
+Delegate to @commands/monitor.md#handleSpawnNext:
 1. Find ready tasks (pending + blockedBy resolved)
 2. Spawn team-worker agents (see SKILL.md Spawn Template)
 3. Output status summary

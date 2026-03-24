@@ -58,7 +58,7 @@ mcp__ccw-tools__team_msg({
   operation: "log", session_id: sessionId,
   from: "coordinator", to: "all",
   type: "phase_paused",
-  ref: `${sessionFolder}/state.md`
+  data: { ref: `${sessionFolder}/state.md` }
 })
 ```
 

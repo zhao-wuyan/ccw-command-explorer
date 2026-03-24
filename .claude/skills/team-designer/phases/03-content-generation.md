@@ -77,7 +77,7 @@ If `.workflow/.team/${teamConfig.sessionPrefix}-*/team-session.json` exists:
 ## Phase 3: Dispatch
 
 - Execute `commands/dispatch.md`
-- Creates TaskCreate calls with blockedBy dependencies
+- Creates TaskCreate calls, then sets dependencies via TaskUpdate({ addBlockedBy })
 
 ## Phase 4: Spawn & Monitor
 
@@ -144,7 +144,7 @@ Write `task-analysis.json` to session directory:
 
 Template — includes:
 - Topological sort from dependency graph
-- TaskCreate with blockedBy
+- TaskCreate + TaskUpdate({ addBlockedBy }) for dependencies
 - Task description template (PURPOSE/TASK/CONTEXT/EXPECTED/CONSTRAINTS)
 
 ### coordinator/commands/monitor.md

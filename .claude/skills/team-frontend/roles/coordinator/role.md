@@ -42,7 +42,7 @@ When coordinator needs to execute a command:
 | Interrupted session | Active/paused session in .workflow/.team/FE-* | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume/complete: load commands/monitor.md, execute handler, STOP.
+For callback/check/resume/complete: load @commands/monitor.md, execute handler, STOP.
 
 ## Phase 0: Session Resume Check
 
@@ -56,7 +56,7 @@ For callback/check/resume/complete: load commands/monitor.md, execute handler, S
 TEXT-LEVEL ONLY. No source code reading.
 
 1. Parse task description from $ARGUMENTS
-2. Delegate to commands/analyze.md -> produces task-analysis.json
+2. Delegate to @commands/analyze.md -> produces task-analysis.json
 3. Ask for missing parameters via AskUserQuestion:
 
    **Scope Selection**:
@@ -83,15 +83,18 @@ TEXT-LEVEL ONLY. No source code reading.
 
 ## Phase 2: Session & Team Setup
 
-1. Generate session ID: `FE-<slug>-<YYYY-MM-DD>`
-2. Create session folder structure:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-frontend`
+3. Generate session ID: `FE-<slug>-<YYYY-MM-DD>`
+4. Create session folder structure:
 ```
 mkdir -p .workflow/.team/<session-id>/{.msg,wisdom,analysis,architecture,qa,build}
 ```
-3. TeamCreate with team name: `TeamCreate({ team_name: "frontend" })`
-4. Read specs/pipelines.md -> select pipeline based on scope
-5. Register roles in session state
-6. Initialize meta.json with pipeline metadata:
+5. TeamCreate with team name: `TeamCreate({ team_name: "frontend" })`
+6. Read specs/pipelines.md -> select pipeline based on scope
+7. Register roles in session state
+8. Initialize meta.json with pipeline metadata:
 ```typescript
 mcp__ccw-tools__team_msg({
   operation: "log", session_id: "<id>", from: "coordinator",
@@ -106,18 +109,18 @@ mcp__ccw-tools__team_msg({
   }
 })
 ```
-7. Write session.json
+9. Write session.json
 
 ## Phase 3: Task Chain Creation
 
-Delegate to commands/dispatch.md:
+Delegate to @commands/dispatch.md:
 1. Read specs/pipelines.md for selected pipeline task registry
-2. Create tasks via TaskCreate with blockedBy
+2. Create tasks via TaskCreate, then set blockedBy via TaskUpdate
 3. Update session.json
 
 ## Phase 4: Spawn-and-Stop
 
-Delegate to commands/monitor.md#handleSpawnNext:
+Delegate to @commands/monitor.md#handleSpawnNext:
 1. Find ready tasks (pending + blockedBy resolved)
 2. Spawn team-worker agents (see SKILL.md Spawn Template)
 3. Output status summary

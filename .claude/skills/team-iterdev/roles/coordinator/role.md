@@ -43,7 +43,7 @@ When coordinator needs to execute a command:
 | Interrupted session | Active/paused session in .workflow/.team/IDS-* | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume/complete: load commands/monitor.md, execute handler, STOP.
+For callback/check/resume/complete: load @commands/monitor.md, execute handler, STOP.
 
 ## Phase 0: Session Resume Check
 
@@ -57,7 +57,7 @@ For callback/check/resume/complete: load commands/monitor.md, execute handler, S
 TEXT-LEVEL ONLY. No source code reading.
 
 1. Parse user task description from $ARGUMENTS
-2. Delegate to commands/analyze.md
+2. Delegate to @commands/analyze.md
 3. Assess complexity for pipeline selection:
 
 | Signal | Weight |
@@ -80,17 +80,20 @@ TEXT-LEVEL ONLY. No source code reading.
 
 ## Phase 2: Session & Team Setup
 
-1. Generate session ID: `IDS-<slug>-<YYYY-MM-DD>`
-2. Create session folder structure:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-iterdev`
+2. Generate session ID: `IDS-<slug>-<YYYY-MM-DD>`
+3. Create session folder structure:
 ```
 mkdir -p .workflow/.team/<session-id>/{design,code,verify,review,wisdom}
 ```
-3. Create team: `TeamCreate({ team_name: "iterdev" })`
-4. Read specs/pipelines.md -> select pipeline based on complexity
-5. Initialize wisdom directory (learnings.md, decisions.md, conventions.md, issues.md)
-6. Write session.json
-7. Initialize task-ledger.json
-8. Initialize meta.json with pipeline metadata:
+4. Create team: `TeamCreate({ team_name: "iterdev" })`
+5. Read specs/pipelines.md -> select pipeline based on complexity
+6. Initialize wisdom directory (learnings.md, decisions.md, conventions.md, issues.md)
+7. Write session.json
+8. Initialize task-ledger.json
+9. Initialize meta.json with pipeline metadata:
 ```typescript
 mcp__ccw-tools__team_msg({
   operation: "log", session_id: "<id>", from: "coordinator",
@@ -106,15 +109,15 @@ mcp__ccw-tools__team_msg({
 
 ## Phase 3: Task Chain Creation
 
-Delegate to commands/dispatch.md:
+Delegate to @commands/dispatch.md:
 1. Read specs/pipelines.md for selected pipeline task registry
-2. Create tasks via TaskCreate with blockedBy
+2. Create tasks via TaskCreate, then TaskUpdate with addBlockedBy
 3. Update task-ledger.json
 
 ## Phase 4: Spawn-and-Stop
 
-Delegate to commands/monitor.md#handleSpawnNext:
-1. Find ready tasks (pending + blockedBy resolved)
+Delegate to @commands/monitor.md#handleSpawnNext:
+1. Find ready tasks (pending + all addBlockedBy dependencies resolved)
 2. Spawn team-worker agents (see SKILL.md Spawn Template)
 3. Output status summary
 4. STOP

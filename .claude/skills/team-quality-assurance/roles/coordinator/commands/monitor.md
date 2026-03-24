@@ -72,9 +72,9 @@ EXPECTED: <session>/results/run-<layer>-gc-<round>.json
 CONSTRAINTS: Read-only execution
 ---
 InnerLoop: false
-RoleSpec: ~  or <project>/.claude/skills/team-quality-assurance/roles/executor/role.md",
-  blockedBy: ["QAGEN-fix-<round>"]
+RoleSpec: ~  or <project>/.claude/skills/team-quality-assurance/roles/executor/role.md"
 })
+TaskUpdate({ taskId: "QARUN-gc-<round>", addBlockedBy: ["QAGEN-fix-<round>"] })
 ```
 
 6. -> handleSpawnNext

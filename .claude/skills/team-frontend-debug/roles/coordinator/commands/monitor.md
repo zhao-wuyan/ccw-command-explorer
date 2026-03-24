@@ -44,10 +44,10 @@ Analyzer needs more evidence. Create supplemental reproduction task.
 1. Parse Analyzer's evidence request (dimensions, specific actions)
 2. Create REPRODUCE-002 task:
    - TaskCreate with description from Analyzer's request
-   - blockedBy: [] (can start immediately)
+   - TaskUpdate to set owner (no blockedBy — can start immediately)
 3. Create ANALYZE-002 task:
-   - blockedBy: [REPRODUCE-002]
-   - Update FIX-001 blockedBy to include ANALYZE-002
+   - TaskCreate + TaskUpdate with addBlockedBy: [REPRODUCE-002]
+   - TaskUpdate FIX-001 with addBlockedBy to include ANALYZE-002
 4. Update team-session.json with new tasks
 5. -> handleSpawnNext
 

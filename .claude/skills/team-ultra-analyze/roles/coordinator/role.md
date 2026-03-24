@@ -44,14 +44,22 @@ When coordinator is invoked, detect invocation type:
 
 | Detection | Condition | Handler |
 |-----------|-----------|---------|
-| Worker callback | Message contains role tag [explorer], [analyst], [discussant], [synthesizer] | -> handleCallback (monitor.md) |
+| Worker callback | Message content starts with `[explorer]`, `[analyst]`, `[discussant]`, or `[synthesizer]` (role tag at beginning of message body) | -> handleCallback (monitor.md) |
+| Supervisor callback | Message content starts with `[supervisor]` | -> handleSupervisorReport (log checkpoint result, proceed to handleSpawnNext if tasks unblocked) |
+| Idle notification | System notification that a teammate went idle (does NOT start with a role tag — typically says "Agent X is now idle") | -> **IGNORE** (do not handleCallback; idle is normal after every turn) |
+| Shutdown response | Message content is a JSON object containing `shutdown_response` (parse as structured data, not string) | -> handleShutdownResponse (see Phase 5) |
 | Status check | Arguments contain "check" or "status" | -> handleCheck (monitor.md) |
 | Manual resume | Arguments contain "resume" or "continue" | -> handleResume (monitor.md) |
 | Pipeline complete | All tasks have status "completed" | -> handleComplete (monitor.md) |
 | Interrupted session | Active/paused session exists | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume/complete: load `commands/monitor.md` and execute matched handler, then STOP.
+**Message format discrimination**:
+- **String messages starting with `[<role>]`**: Worker/supervisor completion reports → route to handleCallback or handleSupervisorReport
+- **JSON object messages** (contain `type:` field): Structured protocol messages (shutdown_response) → route by `type` field
+- **Other strings without role tags**: System idle notifications → IGNORE
+
+For callback/check/resume/complete: load `@commands/monitor.md` and execute matched handler, then STOP.
 
 ### Router Implementation
 
@@ -95,15 +103,18 @@ TEXT-LEVEL ONLY. No source code reading.
 
 1. Parse user task description from $ARGUMENTS
 2. Extract explicit settings: `--mode`, scope, focus areas
-3. Delegate to `commands/analyze.md` for signal detection and pipeline mode selection
+3. Delegate to `@commands/analyze.md` for signal detection and pipeline mode selection
 4. **Interactive clarification** (non-auto mode): AskUserQuestion for focus, perspectives, depth.
 
 ---
 
 ## Phase 2: Create Team + Initialize Session
 
-1. Generate session ID: `UAN-{slug}-{YYYY-MM-DD}`
-2. Create session folder structure:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-ultra-analyze`
+3. Generate session ID: `UAN-{slug}-{YYYY-MM-DD}`
+4. Create session folder structure:
 
 ```
 .workflow/.team/UAN-{slug}-{date}/
@@ -117,8 +128,8 @@ TEXT-LEVEL ONLY. No source code reading.
     +-- learnings.md, decisions.md, conventions.md, issues.md
 ```
 
-3. Write session.json with mode, requirement, timestamp
-4. Initialize .msg/meta.json with pipeline metadata via team_msg:
+5. Write session.json with mode, requirement, timestamp
+6. Initialize .msg/meta.json with pipeline metadata via team_msg:
 ```typescript
 mcp__ccw-tools__team_msg({
   operation: "log",
@@ -134,13 +145,13 @@ mcp__ccw-tools__team_msg({
   }
 })
 ```
-5. Call `TeamCreate({ team_name: "ultra-analyze" })`
+7. Call `TeamCreate({ team_name: "ultra-analyze" })`
 
 ---
 
 ## Phase 3: Create Task Chain
 
-Execute `commands/dispatch.md` inline (Command Execution Protocol):
+Execute `@commands/dispatch.md` inline (Command Execution Protocol):
 1. Read `roles/coordinator/commands/dispatch.md`
 2. Follow dispatch Phase 2 -> Phase 3 -> Phase 4
 3. Result: all pipeline tasks created with correct blockedBy dependencies
@@ -152,7 +163,7 @@ Execute `commands/dispatch.md` inline (Command Execution Protocol):
 ### Initial Spawn
 
 Find first unblocked tasks and spawn their workers. Use SKILL.md Worker Spawn Template with:
-- `role_spec: ~  or <project>/.claude/skills/team-ultra-analyze/roles/<role>/role.md`
+- `role_spec: <skill_root>/roles/<role>/role.md`
 - `team_name: ultra-analyze`
 - `inner_loop: false`
 
@@ -164,7 +175,31 @@ All subsequent coordination is handled by `commands/monitor.md` handlers trigger
 
 ---
 
-## Phase 5: Report + Completion Action
+## Phase 5: Shutdown Workers + Report + Completion Action
+
+### Shutdown All Workers
+
+Before reporting, gracefully shut down all active teammates. This is a **multi-turn** process:
+
+1. Read team config: `~/.claude/teams/ultra-analyze/config.json`
+2. Build shutdown tracking list: `pending_shutdown = [<all member names except coordinator>]`
+3. For each member in pending_shutdown, send shutdown request:
+   ```javascript
+   SendMessage({
+     to: "<member-name>",
+     message: { type: "shutdown_request", reason: "Pipeline complete" }
+   })
+   ```
+4. **STOP** — wait for responses. Each `shutdown_response` triggers a new coordinator turn.
+5. On each subsequent turn (shutdown_response received):
+   - Remove responder from `pending_shutdown`
+   - If `pending_shutdown` is empty → proceed to **Report** section below
+   - If not empty → **STOP** again, wait for remaining responses
+6. If a member is unresponsive after 2 follow-ups, remove from tracking and proceed
+
+**Note**: Workers that completed Phase 5-F and reached STOP may have already terminated. SendMessage to a terminated agent is silently ignored — this is safe. Only resident agents (e.g., supervisor) require explicit shutdown.
+
+### Report
 
 1. Load session state -> count completed tasks, calculate duration
 2. List deliverables:

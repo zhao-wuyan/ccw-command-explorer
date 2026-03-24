@@ -2,7 +2,7 @@
 name: workflow-lite-plan
 description: Explore-first wave pipeline. Decomposes requirement into exploration angles, runs wave exploration via spawn_agents_on_csv, synthesizes findings into execution tasks with cross-phase context linking (E*→T*), then wave-executes via spawn_agents_on_csv.
 argument-hint: "[-y|--yes] [-c|--concurrency N] [--continue] \"requirement description\""
-allowed-tools: spawn_agents_on_csv, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
+allowed-tools: spawn_agents_on_csv, Read, Write, Edit, Bash, Glob, Grep, request_user_input
 ---
 
 ## Auto Mode
@@ -33,7 +33,7 @@ $workflow-lite-plan --continue "auth-20260228"
 
 Explore-first wave-based pipeline using `spawn_agents_on_csv`. Two-stage CSV execution: **explore.csv** (codebase discovery) → **tasks.csv** (implementation), with cross-phase context propagation via `context_from` linking (`E*` → `T*`).
 
-**Core workflow**: Decompose → Wave Explore → Synthesize & Plan → Wave Execute → Aggregate
+**Core workflow**: Decompose → **[Confirm]** → Wave Explore → Synthesize & Plan → **[Confirm]** → Wave Execute → Aggregate
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -43,7 +43,7 @@ Explore-first wave-based pipeline using `spawn_agents_on_csv`. Two-stage CSV exe
 │  Phase 1: Requirement → explore.csv                                  │
 │     ├─ Analyze complexity → select exploration angles (1-4)          │
 │     ├─ Generate explore.csv (1 row per angle)                        │
-│     └─ User validates (skip if -y)                                   │
+│     └─ ⛔ MANDATORY: User validates (skip ONLY if -y)                 │
 │                                                                      │
 │  Phase 2: Wave Explore (spawn_agents_on_csv)                         │
 │     ├─ For each explore wave:                                        │
@@ -57,7 +57,7 @@ Explore-first wave-based pipeline using `spawn_agents_on_csv`. Two-stage CSV exe
 │     ├─ Resolve conflicts between angles                              │
 │     ├─ Decompose into execution tasks with context_from: E*;T*       │
 │     ├─ Compute dependency waves (topological sort)                   │
-│     └─ User validates (skip if -y)                                   │
+│     └─ ⛔ MANDATORY: User validates (skip ONLY if -y)                 │
 │                                                                      │
 │  Phase 4: Wave Execute (spawn_agents_on_csv)                         │
 │     ├─ For each task wave:                                           │
@@ -283,18 +283,19 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
    Write(`${sessionFolder}/explore.csv`, [header, ...rows].join('\n'))
    ```
 
-3. **User Validation** (skip if AUTO_YES)
+3. **User Validation — MANDATORY CONFIRMATION GATE** (skip ONLY if AUTO_YES)
+
+   **CRITICAL: You MUST stop here and wait for user confirmation before proceeding to Phase 2. DO NOT skip this step. DO NOT auto-proceed.**
 
    ```javascript
    if (!AUTO_YES) {
      console.log(`\n## Exploration Plan (${angles.length} angles)\n`)
      angles.forEach(a => console.log(`  - [${a.id}] ${a.angle}: ${a.focus}`))
 
-     const answer = AskUserQuestion({
+     const answer = request_user_input({
        questions: [{
          question: "Approve exploration angles?",
          header: "Validation",
-         multiSelect: false,
          options: [
            { label: "Approve", description: "Proceed with wave exploration" },
            { label: "Modify", description: `Edit ${sessionFolder}/explore.csv manually, then --continue` },
@@ -567,7 +568,9 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
    Write(`${sessionFolder}/tasks.csv`, [header, ...rows].join('\n'))
    ```
 
-4. **User Validation** (skip if AUTO_YES)
+4. **User Validation — MANDATORY CONFIRMATION GATE** (skip ONLY if AUTO_YES)
+
+   **CRITICAL: You MUST stop here and wait for user confirmation before proceeding to Phase 4. DO NOT skip this step. DO NOT auto-proceed.**
 
    ```javascript
    if (!AUTO_YES) {
@@ -585,11 +588,10 @@ ${wt.map(t => `  - [${t.id}] ${t.title} (scope: ${t.scope}, from: ${t.context_fr
 }).join('\n')}
      `)
 
-     const answer = AskUserQuestion({
+     const answer = request_user_input({
        questions: [{
          question: `Proceed with ${decomposedTasks.length} tasks across ${maxWave} waves?`,
          header: "Confirm",
-         multiSelect: false,
          options: [
            { label: "Execute", description: "Proceed with wave execution" },
            { label: "Modify", description: `Edit ${sessionFolder}/tasks.csv then --continue` },
@@ -600,17 +602,18 @@ ${wt.map(t => `  - [${t.id}] ${t.title} (scope: ${t.scope}, from: ${t.context_fr
 
      if (answer.Confirm === "Modify") {
        console.log(`Edit: ${sessionFolder}/tasks.csv\nResume: $workflow-lite-plan --continue`)
-       return
+       return  // STOP — do not proceed to Phase 4
      } else if (answer.Confirm === "Cancel") {
-       return
+       return  // STOP — do not proceed to Phase 4
      }
+     // Only reach here if user selected "Execute"
    }
    ```
 
 **Success Criteria**:
 - tasks.csv created with context_from linking to E* rows
 - No circular dependencies
-- User approved (or AUTO_YES)
+- User explicitly approved (or AUTO_YES) — Phase 4 MUST NOT start without this
 
 ---
 
@@ -986,11 +989,10 @@ ${[...new Set(finalTasks.flatMap(t => (t.files_modified || '').split(';')).filte
 
    ```javascript
    if (!AUTO_YES && failed.length > 0) {
-     const answer = AskUserQuestion({
+     const answer = request_user_input({
        questions: [{
          question: `${failed.length} tasks failed. Next action?`,
          header: "Next Step",
-         multiSelect: false,
          options: [
            { label: "Retry Failed", description: `Re-execute ${failed.length} failed tasks with updated context` },
            { label: "View Report", description: "Display context.md" },
@@ -1114,7 +1116,8 @@ All agents across all phases share `discoveries.ndjson`. This eliminates redunda
 6. **Discovery Board is Append-Only**: Never clear, modify, or recreate discoveries.ndjson
 7. **Skip on Failure**: If a dependency failed, skip the dependent task (cascade)
 8. **Cleanup Temp Files**: Remove wave CSVs after results are merged
-9. **DO NOT STOP**: Continuous execution until all waves complete or all remaining tasks are skipped
+9. **MANDATORY CONFIRMATION GATES**: Unless `-y`/`--yes` is set, you MUST stop and wait for user confirmation after Phase 1 (exploration plan) and Phase 3 (execution plan) before proceeding. NEVER skip these gates. Phase 4 execution MUST NOT begin until user explicitly approves
+10. **Continuous Within Phase**: Within a phase (e.g., wave loop in Phase 4), execute continuously until all waves complete or all remaining tasks are skipped — but NEVER cross a confirmation gate without user approval
 
 ---
 

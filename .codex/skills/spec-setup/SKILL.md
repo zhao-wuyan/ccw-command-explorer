@@ -2,7 +2,7 @@
 name: spec-setup
 description: Initialize project-level state and configure specs via interactive questionnaire using cli-explore-agent
 argument-hint: "[--regenerate] [--skip-specs] [--reset]"
-allowed-tools: spawn_agent, wait, send_input, close_agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Workflow Spec Setup Command
@@ -122,12 +122,12 @@ let exploreAgent = null
 
 try {
   exploreAgent = spawn_agent({
+    agent_type: "cli_explore_agent",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Read: .workflow/project-tech.json (if exists, for --regenerate)
+1. Read: .workflow/project-tech.json (if exists, for --regenerate)
 
 ---
 
@@ -229,18 +229,18 @@ const specsData = JSON.parse(specsList)
 const isPopulated = (specsData.total || 0) > 5  // More than seed docs
 
 if (isPopulated && !reset) {
-  const mode = ASK_USER([
-    {
-      id: "mode", type: "select",
-      prompt: "Project guidelines already contain entries. How would you like to proceed?",
+  const mode = request_user_input({
+    questions: [{
+      header: "Guidelines",
+      id: "mode",
+      question: "Project guidelines already contain entries. How would you like to proceed?",
       options: [
-        { label: "Append", description: "Keep existing entries and add new ones from the wizard" },
+        { label: "Append(Recommended)", description: "Keep existing entries and add new ones from the wizard" },
         { label: "Reset", description: "Clear all existing entries and start fresh" },
         { label: "Cancel", description: "Exit without changes" }
-      ],
-      default: "Append"
-    }
-  ])  // BLOCKS (wait for user response)
+      ]
+    }]
+  })  // BLOCKS (wait for user response)
 
   // If Cancel -> exit
   // If Reset -> clear all arrays before proceeding
@@ -273,7 +273,7 @@ const buildTools = specData.overview?.technology_stack?.build_tools || []
 
 #### Step 5.2: Multi-Round Questionnaire
 
-Each round uses `ASK_USER` with project-aware options. The user can always select "Other" to provide custom input.
+Each round uses `request_user_input` with project-aware options. The user can always select "Other" to provide custom input.
 
 **CRITICAL**: After each round, collect the user's answers and convert them into guideline entries. Do NOT batch all rounds -- process each round's answers before proceeding to the next.
 
@@ -312,23 +312,26 @@ codingStyleOptions.push(
 )
 
 // Round 1: Coding Conventions
-const round1 = ASK_USER([
-  {
-    id: "coding_style", type: "multi-select",
-    prompt: `Your project uses ${primaryLang}. Which coding style conventions do you follow?`,
-    options: codingStyleOptions.slice(0, 4) // Max 4 options
-  },
-  {
-    id: "naming", type: "multi-select",
-    prompt: `What naming conventions does your ${primaryLang} project use?`,
-    options: [
-      { label: "camelCase variables", description: "Variables and functions use camelCase (e.g., getUserName)" },
-      { label: "PascalCase types", description: "Classes, interfaces, type aliases use PascalCase (e.g., UserService)" },
-      { label: "UPPER_SNAKE constants", description: "Constants use UPPER_SNAKE_CASE (e.g., MAX_RETRIES)" },
-      { label: "Prefix interfaces", description: "Prefix interfaces with 'I' (e.g., IUserService)" }
-    ]
-  }
-])  // BLOCKS (wait for user response)
+const round1 = request_user_input({
+  questions: [
+    {
+      header: "Code Style",
+      id: "coding_style",
+      question: `Your project uses ${primaryLang}. Which coding style conventions do you follow?`,
+      options: codingStyleOptions.slice(0, 3) // Max 3 options
+    },
+    {
+      header: "Naming",
+      id: "naming",
+      question: `What naming conventions does your ${primaryLang} project use?`,
+      options: [
+        { label: "camelCase variables", description: "Variables and functions use camelCase (e.g., getUserName)" },
+        { label: "PascalCase types", description: "Classes, interfaces, type aliases use PascalCase (e.g., UserService)" },
+        { label: "UPPER_SNAKE constants", description: "Constants use UPPER_SNAKE_CASE (e.g., MAX_RETRIES)" }
+      ]
+    }
+  ]
+})  // BLOCKS (wait for user response)
 ```
 
 **Process Round 1 answers** -> add to `conventions.coding_style` and `conventions.naming_patterns` arrays.
@@ -339,28 +342,30 @@ const round1 = ASK_USER([
 
 ```javascript
 // Round 2: File Structure & Documentation
-const round2 = ASK_USER([
-  {
-    id: "file_structure", type: "multi-select",
-    prompt: `Your project has a ${archStyle} architecture. What file organization rules apply?`,
-    options: [
-      { label: "Co-located tests", description: "Test files live next to source files (e.g., foo.ts + foo.test.ts)" },
-      { label: "Separate test dir", description: "Tests in a dedicated __tests__ or tests/ directory" },
-      { label: "One export per file", description: "Each file exports a single main component/class/function" },
-      { label: "Index barrels", description: "Use index.ts barrel files for clean imports from directories" }
-    ]
-  },
-  {
-    id: "documentation", type: "multi-select",
-    prompt: "What documentation standards does your project follow?",
-    options: [
-      { label: "JSDoc/docstring public APIs", description: "All public functions and classes must have JSDoc/docstrings" },
-      { label: "README per module", description: "Each major module/package has its own README" },
-      { label: "Inline comments for why", description: "Comments explain 'why', not 'what' -- code should be self-documenting" },
-      { label: "No comment requirement", description: "Code should be self-explanatory; comments only for non-obvious logic" }
-    ]
-  }
-])  // BLOCKS (wait for user response)
+const round2 = request_user_input({
+  questions: [
+    {
+      header: "File Org",
+      id: "file_structure",
+      question: `Your project has a ${archStyle} architecture. What file organization rules apply?`,
+      options: [
+        { label: "Co-located tests", description: "Test files live next to source files (e.g., foo.ts + foo.test.ts)" },
+        { label: "Separate test dir", description: "Tests in a dedicated __tests__ or tests/ directory" },
+        { label: "One export per file", description: "Each file exports a single main component/class/function" }
+      ]
+    },
+    {
+      header: "Docs",
+      id: "documentation",
+      question: "What documentation standards does your project follow?",
+      options: [
+        { label: "JSDoc/docstring public APIs", description: "All public functions and classes must have JSDoc/docstrings" },
+        { label: "Inline comments for why", description: "Comments explain 'why', not 'what' -- code should be self-documenting" },
+        { label: "No comment requirement", description: "Code should be self-explanatory; comments only for non-obvious logic" }
+      ]
+    }
+  ]
+})  // BLOCKS (wait for user response)
 ```
 
 **Process Round 2 answers** -> add to `conventions.file_structure` and `conventions.documentation`.
@@ -390,23 +395,26 @@ archOptions.push(
 )
 
 // Round 3: Architecture & Tech Stack Constraints
-const round3 = ASK_USER([
-  {
-    id: "architecture", type: "multi-select",
-    prompt: `Your ${archStyle} architecture uses ${archPatterns.join(', ') || 'various'} patterns. What architecture constraints apply?`,
-    options: archOptions.slice(0, 4)
-  },
-  {
-    id: "tech_stack", type: "multi-select",
-    prompt: `Tech stack: ${frameworks.join(', ')}. What technology constraints apply?`,
-    options: [
-      { label: "No new deps without review", description: "Adding new dependencies requires explicit justification and review" },
-      { label: "Pin dependency versions", description: "All dependencies must use exact versions, not ranges" },
-      { label: "Prefer native APIs", description: "Use built-in/native APIs over third-party libraries when possible" },
-      { label: "Framework conventions", description: `Follow official ${frameworks[0] || 'framework'} conventions and best practices` }
-    ]
-  }
-])  // BLOCKS (wait for user response)
+const round3 = request_user_input({
+  questions: [
+    {
+      header: "Architecture",
+      id: "architecture",
+      question: `Your ${archStyle} architecture uses ${archPatterns.join(', ') || 'various'} patterns. What architecture constraints apply?`,
+      options: archOptions.slice(0, 3)
+    },
+    {
+      header: "Tech Stack",
+      id: "tech_stack",
+      question: `Tech stack: ${frameworks.join(', ')}. What technology constraints apply?`,
+      options: [
+        { label: "No new deps without review", description: "Adding new dependencies requires explicit justification and review" },
+        { label: "Pin dependency versions", description: "All dependencies must use exact versions, not ranges" },
+        { label: "Prefer native APIs", description: "Use built-in/native APIs over third-party libraries when possible" }
+      ]
+    }
+  ]
+})  // BLOCKS (wait for user response)
 ```
 
 **Process Round 3 answers** -> add to `constraints.architecture` and `constraints.tech_stack`.
@@ -417,28 +425,30 @@ const round3 = ASK_USER([
 
 ```javascript
 // Round 4: Performance & Security Constraints
-const round4 = ASK_USER([
-  {
-    id: "performance", type: "multi-select",
-    prompt: "What performance requirements does your project have?",
-    options: [
-      { label: "API response time", description: "API endpoints must respond within 200ms (p95)" },
-      { label: "Bundle size limit", description: "Frontend bundle size must stay under 500KB gzipped" },
-      { label: "Lazy loading", description: "Large modules/routes must use lazy loading / code splitting" },
-      { label: "No N+1 queries", description: "Database access must avoid N+1 query patterns" }
-    ]
-  },
-  {
-    id: "security", type: "multi-select",
-    prompt: "What security requirements does your project enforce?",
-    options: [
-      { label: "Input sanitization", description: "All user input must be validated and sanitized before use" },
-      { label: "No secrets in code", description: "No API keys, passwords, or tokens in source code -- use env vars" },
-      { label: "Auth on all endpoints", description: "All API endpoints require authentication unless explicitly public" },
-      { label: "Parameterized queries", description: "All database queries must use parameterized/prepared statements" }
-    ]
-  }
-])  // BLOCKS (wait for user response)
+const round4 = request_user_input({
+  questions: [
+    {
+      header: "Performance",
+      id: "performance",
+      question: "What performance requirements does your project have?",
+      options: [
+        { label: "API response time", description: "API endpoints must respond within 200ms (p95)" },
+        { label: "Bundle size limit", description: "Frontend bundle size must stay under 500KB gzipped" },
+        { label: "No N+1 queries", description: "Database access must avoid N+1 query patterns" }
+      ]
+    },
+    {
+      header: "Security",
+      id: "security",
+      question: "What security requirements does your project enforce?",
+      options: [
+        { label: "Input sanitization", description: "All user input must be validated and sanitized before use" },
+        { label: "No secrets in code", description: "No API keys, passwords, or tokens in source code -- use env vars" },
+        { label: "Auth on all endpoints", description: "All API endpoints require authentication unless explicitly public" }
+      ]
+    }
+  ]
+})  // BLOCKS (wait for user response)
 ```
 
 **Process Round 4 answers** -> add to `constraints.performance` and `constraints.security`.
@@ -449,18 +459,20 @@ const round4 = ASK_USER([
 
 ```javascript
 // Round 5: Quality Rules
-const round5 = ASK_USER([
-  {
-    id: "quality", type: "multi-select",
-    prompt: `Testing with ${testFrameworks.join(', ') || 'your test framework'}. What quality rules apply?`,
-    options: [
-      { label: "Min test coverage", description: "Minimum 80% code coverage for new code; no merging below threshold" },
-      { label: "No skipped tests", description: "Tests must not be skipped (.skip/.only) in committed code" },
-      { label: "Lint must pass", description: "All code must pass linter checks before commit (enforced by pre-commit)" },
-      { label: "Type check must pass", description: "Full type checking (tsc --noEmit) must pass with zero errors" }
-    ]
-  }
-])  // BLOCKS (wait for user response)
+const round5 = request_user_input({
+  questions: [
+    {
+      header: "Quality",
+      id: "quality",
+      question: `Testing with ${testFrameworks.join(', ') || 'your test framework'}. What quality rules apply?`,
+      options: [
+        { label: "Min test coverage", description: "Minimum 80% code coverage for new code; no merging below threshold" },
+        { label: "No skipped tests", description: "Tests must not be skipped (.skip/.only) in committed code" },
+        { label: "Lint must pass", description: "All code must pass linter checks before commit (enforced by pre-commit)" }
+      ]
+    }
+  ]
+})  // BLOCKS (wait for user response)
 ```
 
 **Process Round 5 answers** -> add to `quality_rules` array as `{ rule, scope, enforced_by }` objects.

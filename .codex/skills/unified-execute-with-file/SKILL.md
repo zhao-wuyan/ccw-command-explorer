@@ -369,18 +369,19 @@ tasks.forEach(task => {
 
 ```javascript
 if (!dryRun) {
-  AskUserQuestion({
+  request_user_input({
     questions: [{
-      question: `Execute ${tasks.length} tasks?\n\n${conflicts.length ? `⚠ ${conflicts.length} file conflicts\n` : ''}Execution order:\n${executionOrder.map((id, i) => `  ${i+1}. ${id}: ${tasks.find(t => t.id === id).title}`).join('\n')}`,
       header: "Confirm",
-      multiSelect: false,
+      id: "confirm_execute",
+      question: `Execute ${tasks.length} tasks?`,
       options: [
-        { label: "Execute", description: "Start serial execution" },
+        { label: "Execute (Recommended)", description: "Start serial execution" },
         { label: "Dry Run", description: "Simulate without changes" },
         { label: "Cancel", description: "Abort execution" }
       ]
     }]
   })
+  // answer.answers.confirm_execute.answers[0] → selected label
 }
 ```
 
@@ -565,19 +566,19 @@ ${task.convergence.criteria.map((c, i) => `- [${convergenceResults.verified[i] ?
   failedTasks.add(task.id)
 
   // Ask user
-  AskUserQuestion({
+  request_user_input({
     questions: [{
-      question: `Task ${task.id} failed convergence verification. How to proceed?`,
       header: "Failure",
-      multiSelect: false,
+      id: "handle_failure",
+      question: `Task ${task.id} failed convergence verification. How to proceed?`,
       options: [
-        { label: "Skip & Continue", description: "Skip this task, continue with next" },
+        { label: "Skip & Continue (Recommended)", description: "Skip this task, continue with next" },
         { label: "Retry", description: "Retry this task" },
-        { label: "Accept", description: "Mark as completed despite failure" },
         { label: "Abort", description: "Stop execution, keep progress" }
       ]
     }]
   })
+  // answer.answers.handle_failure.answers[0] → selected label
 }
 ```
 
@@ -697,19 +698,19 @@ tasks.forEach(task => {
 ### Step 4.4: Post-Completion Options
 
 ```javascript
-AskUserQuestion({
+request_user_input({
   questions: [{
-    question: `Execution complete: ${completedTasks.size}/${tasks.length} succeeded (${Math.round(completedTasks.size / tasks.length * 100)}%).\nNext step:`,
-    header: "Post-Execute",
-    multiSelect: false,
+    header: "Post Execute",
+    id: "post_execute",
+    question: `Execution complete: ${completedTasks.size}/${tasks.length} succeeded. Next step?`,
     options: [
+      { label: "Done (Recommended)", description: "End workflow" },
       { label: "Retry Failed", description: `Re-execute ${failedTasks.size} failed tasks` },
-      { label: "View Events", description: "Display execution-events.md" },
-      { label: "Create Issue", description: "Create issue from failed tasks" },
-      { label: "Done", description: "End workflow" }
+      { label: "Create Issue", description: "Create issue from failed tasks" }
     ]
   }]
 })
+// answer.answers.post_execute.answers[0] → selected label
 ```
 
 | Selection | Action |

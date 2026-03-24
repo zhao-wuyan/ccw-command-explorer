@@ -9,6 +9,10 @@ Apply simplification rules from analysisResult to produce optimized content. Wri
 - Fix pseudo-code format issues
 - Write optimized content back to target file
 
+## Pre-Step: Load Context
+
+Run `ccw spec load --category validation` for verification rules and acceptance criteria to validate optimization preserves functional integrity.
+
 ## Execution
 
 ### Step 2.1: Apply Operations in Order

@@ -105,7 +105,7 @@ Pipeline done. Generate report and completion action.
 
 1. Shutdown resident supervisor (if active):
    ```
-   SendMessage({ type: "shutdown_request", recipient: "supervisor", content: "Pipeline complete" })
+   SendMessage({ to: "supervisor", message: { type: "shutdown_request", reason: "Pipeline complete" } })
    ```
 2. Generate summary (deliverables, stats, discussions)
 3. Read session.completion_action:

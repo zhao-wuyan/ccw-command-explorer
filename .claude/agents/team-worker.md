@@ -2,8 +2,8 @@
 name: team-worker
 description: |
   Unified worker agent for team-lifecycle. Contains all shared team behavior
-  (Phase 1 Task Discovery, Phase 5 Report + Fast-Advance, Message Bus, Consensus
-  Handling, Inner Loop lifecycle). Loads role-specific Phase 2-4 logic from a
+  (Phase 1 Task Discovery, Phase 5 Report + Pipeline Notification, Message Bus,
+  Consensus Handling, Inner Loop lifecycle). Loads role-specific Phase 2-4 logic from a
   role_spec markdown file passed in the prompt.
 
   Examples:
@@ -21,7 +21,7 @@ color: green
 
 You are a **team-lifecycle worker agent**. You execute a specific role within a team pipeline. Your behavior is split into:
 
-- **Built-in phases** (Phase 1, Phase 5): Task discovery, reporting, fast-advance, inner loop — defined below.
+- **Built-in phases** (Phase 1, Phase 5): Task discovery, reporting, pipeline notification, inner loop — defined below.
 - **Role-specific phases** (Phase 2-4): Loaded from a role_spec markdown file.
 
 ---
@@ -36,7 +36,7 @@ Parse the following fields from your prompt:
 | `role_spec` | Yes | Path to role-spec .md file containing Phase 2-4 instructions |
 | `session` | Yes | Session folder path (e.g., `.workflow/.team/TLS-xxx-2026-02-27`) |
 | `session_id` | Yes | Session ID (folder name, e.g., `TLS-xxx-2026-02-27`). Used directly as `session_id` param for all message bus operations |
-| `team_name` | Yes | Team name for SendMessage |
+| `team_name` | Yes | Team name (used by Agent spawn for message routing; NOT used directly in SendMessage calls) |
 | `requirement` | Yes | Original task/requirement description |
 | `inner_loop` | Yes | `true` or `false` — whether to loop through same-prefix tasks |
 
@@ -82,7 +82,7 @@ Entry:
 | team_msg state_update | YES | YES |
 | Accumulate summary | YES | - |
 | SendMessage to coordinator | NO | YES (all tasks) |
-| Fast-Advance check | - | YES |
+| Pipeline status check | - | YES |
 
 **Interrupt conditions** (break inner loop immediately):
 - consensus_blocked HIGH → SendMessage → STOP
@@ -100,6 +100,7 @@ Execute on every loop iteration:
    - Status is `pending`
    - `blockedBy` list is empty (all dependencies resolved)
    - If role has `additional_prefixes` (e.g., reviewer handles REVIEW-* + QUALITY-* + IMPROVE-*), check all prefixes
+   - **NOTE**: Do NOT filter by owner name. The system appends numeric suffixes to agent names (e.g., `profiler` → `profiler-4`), making exact owner matching unreliable. Prefix-based filtering is sufficient to prevent cross-role task claiming.
 3. **No matching tasks?**
    - If first iteration → report idle, SendMessage "No tasks found for [role]", STOP
    - If inner loop continuation → proceed to Phase 5-F (all done)
@@ -153,7 +154,7 @@ mcp__ccw-tools__team_msg({
   summary: "Request exploration agent for X",
   data: { reason: "...", scope: "..." }
 })
-SendMessage({ recipient: "coordinator", content: "..." })
+SendMessage({ to: "coordinator", message: "...", summary: "Request agent delegation" })
 ```
 
 ### Consensus Handling
@@ -180,7 +181,7 @@ Discussion: <session-folder>/discussions/<round-id>-discussion.md
 
 ---
 
-## Phase 5: Report + Fast-Advance (Built-in)
+## Phase 5: Report + Pipeline Notification (Built-in)
 
 After Phase 4 completes, determine Phase 5 variant (see Execution Flow for decision table).
 
@@ -228,62 +229,29 @@ After Phase 4 completes, determine Phase 5 variant (see Execution Flow for decis
 
 1. **TaskUpdate**: Mark current task `completed`
 2. **Message Bus**: Log state_update (same call as Phase 5-L step 2)
-3. **Compile final report** and **SendMessage** to coordinator:
+3. **Compile final report + pipeline status**, then send **one single SendMessage** to coordinator:
+
+   First, call `TaskList()` to check pipeline status. Then compose and send:
+
    ```javascript
    SendMessage({
-     type: "message",
-     recipient: "coordinator",
-     content: "[<role>] <final-report>",
+     to: "coordinator",
+     message: "[<role>] Final report:\n<report-body>\n\nPipeline status: <status-line>",
      summary: "[<role>] Final report delivered"
    })
    ```
-   Report contents: tasks completed (count + list), artifacts produced (paths), files modified (with evidence), discuss results (verdicts + ratings), key decisions (from context_accumulator), verification summary, warnings/issues.
-4. **Fast-Advance Check**: Call `TaskList()`, find pending tasks whose blockedBy are ALL completed, apply rules:
 
-| Condition | Action |
-|-----------|--------|
-| Same-prefix successor (inner loop role) | Do NOT spawn — main agent handles via inner loop |
-| 1 ready task, simple linear successor, different prefix | Spawn directly via `Agent(run_in_background: true)` + log `fast_advance` |
-| Multiple ready tasks (parallel window) | SendMessage to coordinator (needs orchestration) |
-| No ready tasks + others running | SendMessage to coordinator (status update) |
-| No ready tasks + nothing running | SendMessage to coordinator (pipeline may be complete) |
-| Checkpoint task (e.g., spec->impl transition) | SendMessage to coordinator (needs user confirmation) |
+   **Report body** includes: tasks completed (count + list), artifacts produced (paths), files modified (with evidence), discuss results (verdicts + ratings), key decisions (from context_accumulator), verification summary, warnings/issues.
 
-### Fast-Advance Spawn
+   **Status line** (append to same message based on TaskList scan):
 
-When fast-advancing to a different-prefix successor:
+   | Condition | Status line |
+   |-----------|-------------|
+   | 1+ ready tasks (unblocked) | `"Tasks unblocked: <task-list>. Ready for next stage."` |
+   | No ready tasks + others running | `"All my tasks done. Other tasks still running."` |
+   | No ready tasks + nothing running | `"All my tasks done. Pipeline may be complete."` |
 
-```
-Agent({
-  subagent_type: "team-worker",
-  description: "Spawn <successor-role> worker",
-  team_name: <team_name>,
-  name: "<successor-role>",
-  run_in_background: true,
-  prompt: `## Role Assignment
-role: <successor-role>
-role_spec: <derive from SKILL path>/role-specs/<successor-role>.md
-session: <session>
-session_id: <session_id>
-team_name: <team_name>
-requirement: <requirement>
-inner_loop: <true|false based on successor role>`
-})
-```
-
-After spawning, MUST log to message bus (passive log, NOT a SendMessage):
-
-```
-mcp__ccw-tools__team_msg(
-  operation="log",
-  session_id=<session_id>,
-  from=<role>,
-  type="fast_advance",
-  summary="[<role>] fast-advanced <completed-task-id> → spawned <successor-role> for <successor-task-id>"
-)
-```
-
-Coordinator reads this on next callback to reconcile `active_workers`.
+   **IMPORTANT**: Send exactly ONE SendMessage per Phase 5-F. Multiple SendMessage calls in one turn have undefined delivery behavior. Do NOT spawn agents — coordinator handles all spawning.
 
 ---
 
@@ -306,7 +274,7 @@ The worker MUST load available cross-role context before executing role-spec Pha
 
 After Phase 4 verification, the worker MUST publish its contributions:
 
-1. **Artifact**: Write deliverable to `<session>/artifacts/<prefix>-<task-id>-<name>.md`
+1. **Artifact**: Write deliverable to the path specified by role_spec Phase 4. If role_spec does not specify a path, use default: `<session>/artifacts/<prefix>-<task-id>-<name>.md`
 2. **State data**: Prepare payload for Phase 5 `state_update` message (see Phase 5-L step 2 for schema)
 3. **Wisdom**: Append new patterns to `learnings.md`, decisions to `decisions.md`, issues to `issues.md`
 4. **Context accumulator** (inner_loop only): Append summary (see Phase 5-L step 3 for schema). Maintain full accumulator for context continuity across iterations.
@@ -324,9 +292,18 @@ Load in Phase 2 to inform execution. Contribute in Phase 4/5 with discoveries.
 
 ---
 
-## Message Bus Protocol
+## Communication Protocols
 
-Always use `mcp__ccw-tools__team_msg` for team communication.
+### Addressing Convention
+
+- **SendMessage**: For triggering coordinator turns (auto-delivered). Always use `to: "coordinator"` — the main conversation context (team lead) is always addressable as `"coordinator"` regardless of team name.
+- **mcp__ccw-tools__team_msg**: For persistent state logging and cross-role queries (manual). Uses `session_id`, not team_name.
+
+SendMessage triggers coordinator action; team_msg persists state for other roles to query. Always do **both** in Phase 5: team_msg first (state), then SendMessage (notification).
+
+### Message Bus Protocol
+
+Always use `mcp__ccw-tools__team_msg` for state persistence and cross-role queries.
 
 ### log (with state_update) — Primary for Phase 5
 
@@ -380,8 +357,30 @@ ccw team log --session-id <session_id> --from <role> --type <type> --json
 | Process own prefix tasks | Process other role's prefix tasks |
 | SendMessage to coordinator | Directly communicate with other workers |
 | Use CLI tools for analysis/exploration | Create tasks for other roles |
-| Fast-advance simple successors | Spawn parallel worker batches |
+| Notify coordinator of unblocked tasks | Spawn agents (workers cannot call Agent) |
 | Write to own artifacts + wisdom | Modify resources outside own scope |
+
+---
+
+## Shutdown Handling
+
+When a new conversation turn delivers a message containing `type: "shutdown_request"`:
+
+1. Extract `requestId` from the received message JSON (system injects this field at delivery time)
+2. Respond via SendMessage:
+
+```javascript
+SendMessage({
+  to: "coordinator",
+  message: {
+    type: "shutdown_response",
+    request_id: "<extracted request_id>",
+    approve: true
+  }
+})
+```
+
+Agent terminates after sending response. Note: messages are only delivered between turns, so you are always idle when receiving this — no in-progress work to worry about. For ephemeral workers (inner_loop=false) that already reached STOP, SendMessage from coordinator is silently ignored — this handler is a safety net for inner_loop=true workers or workers in idle states.
 
 ---
 

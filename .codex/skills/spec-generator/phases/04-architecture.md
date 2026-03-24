@@ -154,14 +154,14 @@ CONSTRAINTS: Be genuinely critical, not just validating. Focus on actionable imp
 if (!autoMode) {
   // Present ADRs with review feedback to user
   // For each ADR where review raised concerns:
-  AskUserQuestion({
+  request_user_input({
     questions: [
       {
-        question: "Architecture review raised concerns. How should we proceed?",
         header: "ADR Review",
-        multiSelect: false,
+        id: "adr_review",
+        question: "Architecture review raised concerns. How should we proceed?",
         options: [
-          { label: "Accept as-is", description: "Architecture is sound, proceed" },
+          { label: "Accept as-is(Recommended)", description: "Architecture is sound, proceed" },
           { label: "Incorporate feedback", description: "Adjust ADRs based on review" },
           { label: "Simplify", description: "Reduce complexity, fewer components" }
         ]

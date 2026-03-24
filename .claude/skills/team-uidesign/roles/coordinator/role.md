@@ -45,7 +45,7 @@ When coordinator needs to execute a command (analyze, dispatch, monitor):
 | Interrupted session | Active/paused session exists in .workflow/.team/UDS-* | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume/adapt/complete: load `commands/monitor.md`, execute matched handler, STOP.
+For callback/check/resume/adapt/complete: load `@commands/monitor.md`, execute matched handler, STOP.
 
 ## Phase 0: Session Resume Check
 
@@ -84,13 +84,16 @@ TEXT-LEVEL ONLY. No source code reading.
      ]
    })
    ```
-4. Delegate to `commands/analyze.md` -> output scope context
+4. Delegate to `@commands/analyze.md` -> output scope context
 5. Record: pipeline_mode, industry, complexity
 
 ## Phase 2: Create Team + Initialize Session
 
-1. Generate session ID: `UDS-<slug>-<YYYY-MM-DD>`
-2. Create session folder structure:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-uidesign`
+2. Generate session ID: `UDS-<slug>-<YYYY-MM-DD>`
+3. Create session folder structure:
    ```
    .workflow/.team/UDS-<slug>-<date>/research/
    .workflow/.team/UDS-<slug>-<date>/design/component-specs/
@@ -101,13 +104,13 @@ TEXT-LEVEL ONLY. No source code reading.
    .workflow/.team/UDS-<slug>-<date>/wisdom/
    .workflow/.team/UDS-<slug>-<date>/.msg/
    ```
-3. Initialize `.msg/meta.json` via team_msg state_update with pipeline metadata
-4. TeamCreate(team_name="uidesign")
-5. Do NOT spawn workers yet - deferred to Phase 4
+4. Initialize `.msg/meta.json` via team_msg state_update with pipeline metadata
+5. TeamCreate(team_name="uidesign")
+6. Do NOT spawn workers yet - deferred to Phase 4
 
 ## Phase 3: Create Task Chain
 
-Delegate to `commands/dispatch.md`. Task chains by mode:
+Delegate to `@commands/dispatch.md`. Task chains by mode:
 
 | Mode | Task Chain |
 |------|------------|
@@ -117,7 +120,7 @@ Delegate to `commands/dispatch.md`. Task chains by mode:
 
 ## Phase 4: Spawn-and-Stop
 
-Delegate to `commands/monitor.md#handleSpawnNext`:
+Delegate to `@commands/monitor.md#handleSpawnNext`:
 1. Find ready tasks (pending + blockedBy resolved)
 2. Spawn team-worker agents (see SKILL.md Spawn Template)
 3. Output status summary

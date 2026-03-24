@@ -1,0 +1,185 @@
+# Monitor Pipeline
+
+Synchronous pipeline coordination using spawn_agent + wait_agent.
+
+## Constants
+
+- WORKER_AGENT: team_worker
+- FAST_ADVANCE_AWARE: true
+
+## Handler Router
+
+| Source | Handler |
+|--------|---------|
+| "capability_gap" | handleAdapt |
+| "check" or "status" | handleCheck |
+| "resume" or "continue" | handleResume |
+| All tasks completed | handleComplete |
+| Default | handleSpawnNext |
+
+## Role-Worker Map
+
+| Prefix | Role | Role Spec | inner_loop |
+|--------|------|-----------|------------|
+| SCAN-* | scanner | `<project>/.codex/skills/team-review/roles/scanner/role.md` | false |
+| REV-* | reviewer | `<project>/.codex/skills/team-review/roles/reviewer/role.md` | false |
+| FIX-* | fixer | `<project>/.codex/skills/team-review/roles/fixer/role.md` | true |
+
+## handleCheck
+
+Read-only status report from tasks.json, then STOP.
+
+1. Read tasks.json
+2. Count tasks by status (pending, in_progress, completed, failed)
+
+Output:
+```
+[coordinator] Review Pipeline Status
+[coordinator] Mode: <pipeline_mode>
+[coordinator] Progress: <completed>/<total> (<percent>%)
+
+[coordinator] Pipeline Graph:
+  SCAN-001: <done|run|wait|deleted> <summary>
+  REV-001:  <done|run|wait|deleted> <summary>
+  FIX-001:  <done|run|wait|deleted> <summary>
+
+  done=completed  >>>=running  o=pending  x=deleted
+
+[coordinator] Active Agents: <list from active_agents>
+[coordinator] Ready to spawn: <subjects>
+[coordinator] Commands: 'resume' to advance | 'check' to refresh
+```
+
+Then STOP.
+
+## handleResume
+
+1. Read tasks.json, check active_agents
+2. No active agents -> handleSpawnNext
+3. Has active agents -> check each status
+   - completed -> mark done in tasks.json
+   - in_progress -> still running
+   - other -> worker failure -> reset to pending
+4. Some completed -> handleSpawnNext
+5. All running -> report status, STOP
+
+## handleSpawnNext
+
+Find ready tasks, spawn workers, wait for results, process.
+
+1. Read tasks.json:
+   - completedTasks: status = completed
+   - inProgressTasks: status = in_progress
+   - deletedTasks: status = deleted
+   - readyTasks: status = pending AND all deps in completedTasks
+
+2. No ready + work in progress -> report waiting, STOP
+3. No ready + nothing in progress -> handleComplete
+4. Has ready -> take first ready task:
+   a. Determine role from prefix (use Role-Worker Map)
+   b. Update task status to in_progress in tasks.json
+   c. team_msg log -> task_unblocked
+   d. Spawn team_worker:
+
+```javascript
+// 1) Update status in tasks.json
+state.tasks[taskId].status = 'in_progress'
+
+// 2) Spawn worker
+const agentId = spawn_agent({
+  agent_type: "team_worker",
+  items: [
+    { type: "text", text: `## Role Assignment
+role: ${role}
+role_spec: ${skillRoot}/roles/${role}/role.md
+session: ${sessionFolder}
+session_id: ${sessionId}
+requirement: ${taskDescription}
+inner_loop: ${innerLoop}` },
+
+    { type: "text", text: `## Current Task
+- Task ID: ${taskId}
+- Task: ${taskSubject}
+
+Read role_spec file to load Phase 2-4 domain instructions.
+Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).` }
+  ]
+})
+
+// 3) Track agent
+state.active_agents[taskId] = { agentId, role, started_at: now }
+
+// 4) Wait for completion
+wait_agent({ ids: [agentId] })
+
+// 5) Collect results
+state.tasks[taskId].status = 'completed'
+delete state.active_agents[taskId]
+```
+
+   e. Check for checkpoints after worker completes:
+      - scanner completes -> read meta.json for findings_count:
+        - findings_count === 0 -> mark remaining REV-*/FIX-* tasks as deleted -> handleComplete
+        - findings_count > 0 -> proceed to handleSpawnNext
+      - reviewer completes AND pipeline_mode === 'full':
+        - autoYes flag set -> write fix-manifest.json, set fix_scope='all' -> handleSpawnNext
+        - NO autoYes -> request_user_input:
+          ```
+          question: "<N> findings reviewed. Proceed with fix?"
+          options:
+            - "Fix all": set fix_scope='all'
+            - "Fix critical/high only": set fix_scope='critical,high'
+            - "Skip fix": mark FIX-* tasks as deleted -> handleComplete
+          ```
+          Write fix_scope to meta.json, write fix-manifest.json, -> handleSpawnNext
+      - fixer completes -> handleSpawnNext (checks for completion naturally)
+
+5. Update tasks.json, output summary, STOP
+
+## handleComplete
+
+Pipeline done. Generate report and completion action.
+
+1. All tasks completed or deleted (no pending, no in_progress)
+2. Read final session state from meta.json
+3. Generate pipeline summary: mode, target, findings_count, stages_completed, fix results (if applicable), deliverable paths
+4. Update session: pipeline_status='complete', completed_at=<timestamp>
+5. Read session.completion_action:
+   - interactive -> request_user_input (Archive/Keep/Export)
+   - auto_archive -> Archive & Clean
+   - auto_keep -> Keep Active (status=paused)
+
+## handleAdapt
+
+Capability gap reported mid-pipeline.
+
+1. Parse gap description
+2. Check if existing role covers it -> redirect
+3. Role count < 4 -> generate dynamic role-spec in <session>/role-specs/
+4. Create new task in tasks.json, spawn worker
+5. Role count >= 4 -> merge or pause
+
+## Fast-Advance Reconciliation
+
+On every coordinator wake:
+1. Read tasks.json for completed tasks
+2. Sync active_agents with actual state
+3. No duplicate spawns
+
+## State Persistence
+
+After every handler execution:
+1. Reconcile active_agents with actual tasks.json states
+2. Remove entries for completed/deleted tasks
+3. Write updated tasks.json
+4. STOP (wait for next event)
+
+## Error Handling
+
+| Scenario | Resolution |
+|----------|------------|
+| Session file not found | Error, suggest re-initialization |
+| 0 findings after scan | Delete remaining stages, complete pipeline |
+| User declines fix | Delete FIX-* tasks, complete with review-only results |
+| Pipeline stall | Check deps chains, report to user |
+| Worker failure | Reset task to pending, respawn on next resume |

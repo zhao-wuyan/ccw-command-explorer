@@ -20,7 +20,7 @@ Interactive brainstorming workflow with **documented thought evolution**. Expand
 
 **Codex-Specific Features**:
 - Parallel subagent execution via `spawn_agent` + batch `wait({ ids: [...] })`
-- Role loading via path (agent reads `~/.codex/agents/*.md` itself)
+- Role loading via TOML agent definition (agent_type parameter in spawn_agent)
 - Deep interaction with `send_input` for multi-round refinement within single agent
 - Explicit lifecycle management with `close_agent`
 
@@ -208,11 +208,9 @@ Generate key questions that guide the brainstorming exploration. Use a subagent 
 
 ```javascript
 const vectorAgent = spawn_agent({
+  agent_type: "cli_explore_agent",
   message: `
 ## TASK ASSIGNMENT
-
-### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
 
 ---
 
@@ -302,9 +300,9 @@ Spawn 3 perspective agents in parallel: Creative + Pragmatic + Systematic.
 
 | Perspective | Role File | Focus |
 |-------------|-----------|-------|
-| Creative | `~/.codex/agents/cli-explore-agent.md` | Innovation, cross-domain inspiration, challenging assumptions |
-| Pragmatic | `~/.codex/agents/cli-explore-agent.md` | Implementation feasibility, effort estimates, blockers |
-| Systematic | `~/.codex/agents/cli-explore-agent.md` | Problem decomposition, patterns, scalability |
+| Creative | `cli_explore_agent` | Innovation, cross-domain inspiration, challenging assumptions |
+| Pragmatic | `cli_explore_agent` | Implementation feasibility, effort estimates, blockers |
+| Systematic | `cli_explore_agent` | Problem decomposition, patterns, scalability |
 
 **Parallel Subagent Execution**:
 
@@ -353,13 +351,13 @@ const perspectives = [
 // Parallel spawn - all agents start immediately
 const agentIds = perspectives.map(perspective => {
   return spawn_agent({
+    agent_type: "cli_explore_agent",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Run: `ccw spec load --category "exploration planning"`
-3. Read project tech context from loaded specs
+1. Run: `ccw spec load --category "exploration planning"`
+2. Read project tech context from loaded specs
 
 ---
 
@@ -560,13 +558,13 @@ const deepDiveResult = wait({ ids: [perspectiveAgent], timeout_ms: 600000 })
 
 ```javascript
 const deepDiveAgent = spawn_agent({
+  agent_type: "cli_explore_agent",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Read: ${sessionFolder}/perspectives.json (prior findings)
-3. Run: `ccw spec load --category "exploration planning"`
+1. Read: ${sessionFolder}/perspectives.json (prior findings)
+2. Run: `ccw spec load --category "exploration planning"`
 
 ---
 
@@ -606,12 +604,12 @@ When user selects "challenge", spawn a dedicated challenge agent.
 
 ```javascript
 const challengeAgent = spawn_agent({
+  agent_type: "cli_explore_agent",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Read: ${sessionFolder}/perspectives.json (ideas to challenge)
+1. Read: ${sessionFolder}/perspectives.json (ideas to challenge)
 
 ---
 
@@ -659,12 +657,12 @@ When user selects "merge", synthesize complementary ideas.
 
 ```javascript
 const mergeAgent = spawn_agent({
+  agent_type: "cli_explore_agent",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Read: ${sessionFolder}/perspectives.json (source ideas)
+1. Read: ${sessionFolder}/perspectives.json (source ideas)
 
 ---
 
@@ -796,15 +794,18 @@ Append conclusions section and finalize the thinking document.
 
 Offer user follow-up actions based on brainstorming results.
 
-**Available Options**:
+**Available Options** (this skill is brainstorming-only — NEVER auto-launch other skills):
 
 | Option | Purpose | Action |
 |--------|---------|--------|
-| **创建实施计划** | Plan implementation of top idea | Launch `workflow-lite-plan` |
-| **创建Issue** | Track top ideas for later | Launch `issue:new` with ideas |
-| **深入分析** | Analyze top idea in detail | Launch `workflow:analyze-with-file` |
+| **显示后续命令** | Show available next-step commands | Display command list for user to manually run |
 | **导出分享** | Generate shareable report | Create formatted report document |
 | **完成** | No further action | End workflow |
+
+**Next-step commands to display** (user runs manually, NOT auto-launched):
+- `/workflow-lite-plan "..."` → Generate implementation plan
+- `/issue:new "..."` → Track top ideas as issues
+- `/workflow:analyze-with-file "..."` → Analyze top idea in detail
 
 **Success Criteria**:
 - `synthesis.json` created with complete synthesis
@@ -885,7 +886,7 @@ Dimensions guide brainstorming scope and focus:
 ```javascript
 // Safe parallel execution with error handling
 try {
-  const agentIds = perspectives.map(p => spawn_agent({ message: buildPrompt(p) }))
+  const agentIds = perspectives.map(p => spawn_agent({ agent_type: "cli_explore_agent", message: buildPrompt(p) }))
 
   const results = wait({ ids: agentIds, timeout_ms: 600000 })
 
@@ -1011,7 +1012,7 @@ Final synthesis:
 
 ### Codex Subagent Best Practices
 
-1. **Role Path, Not Content**: Pass `~/.codex/agents/*.md` path in message, let agent read itself
+1. **Agent Type, Not Path**: Use `agent_type` parameter in spawn_agent, not manual file path reading
 2. **Parallel for Perspectives**: Use batch spawn + wait for 3 perspective agents
 3. **Delay close_agent for Refinement**: Keep perspective agents alive for `send_input` reuse
 4. **Batch wait**: Use `wait({ ids: [a, b, c] })` for parallel agents, not sequential waits
@@ -1030,4 +1031,6 @@ Final synthesis:
 
 ---
 
-**Now execute the brainstorm-with-file workflow for topic**: $TOPIC
+**Now start brainstorming for topic**: $TOPIC
+
+**IMPORTANT**: This skill is brainstorming-only. It produces analysis, perspectives, and synthesis documents but NEVER executes code, modifies source files, or auto-launches other skills. All follow-up actions require user to manually run the suggested commands.

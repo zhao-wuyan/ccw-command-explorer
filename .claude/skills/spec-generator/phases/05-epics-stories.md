@@ -19,6 +19,10 @@ Decompose the specification into executable Epics and Stories with dependency ma
 
 ## Execution Steps
 
+### Step 0: Load Validation Context
+
+Run `ccw spec load --category validation` for verification rules and acceptance criteria to validate epic decomposition.
+
 ### Step 1: Load Phase 2-4 Context
 
 ```javascript

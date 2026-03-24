@@ -312,28 +312,20 @@ Write(`${workDir}/spec-config.json`, JSON.stringify(specConfig, null, 2));
 ### Step 6: Handoff Options
 
 ```javascript
-AskUserQuestion({
+request_user_input({
   questions: [
     {
-      question: "Specification package is complete. What would you like to do next?",
       header: "Next Step",
-      multiSelect: false,
+      id: "next_step",
+      question: "Specification package is complete. What would you like to do next?",
       options: [
+        {
+          label: "Export Issues(Recommended)",
+          description: "Create issues per Epic with spec links and wave assignment (Phase 7)"
+        },
         {
           label: "Execute via lite-plan",
           description: "Start implementing with /workflow-lite-plan, one Epic at a time"
-        },
-        {
-          label: "Create roadmap",
-          description: "Generate execution roadmap with /workflow:req-plan-with-file"
-        },
-        {
-          label: "Full planning",
-          description: "Detailed planning with /workflow-plan for the full scope"
-        },
-        {
-          label: "Export Issues (Phase 7)",
-          description: "Create issues per Epic with spec links and wave assignment"
         },
         {
           label: "Iterate & improve",
@@ -344,7 +336,8 @@ AskUserQuestion({
   ]
 });
 
-// Based on user selection, execute the corresponding handoff:
+// Based on user selection (answer.answers.next_step.answers[0]), execute the corresponding handoff:
+const selection = answer.answers.next_step.answers[0];
 
 if (selection === "Execute via lite-plan") {
   // lite-plan accepts a text description directly
@@ -489,7 +482,7 @@ ${extractSection(epicContent, "Architecture")}
   }
 }
 
-if (selection === "Export Issues (Phase 7)") {
+if (selection === "Export Issues(Recommended)") {
   // Proceed to Phase 7: Issue Export
   // Read phases/07-issue-export.md and execute
 }

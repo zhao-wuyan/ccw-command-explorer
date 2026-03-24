@@ -50,7 +50,7 @@ Unified multi-dimensional code review orchestrator with dual-mode (session/modul
 3. **Progressive Phase Loading**: Phase docs are read on-demand when that phase executes, not all at once
 4. **Auto-Continue**: All phases run autonomously without user intervention between phases
 5. **Subagent Lifecycle**: Explicit lifecycle management with spawn_agent → wait → close_agent
-6. **Role Path Loading**: Subagent roles loaded via path reference in MANDATORY FIRST STEPS
+6. **Role via agent_type**: Subagent roles loaded via TOML `agent_type` parameter in spawn_agent (e.g., `"cli_explore_agent"`)
 7. **Optional Fix Pipeline**: Phase 6-9 triggered only by explicit `--fix` flag or user confirmation after Phase 5
 8. **Content Preservation**: All agent prompts, code, schemas preserved verbatim from source commands
 
@@ -298,12 +298,12 @@ Create a new subagent with task assignment.
 
 ```javascript
 const agentId = spawn_agent({
+  agent_type: "{agent_type}",  // TOML agent definition name (e.g., "cli_explore_agent")
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/{agent-type}.md (MUST read first)
-2. Execute: ccw spec load --category "exploration execution"
+1. Execute: ccw spec load --category "exploration execution"
 
 ---
 

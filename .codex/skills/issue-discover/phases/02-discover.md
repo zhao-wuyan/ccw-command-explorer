@@ -86,18 +86,20 @@ let selectedPerspectives = [];
 if (args.perspectives) {
   selectedPerspectives = args.perspectives.split(',').map(p => p.trim());
 } else {
-  // Interactive selection via ASK_USER
-  const response = ASK_USER([{
-    id: "focus",
-    type: "select",
-    prompt: "Select primary discovery focus:",
-    options: [
-      { label: "Bug + Test + Quality", description: "Quick scan: potential bugs, test gaps, code quality (Recommended)" },
-      { label: "Security + Performance", description: "System audit: security issues, performance bottlenecks" },
-      { label: "Maintainability + Best-practices", description: "Long-term health: coupling, tech debt, conventions" },
-      { label: "Full analysis", description: "All 8 perspectives (comprehensive, takes longer)" }
-    ]
-  }]);  // BLOCKS (wait for user response)
+  // Interactive selection via request_user_input
+  const response = request_user_input({
+    questions: [{
+      header: "Focus",
+      id: "focus",
+      question: "Select primary discovery focus.",
+      options: [
+        { label: "Bug + Test + Quality (Recommended)", description: "Quick scan: potential bugs, test gaps, code quality" },
+        { label: "Security + Performance", description: "System audit: security issues, performance bottlenecks" },
+        { label: "Full analysis", description: "All 8 perspectives (comprehensive, takes longer)" }
+      ]
+    }]
+  });  // BLOCKS (wait for user response)
+  // response.answers.focus.answers[0] → selected label
   selectedPerspectives = parseSelectedPerspectives(response);
 }
 ```
@@ -112,13 +114,13 @@ const perspectiveAgents = [];
 
 selectedPerspectives.forEach(perspective => {
   const agentId = spawn_agent({
+    agent_type: "cli_explore_agent",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Read: {projectRoot}/.workflow/project-tech.json
-3. Read: {projectRoot}/.workflow/specs/*.md
+1. Read: {projectRoot}/.workflow/project-tech.json
+2. Read: {projectRoot}/.workflow/specs/*.md
 
 ---
 
@@ -190,13 +192,13 @@ agentIds.forEach(id => close_agent({ id }));
 // Only spawn if perspective requires external research
 if (selectedPerspectives.includes('security') || selectedPerspectives.includes('best-practices') || args.external) {
   const exaAgentId = spawn_agent({
+    agent_type: "cli_explore_agent",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Read: {projectRoot}/.workflow/project-tech.json
-3. Read: {projectRoot}/.workflow/specs/*.md
+1. Read: {projectRoot}/.workflow/project-tech.json
+2. Read: {projectRoot}/.workflow/specs/*.md
 
 ---
 
@@ -271,20 +273,23 @@ await updateDiscoveryState(outputDir, {
 ```javascript
 const hasHighPriority = issues.some(i => i.priority === 'critical' || i.priority === 'high');
 
-await ASK_USER([{
-  id: "next_step",
-  type: "select",
-  prompt: `Discovery complete: ${issues.length} issues generated, ${prioritizedFindings.length} total findings. What next?`,
-  options: hasHighPriority ? [
-    { label: "Export to Issues (Recommended)", description: `${issues.length} high-priority issues found - export to tracker` },
-    { label: "Open Dashboard", description: "Review findings in ccw view before exporting" },
-    { label: "Skip", description: "Complete discovery without exporting" }
-  ] : [
-    { label: "Open Dashboard (Recommended)", description: "Review findings in ccw view to decide which to export" },
-    { label: "Export to Issues", description: `Export ${issues.length} issues to tracker` },
-    { label: "Skip", description: "Complete discovery without exporting" }
-  ]
-}]);  // BLOCKS (wait for user response)
+await request_user_input({
+  questions: [{
+    header: "Next Step",
+    id: "next_step",
+    question: `Discovery complete: ${issues.length} issues generated, ${prioritizedFindings.length} total findings. What next?`,
+    options: hasHighPriority ? [
+      { label: "Export to Issues (Recommended)", description: `${issues.length} high-priority issues found - export to tracker` },
+      { label: "Open Dashboard", description: "Review findings in ccw view before exporting" },
+      { label: "Skip", description: "Complete discovery without exporting" }
+    ] : [
+      { label: "Open Dashboard (Recommended)", description: "Review findings in ccw view to decide which to export" },
+      { label: "Export to Issues", description: `Export ${issues.length} issues to tracker` },
+      { label: "Skip", description: "Complete discovery without exporting" }
+    ]
+  }]
+});  // BLOCKS (wait for user response)
+// response.answers.next_step.answers[0] → selected label
 
 if (response === "Export to Issues") {
   await appendJsonl(`${projectRoot}/.workflow/issues/issues.jsonl`, issues);

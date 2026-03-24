@@ -2,7 +2,7 @@
 name: spec-add
 description: Add specs, conventions, constraints, or learnings to project guidelines interactively or automatically
 argument-hint: "[-y|--yes] [--type <convention|constraint|learning>] [--category <category>] [--dimension <specs|personal>] [--scope <global|project>] [--interactive] \"rule text\""
-allowed-tools: AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Spec Add Command
@@ -196,17 +196,18 @@ if (useInteractiveWizard) {
     if (AUTO_YES) {
       dimension = 'specs'  // Default to project specs in auto mode
     } else {
-      const dimensionAnswer = ASK_USER([
-        {
-          id: "dimension", type: "select",
-          prompt: "What type of spec do you want to create?",
+      const dimensionAnswer = request_user_input({
+        questions: [{
+          header: "Dimension",
+          id: "dimension",
+          question: "What type of spec do you want to create?",
           options: [
-            { label: "Project Spec", description: "Coding conventions, constraints, quality rules for this project (stored in .ccw/specs/)" },
+            { label: "Project Spec(Recommended)", description: "Coding conventions, constraints, quality rules for this project (stored in .ccw/specs/)" },
             { label: "Personal Spec", description: "Personal preferences and constraints that follow you across projects (stored in ~/.ccw/specs/personal/ or .ccw/specs/personal/)" }
           ]
-        }
-      ])  // BLOCKS (wait for user response)
-      dimension = dimensionAnswer.dimension === "Project Spec" ? "specs" : "personal"
+        }]
+      })  // BLOCKS (wait for user response)
+      dimension = dimensionAnswer.answers.dimension.answers[0] === "Project Spec(Recommended)" ? "specs" : "personal"
     }
   }
 
@@ -215,17 +216,18 @@ if (useInteractiveWizard) {
     if (AUTO_YES) {
       scope = 'project'  // Default to project scope in auto mode
     } else {
-      const scopeAnswer = ASK_USER([
-        {
-          id: "scope", type: "select",
-          prompt: "Where should this personal spec be stored?",
+      const scopeAnswer = request_user_input({
+        questions: [{
+          header: "Scope",
+          id: "scope",
+          question: "Where should this personal spec be stored?",
           options: [
-            { label: "Global (Recommended)", description: "Apply to ALL projects (~/.ccw/specs/personal/)" },
+            { label: "Global(Recommended)", description: "Apply to ALL projects (~/.ccw/specs/personal/)" },
             { label: "Project-only", description: "Apply only to this project (.ccw/specs/personal/)" }
           ]
-        }
-      ])  // BLOCKS (wait for user response)
-      scope = scopeAnswer.scope.includes("Global") ? "global" : "project"
+        }]
+      })  // BLOCKS (wait for user response)
+      scope = scopeAnswer.answers.scope.answers[0] === "Global(Recommended)" ? "global" : "project"
     }
   }
 
@@ -234,19 +236,19 @@ if (useInteractiveWizard) {
     if (AUTO_YES) {
       category = 'general'  // Default to general in auto mode
     } else {
-      const categoryAnswer = ASK_USER([
-        {
-          id: "category", type: "select",
-          prompt: "Which workflow stage does this spec apply to?",
+      const categoryAnswer = request_user_input({
+        questions: [{
+          header: "Category",
+          id: "category",
+          question: "Which workflow stage does this spec apply to?",
           options: [
-            { label: "General (Recommended)", description: "Applies to all stages (default)" },
+            { label: "General(Recommended)", description: "Applies to all stages (default)" },
             { label: "Exploration", description: "Code exploration, analysis, debugging" },
-            { label: "Planning", description: "Task planning, requirements gathering" },
-            { label: "Execution", description: "Implementation, testing, deployment" }
+            { label: "Planning", description: "Task planning, requirements gathering" }
           ]
-        }
-      ])  // BLOCKS (wait for user response)
-      const categoryLabel = categoryAnswer.category
+        }]
+      })  // BLOCKS (wait for user response)
+      const categoryLabel = categoryAnswer.answers.category.answers[0]
       category = categoryLabel.includes("General") ? "general"
         : categoryLabel.includes("Exploration") ? "exploration"
         : categoryLabel.includes("Planning") ? "planning"
@@ -259,18 +261,19 @@ if (useInteractiveWizard) {
     if (AUTO_YES) {
       type = 'convention'  // Default to convention in auto mode
     } else {
-      const typeAnswer = ASK_USER([
-        {
-          id: "type", type: "select",
-          prompt: "What type of rule is this?",
+      const typeAnswer = request_user_input({
+        questions: [{
+          header: "Rule Type",
+          id: "rule_type",
+          question: "What type of rule is this?",
           options: [
             { label: "Convention", description: "Coding style preference (e.g., use functional components)" },
             { label: "Constraint", description: "Hard rule that must not be violated (e.g., no direct DB access)" },
             { label: "Learning", description: "Insight or lesson learned (e.g., cache invalidation needs events)" }
           ]
-        }
-      ])  // BLOCKS (wait for user response)
-      const typeLabel = typeAnswer.type
+        }]
+      })  // BLOCKS (wait for user response)
+      const typeLabel = typeAnswer.answers.rule_type.answers[0]
       type = typeLabel.includes("Convention") ? "convention"
         : typeLabel.includes("Constraint") ? "constraint"
         : "learning"
@@ -283,13 +286,17 @@ if (useInteractiveWizard) {
       console.log("Error: Rule text is required in auto mode. Provide rule text as argument.")
       return
     }
-    const contentAnswer = ASK_USER([
-      {
-        id: "content", type: "text",
-        prompt: "Enter the rule or guideline text:"
-      }
-    ])  // BLOCKS (wait for user response)
-    ruleText = contentAnswer.content
+    const contentAnswer = request_user_input({
+      questions: [{
+        header: "Content",
+        id: "content",
+        question: "Enter the rule or guideline text:",
+        options: [
+          { label: "Type in Other", description: "Enter your rule text via the Other input field" }
+        ]
+      }]
+    })  // BLOCKS (wait for user response)
+    ruleText = contentAnswer.answers.content.answers[0]
   }
 
 }

@@ -93,7 +93,7 @@ rg "password|token|secret|auth" -g "*.{ts,js,py}"
 rg "eval|exec|innerHTML|dangerouslySetInnerHTML" -g "*.{ts,js,tsx}"
 
 # Gemini security analysis
-ccw spec load --category execution
+ccw spec load --category review
 ccw cli -p "
 PURPOSE: Security audit of completed implementation
 TASK: Review code for security vulnerabilities, insecure patterns, auth/authz issues
@@ -105,7 +105,7 @@ RULES: Focus on OWASP Top 10, authentication, authorization, data validation, in
 
 **Architecture Review** (`architecture`):
 ```bash
-ccw spec load --category execution
+ccw spec load --category review
 ccw cli -p "
 PURPOSE: Architecture compliance review
 TASK: Evaluate adherence to architectural patterns, identify technical debt, review design decisions
@@ -117,7 +117,7 @@ RULES: Check for patterns, separation of concerns, modularity, scalability
 
 **Quality Review** (`quality`):
 ```bash
-ccw spec load --category execution
+ccw spec load --category review
 ccw cli -p "
 PURPOSE: Code quality and best practices review
 TASK: Assess code readability, maintainability, adherence to best practices
@@ -139,7 +139,7 @@ for task_file in ${sessionPath}/.task/*.json; do
 done
 
 # Cross-check implementation against requirements
-ccw spec load --category execution
+ccw spec load --category review
 ccw cli -p "
 PURPOSE: Verify all requirements and acceptance criteria are met
 TASK: Cross-check implementation summaries against original requirements

@@ -78,4 +78,26 @@ export const DEPRECATED_COMMANDS: DeprecatedCommand[] = [
   { old: '/team-lifecycle-v5', newCmd: '/team-lifecycle-v4', reason: 'v5 版本已移除，请使用 v4 版本', deprecatedInVersion: 'v7.2.7' },
   { old: '/team-coordinate-v2', newCmd: '/team-coordinate', reason: 'v2 版本已移除，请使用无版本号的基础版本', deprecatedInVersion: 'v7.2.7' },
   { old: '/team-executor-v2', newCmd: '/team-executor', reason: 'v2 版本已移除，请使用无版本号的基础版本', deprecatedInVersion: 'v7.2.7' },
+
+  // v7.2.20 废弃 - DDD 系列命令移除
+  { old: '/ddd:auto', newCmd: null, reason: 'DDD 文档驱动开发功能已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/ddd:doc-generate', newCmd: null, reason: 'DDD 文档驱动开发功能已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/ddd:doc-refresh', newCmd: null, reason: 'DDD 文档驱动开发功能已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/ddd:execute', newCmd: null, reason: 'DDD 文档驱动开发功能已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/ddd:index-build', newCmd: null, reason: 'DDD 文档驱动开发功能已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/ddd:plan', newCmd: null, reason: 'DDD 文档驱动开发功能已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/ddd:scan', newCmd: null, reason: 'DDD 文档驱动开发功能已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/ddd:sync', newCmd: null, reason: 'DDD 文档驱动开发功能已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/ddd:update', newCmd: null, reason: 'DDD 文档驱动开发功能已移除', deprecatedInVersion: 'v7.2.20' },
+
+  // v7.2.20 废弃 - IDAW 系列命令移除
+  { old: '/idaw:add', newCmd: null, reason: 'IDAW 迭代开发工作流已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/idaw:resume', newCmd: null, reason: 'IDAW 迭代开发工作流已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/idaw:run', newCmd: null, reason: 'IDAW 迭代开发工作流已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/idaw:run-coordinate', newCmd: null, reason: 'IDAW 迭代开发工作流已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/idaw:status', newCmd: null, reason: 'IDAW 迭代开发工作流已移除', deprecatedInVersion: 'v7.2.20' },
+
+  // v7.2.20 废弃 - 其他命令移除
+  { old: '/team-edict', newCmd: null, reason: '三省六部协作框架已移除', deprecatedInVersion: 'v7.2.20' },
+  { old: '/team-planex-v2', newCmd: '/team-planex', reason: 'v2 版本已移除，请使用 /team-planex', deprecatedInVersion: 'v7.2.20' },
 ];

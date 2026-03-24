@@ -100,12 +100,12 @@ for (let i = 1; i <= aggregatedPlan.groups.length; i++) {
 ```javascript
 // Spawn planning agent for a batch
 const agentId = spawn_agent({
+  agent_type: "cli_planning_agent",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-planning-agent.md (MUST read first)
-2. Execute: ccw spec load --category planning
+1. Execute: ccw spec load --category planning
 
 ---
 

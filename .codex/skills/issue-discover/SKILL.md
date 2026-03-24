@@ -1,7 +1,7 @@
 ---
 name: issue-discover
 description: Unified issue discovery and creation. Create issues from GitHub/text, discover issues via multi-perspective analysis, or prompt-driven iterative exploration. Triggers on "issue:new", "issue:discover", "issue:discover-by-prompt", "create issue", "discover issues", "find issues".
-allowed-tools: spawn_agent, wait, send_input, close_agent, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__exa__search
+allowed-tools: spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__exa__search
 ---
 
 # Issue Discover
@@ -16,7 +16,7 @@ Unified issue discovery and creation skill covering three entry points: manual i
 │  → Action selection → Route to phase → Execute → Summary         │
 └───────────────┬─────────────────────────────────────────────────┘
                 │
-                ├─ ASK_USER: Select action
+                ├─ request_user_input: Select action
                 │
     ┌───────────┼───────────┬───────────┐
     ↓           ↓           ↓           │
@@ -50,7 +50,7 @@ Unified issue discovery and creation skill covering three entry points: manual i
 
 ## Key Design Principles
 
-1. **Action-Driven Routing**: ASK_USER selects action, then load single phase
+1. **Action-Driven Routing**: request_user_input selects action, then load single phase
 2. **Progressive Phase Loading**: Only read the selected phase document
 3. **CLI-First Data Access**: All issue CRUD via `ccw issue` CLI commands
 4. **Auto Mode Support**: `-y` flag skips action selection with auto-detection
@@ -101,7 +101,7 @@ Action Selection:
    │   ├─ Path pattern (src/**, *.ts) → Discover (Phase 2)
    │   ├─ Short text (< 80 chars) → Create New (Phase 1)
    │   └─ Long descriptive text (≥ 80 chars) → Discover by Prompt (Phase 3)
-   └─ Otherwise → ASK_USER to select action
+   └─ Otherwise → request_user_input to select action
 
 Phase Execution (load one phase):
    ├─ Phase 1: Create New          → phases/01-issue-new.md
@@ -168,33 +168,36 @@ function detectAction(input, flags) {
 }
 ```
 
-### Action Selection (ASK_USER)
+### Action Selection (request_user_input)
 
 ```javascript
 // When action cannot be auto-detected
-const answer = ASK_USER([{
-  id: "action",
-  type: "select",
-  prompt: "What would you like to do?",
-  options: [
-    {
-      label: "Create New Issue (Recommended)",
-      description: "Create issue from GitHub URL, text description, or structured input"
-    },
-    {
-      label: "Discover Issues",
-      description: "Multi-perspective discovery: bug, security, test, quality, performance, etc."
-    },
-    {
-      label: "Discover by Prompt",
-      description: "Describe what to find — Gemini plans the exploration strategy iteratively"
-    }
-  ]
-}]);  // BLOCKS (wait for user response)
+const answer = request_user_input({
+  questions: [{
+    header: "Action",
+    id: "action",
+    question: "What would you like to do?",
+    options: [
+      {
+        label: "Create New Issue (Recommended)",
+        description: "Create issue from GitHub URL, text description, or structured input"
+      },
+      {
+        label: "Discover Issues",
+        description: "Multi-perspective discovery: bug, security, test, quality, performance, etc."
+      },
+      {
+        label: "Discover by Prompt",
+        description: "Describe what to find — Gemini plans the exploration strategy iteratively"
+      }
+    ]
+  }]
+});  // BLOCKS (wait for user response)
 
 // Route based on selection
+// answer.answers.action.answers[0] → selected label
 const actionMap = {
-  "Create New Issue": "new",
+  "Create New Issue (Recommended)": "new",
   "Discover Issues": "discover",
   "Discover by Prompt": "discover-by-prompt"
 };
@@ -207,7 +210,7 @@ User Input (URL / text / path pattern / descriptive prompt)
     ↓
 [Parse Flags + Auto-Detect Action]
     ↓
-[Action Selection] ← ASK_USER (if needed)
+[Action Selection] ← request_user_input (if needed)
     ↓
 [Read Selected Phase Document]
     ↓
@@ -226,12 +229,13 @@ Create a new subagent with task assignment.
 
 ```javascript
 const agentId = spawn_agent({
+  agent_type: "{agent_type}",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/{agent-type}.md (MUST read first)
-2. Execute: ccw spec load --category exploration
+1. Execute: ccw spec load --category exploration
+2. Execute: ccw spec load --category debug (known issues cross-reference)
 
 ## TASK CONTEXT
 ${taskContext}
@@ -304,7 +308,7 @@ close_agent({ id: agentId })
 
 | Error | Resolution |
 |-------|------------|
-| No action detected | Show ASK_USER with all 3 options |
+| No action detected | Show request_user_input with all 3 options |
 | Invalid action type | Show available actions, re-prompt |
 | Phase execution fails | Report error, suggest manual intervention |
 | No files matched (discover) | Check target pattern, verify path exists |
@@ -317,31 +321,35 @@ After successful phase execution, recommend next action:
 
 ```javascript
 // After Create New (issue created)
-ASK_USER([{
-  id: "next_after_create",
-  type: "select",
-  prompt: "Issue created. What next?",
-  options: [
-    { label: "Plan Solution", description: "Generate solution via issue-resolve" },
-    { label: "Create Another", description: "Create more issues" },
-    { label: "View Issues", description: "Review all issues" },
-    { label: "Done", description: "Exit workflow" }
-  ]
-}]);  // BLOCKS (wait for user response)
+request_user_input({
+  questions: [{
+    header: "Next Step",
+    id: "next_after_create",
+    question: "Issue created. What next?",
+    options: [
+      { label: "Plan Solution (Recommended)", description: "Generate solution via issue-resolve" },
+      { label: "Create Another", description: "Create more issues" },
+      { label: "Done", description: "Exit workflow" }
+    ]
+  }]
+});  // BLOCKS (wait for user response)
+// answer.answers.next_after_create.answers[0] → selected label
 
 // After Discover / Discover by Prompt (discoveries generated)
-ASK_USER([{
-  id: "next_after_discover",
-  type: "select",
-  prompt: `Discovery complete: ${findings.length} findings, ${executableFindings.length} executable. What next?`,
-  options: [
-    { label: "Quick Plan & Execute (Recommended)", description: `Fix ${executableFindings.length} high-confidence findings directly` },
-    { label: "Export to Issues", description: "Convert discoveries to issues" },
-    { label: "Plan Solutions", description: "Plan solutions for exported issues via issue-resolve" },
-    { label: "Done", description: "Exit workflow" }
-  ]
-}]);  // BLOCKS (wait for user response)
-// If "Quick Plan & Execute" → Read phases/04-quick-execute.md, execute
+request_user_input({
+  questions: [{
+    header: "Next Step",
+    id: "next_after_discover",
+    question: `Discovery complete: ${findings.length} findings, ${executableFindings.length} executable. What next?`,
+    options: [
+      { label: "Quick Plan & Execute (Recommended)", description: `Fix ${executableFindings.length} high-confidence findings directly` },
+      { label: "Export to Issues", description: "Convert discoveries to issues" },
+      { label: "Done", description: "Exit workflow" }
+    ]
+  }]
+});  // BLOCKS (wait for user response)
+// answer.answers.next_after_discover.answers[0] → selected label
+// If "Quick Plan & Execute (Recommended)" → Read phases/04-quick-execute.md, execute
 ```
 
 ## Related Skills & Commands

@@ -55,12 +55,12 @@ if (result.passRate < 100%) {
 ```javascript
 // Spawn execution agent for a group
 const execAgentId = spawn_agent({
+  agent_type: "cli_execution_agent",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-execution-agent.md (MUST read first)
-2. Execute: ccw spec load --category execution
+1. Execute: ccw spec load --category execution
 
 ---
 

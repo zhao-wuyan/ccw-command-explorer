@@ -44,7 +44,7 @@ Phase 2: Drift Discovery (Subagent)
 Phase 3: Confirmation
    ├─ Validate manifest schema
    ├─ Display cleanup summary by category
-   ├─ ASK_USER: Select categories and risk level
+   ├─ request_user_input: Select categories and risk level
    └─ Dry-run exit if --dry-run
 
 Phase 4: Execution
@@ -159,12 +159,12 @@ let exploreAgent = null
 try {
   // Launch cli-explore-agent
   exploreAgent = spawn_agent({
+    agent_type: "cli_explore_agent",
     message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS
-1. Read: ~/.codex/agents/cli-explore-agent.md
-2. Read: ${projectRoot}/.workflow/project-tech.json (if exists)
+1. Read: ${projectRoot}/.workflow/project-tech.json (if exists)
 
 ## Task Objective
 Discover stale artifacts for cleanup.
@@ -252,26 +252,30 @@ Manifest: ${sessionFolder}/cleanup-manifest.json
 }
 
 // User confirmation
-const selection = ASK_USER([
-  {
-    id: "categories", type: "multi-select",
-    prompt: "Which categories to clean?",
-    options: [
-      { label: "Sessions", description: `${manifest.summary.by_category.stale_sessions} stale sessions` },
-      { label: "Documents", description: `${manifest.summary.by_category.drifted_documents} drifted docs` },
-      { label: "Dead Code", description: `${manifest.summary.by_category.dead_code} unused files` }
-    ]
-  },
-  {
-    id: "risk", type: "select",
-    prompt: "Risk level?",
-    options: [
-      { label: "Low only", description: "Safest (Recommended)" },
-      { label: "Low + Medium", description: "Includes likely unused" },
-      { label: "All", description: "Aggressive" }
-    ]
-  }
-])  // BLOCKS (wait for user response)
+const selection = request_user_input({
+  questions: [
+    {
+      header: "清理类别",
+      id: "categories",
+      question: "Which categories to clean?",
+      options: [
+        { label: "Sessions", description: `${manifest.summary.by_category.stale_sessions} stale sessions` },
+        { label: "Documents", description: `${manifest.summary.by_category.drifted_documents} drifted docs` },
+        { label: "Dead Code", description: `${manifest.summary.by_category.dead_code} unused files` }
+      ]
+    },
+    {
+      header: "风险级别",
+      id: "risk",
+      question: "Risk level?",
+      options: [
+        { label: "Low only(Recommended)", description: "Safest — only clearly stale items" },
+        { label: "Low + Medium", description: "Includes likely unused" },
+        { label: "All", description: "Aggressive" }
+      ]
+    }
+  ]
+})  // BLOCKS (wait for user response)
 ```
 
 ---
@@ -279,21 +283,24 @@ const selection = ASK_USER([
 ### Phase 4: Execution
 
 ```javascript
+const selectedCategory = selection.answers.categories.answers[0]
+const selectedRisk = selection.answers.risk.answers[0]
+
 const riskFilter = {
-  'Low only': ['low'],
+  'Low only(Recommended)': ['low'],
   'Low + Medium': ['low', 'medium'],
   'All': ['low', 'medium', 'high']
-}[selection.risk]
+}[selectedRisk]
 
 // Collect items to clean
 const items = []
-if (selection.categories.includes('Sessions')) {
+if (selectedCategory === 'Sessions') {
   items.push(...manifest.discoveries.stale_sessions.filter(s => riskFilter.includes(s.risk)))
 }
-if (selection.categories.includes('Documents')) {
+if (selectedCategory === 'Documents') {
   items.push(...manifest.discoveries.drifted_documents.filter(d => riskFilter.includes(d.risk)))
 }
-if (selection.categories.includes('Dead Code')) {
+if (selectedCategory === 'Dead Code') {
   items.push(...manifest.discoveries.dead_code.filter(c => riskFilter.includes(c.risk)))
 }
 

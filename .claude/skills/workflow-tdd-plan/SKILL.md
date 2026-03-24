@@ -4,18 +4,20 @@ description: Unified TDD workflow skill combining 6-phase TDD planning with Red-
 allowed-tools: Skill, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep
 ---
 
-# Workflow TDD
+<purpose>
+Unified TDD workflow skill combining TDD planning (Red-Green-Refactor task chain generation with test-first development structure) and TDD verification (compliance validation with quality gate reporting). Produces IMPL_PLAN.md, task JSONs with internal TDD cycles, and TDD_COMPLIANCE_REPORT.md. Triggers on "workflow-tdd-plan" (plan mode) or "workflow-tdd-verify" (verify mode).
+</purpose>
 
-Unified TDD workflow skill combining TDD planning (Red-Green-Refactor task chain generation with test-first development structure) and TDD verification (compliance validation with quality gate reporting). Produces IMPL_PLAN.md, task JSONs with internal TDD cycles, and TDD_COMPLIANCE_REPORT.md.
+<process>
 
-## Architecture Overview
+## 1. Architecture Overview
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │  Workflow TDD Orchestrator (SKILL.md)                            │
 │  → Route by mode: plan | verify                                  │
 │  → Pure coordinator: Execute phases, parse outputs, pass context │
-└──────────────────────────────┬───────────────────────────────────┘
+└──────────────────────────────────┬───────────────────────────────┘
                                 │
         ┌───────────────────────┴───────────────────────┐
         ↓                                               ↓
@@ -38,7 +40,7 @@ Unified TDD workflow skill combining TDD planning (Red-Green-Refactor task chain
                        └───────────┘─── Review ──→ Display session status inline
 ```
 
-## Key Design Principles
+## 2. Key Design Principles
 
 1. **Pure Orchestrator**: SKILL.md routes and coordinates only; execution detail lives in phase files
 2. **Progressive Phase Loading**: Read phase docs ONLY when that phase is about to execute
@@ -47,7 +49,7 @@ Unified TDD workflow skill combining TDD planning (Red-Green-Refactor task chain
 5. **Auto-Continue**: After each phase completes, automatically execute next pending phase
 6. **TDD Iron Law**: NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST - enforced in task structure
 
-## Interactive Preference Collection
+## 3. Interactive Preference Collection
 
 Before dispatching to phase execution, collect workflow preferences via AskUserQuestion:
 
@@ -81,7 +83,7 @@ if (autoYes) {
 
 **workflowPreferences** is passed to phase execution as context variable, referenced as `workflowPreferences.autoYes` within phases.
 
-## Mode Detection
+## 4. Mode Detection
 
 ```javascript
 const args = $ARGUMENTS
@@ -94,7 +96,7 @@ function detectMode(args) {
 }
 ```
 
-## Compact Recovery (Phase Persistence)
+## 5. Compact Recovery (Phase Persistence)
 
 Multi-phase TDD planning (Phase 1-6/7) spans long conversations. Uses **双重保险**: TodoWrite 跟踪 active phase 保护其不被压缩，sentinel 作为兜底。
 
@@ -102,42 +104,40 @@ Multi-phase TDD planning (Phase 1-6/7) spans long conversations. Uses **双重�
 > The phase currently marked `in_progress` is the active execution phase — preserve its FULL content.
 > Only compress phases marked `completed` or `pending`.
 
-## Execution Flow
-
-### Plan Mode (default)
+## 6. Execution Flow — Plan Mode (default)
 
 ```
 Input Parsing:
    └─ Convert user input to TDD structured format (GOAL/SCOPE/CONTEXT/TEST_FOCUS)
 
 Phase 1: Session Discovery
-   └─ Ref: phases/01-session-discovery.md
+   └─ Read("phases/01-session-discovery.md")
       └─ Output: sessionId (WFS-xxx)
 
 Phase 2: Context Gathering
-   └─ Ref: phases/02-context-gathering.md
+   └─ Read("phases/02-context-gathering.md")
       ├─ Tasks attached: Analyze structure → Identify integration → Generate package
       └─ Output: contextPath + conflictRisk
 
 Phase 3: Test Coverage Analysis
-   └─ Ref: phases/03-test-coverage-analysis.md
+   └─ Read("phases/03-test-coverage-analysis.md")
       ├─ Tasks attached: Detect framework → Analyze coverage → Identify gaps
       └─ Output: testContextPath
 
 Phase 4: Conflict Resolution (conditional: conflictRisk ≥ medium)
    └─ Decision (conflictRisk check):
-      ├─ conflictRisk ≥ medium → Ref: phases/04-conflict-resolution.md
+      ├─ conflictRisk ≥ medium → Read("phases/04-conflict-resolution.md")
       │   ├─ Tasks attached: Detect conflicts → Log analysis → Apply strategies
       │   └─ Output: conflict-resolution.json
       └─ conflictRisk < medium → Skip to Phase 5
 
 Phase 5: TDD Task Generation
-   └─ Ref: phases/05-tdd-task-generation.md
+   └─ Read("phases/05-tdd-task-generation.md")
       ├─ Tasks attached: Discovery → Planning → Output
       └─ Output: IMPL_PLAN.md, IMPL-*.json, TODO_LIST.md
 
 Phase 6: TDD Structure Validation
-   └─ Ref: phases/06-tdd-structure-validation.md
+   └─ Read("phases/06-tdd-structure-validation.md")
       └─ Output: Validation report + Plan Confirmation Gate
 
 Plan Confirmation (User Decision Gate):
@@ -147,32 +147,34 @@ Plan Confirmation (User Decision Gate):
       └─ "Review Status Only" → Display session status inline
 ```
 
-### Verify Mode
+## 7. Execution Flow — Verify Mode
 
 ```
 Phase 7: TDD Verification
-   └─ Ref: phases/07-tdd-verify.md
+   └─ Read("phases/07-tdd-verify.md")
       └─ Output: TDD_COMPLIANCE_REPORT.md with quality gate recommendation
 ```
 
-**Phase Reference Documents** (read on-demand when phase executes):
+## 8. Phase Reference Documents
+
+Read on-demand when phase executes using `Read("phases/...")`:
 
 | Phase | Document | Purpose | Mode | Compact |
 |-------|----------|---------|------|---------|
-| 1 | [phases/01-session-discovery.md](phases/01-session-discovery.md) | Create or discover TDD workflow session | plan | TodoWrite 驱动 |
-| 2 | [phases/02-context-gathering.md](phases/02-context-gathering.md) | Gather project context and analyze codebase | plan | TodoWrite 驱动 |
-| 3 | [phases/03-test-coverage-analysis.md](phases/03-test-coverage-analysis.md) | Analyze test coverage and framework detection | plan | TodoWrite 驱动 |
-| 4 | [phases/04-conflict-resolution.md](phases/04-conflict-resolution.md) | Detect and resolve conflicts (conditional) | plan | TodoWrite 驱动 |
-| 5 | [phases/05-tdd-task-generation.md](phases/05-tdd-task-generation.md) | Generate TDD tasks with Red-Green-Refactor cycles | plan | TodoWrite 驱动 + 🔄 sentinel |
-| 6 | [phases/06-tdd-structure-validation.md](phases/06-tdd-structure-validation.md) | Validate TDD structure and present confirmation gate | plan | TodoWrite 驱动 + 🔄 sentinel |
-| 7 | [phases/07-tdd-verify.md](phases/07-tdd-verify.md) | Full TDD compliance verification with quality gate | verify | TodoWrite 驱动 |
+| 1 | phases/01-session-discovery.md | Create or discover TDD workflow session | plan | TodoWrite 驱动 |
+| 2 | phases/02-context-gathering.md | Gather project context and analyze codebase | plan | TodoWrite 驱动 |
+| 3 | phases/03-test-coverage-analysis.md | Analyze test coverage and framework detection | plan | TodoWrite 驱动 |
+| 4 | phases/04-conflict-resolution.md | Detect and resolve conflicts (conditional) | plan | TodoWrite 驱动 |
+| 5 | phases/05-tdd-task-generation.md | Generate TDD tasks with Red-Green-Refactor cycles | plan | TodoWrite 驱动 + sentinel |
+| 6 | phases/06-tdd-structure-validation.md | Validate TDD structure and present confirmation gate | plan | TodoWrite 驱动 + sentinel |
+| 7 | phases/07-tdd-verify.md | Full TDD compliance verification with quality gate | verify | TodoWrite 驱动 |
 
 **Compact Rules**:
 1. **TodoWrite `in_progress`** → 保留完整内容，禁止压缩
 2. **TodoWrite `completed`** → 可压缩为摘要
-3. **🔄 sentinel fallback** → Phase 5/6 包含 compact sentinel；若 compact 后仅存 sentinel 而无完整 Step 协议，必须立即 `Read()` 恢复对应 phase 文件
+3. **sentinel fallback** → Phase 5/6 包含 compact sentinel；若 compact 后仅存 sentinel 而无完整 Step 协议，必须立即 `Read()` 恢复对应 phase 文件
 
-## Core Rules
+## 9. Core Rules
 
 1. **Start Immediately**: First action is mode detection + TaskCreate initialization, second action is phase execution
 2. **No Preliminary Analysis**: Do not read files, analyze structure, or gather context before Phase 1
@@ -184,7 +186,7 @@ Phase 7: TDD Verification
 8. **DO NOT STOP**: Continuous multi-phase workflow. After executing all attached tasks, immediately collapse them and execute next phase
 9. **TDD Context**: All descriptions include "TDD:" prefix
 
-## TDD Compliance Requirements
+## 10. TDD Compliance Requirements
 
 ### The Iron Law
 
@@ -222,7 +224,7 @@ NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 - Test-first forces edge case discovery before implementation
 - Tests-after verify what was built, not what's required
 
-## Input Processing
+## 11. Input Processing
 
 **Convert User Input to TDD Structured Format**:
 
@@ -252,9 +254,7 @@ NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 
 3. **File/Issue** → Read and structure with TDD
 
-## Data Flow
-
-### Plan Mode
+## 12. Data Flow — Plan Mode
 
 ```
 User Input (task description)
@@ -297,7 +297,7 @@ Plan Confirmation (User Decision Gate):
     └─ "Review Status Only" → Display session status inline
 ```
 
-### Verify Mode
+## 13. Data Flow — Verify Mode
 
 ```
 Input: --session sessionId (or auto-detect)
@@ -311,7 +311,7 @@ Phase 7: Session discovery → Chain validation → Coverage analysis → Report
 - Existing context and analysis
 - Session-specific configuration
 
-## TodoWrite Pattern
+## 14. TodoWrite Pattern
 
 **Core Concept**: Dynamic task attachment and collapse for real-time visibility into TDD workflow execution.
 
@@ -394,7 +394,7 @@ Phase 7: Session discovery → Chain validation → Coverage analysis → Report
 
 **Note**: See individual Phase descriptions for detailed TodoWrite Update examples.
 
-## Post-Phase Updates
+## 15. Post-Phase Updates
 
 ### Memory State Check
 
@@ -409,7 +409,7 @@ After heavy phases (Phase 2-3), evaluate context window usage:
 
 Similar to workflow-plan, a `planning-notes.md` can accumulate context across phases if needed. See Phase 1 for initialization.
 
-## Error Handling
+## 16. Error Handling
 
 - **Parsing Failure**: If output parsing fails, retry command once, then report error
 - **Validation Failure**: Report which file/data is missing or invalid
@@ -447,9 +447,8 @@ Similar to workflow-plan, a `planning-notes.md` can accumulate context across ph
 2. Summary displayed in Phase 6 output
 3. User decides whether to address before `workflow-execute` skill
 
-## Coordinator Checklist
+## 17. Coordinator Checklist — Plan Mode
 
-### Plan Mode
 - **Pre-Phase**: Convert user input to TDD structured format (TDD/GOAL/SCOPE/CONTEXT/TEST_FOCUS)
 - Initialize TaskCreate before any command (Phase 4 added dynamically after Phase 2)
 - Execute Phase 1 immediately with structured description
@@ -466,20 +465,21 @@ Similar to workflow-plan, a `planning-notes.md` can accumulate context across ph
 - Verify all Phase 5 outputs (IMPL_PLAN.md, IMPL-*.json, TODO_LIST.md)
 - Execute Phase 6 (internal TDD structure validation)
 - **Plan Confirmation Gate**: Present user with choice (Verify → Phase 7 / Execute / Review Status)
-- **If user selects Verify**: Read phases/07-tdd-verify.md, execute Phase 7 in-process
+- **If user selects Verify**: Read("phases/07-tdd-verify.md"), execute Phase 7 in-process
 - **If user selects Execute**: Skill(skill="workflow-execute")
 - **If user selects Review**: Display session status inline
 - **Auto mode (workflowPreferences.autoYes)**: Auto-select "Verify TDD Compliance", then auto-continue to execute if APPROVED
 - Update TaskCreate/TaskUpdate after each phase
 - After each phase, automatically continue to next phase based on TaskList status
 
-### Verify Mode
+## 18. Coordinator Checklist — Verify Mode
+
 - Detect/validate session (from --session flag or auto-detect)
 - Initialize TaskCreate with verification tasks
 - Execute Phase 7 through all sub-phases (session validation → chain validation → coverage analysis → report generation)
 - Present quality gate result and next step options
 
-## Related Skills
+## 19. Related Skills
 
 **Prerequisite Skills**:
 - None - TDD planning is self-contained (can optionally run brainstorm commands before)
@@ -500,3 +500,28 @@ Similar to workflow-plan, a `planning-notes.md` can accumulate context across ph
 - `workflow-plan` skill (plan-verify phase) - Verify plan quality and dependencies
 - Display session status inline - Review TDD task breakdown
 - `Skill(skill="workflow-execute")` - Begin TDD implementation
+
+</process>
+
+<auto_mode>
+When `workflowPreferences.autoYes` is true (triggered by `-y`/`--yes` flag):
+- Skip all interactive confirmation prompts
+- Use default values for all preference questions
+- At Plan Confirmation Gate: Auto-select "Verify TDD Compliance"
+- After verification: Auto-continue to execute if quality gate returns APPROVED
+- All phases execute continuously without user intervention
+</auto_mode>
+
+<success_criteria>
+- [ ] Mode correctly detected from skill trigger name (plan vs verify)
+- [ ] All 6 plan phases execute sequentially with proper data flow between them
+- [ ] Phase files loaded progressively via Read() only when phase is about to execute
+- [ ] TaskCreate/TaskUpdate tracks all phases with attachment/collapse pattern
+- [ ] TDD Iron Law enforced: every task has Red-Green-Refactor structure
+- [ ] Phase 4 (Conflict Resolution) conditionally executes based on conflictRisk level
+- [ ] Plan Confirmation Gate presents three choices after Phase 6
+- [ ] Verify mode (Phase 7) produces TDD_COMPLIANCE_REPORT.md with quality gate
+- [ ] All outputs generated: IMPL_PLAN.md, IMPL-*.json, TODO_LIST.md
+- [ ] Compact recovery preserves active phase content via TodoWrite status
+- [ ] Error handling retries once on parsing failure, reports on persistent errors
+</success_criteria>

@@ -32,7 +32,7 @@ Execution method: <agent|codex|gemini>
 ## Instructions
 1. Parse input to get issue list
 2. For each issue: call issue-plan-agent → write solution artifact
-3. After each solution: create EXEC-* task (owner: executor) with solution_file path
+3. After each solution: create EXEC-* task with solution_file path, then TaskUpdate to set owner: executor
 4. After all issues: send all_planned signal
 
 InnerLoop: true`,

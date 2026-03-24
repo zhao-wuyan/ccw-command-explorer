@@ -6,7 +6,7 @@ description: |
   wave execution via spawn_agents_on_csv → results sync.
   Task JSONs remain the rich data source; CSV is brief + execution state.
 argument-hint: "[-y|--yes] [-c|--concurrency N] [--resume-session=ID] [--with-commit]"
-allowed-tools: spawn_agents_on_csv, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: spawn_agents_on_csv, request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 ## Auto Mode
@@ -213,18 +213,18 @@ if (isResumeMode) {
         return { id, path: s, progress: `${done}/${total} tasks` }
       })
 
-      const answer = AskUserQuestion({
+      const answer = request_user_input({
         questions: [{
-          question: "Select session to execute:",
           header: "Session",
-          multiSelect: false,
+          id: "session",
+          question: "Select session to execute.",
           options: sessionInfos.map(s => ({
             label: s.id,
             description: s.progress
           }))
         }]
       })
-      sessionId = answer.Session
+      sessionId = answer.answers.session.answers[0]
       sessionFolder = `.workflow/active/${sessionId}`
     }
   }
@@ -546,23 +546,23 @@ if (!AUTO_YES) {
     console.log(`  Wave ${w}: ${waveTasks.map(t => `${t.id}(${t.agent})`).join(', ')}`)
   }
 
-  const answer = AskUserQuestion({
+  const answer = request_user_input({
     questions: [{
-      question: `Proceed with ${pendingRows.length} tasks across ${maxWave} waves?`,
       header: "Confirm",
-      multiSelect: false,
+      id: "confirm_execute",
+      question: `Proceed with ${pendingRows.length} tasks across ${maxWave} waves?`,
       options: [
-        { label: "Execute", description: "Proceed with wave execution" },
+        { label: "Execute (Recommended)", description: "Proceed with wave execution" },
         { label: "Modify", description: `Edit ${sessionFolder}/tasks.csv then --resume-session` },
         { label: "Cancel", description: "Abort" }
       ]
     }]
   })
 
-  if (answer.Confirm === "Modify") {
+  if (answer.answers.confirm_execute.answers[0] === "Modify") {
     console.log(`Edit: ${sessionFolder}/tasks.csv\nResume: $workflow-execute --resume-session=${sessionId}`)
     return
-  } else if (answer.Confirm === "Cancel") {
+  } else if (answer.answers.confirm_execute.answers[0] === "Cancel") {
     return
   }
 }
@@ -891,19 +891,19 @@ Bash(`cd "${sessionFolder}" && jq '.status = "${sessionStatus}" | .completed_at 
 if (AUTO_YES) {
   console.log(`  [--yes] Session ${sessionId} ${sessionStatus}.`)
 } else {
-  const nextStep = AskUserQuestion({
+  const nextStep = request_user_input({
     questions: [{
-      question: "Execution complete. What's next?",
       header: "Next Step",
-      multiSelect: false,
+      id: "next_step",
+      question: "Execution complete. What is next?",
       options: [
-        { label: "Enter Review", description: "Run post-implementation review (security/quality/architecture)" },
+        { label: "Enter Review (Recommended)", description: "Run post-implementation review (security/quality/architecture)" },
         { label: "Complete Session", description: "Archive session and finalize" }
       ]
     }]
   })
 
-  if (nextStep['Next Step'] === 'Enter Review') {
+  if (nextStep.answers.next_step.answers[0] === 'Enter Review (Recommended)') {
     // → Phase 6
   } else {
     console.log(`  Session ${sessionId} ${sessionStatus}.`)
@@ -922,20 +922,19 @@ if (AUTO_YES) {
 console.log(`\n## Phase 6: Post-Implementation Review\n`)
 
 const reviewType = AUTO_YES ? 'quality' : (() => {
-  const answer = AskUserQuestion({
+  const answer = request_user_input({
     questions: [{
-      question: "Select review type:",
-      header: "Review",
-      multiSelect: false,
+      header: "Review Type",
+      id: "review_type",
+      question: "Select review type.",
       options: [
-        { label: "Quality", description: "Code quality, best practices, maintainability" },
+        { label: "Quality (Recommended)", description: "Code quality, best practices, maintainability" },
         { label: "Security", description: "Security vulnerabilities, OWASP Top 10" },
-        { label: "Architecture", description: "Architecture decisions, scalability, patterns" },
-        { label: "Action Items", description: "TODO items, tech debt, follow-ups" }
+        { label: "Architecture", description: "Architecture decisions, scalability, patterns" }
       ]
     }]
   })
-  return answer.Review.toLowerCase()
+  return answer.answers.review_type.answers[0].toLowerCase()
 })()
 
 // Get list of modified files from tasks.csv
@@ -967,19 +966,19 @@ console.log(`  Review complete: ${sessionFolder}/REVIEW-${reviewType}.md`)
 
 // Post-review options
 if (!AUTO_YES) {
-  const postReview = AskUserQuestion({
+  const postReview = request_user_input({
     questions: [{
-      question: "Review complete. What's next?",
-      header: "Post-Review",
-      multiSelect: false,
+      header: "Post Review",
+      id: "post_review",
+      question: "Review complete. What is next?",
       options: [
-        { label: "Another Review", description: "Run a different review type" },
-        { label: "Complete Session", description: "Archive and finalize" }
+        { label: "Complete Session (Recommended)", description: "Archive and finalize" },
+        { label: "Another Review", description: "Run a different review type" }
       ]
     }]
   })
 
-  if (postReview['Post-Review'] === 'Another Review') {
+  if (postReview.answers.post_review.answers[0] === 'Another Review') {
     // Loop back to Phase 6 review type selection
   }
 }

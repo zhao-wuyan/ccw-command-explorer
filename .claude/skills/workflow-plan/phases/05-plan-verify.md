@@ -34,6 +34,10 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Execution
 
+### Step 5.0: Load Validation Context
+
+Run `ccw spec load --category validation` for verification rules and acceptance criteria.
+
 ### Step 5.1: Initialize Analysis Context
 
 ```bash

@@ -49,7 +49,7 @@ Skill(skill="team-lifecycle-v4", args="task description")
 
 Parse `$ARGUMENTS`:
 - Has `--role <name>` → Read `roles/<name>/role.md`, execute Phase 2-4
-- No `--role` → Read `roles/coordinator/role.md`, execute entry router
+- No `--role` → `@roles/coordinator/role.md`, execute entry router
 
 ## Shared Constants
 
@@ -71,14 +71,14 @@ Agent({
   run_in_background: true,
   prompt: `## Role Assignment
 role: <role>
-role_spec: ~  or <project>/.claude/skills/team-lifecycle-v4/roles/<role>/role.md
+role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
 session_id: <session-id>
 team_name: <team-name>
 requirement: <task-description>
 inner_loop: <true|false>
 
-Read role_spec file to load Phase 2-4 domain instructions.
+Read role_spec file (@<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.
 Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).`
 })
 ```
@@ -98,13 +98,13 @@ Agent({
   run_in_background: true,
   prompt: `## Role Assignment
 role: supervisor
-role_spec: ~  or <project>/.claude/skills/team-lifecycle-v4/roles/supervisor/role.md
+role_spec: <skill_root>/roles/supervisor/role.md
 session: <session-folder>
 session_id: <session-id>
 team_name: <team-name>
 requirement: <task-description>
 
-Read role_spec file to load checkpoint definitions.
+Read role_spec file (@<skill_root>/roles/supervisor/role.md) to load checkpoint definitions.
 Init: load baseline context, report ready, go idle.
 Wake cycle: coordinator sends checkpoint requests via SendMessage.`
 })

@@ -140,12 +140,12 @@ while (!userSatisfied && requirementState.discussion_rounds < 5) {
     // Format questions and suggestions from gapAnalysis for display
     // Present as a structured summary to the user
 
-    AskUserQuestion({
+    request_user_input({
       questions: [
         {
-          question: buildDiscussionPrompt(gapAnalysis, requirementState),
           header: "Req Expand",
-          multiSelect: false,
+          id: "req_expand",
+          question: buildDiscussionPrompt(gapAnalysis, requirementState),
           options: [
             { label: "I'll answer", description: "I have answers/feedback to provide (type in 'Other')" },
             { label: "Accept all suggestions", description: "Accept all expansion recommendations as-is" },
@@ -194,12 +194,12 @@ CONSTRAINTS: 避免重复已回答的问题，聚焦未覆盖的领域
     // If status === "ready_for_confirmation", break to confirmation step
     // If status === "need_more_discussion", present follow-up questions
 
-    AskUserQuestion({
+    request_user_input({
       questions: [
         {
-          question: buildFollowUpPrompt(followUpAnalysis, requirementState),
           header: "Follow-up",
-          multiSelect: false,
+          id: "follow_up",
+          question: buildFollowUpPrompt(followUpAnalysis, requirementState),
           options: [
             { label: "I'll answer", description: "I have more feedback (type in 'Other')" },
             { label: "Looks good", description: "Requirements are sufficiently clear now" },
@@ -300,14 +300,14 @@ if (!autoMode) {
   // Build confirmation summary from requirementState
   const summary = buildConfirmationSummary(requirementState);
 
-  AskUserQuestion({
+  request_user_input({
     questions: [
       {
-        question: `## Requirement Confirmation\n\n${summary}\n\nConfirm and proceed to specification generation?`,
         header: "Confirm",
-        multiSelect: false,
+        id: "confirm",
+        question: `## Requirement Confirmation\n\n${summary}\n\nConfirm and proceed to specification generation?`,
         options: [
-          { label: "Confirm & proceed", description: "Requirements confirmed, start spec generation" },
+          { label: "Confirm & proceed(Recommended)", description: "Requirements confirmed, start spec generation" },
           { label: "Need adjustments", description: "Go back and refine further" }
         ]
       }

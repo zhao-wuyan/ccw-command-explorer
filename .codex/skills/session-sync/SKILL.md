@@ -2,7 +2,7 @@
 name: session-sync
 description: Quick-sync session work to specs/*.md and project-tech.json
 argument-hint: "[-y|--yes] [\"what was done\"]"
-allowed-tools: AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Session Sync
@@ -136,8 +136,18 @@ Target files:
 `)
 
 if (!AUTO_YES) {
-  const approved = CONFIRM("Apply these updates? (modify/skip items if needed)")  // BLOCKS (wait for user response)
-  if (!approved) {
+  const answer = request_user_input({
+    questions: [{
+      header: "确认同步",
+      id: "confirm_sync",
+      question: "Apply these updates? (modify/skip items if needed)",
+      options: [
+        { label: "Apply(Recommended)", description: "Apply all extracted updates to specs and project-tech.json" },
+        { label: "Cancel", description: "Abort sync, no changes made" }
+      ]
+    }]
+  })  // BLOCKS (wait for user response)
+  if (answer.answers.confirm_sync.answers[0] !== "Apply(Recommended)") {
     console.log('Sync cancelled.')
     return
   }

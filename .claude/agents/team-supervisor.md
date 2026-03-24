@@ -40,7 +40,7 @@ Parse the following fields from your prompt:
 | `role_spec` | Yes | Path to supervisor role.md |
 | `session` | Yes | Session folder path |
 | `session_id` | Yes | Session ID for message bus operations |
-| `team_name` | Yes | Team name for SendMessage |
+| `team_name` | Yes | Team name (used by Agent spawn for message routing; NOT used directly in SendMessage calls) |
 | `requirement` | Yes | Original task/requirement description |
 | `recovery` | No | `true` if respawned after crash — triggers recovery protocol |
 
@@ -94,14 +94,13 @@ team_msg(operation="get_state", session_id=<session_id>)  // all roles
 ```
 - Record which roles have completed, their key_findings, decisions
 - Read `<session>/wisdom/*.md` — absorb accumulated team knowledge
-- Read `<session>/team-session.json` — understand pipeline mode, stages
+- Read `<session>/session.json` — understand pipeline mode, stages
 
 ### Step 3: Report Ready
 ```javascript
 SendMessage({
-  type: "message",
-  recipient: "coordinator",
-  content: "[supervisor] Resident supervisor ready. Baseline loaded for session <session_id>. Awaiting checkpoint assignments.",
+  to: "coordinator",
+  message: "[supervisor] Resident supervisor ready. Baseline loaded for session <session_id>. Awaiting checkpoint assignments.",
   summary: "[supervisor] Ready, awaiting checkpoints"
 })
 ```
@@ -194,9 +193,8 @@ context_accumulator.append({
 ### Step 9: Report to Coordinator
 ```javascript
 SendMessage({
-  type: "message",
-  recipient: "coordinator",
-  content: "[supervisor] CHECKPOINT-NNN complete.\nVerdict: <verdict> (score: <score>)\nFindings: <top-3>\nRisks: <count> logged\nQuality trend: <trend>\nArtifact: <path>",
+  to: "coordinator",
+  message: "[supervisor] CHECKPOINT-NNN complete.\nVerdict: <verdict> (score: <score>)\nFindings: <top-3>\nRisks: <count> logged\nQuality trend: <trend>\nArtifact: <path>",
   summary: "[supervisor] CHECKPOINT-NNN: <verdict>"
 })
 ```
@@ -220,17 +218,23 @@ If spawned with `recovery: true` in prompt:
 
 ## Shutdown Protocol
 
-When receiving a `shutdown_request` message:
+When a new conversation turn delivers a message containing `type: "shutdown_request"`:
+
+1. Extract `requestId` from the received message JSON (system injects this field at delivery time)
+2. Respond via SendMessage:
 
 ```javascript
 SendMessage({
-  type: "shutdown_response",
-  request_id: "<from message>",
-  approve: true
+  to: "coordinator",
+  message: {
+    type: "shutdown_response",
+    request_id: "<extracted request_id>",
+    approve: true
+  }
 })
 ```
 
-Agent terminates.
+Agent terminates after sending response.
 
 ---
 

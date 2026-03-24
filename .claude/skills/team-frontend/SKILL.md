@@ -44,7 +44,7 @@ Skill(skill="team-frontend", args="task description")
 
 Parse `$ARGUMENTS`:
 - Has `--role <name>` → Read `roles/<name>/role.md`, execute Phase 2-4
-- No `--role` → Read `roles/coordinator/role.md`, execute entry router
+- No `--role` → `@roles/coordinator/role.md`, execute entry router
 
 ## Shared Constants
 
@@ -66,14 +66,14 @@ Agent({
   run_in_background: true,
   prompt: `## Role Assignment
 role: <role>
-role_spec: ~  or <project>/.claude/skills/team-frontend/roles/<role>/role.md
+role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
 session_id: <session-id>
 team_name: frontend
 requirement: <task-description>
 inner_loop: <true|false>
 
-Read role_spec file to load Phase 2-4 domain instructions.
+Read role_spec file (@<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.
 Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).`
 })
 ```

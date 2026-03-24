@@ -1,12 +1,12 @@
 ---
 name: roadmap-with-file
-description: Strategic requirement roadmap with iterative decomposition and issue creation. Outputs roadmap.md (human-readable, single source) + issues.jsonl (machine-executable). Handoff to team-planex.
+description: Strategic requirement roadmap with iterative decomposition and issue creation. Outputs roadmap.md (human-readable, single source) + issues.jsonl (machine-executable). Handoff to csv-wave-pipeline.
 argument-hint: "[-y|--yes] [-c|--continue] [-m progressive|direct|auto] \"requirement description\""
 ---
 
 ## Auto Mode
 
-When `--yes` or `-y`: Auto-confirm strategy selection, use recommended mode, skip interactive rounds.
+When `--yes` or `-y`: Auto-confirm strategy selection, use recommended mode, skip interactive refinement rounds. **This skill is planning-only — it NEVER executes code or modifies source files. Output is the roadmap + issues for user review.**
 
 # Roadmap-with-file Skill
 
@@ -39,13 +39,13 @@ Create a new subagent with task assignment.
 
 ```javascript
 const agentId = spawn_agent({
+  agent_type: "{agent_type}",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/{agent-type}.md (MUST read first)
-2. Read: .workflow/project-tech.json
-3. Read: .workflow/project-guidelines.json
+1. Read: .workflow/project-tech.json
+2. Read: .workflow/project-guidelines.json
 
 ## TASK CONTEXT
 ${taskContext}
@@ -101,8 +101,8 @@ close_agent({ id: agentId })
 
 | Artifact | Purpose | Consumer |
 |----------|---------|----------|
-| `roadmap.md` | ⭐ Human-readable strategic roadmap with all context | Human review, team-planex handoff |
-| `.workflow/issues/issues.jsonl` | Global issue store (appended) | team-planex, issue commands |
+| `roadmap.md` | ⭐ Human-readable strategic roadmap with all context | Human review, csv-wave-pipeline handoff |
+| `.workflow/issues/issues.jsonl` | Global issue store (appended) | csv-wave-pipeline, issue commands |
 
 ### Why No Separate JSON Files?
 
@@ -143,9 +143,9 @@ Strategic requirement roadmap with **iterative decomposition**. Creates a single
 │     ├─ Update roadmap.md with each round                                 │
 │     └─ Repeat until approved (max 5 rounds)                              │
 │                                                                          │
-│  Phase 4: Handoff                                                        │
+│  Phase 4: Handoff (PLANNING ENDS HERE)                                   │
 │     ├─ Final roadmap.md with Issue ID references                         │
-│     ├─ Options: team-planex | first wave | view issues | done            │
+│     ├─ Options: view issues | done (show next-step commands)             │
 │     └─ Issues ready in .workflow/issues/issues.jsonl                     │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -180,7 +180,7 @@ Strategic requirement roadmap with **iterative decomposition**. Creates a single
 
 .workflow/issues/issues.jsonl   # Global issue store (appended)
                                 #   - One JSON object per line
-                                #   - Consumed by team-planex, issue commands
+                                #   - Consumed by csv-wave-pipeline, issue commands
 ```
 
 ---
@@ -403,20 +403,19 @@ Bash(`mkdir -p ${sessionFolder}`)
    } else if (AUTO_YES) {
      selectedMode = recommendedMode
    } else {
-     const answer = ASK_USER([
-       {
+     const answer = request_user_input({
+       questions: [{
+         header: "Strategy",
          id: "strategy",
-         type: "choice",
-         prompt: `Decomposition strategy:\nUncertainty: ${uncertaintyLevel}\nRecommended: ${recommendedMode}`,
+         question: `Decomposition strategy:\nUncertainty: ${uncertaintyLevel}\nRecommended: ${recommendedMode}`,
          options: [
-           { value: "progressive", label: recommendedMode === 'progressive' ? "Progressive (Recommended)" : "Progressive" },
-           { value: "direct", label: recommendedMode === 'direct' ? "Direct (Recommended)" : "Direct" }
-         ],
-         default: recommendedMode
-       }
-     ])  // BLOCKS (wait for user response)
+           { label: recommendedMode === 'progressive' ? "Progressive (Recommended)" : "Progressive" },
+           { label: recommendedMode === 'direct' ? "Direct (Recommended)" : "Direct" }
+         ]
+       }]
+     })  // BLOCKS (wait for user response)
 
-     selectedMode = answer.strategy
+     selectedMode = answer.answers.strategy.answers[0]
    }
    ```
 
@@ -503,13 +502,13 @@ Bash(`mkdir -p ${sessionFolder}`)
 
    if (hasCodebase !== 'none') {
      const exploreAgentId = spawn_agent({
+       agent_type: "cli_explore_agent",
        message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-explore-agent.md (MUST read first)
-2. Read: .workflow/project-tech.json
-3. Read: .workflow/project-guidelines.json
+1. Read: .workflow/project-tech.json
+2. Read: .workflow/project-guidelines.json
 
 ---
 
@@ -554,13 +553,13 @@ Return findings as JSON with schema:
 2. **Execute Decomposition Agent**
    ```javascript
    const decompositionAgentId = spawn_agent({
+     agent_type: "cli_roadmap_plan_agent",
      message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-roadmap-plan-agent.md (MUST read first)
-2. Read: .workflow/project-tech.json
-3. Read: .workflow/project-guidelines.json
+1. Read: .workflow/project-tech.json
+2. Read: .workflow/project-guidelines.json
 
 ---
 
@@ -670,31 +669,36 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
    while (!approved && round < 5) {
      round++
 
-     const feedback = ASK_USER([
-       {
+     const feedback = request_user_input({
+       questions: [{
+         header: "Validate",
          id: "feedback",
-         type: "choice",
-         prompt: `Roadmap validation (round ${round}):\n${issueIds.length} issues across ${waveCount} waves. Feedback?`,
+         question: `Roadmap validation (round ${round}):\n${issueIds.length} issues across ${waveCount} waves. Feedback?`,
          options: [
-           { value: "approve", label: "Approve", description: "Proceed to handoff" },
-           { value: "scope", label: "Adjust Scope", description: "Modify issue scopes" },
-           { value: "convergence", label: "Modify Convergence", description: "Refine criteria/verification" },
-           { value: "replan", label: "Re-decompose", description: "Change strategy/layering" }
+           { label: "Approve", description: "Proceed to handoff" },
+           { label: "Adjust Scope", description: "Modify issue scopes" },
+           { label: "Modify Convergence", description: "Refine criteria/verification" },
+           { label: "Re-decompose", description: "Change strategy/layering" }
          ]
-       }
-     ])  // BLOCKS (wait for user response)
+       }]
+     })  // BLOCKS (wait for user response)
 
-     if (feedback.feedback === 'approve') {
+     const feedbackChoice = feedback.answers.feedback.answers[0]
+     if (feedbackChoice === 'Approve') {
        approved = true
      } else {
        // CONSTRAINT: All modifications below ONLY touch roadmap.md and issues.jsonl
        // NEVER modify source code or project files during interactive rounds
-       switch (feedback.feedback) {
-         case 'scope':
+       switch (feedbackChoice) {
+         case 'Adjust Scope':
            // Collect scope adjustments
-           const scopeAdjustments = ASK_USER([
-             { id: "adjustments", type: "text", prompt: "Describe scope adjustments needed:" }
-           ])  // BLOCKS
+           const scopeAdjustments = request_user_input({
+             questions: [{
+               header: "Scope",
+               id: "adjustments",
+               question: "Describe scope adjustments needed:"
+             }]
+           })  // BLOCKS
 
            // Update ONLY roadmap.md Roadmap table + Convergence sections
            Edit({ path: `${sessionFolder}/roadmap.md`, /* scope changes */ })
@@ -702,32 +706,36 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 
            break
 
-         case 'convergence':
+         case 'Modify Convergence':
            // Collect convergence refinements
-           const convergenceRefinements = ASK_USER([
-             { id: "refinements", type: "text", prompt: "Describe convergence refinements needed:" }
-           ])  // BLOCKS
+           const convergenceRefinements = request_user_input({
+             questions: [{
+               header: "Convergence",
+               id: "refinements",
+               question: "Describe convergence refinements needed:"
+             }]
+           })  // BLOCKS
 
            // Update ONLY roadmap.md Convergence Criteria section
            Edit({ path: `${sessionFolder}/roadmap.md`, /* convergence changes */ })
 
            break
 
-         case 'replan':
+         case 'Re-decompose':
            // Return to Phase 2 with new strategy
-           const newStrategy = ASK_USER([
-             {
+           const newStrategy = request_user_input({
+             questions: [{
+               header: "Strategy",
                id: "strategy",
-               type: "choice",
-               prompt: "Select new decomposition strategy:",
+               question: "Select new decomposition strategy:",
                options: [
-                 { value: "progressive", label: "Progressive" },
-                 { value: "direct", label: "Direct" }
+                 { label: "Progressive" },
+                 { label: "Direct" }
                ]
-             }
-           ])  // BLOCKS
+             }]
+           })  // BLOCKS
 
-           selectedMode = newStrategy.strategy
+           selectedMode = newStrategy.answers.strategy.answers[0]
            // Re-execute Phase 2 (updates roadmap.md + issues.jsonl only)
            break
        }
@@ -793,53 +801,42 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
    if (AUTO_YES) {
      nextStep = "done"  // Default to done in auto mode
    } else {
-     const answer = ASK_USER([
-       {
-         id: "next",
-         type: "choice",
-         prompt: `${issueIds.length} issues ready. Next step:`,
+     const answer = request_user_input({
+       questions: [{
+         header: "Next Step",
+         id: "next_step",
+         question: `${issueIds.length} issues ready. Next step:`,
          options: [
-           { value: "planex", label: "Execute with team-planex (Recommended)", description: `Run all ${issueIds.length} issues via team-planex` },
-           { value: "wave1", label: "Execute first wave", description: "Run wave-1 issues only" },
-           { value: "view", label: "View issues", description: "Display issue details" },
-           { value: "done", label: "Done", description: "Save and exit" }
+           { label: "View issues", description: "Display issue details" },
+           { label: "Done", description: "Planning complete — show next-step commands" }
          ]
-       }
-     ])  // BLOCKS (wait for user response)
+       }]
+     })  // BLOCKS (wait for user response)
 
-     nextStep = answer.next
+     nextStep = answer.answers.next_step.answers[0]
    }
    ```
 
 3. **Execute Selection**
    ```javascript
    switch (nextStep) {
-     case 'planex':
-       // Launch team-planex with all issue IDs
-       Bash(`ccw skill team-planex ${issueIds.join(' ')}`)
-       break
-
-     case 'wave1':
-       // Filter issues by wave-1 tag
-       Bash(`ccw skill team-planex --tag wave-1 --session ${sessionId}`)
-       break
-
      case 'view':
        // Display issues from issues.jsonl
        Bash(`ccw issue list --session ${sessionId}`)
-       break
+       // Fall through to show next-step commands
+       // STOP — do not execute anything
 
      case 'done':
-       // Output paths and end
+       // Output paths and end — this skill is planning-only
        console.log([
          `Roadmap saved: ${sessionFolder}/roadmap.md`,
          `Issues created: ${issueIds.length}`,
          '',
-         'To execute later:',
-         `  $team-planex ${issueIds.slice(0, 3).join(' ')}...`,
+         'Planning complete. To execute, run:',
+         `  $csv-wave-pipeline "${requirement}"`,
          `  ccw issue list --session ${sessionId}`
        ].join('\n'))
-       break
+       return  // STOP — this skill is planning-only, NEVER proceed to execution
    }
    ```
 
@@ -871,8 +868,9 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 3. **Iterate on Roadmap**: Use feedback rounds to refine, not recreate
 4. **Testable Convergence**: criteria = assertions, DoD = business language
 5. **Explicit Lifecycle**: Always close_agent after wait completes to free resources
-6. **DO NOT STOP**: Continuous workflow until handoff complete
-7. **Plan-Only Modifications**: Interactive feedback (Phase 3) MUST only update `roadmap.md` and `issues.jsonl`. NEVER modify source code, configuration files, or any project files during interactive rounds. Code changes happen only after handoff (Phase 4) via team-planex or other execution skills
+6. **Planning-Only Skill**: This skill ONLY produces roadmap and issues. It NEVER executes code, creates source files, or runs implementation. All code changes happen via separate execution skills after user manually triggers them
+7. **Plan-Only Modifications**: Interactive feedback (Phase 3) MUST only update `roadmap.md` and `issues.jsonl`. NEVER modify source code, configuration files, or any project files during any phase. Code changes happen only after handoff when user manually runs `$csv-wave-pipeline` or other execution skills
+8. **MANDATORY CONFIRMATION GATE**: After Phase 2 decomposition completes, you MUST present the roadmap to the user and wait for confirmation (Phase 3) before proceeding to handoff. NEVER skip Phase 3 user validation
 
 ---
 
@@ -900,4 +898,4 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 
 ---
 
-**Now execute roadmap-with-file for**: $ARGUMENTS
+**Now plan roadmap for**: $ARGUMENTS

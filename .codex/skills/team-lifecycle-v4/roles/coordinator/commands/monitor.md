@@ -1,0 +1,177 @@
+# Monitor Pipeline
+
+Synchronous pipeline coordination using spawn_agent + wait_agent.
+
+## Constants
+
+- WORKER_AGENT: tlv4_worker
+- SUPERVISOR_AGENT: tlv4_supervisor (resident, woken via send_input)
+
+## Handler Router
+
+| Source | Handler |
+|--------|---------|
+| "capability_gap" | handleAdapt |
+| "check" or "status" | handleCheck |
+| "resume" or "continue" | handleResume |
+| All tasks completed | handleComplete |
+| Default | handleSpawnNext |
+
+## handleCheck
+
+Read-only status report from tasks.json, then STOP.
+
+1. Read tasks.json
+2. Count tasks by status (pending, in_progress, completed, failed, skipped)
+
+Output:
+```
+[coordinator] Pipeline Status
+[coordinator] Progress: <done>/<total> (<pct>%)
+[coordinator] Active agents: <list from active_agents>
+[coordinator] Ready: <pending tasks with resolved deps>
+[coordinator] Commands: 'resume' to advance | 'check' to refresh
+```
+
+## handleResume
+
+1. Read tasks.json, check active_agents
+2. No active agents -> handleSpawnNext
+3. Has active agents -> check each:
+   - If supervisor with `resident: true` + no CHECKPOINT in_progress + pending CHECKPOINT exists
+     -> supervisor may have crashed. Respawn via spawn_agent({ agent_type: "tlv4_supervisor" }) with recovery: true
+4. Proceed to handleSpawnNext
+
+## handleSpawnNext
+
+Find ready tasks, spawn workers, wait for completion, process results.
+
+1. Read tasks.json
+2. Collect: completedTasks, inProgressTasks, readyTasks (pending + all deps completed)
+3. No ready + nothing in progress -> handleComplete
+4. No ready + work in progress -> report waiting, STOP
+5. Has ready -> separate regular tasks and CHECKPOINT tasks
+
+### Spawn Regular Tasks
+
+For each ready non-CHECKPOINT task:
+
+```javascript
+// 1) Update status in tasks.json
+state.tasks[task.id].status = 'in_progress'
+
+// 2) Spawn worker
+const agentId = spawn_agent({
+  agent_type: "tlv4_worker",
+  items: [
+    { type: "text", text: `## Role Assignment
+role: ${task.role}
+role_spec: ${skillRoot}/roles/${task.role}/role.md
+session: ${sessionFolder}
+session_id: ${sessionId}
+requirement: ${requirement}
+inner_loop: ${hasInnerLoop(task.role)}` },
+
+    { type: "text", text: `Read role_spec file (${skillRoot}/roles/${task.role}/role.md) to load Phase 2-4 domain instructions.
+Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).` },
+
+    { type: "text", text: `## Task Context
+task_id: ${task.id}
+title: ${task.title}
+description: ${task.description}
+pipeline_phase: ${task.pipeline_phase}` },
+
+    { type: "text", text: `## Upstream Context\n${prevContext}` }
+  ]
+})
+
+// 3) Track agent
+state.active_agents[task.id] = { agentId, role: task.role, started_at: now }
+```
+
+After spawning all ready regular tasks:
+
+```javascript
+// 4) Batch wait for all spawned workers
+const agentIds = Object.values(state.active_agents)
+  .filter(a => !a.resident)
+  .map(a => a.agentId)
+wait_agent({ ids: agentIds, timeout_ms: 900000 })
+
+// 5) Collect results from discoveries/{task_id}.json
+for (const [taskId, agent] of Object.entries(state.active_agents)) {
+  if (agent.resident) continue
+  try {
+    const disc = JSON.parse(Read(`${sessionFolder}/discoveries/${taskId}.json`))
+    state.tasks[taskId].status = disc.status || 'completed'
+    state.tasks[taskId].findings = disc.findings || ''
+    state.tasks[taskId].quality_score = disc.quality_score || null
+    state.tasks[taskId].error = disc.error || null
+  } catch {
+    state.tasks[taskId].status = 'failed'
+    state.tasks[taskId].error = 'No discovery file produced'
+  }
+  close_agent({ id: agent.agentId })
+  delete state.active_agents[taskId]
+}
+```
+
+### Handle CHECKPOINT Tasks
+
+For each ready CHECKPOINT task:
+
+1. Verify supervisor is in active_agents with `resident: true`
+   - Not found -> spawn supervisor via SKILL.md Supervisor Spawn Template, record supervisorId
+2. Determine scope: list task IDs that this checkpoint depends on (its deps)
+3. Wake supervisor:
+   ```javascript
+   send_input({
+     id: supervisorId,
+     items: [
+       { type: "text", text: `## Checkpoint Request
+   task_id: ${task.id}
+   scope: [${task.deps.join(', ')}]
+   pipeline_progress: ${completedCount}/${totalCount} tasks completed` }
+     ]
+   })
+   wait_agent({ ids: [supervisorId], timeout_ms: 300000 })
+   ```
+4. Read checkpoint report from artifacts/${task.id}-report.md
+5. Parse verdict (pass / warn / block):
+   - **pass** -> mark completed, proceed
+   - **warn** -> log risks to wisdom, mark completed, proceed
+   - **block** -> request_user_input: Override / Revise upstream / Abort
+
+### Persist and Loop
+
+After processing all results:
+1. Write updated tasks.json
+2. Check if more tasks are now ready (deps newly resolved)
+3. If yes -> loop back to step 1 of handleSpawnNext
+4. If no more ready and all done -> handleComplete
+5. If no more ready but some still blocked -> report status, STOP
+
+## handleComplete
+
+Pipeline done. Generate report and completion action.
+
+1. Shutdown resident supervisor (if active):
+   ```javascript
+   close_agent({ id: supervisorId })
+   ```
+   Remove from active_agents in tasks.json
+2. Generate summary (deliverables, stats, discussions)
+3. Read tasks.json completion_action:
+   - interactive -> request_user_input (Archive/Keep/Export)
+   - auto_archive -> Archive & Clean (rm -rf session folder)
+   - auto_keep -> Keep Active (update status to "paused")
+
+## handleAdapt
+
+Capability gap reported mid-pipeline.
+
+1. Parse gap description
+2. Check if existing role covers it -> redirect
+3. Role count < 5 -> generate dynamic role-spec in <session>/role-specs/
+4. Add new task to tasks.json, spawn worker via spawn_agent + wait_agent
+5. Role count >= 5 -> merge or pause

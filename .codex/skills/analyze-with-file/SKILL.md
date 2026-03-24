@@ -10,14 +10,14 @@ argument-hint: "TOPIC=\"<question or topic>\" [--depth=quick|standard|deep] [--c
 
 Interactive collaborative analysis workflow with **documented discussion process**. Records understanding evolution, facilitates multi-round Q&A, and uses inline search tools for deep exploration.
 
-**Core workflow**: Topic → Explore → Discuss → Document → Refine → Conclude → (Optional) Quick Execute
+**Core workflow**: Topic → Explore → Discuss → Document → Refine → Conclude → Plan Checklist
 
 **Key features**:
 - **Documented discussion timeline**: Captures understanding evolution across all phases
 - **Decision recording at every critical point**: Mandatory recording of key findings, direction changes, and trade-offs
 - **Multi-perspective analysis**: Supports up to 4 analysis perspectives (serial, inline)
 - **Interactive discussion**: Multi-round Q&A with user feedback and direction adjustments
-- **Quick execute**: Convert conclusions directly to executable tasks
+- **Plan output**: Generate structured plan checklist for downstream execution (e.g., `$csv-wave-pipeline`)
 
 ### Decision Recording Protocol
 
@@ -96,6 +96,7 @@ Step 1: Topic Understanding
 Step 2: Exploration (Inline, No Agents)
    ├─ Detect codebase → search relevant modules, patterns
    │   ├─ Run `ccw spec load --category exploration` (if spec system available)
+   │   ├─ Run `ccw spec load --category debug` (known issues and root-cause notes)
    │   └─ Use Grep, Glob, Read, mcp__ace-tool__search_context
    ├─ Multi-perspective analysis (if selected, serial)
    │   ├─ Single: Comprehensive analysis
@@ -128,17 +129,11 @@ Step 4: Synthesis & Conclusion
    ├─ Consolidate all insights → conclusions.json (with steps[] per recommendation)
    ├─ Update discussion.md with final synthesis
    ├─ Interactive Recommendation Review (per-recommendation confirm/modify/reject)
-   └─ Offer options: quick execute / create issue / generate task / export / done
+   └─ Offer options: generate plan / create issue / export / done
 
-Step 5: Execute (Optional - user selects, routes by complexity)
-   ├─ Simple (≤2 recs): Direct inline execution → summary in discussion.md
-   └─ Complex (≥3 recs): EXECUTE.md pipeline
-      ├─ Enrich recommendations → generate .task/TASK-*.json
-      ├─ Pre-execution analysis (dependencies, file conflicts, execution order)
-      ├─ User confirmation
-      ├─ Direct inline execution (Read/Edit/Write/Grep/Glob/Bash)
-      ├─ Record events → execution-events.md, update execution.md
-      └─ Report completion summary
+Step 5: Plan Generation (Optional - produces plan only, NO code modifications)
+   ├─ Generate inline plan checklist → appended to discussion.md
+   └─ Remind user to execute via $csv-wave-pipeline
 ```
 
 ## Configuration
@@ -218,26 +213,25 @@ For new sessions, gather user preferences (skipped in auto mode or continue mode
 if (!autoYes && !continueMode) {
   // 1. Focus areas (multi-select)
   // Generate directions dynamically from detected dimensions (see Dimension-Direction Mapping)
-  const focusAreas = AskUserQuestion({
+  const focusAreas = request_user_input({
     questions: [{
+      header: "聚焦领域",
+      id: "focus",
       question: "Select analysis focus areas:",
-      header: "Focus",
-      multiSelect: true,
       options: generateFocusOptions(dimensions) // Dynamic based on dimensions
     }]
   })
 
   // 2. Analysis perspectives (multi-select, max 4)
-  const perspectives = AskUserQuestion({
+  const perspectives = request_user_input({
     questions: [{
+      header: "分析视角",
+      id: "perspectives",
       question: "Select analysis perspectives (single = focused, multi = broader coverage):",
-      header: "Perspectives",
-      multiSelect: true,
       options: [
         { label: "Technical", description: "Implementation patterns, code structure, technical feasibility" },
         { label: "Architectural", description: "System design, scalability, component interactions" },
-        { label: "Security", description: "Vulnerabilities, authentication, access control" },
-        { label: "Performance", description: "Bottlenecks, optimization, resource utilization" }
+        { label: "Security", description: "Vulnerabilities, authentication, access control" }
       ]
     }]
   })
@@ -326,6 +320,7 @@ const hasCodebase = Bash(`
 if (hasCodebase !== 'none') {
   // 1. Read project metadata (if exists)
   //    - Run `ccw spec load --category exploration` (load project specs)
+  //    - Run `ccw spec load --category debug` (known issues and root-cause notes)
   //    - .workflow/specs/*.md (project conventions)
 
   // 2. Search codebase for relevant content
@@ -511,16 +506,14 @@ if (round >= 2) {
 // Show key points, discussion points, open questions
 
 if (!autoYes) {
-  const feedback = AskUserQuestion({
+  const feedback = request_user_input({
     questions: [{
+      header: "分析方向",
+      id: "direction",
       question: `Analysis round ${round}: Feedback on current findings?`,
-      header: "Direction",
-      multiSelect: false,
       options: [
-        { label: "Deepen", description: "Analysis direction is correct, investigate deeper" },
-        { label: "Agree & Suggest", description: "Agree with direction, but have specific next step in mind" },
+        { label: "Deepen(Recommended)", description: "Analysis direction is correct, investigate deeper" },
         { label: "Adjust Direction", description: "Different understanding or focus needed" },
-        { label: "Specific Questions", description: "Have specific questions to ask" },
         { label: "Analysis Complete", description: "Sufficient information obtained, proceed to synthesis" }
       ]
     }]
@@ -544,7 +537,7 @@ if (!autoYes) {
 //   "analyze under extreme load scenarios",
 //   "review from security audit perspective",
 //   "explore simpler architectural alternatives"
-// AskUserQuestion with generated options (single-select)
+// request_user_input with generated options (single-select)
 // Execute selected direction via inline search tools
 // Merge new findings into explorations.json
 // Record: Which assumptions were confirmed, specific angles for deeper exploration
@@ -553,12 +546,15 @@ if (!autoYes) {
 **Agree & Suggest** — user provides specific next step:
 ```javascript
 // Ask user for their specific direction (free text input)
-const userSuggestion = AskUserQuestion({
+const userSuggestion = request_user_input({
   questions: [{
+    header: "你的方向",
+    id: "your_direction",
     question: "请描述您希望下一步深入的方向:",
-    header: "Your Direction",
-    multiSelect: false,
-    options: [/* user will select "Other" to type free text */]
+    options: [
+      { label: "Code Details", description: "Deeper into implementation specifics" },
+      { label: "Architecture", description: "Broader structural analysis" }
+    ]
   }]
 })
 // Execute user's specific direction via inline search tools
@@ -568,11 +564,11 @@ const userSuggestion = AskUserQuestion({
 **Adjust Direction** — new focus area:
 ```javascript
 // Ask user for adjusted focus
-const adjustedFocus = AskUserQuestion({
+const adjustedFocus = request_user_input({
   questions: [{
+    header: "新焦点",
+    id: "new_focus",
     question: "What should the new analysis focus be?",
-    header: "New Focus",
-    multiSelect: false,
     options: [
       { label: "Code Details", description: "Deeper into implementation specifics" },
       { label: "Architecture", description: "Broader structural analysis" },
@@ -590,7 +586,7 @@ const adjustedFocus = AskUserQuestion({
 
 **Specific Questions** — answer directly:
 ```javascript
-// Capture user questions via AskUserQuestion (text input)
+// Capture user questions via request_user_input
 // Answer each question based on codebase search and analysis
 // Provide evidence and file references
 // Rate confidence for each answer (high/medium/low)
@@ -694,7 +690,49 @@ Write "Intent Coverage Matrix" to discussion.md:
 - (a) Add a dedicated discussion round to address it before continuing, OR
 - (b) Explicitly confirm with user that it is intentionally deferred
 
-##### Step 4.1: Consolidate Insights
+##### Step 4.1: Findings-to-Recommendations Traceability (MANDATORY before consolidation)
+
+Collect ALL actionable findings from every round and map each to a disposition:
+
+```javascript
+// 1. Collect all actionable findings from discussion rounds
+//    Sources: key findings with actionable implications, technical solutions (proposed/validated),
+//    identified gaps (API-frontend gaps, missing features, design issues),
+//    corrected assumptions that imply fixes
+const allFindings = collectActionableFindings(explorations, discussionRounds)
+
+// 2. Map each finding → disposition
+// | Disposition     | Meaning                                              |
+// |-----------------|------------------------------------------------------|
+// | recommendation  | Converted to a numbered recommendation               |
+// | absorbed        | Covered by another recommendation (specify which)    |
+// | deferred        | Explicitly out-of-scope with reason                  |
+// | informational   | Pure insight, no action needed                       |
+
+const findingsCoverage = allFindings.map(f => ({
+  finding: f.summary,
+  round: f.round,
+  disposition: null,  // MUST be assigned before proceeding
+  target: null,       // e.g., "Rec #1" or "→ Rec #3" or "Reason: ..."
+  reason: null
+}))
+
+// 3. Gate: ALL findings MUST have a disposition assigned.
+//    Do NOT proceed to Step 4.2 with any disposition = null.
+//    Unmapped findings must be either added as new recommendations or assigned a disposition.
+
+// 4. Append Findings Coverage Matrix to discussion.md
+appendToDiscussion(`
+### Findings Coverage Matrix
+| # | Finding (Round) | Disposition | Target |
+|---|----------------|-------------|--------|
+${findingsCoverage.map((f, i) =>
+  `| ${i+1} | ${f.finding} (R${f.round}) | ${f.disposition} | ${f.target || '—'} |`
+).join('\n')}
+`)
+```
+
+##### Step 4.2: Consolidate Insights
 
 ```javascript
 const conclusions = {
@@ -707,6 +745,7 @@ const conclusions = {
     { point: '...', evidence: '...', confidence: 'high|medium|low' }
   ],
   recommendations: [                 // Actionable recommendations
+    // MUST include all findings with disposition = 'recommendation' from Step 4.1
     {
       action: '...',                    // What to do (imperative verb + target)
       rationale: '...',                 // Why this matters
@@ -730,12 +769,13 @@ const conclusions = {
   ],
   intent_coverage: [                 // From Step 4.0
     { intent: '...', status: 'addressed|transformed|absorbed|missed', where_addressed: '...', notes: '...' }
-  ]
+  ],
+  findings_coverage: findingsCoverage // From Step 4.1
 }
 Write(`${sessionFolder}/conclusions.json`, JSON.stringify(conclusions, null, 2))
 ```
 
-##### Step 4.2: Final discussion.md Update
+##### Step 4.3: Final discussion.md Update
 
 Append conclusions section and finalize:
 
@@ -753,6 +793,8 @@ Append conclusions section and finalize:
 | What Was Clarified | Important corrections (~~wrong→right~~) |
 | Key Insights | Valuable learnings for future reference |
 
+**Findings Coverage Matrix**: From Step 4.1 (already appended).
+
 **Decision Trail Section**:
 
 | Subsection | Content |
@@ -763,7 +805,7 @@ Append conclusions section and finalize:
 
 **Session Statistics**: Total discussion rounds, key findings count, dimensions covered, artifacts generated, **decision count**.
 
-##### Step 4.3: Interactive Recommendation Review (skip in auto mode)
+##### Step 4.4: Interactive Recommendation Review (skip in auto mode)
 
 Walk through each recommendation one-by-one for user confirmation before proceeding:
 
@@ -776,16 +818,15 @@ for (const [index, rec] of sortedRecs.entries()) {
   // Display: action, rationale, priority, steps[] (numbered sub-steps with target + verification)
 
   // 2. Gather user review
-  const review = AskUserQuestion({
+  const review = request_user_input({
     questions: [{
+      header: `建议#${index + 1}`,
+      id: `rec_${index + 1}`,
       question: `Recommendation #${index + 1}: "${rec.action}" (${rec.priority} priority, ${rec.steps.length} steps). Your decision:`,
-      header: `Rec #${index + 1}`,
-      multiSelect: false,
       options: [
-        { label: "Accept", description: "Accept this recommendation as-is" },
+        { label: "Accept(Recommended)", description: "Accept this recommendation as-is" },
         { label: "Modify", description: "Adjust scope, steps, or priority" },
-        { label: "Reject", description: "Remove this recommendation" },
-        { label: "Accept All Remaining", description: "Skip review for remaining recommendations" }
+        { label: "Reject", description: "Remove this recommendation" }
       ]
     }]
   })
@@ -815,9 +856,9 @@ for (const [index, rec] of sortedRecs.entries()) {
 | 3 | [action] | low | 1 | ❌ Rejected | [reason] |
 ```
 
-##### Step 4.4: Post-Completion Options
+##### Step 4.5: Post-Completion Options
 
-**Complexity Assessment** — determine whether .task/*.json generation is warranted:
+**Complexity Assessment** — determine available options:
 
 ```javascript
 // Assess recommendation complexity to decide available options
@@ -833,26 +874,26 @@ function assessComplexity(recs) {
 
 // Complexity → available options mapping:
 //   none:    Done | Create Issue | Export Report
-//   simple:  Done | Create Issue | Export Report (no task generation — overkill)
-//   moderate: Done | Generate Task | Create Issue | Export Report
-//   complex:  Quick Execute | Generate Task | Create Issue | Export Report | Done
+//   simple:  Done | Create Issue | Export Report
+//   moderate: Generate Plan | Create Issue | Export Report | Done
+//   complex:  Generate Plan | Create Issue | Export Report | Done
 ```
 
 ```javascript
 if (!autoYes) {
   const options = buildOptionsForComplexity(complexity)
-  AskUserQuestion({
+  request_user_input({
     questions: [{
+      header: "下一步",
+      id: "next_step",
       question: `Analysis complete (${recs.length} recommendations, complexity: ${complexity}). Next step:`,
-      header: "Next Step",
-      multiSelect: false,
       options: options
     }]
   })
 } else {
-  // Auto mode: generate .task/*.json only for moderate/complex, skip for simple/none
+  // Auto mode: generate plan only for moderate/complex, skip for simple/none
   if (complexity === 'complex' || complexity === 'moderate') {
-    // → Phase 5 Step 5.1-5.2 (task generation only, no execution)
+    // → Phase 5 (plan generation only, NO code modifications)
   } else {
     // → Done (conclusions.json is sufficient output)
   }
@@ -865,114 +906,82 @@ if (!autoYes) {
 |------------|-------------------|-----------|
 | `none` | Done, Create Issue, Export Report | No actionable recommendations |
 | `simple` | Done, Create Issue, Export Report | 1-2 low-priority items don't warrant formal task JSON |
-| `moderate` | Generate Task, Create Issue, Export Report, Done | Task structure helpful but execution not urgent |
-| `complex` | Quick Execute, Generate Task, Create Issue, Export Report, Done | Full pipeline justified |
+| `moderate` | Generate Plan, Create Issue, Export Report, Done | Task structure helpful for downstream execution |
+| `complex` | Generate Plan, Create Issue, Export Report, Done | Full plan generation justified |
 
 | Selection | Action |
 |-----------|--------|
-| Quick Execute | Jump to Phase 5 (only reviewed recs with status accepted/modified) |
+| Generate Plan | Jump to Phase 5 (plan generation only, NO code modifications) |
 | Create Issue | `Skill(skill="issue:new", args="...")` (only reviewed recs) |
-| Generate Task | Jump to Phase 5 Step 5.1-5.2 only (generate .task/*.json, no execution) |
 | Export Report | Copy discussion.md + conclusions.json to user-specified location |
 | Done | Display artifact paths, end |
 
 **Success Criteria**:
-- conclusions.json created with complete synthesis
-- discussion.md finalized with conclusions and decision trail
+- conclusions.json created with complete synthesis including findings_coverage[]
+- **Findings Coverage Matrix** completed — all actionable findings mapped to disposition (recommendation/absorbed/deferred/informational)
+- discussion.md finalized with conclusions, decision trail, and findings coverage matrix
 - **Intent Coverage Matrix** verified — all original intents accounted for (no ❌ Missed without explicit user deferral)
 - User offered meaningful next step options
 - **Complete decision trail** documented and traceable from initial scoping to final conclusions
 
-### Phase 5: Execute (Optional)
+### Phase 5: Plan Generation (Optional — NO code modifications)
 
-**Objective**: Execute analysis recommendations — route by complexity.
+**Objective**: Generate structured plan checklist from analysis recommendations. **This phase produces plans only — it does NOT modify any source code.**
 
-**Trigger**: User selects "Quick Execute" in Phase 4. In auto mode, triggered only for `moderate`/`complex` recommendations.
-
-**Routing Logic**:
-
-```
-complexity assessment (from Phase 4.3)
-  ├─ simple/moderate (≤2 recommendations, clear changes)
-  │   └─ Direct inline execution — no .task/*.json overhead
-  └─ complex (≥3 recommendations, or high-priority with dependencies)
-      └─ Route to EXECUTE.md — full pipeline (task generation → execution)
-```
-
-##### Step 5.1: Route by Complexity
+**Trigger**: User selects "Generate Plan" in Phase 4. In auto mode, triggered only for `moderate`/`complex` recommendations.
 
 ```javascript
 const recs = conclusions.recommendations || []
 
-if (recs.length >= 3 || recs.some(r => r.priority === 'high')) {
-  // COMPLEX PATH → EXECUTE.md pipeline
-  // Full specification: EXECUTE.md
-  // Flow: load all context → generate .task/*.json → pre-execution analysis → serial execution → finalize
-} else {
-  // SIMPLE PATH → direct inline execution (below)
-}
-```
+// Build plan checklist from all accepted/modified recommendations
+const planChecklist = recs
+  .filter(r => r.review_status !== 'rejected')
+  .map((rec, index) => {
+    const files = rec.evidence_refs
+      ?.filter(ref => ref.includes(':'))
+      .map(ref => ref.split(':')[0]) || []
 
-##### Step 5.2: Simple Path — Direct Inline Execution
-
-For simple/moderate recommendations, execute directly without .task/*.json ceremony:
-
-```javascript
-// For each recommendation:
-recs.forEach((rec, index) => {
-  // 1. Locate relevant files from evidence_refs or codebase search
-  const files = rec.evidence_refs
-    ?.filter(ref => ref.includes(':'))
-    .map(ref => ref.split(':')[0]) || []
-
-  // 2. Read each target file
-  files.forEach(filePath => Read(filePath))
-
-  // 3. Apply changes based on rec.action + rec.rationale
-  //    Use Edit (preferred) for modifications, Write for new files
-
-  // 4. Log to discussion.md — append execution summary
-})
-
-// Append execution summary to discussion.md
-appendToDiscussion(`
-## Quick Execution Summary
-
-- **Recommendations executed**: ${recs.length}
-- **Completed**: ${getUtc8ISOString()}
-
-${recs.map((rec, i) => `### ${i+1}. ${rec.action}
-- **Status**: completed/failed
+    return `### ${index + 1}. ${rec.action}
+- **Priority**: ${rec.priority}
 - **Rationale**: ${rec.rationale}
+- **Target files**: ${files.join(', ') || 'TBD'}
 - **Evidence**: ${rec.evidence_refs?.join(', ') || 'N/A'}
-`).join('\n')}
+- [ ] Ready for execution`
+  }).join('\n\n')
+
+// Append plan checklist to discussion.md
+appendToDiscussion(`
+## Plan Checklist
+
+> **This is a plan only — no code was modified.**
+> To execute, use: \`$csv-wave-pipeline "<requirement summary>"\`
+
+- **Recommendations**: ${recs.length}
+- **Generated**: ${getUtc8ISOString()}
+
+${planChecklist}
+
+---
+
+### Next Step: Execute
+
+Run \`$csv-wave-pipeline\` to execute these recommendations as wave-based batch tasks:
+
+\`\`\`bash
+$csv-wave-pipeline "${topic}"
+\`\`\`
 `)
 ```
 
-**Simple path characteristics**:
-- No `.task/*.json` generation
-- No `execution.md` / `execution-events.md`
-- Execution summary appended directly to `discussion.md`
-- Suitable for 1-2 clear, low-risk recommendations
-
-##### Step 5.3: Complex Path — EXECUTE.md Pipeline
-
-For complex recommendations, follow the full specification in `EXECUTE.md`:
-
-1. **Load context sources**: Reuse in-memory artifacts or read from disk
-2. **Enrich recommendations**: Resolve target files, generate implementation steps, build convergence criteria
-3. **Generate `.task/*.json`**: Individual task files with full execution context
-4. **Pre-execution analysis**: Dependency validation, file conflicts, topological sort
-5. **User confirmation**: Present task list, allow adjustment
-6. **Serial execution**: Execute each task following generated implementation steps
-7. **Finalize**: Update task states, write execution artifacts
-
-**Full specification**: `EXECUTE.md`
+**Characteristics**:
+- Plan checklist appended directly to `discussion.md`
+- **No code modifications** — plan output only
+- Reminds user to use `$csv-wave-pipeline` for execution
 
 **Success Criteria**:
-- Simple path: recommendations executed, summary in discussion.md
-- Complex path: `.task/*.json` generated with quality validation, execution tracked via execution.md + execution-events.md
-- Execution route chosen correctly based on complexity assessment
+- Plan checklist in discussion.md with all accepted recommendations
+- User reminded about `$csv-wave-pipeline` for execution
+- **No source code modified** — strictly plan output
 
 ## Output Structure
 
@@ -989,16 +998,16 @@ For complex recommendations, follow the full specification in `EXECUTE.md`:
 └── conclusions.json           # Phase 4: Final synthesis with recommendations
 ```
 
-> **Phase 5 complex path** adds `.task/`, `execution.md`, `execution-events.md` — see `EXECUTE.md` for structure.
+> **Phase 5** appends a plan checklist to `discussion.md`. No additional files are generated.
 
 | File | Phase | Description |
 |------|-------|-------------|
-| `discussion.md` | 1-4 | Session metadata → discussion timeline → conclusions. Simple execution summary appended here. |
+| `discussion.md` | 1-5 | Session metadata → discussion timeline → conclusions. Plan checklist appended here (simple path). |
 | `exploration-codebase.json` | 2 | Codebase context: relevant files, patterns, constraints |
 | `explorations/*.json` | 2 | Per-perspective exploration results (multi only) |
 | `explorations.json` | 2 | Single perspective aggregated findings |
 | `perspectives.json` | 2 | Multi-perspective findings with cross-perspective synthesis |
-| `conclusions.json` | 4 | Final synthesis: conclusions, recommendations, open questions |
+| `conclusions.json` | 4 | Final synthesis: conclusions, recommendations, findings_coverage, open questions |
 
 ## Analysis Dimensions Reference
 
@@ -1158,16 +1167,13 @@ Remaining questions or areas for investigation
 | User timeout in discussion | Save state, show resume command | Use `--continue` to resume |
 | Max rounds reached (5) | Force synthesis phase | Highlight remaining questions in conclusions |
 | Session folder conflict | Append timestamp suffix | Create unique folder and continue |
-| Quick execute: task fails | Record failure, ask user | Retry, skip, or abort (see EXECUTE.md) |
-| Quick execute: verification fails | Mark as unverified | Note in events, manual check |
-| Quick execute: no recommendations | Cannot generate .task/*.json | Inform user, suggest lite-plan |
-| Quick execute: simple recommendations | Complexity too low for .task/*.json | Direct inline execution (no task generation) |
+| Plan generation: no recommendations | No plan to generate | Inform user, suggest lite-plan |
 
 ## Best Practices
 
 ### Core Principles
 
-1. **Explicit user confirmation required before code modifications**: The analysis phase is strictly read-only. Any code changes (Phase 5 quick execute) require user approval.
+1. **No code modifications**: This skill is strictly read-only and plan-only. Phase 5 generates plan checklists in `discussion.md` but does NOT modify source code. Use `$csv-wave-pipeline` for execution.
 
 ### Before Starting Analysis
 
@@ -1204,10 +1210,11 @@ Remaining questions or areas for investigation
 - Building shared understanding before implementation
 - Want to document how understanding evolved
 
-**Use Quick Execute (Phase 5) when:**
+**Use Plan Generation (Phase 5) when:**
 - Analysis conclusions contain clear, actionable recommendations
-- Simple: 1-2 clear changes → direct inline execution (no .task/ overhead)
-- Complex: 3+ recommendations with dependencies → EXECUTE.md pipeline (.task/*.json → serial execution)
+- Simple: 1-2 items → inline plan checklist in discussion.md
+- Complex: 3+ recommendations → detailed plan checklist
+- **Then execute via**: `$csv-wave-pipeline` for wave-based batch execution
 
 **Consider alternatives when:**
 - Specific bug diagnosis needed → use `debug-with-file`

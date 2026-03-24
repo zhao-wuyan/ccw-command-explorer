@@ -10,10 +10,6 @@
 **Strictly follow the cli-tools.json configuration**
 
 Available CLI endpoints are dynamically defined by the config file
-## Tool Execution
-
-- **Context Requirements**: @~/.ccw/workflows/context-tools.md
-- **File Modification**: @~/.ccw/workflows/file-modification.md
 
 ### Agent Calls
 - **Always use `run_in_background: false`** for Agent tool calls: `Agent({ subagent_type: "xxx", prompt: "...", run_in_background: false })` to ensure synchronous execution and immediate result visibility

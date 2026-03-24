@@ -249,7 +249,8 @@ Task(
     ${selectedStrategy} - ${strategyDescription}
 
     ## PROJECT CONTEXT (MANDATORY)
-    1. Run: \`ccw spec load --category execution\` (tech stack, test framework, build system, constraints)
+    1. Run: \`ccw spec load --category execution\` (tech stack, build system, constraints)
+    2. Run: \`ccw spec load --category test\` (test framework, coverage targets, conventions)
 
     ## MANDATORY FIRST STEPS
     1. Read test results: ${session.test_results_path}

@@ -46,7 +46,7 @@ When coordinator needs to execute a specific phase:
 | Interrupted session | Active session in .workflow/.team/TAO-* | -> Phase 0 |
 | New session | None of above | -> Phase 1 |
 
-For callback/check/resume/consensus/adapt/complete: load commands/monitor.md, execute handler, STOP.
+For callback/check/resume/consensus/adapt/complete: load @commands/monitor.md, execute handler, STOP.
 
 ## Phase 0: Session Resume Check
 
@@ -81,11 +81,14 @@ TEXT-LEVEL ONLY. No source code reading.
 
 ## Phase 2: Create Team + Initialize Session
 
-1. Generate session ID: `TAO-<slug>-<date>`
-2. Create session folder structure
-3. TeamCreate with team name `arch-opt`
-4. Write session.json with parallel_mode, max_branches, branches, independent_targets, fix_cycles
-5. Initialize meta.json via team_msg state_update:
+1. Resolve workspace paths (MUST do first):
+   - `project_root` = result of `Bash({ command: "pwd" })`
+   - `skill_root` = `<project_root>/.claude/skills/team-arch-opt`
+2. Generate session ID: `TAO-<slug>-<date>`
+3. Create session folder structure
+4. TeamCreate with team name `arch-opt`
+5. Write session.json with parallel_mode, max_branches, branches, independent_targets, fix_cycles
+6. Initialize meta.json via team_msg state_update:
    ```
    mcp__ccw-tools__team_msg({
      operation: "log", session_id: "<id>", from: "coordinator",
@@ -93,19 +96,19 @@ TEXT-LEVEL ONLY. No source code reading.
      data: { pipeline_mode: "<mode>", pipeline_stages: ["analyzer","designer","refactorer","validator","reviewer"], team_name: "arch-opt" }
    })
    ```
-6. Write session.json
+7. Write session.json
 
 ## Phase 3: Create Task Chain
 
-Delegate to commands/dispatch.md:
+Delegate to @commands/dispatch.md:
 1. Read dependency graph and parallel mode from session.json
 2. Topological sort tasks
-3. Create tasks via TaskCreate with blockedBy
+3. Create tasks via TaskCreate, then set dependencies via TaskUpdate({ addBlockedBy })
 4. Update session.json with task count
 
 ## Phase 4: Spawn-and-Stop
 
-Delegate to commands/monitor.md#handleSpawnNext:
+Delegate to @commands/monitor.md#handleSpawnNext:
 1. Find ready tasks (pending + blockedBy resolved)
 2. Spawn team-worker agents (see SKILL.md Spawn Template)
 3. Output status summary

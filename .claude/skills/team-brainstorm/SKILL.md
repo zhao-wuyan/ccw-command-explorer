@@ -43,7 +43,7 @@ Skill(skill="team-brainstorm", args="topic description")
 
 Parse `$ARGUMENTS`:
 - Has `--role <name>` → Read `roles/<name>/role.md`, execute Phase 2-4
-- No `--role` → Read `roles/coordinator/role.md`, execute entry router
+- No `--role` → `@roles/coordinator/role.md`, execute entry router
 
 ## Shared Constants
 
@@ -65,14 +65,14 @@ Agent({
   run_in_background: true,
   prompt: `## Role Assignment
 role: <role>
-role_spec: ~  or <project>/.claude/skills/team-brainstorm/roles/<role>/role.md
+role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
 session_id: <session-id>
 team_name: brainstorm
 requirement: <topic-description>
 inner_loop: false
 
-Read role_spec file to load Phase 2-4 domain instructions.
+Read role_spec file (@<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.
 Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).`
 })
 ```
@@ -89,7 +89,7 @@ Agent({
   run_in_background: true,
   prompt: `## Role Assignment
 role: ideator
-role_spec: ~  or <project>/.claude/skills/team-brainstorm/roles/ideator/role.md
+role_spec: <skill_root>/roles/ideator/role.md
 session: <session-folder>
 session_id: <session-id>
 team_name: brainstorm
@@ -97,7 +97,7 @@ requirement: <topic-description>
 agent_name: ideator-<N>
 inner_loop: false
 
-Read role_spec file to load Phase 2-4 domain instructions.
+Read role_spec file (@<skill_root>/roles/ideator/role.md) to load Phase 2-4 domain instructions.
 Execute built-in Phase 1 (task discovery, owner=ideator-<N>) -> role Phase 2-4 -> built-in Phase 5 (report).`
 })
 ```

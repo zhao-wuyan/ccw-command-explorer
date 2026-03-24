@@ -145,16 +145,23 @@ if (clarityScore >= 1 && clarityScore <= 2 && !issueData.affected_components?.le
 ```javascript
 // ONLY ask questions if clarity is low
 if (clarityScore < 2 && (!issueData.context || issueData.context.length < 20)) {
-  const answer = ASK_USER([{
-    id: "clarify",
-    type: "input",
-    prompt: "Please describe the issue in more detail:",
-    description: "Describe what, where, and expected behavior"
-  }]);  // BLOCKS (wait for user response)
+  const answer = request_user_input({
+    questions: [{
+      header: "Clarify",
+      id: "clarify",
+      question: "Please describe the issue in more detail.",
+      options: [
+        { label: "Provide Details", description: "Describe what, where, and expected behavior" },
+        { label: "Skip", description: "Create issue with current information" }
+      ]
+    }]
+  });  // BLOCKS (wait for user response)
 
-  if (answer.customText) {
-    issueData.context = answer.customText;
-    issueData.title = answer.customText.split(/[.\n]/)[0].substring(0, 60);
+  const selection = answer.answers.clarify.answers[0];
+  if (selection === "Provide Details") {
+    // User provides details via follow-up
+    issueData.context = selection;
+    issueData.title = selection.split(/[.\n]/)[0].substring(0, 60);
     issueData.feedback = [{
       type: 'clarification',
       stage: 'new',
@@ -228,7 +235,7 @@ Phase 2: Data Extraction (branched by clarity)
    │  Score 3   │   Score 1-2     │   Score 0    │
    │  GitHub    │   Text + ACE    │   Vague      │
    ├────────────┼─────────────────┼──────────────┤
-   │  gh CLI    │  Parse struct   │  ASK_USER    │
+   │  gh CLI    │  Parse struct   │ request_user_input  │
    │  → parse   │  + quick hint   │ (1 question) │
    │            │  (3 files max)  │  → feedback  │
    └────────────┴─────────────────┴──────────────┘

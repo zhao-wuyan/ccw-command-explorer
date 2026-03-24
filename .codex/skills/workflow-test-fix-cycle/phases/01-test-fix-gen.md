@@ -70,12 +70,13 @@ if (input.startsWith("WFS-")) {
 ```javascript
 // Session Mode - gather from source session via test-context-search-agent
 const contextAgentId = spawn_agent({
+  agent_type: "test_context_search_agent",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/test-context-search-agent.md (MUST read first)
-2. Run: `ccw spec load --category planning`
+1. Run: `ccw spec load --category planning`
+2. Run: `ccw spec load --category test` (test framework, coverage targets, conventions)
 
 ---
 
@@ -96,12 +97,13 @@ close_agent({ id: contextAgentId });
 
 // Prompt Mode - gather from codebase via context-search-agent
 const contextAgentId = spawn_agent({
+  agent_type: "context_search_agent",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/context-search-agent.md (MUST read first)
-2. Run: `ccw spec load --category planning`
+1. Run: `ccw spec load --category planning`
+2. Run: `ccw spec load --category test` (test framework, coverage targets, conventions)
 
 ---
 
@@ -169,12 +171,13 @@ close_agent({ id: contextAgentId });
 
 ```javascript
 const analysisAgentId = spawn_agent({
+  agent_type: "cli_execution_agent",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/cli-execution-agent.md (MUST read first)
-2. Run: `ccw spec load --category planning`
+1. Run: `ccw spec load --category planning`
+2. Run: `ccw spec load --category test` (test framework, coverage targets, conventions)
 
 ---
 
@@ -237,12 +240,13 @@ close_agent({ id: analysisAgentId });
 
 ```javascript
 const taskGenAgentId = spawn_agent({
+  agent_type: "action_planning_agent",
   message: `
 ## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
-1. **Read role definition**: ~/.codex/agents/action-planning-agent.md (MUST read first)
-2. Run: `ccw spec load --category planning`
+1. Run: `ccw spec load --category planning`
+2. Run: `ccw spec load --category test` (test framework, coverage targets, conventions)
 
 ---
 

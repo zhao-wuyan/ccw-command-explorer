@@ -54,7 +54,7 @@ Skill(skill="team-frontend-debug", args="feature list or bug description")
 
 Parse `$ARGUMENTS`:
 - Has `--role <name>` → Read `roles/<name>/role.md`, execute Phase 2-4
-- No `--role` → Read `roles/coordinator/role.md`, execute entry router
+- No `--role` → `@roles/coordinator/role.md`, execute entry router
 
 ## Shared Constants
 
@@ -62,6 +62,20 @@ Parse `$ARGUMENTS`:
 - **Session path**: `.workflow/.team/TFD-<slug>-<date>/`
 - **CLI tools**: `ccw cli --mode analysis` (read-only), `ccw cli --mode write` (modifications)
 - **Message bus**: `mcp__ccw-tools__team_msg(session_id=<session-id>, ...)`
+
+## Workspace Resolution
+
+Coordinator MUST resolve paths at Phase 2 before TeamCreate:
+
+1. Run `Bash({ command: "pwd" })` → capture `project_root` (absolute path)
+2. `skill_root = <project_root>/.claude/skills/team-frontend-debug`
+3. Store in `team-session.json`:
+   ```json
+   { "project_root": "/abs/path/to/project", "skill_root": "/abs/path/to/skill" }
+   ```
+4. All worker `role_spec` values MUST use `<skill_root>/roles/<role>/role.md` (absolute)
+
+This ensures workers spawned with `run_in_background: true` always receive an absolute, resolvable path regardless of their working directory.
 
 ## Chrome DevTools MCP Tools
 
@@ -99,14 +113,14 @@ Agent({
   run_in_background: true,
   prompt: `## Role Assignment
 role: <role>
-role_spec: ~  or <project>/.claude/skills/team-frontend-debug/roles/<role>/role.md
+role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
 session_id: <session-id>
 team_name: <team-name>
 requirement: <task-description>
 inner_loop: <true|false>
 
-Read role_spec file to load Phase 2-4 domain instructions.
+Read role_spec file (@<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.
 Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).`
 })
 ```

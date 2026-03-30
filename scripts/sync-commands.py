@@ -315,7 +315,7 @@ def generate_fix_suggestions(result: Dict) -> str:
             cli = 'claude' if 'claude' in source else 'codex'
             category = 'skill' if 'skill' in source else ('prompt' if 'prompt' in source else 'workflow')
             suggestions.append(f"  {cmd:40} [{source}]")
-            suggestions.append(f"    建议配置: category: '{category}', cli: '{cli}'")
+            suggestions.append(f"    建议配置: category: '{category}', cli: ['{cli}']")
 
     if result['stale_in_dirs']:
         suggestions.append("\n## 需要删除的残留旧命令目录:\n")

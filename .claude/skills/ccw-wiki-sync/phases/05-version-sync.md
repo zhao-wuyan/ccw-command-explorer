@@ -37,9 +37,9 @@ const commandsContent = Read('src/data/commands.ts');
 const cmdMatches = commandsContent.match(/cmd: '\/[^']+'/g) || [];
 const totalCommands = cmdMatches.length;
 
-// 统计各类型命令
-const claudeCommands = (commandsContent.match(/cli: 'claude'/g) || []).length;
-const codexCommands = (commandsContent.match(/cli: 'codex'/g) || []).length;
+// 统计各类型命令（cli 为数组格式，使用 includes 匹配）
+const claudeCommands = (commandsContent.match(/cli:\s*\[[^\]]*'claude'[^\]]*\]/g) || []).length;
+const codexCommands = (commandsContent.match(/cli:\s*\[[^\]]*'codex'[^\]]*\]/g) || []).length;
 const newCommands = (commandsContent.match(/status: 'new'/g) || []).length;
 const recommendedCommands = (commandsContent.match(/status: 'recommended'/g) || []).length;
 

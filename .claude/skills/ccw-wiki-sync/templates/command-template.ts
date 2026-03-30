@@ -10,7 +10,7 @@ interface Command {
   desc: string;                   // 必需: 简短描述 (< 80 字符)
   status: CommandStatus;          // 必需: 命令状态
   category: CommandCategory;      // 必需: 命令分类
-  cli: CLIType;                   // 必需: CLI 类型
+  cli: CLIType[];                 // 必需: CLI 类型数组（支持多 CLI）
   level?: 1 | 2 | 3 | 4;          // 可选: 工作流级别
   addedInVersion?: string;        // 可选: 添加版本
   detail?: string;                // 可选: 详细描述 (< 200 字符)
@@ -43,7 +43,7 @@ const basicCommand: Command = {
   desc: '示例命令的简短描述',
   status: 'new',
   category: 'workflow',
-  cli: 'claude',
+  cli: ['claude'],
   addedInVersion: 'v7.1'
 };
 
@@ -53,7 +53,7 @@ const fullCommand: Command = {
   desc: '这是一个示例工作流命令，用于演示完整结构',
   status: 'stable',
   category: 'workflow',
-  cli: 'claude',
+  cli: ['claude'],
   level: 2,
   addedInVersion: 'v7.0',
   detail: '详细的命令描述，解释命令的功能、参数、输出等信息。应该让用户清楚知道这个命令能做什么。',
@@ -66,7 +66,7 @@ const skillCommand: Command = {
   desc: '团队协作技能示例',
   status: 'stable',
   category: 'skill',
-  cli: 'claude',
+  cli: ['claude'],
   detail: '多角色协作：分析师→规划师→执行者→审查员',
   usage: '需要多人协作完成复杂任务时'
 };
@@ -77,8 +77,19 @@ const codexCommand: Command = {
   desc: 'Codex 专用命令示例',
   status: 'stable',
   category: 'prompt',
-  cli: 'codex',
+  cli: ['codex'],
   addedInVersion: 'v6.2'
+};
+
+// 示例 5: 多 CLI 命令（同时支持 Claude Code 和 Codex）
+const multiCliCommand: Command = {
+  cmd: '/team-planex',
+  desc: '团队 PlanEx - 规划执行流水线',
+  status: 'stable',
+  category: 'skill',
+  cli: ['claude', 'codex'],
+  detail: '2人流水线：规划师边规划边派任务，执行者边收任务边写代码',
+  usage: '需求明确的开发任务，想要边规划边执行'
 };
 
 // ============================================
@@ -143,7 +154,7 @@ function generateCommandObject(
   usage?: string
 ): Command {
   const category = mapCategory(cmd, source);
-  const cli = source.includes('codex') ? 'codex' : 'claude';
+  const cli = source.includes('codex') ? ['codex'] : ['claude'];
 
   return {
     cmd,
@@ -164,6 +175,9 @@ function generateCommandObject(
 /**
  * 在 commands.ts 中使用的格式:
  *
- * { cmd: '/example', desc: '描述', status: 'new', category: 'workflow', cli: 'claude', addedInVersion: 'v7.1',
+ * { cmd: '/example', desc: '描述', status: 'new', category: 'workflow', cli: ['claude'], addedInVersion: 'v7.1',
  *   detail: '详细描述', usage: '使用场景' }
+ *
+ * 多 CLI 格式:
+ * { cmd: '/example', desc: '描述', status: 'stable', category: 'skill', cli: ['claude', 'codex'], ... }
  */

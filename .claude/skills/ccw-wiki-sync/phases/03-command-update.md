@@ -91,12 +91,15 @@ function generateCommandObject(cmdInfo, content) {
   const versionDiff = JSON.parse(Read(`${workDir}/version-diff.json`));
   const version = versionDiff.localVersion?.replace('v', '') || '7.0';
 
+  // 确保 cli 为数组格式（CLIType[]）
+  const cliArray = Array.isArray(cli) ? cli : [cli];
+
   return {
     cmd,
     desc,
     status: 'new',
     category: mapCategory(type, source),
-    cli,
+    cli: cliArray,
     addedInVersion: `v${version}`,
     ...(detail && { detail }),
     ...(usage && { usage })
@@ -401,7 +404,7 @@ let commandsContent = Read('src/data/commands.ts');
 // Add new commands
 if (newCommandObjects.length > 0) {
   const newCommandsCode = newCommandObjects.map(cmd =>
-    `  { cmd: '${cmd.cmd}', desc: '${cmd.desc}', status: '${cmd.status}', category: '${cmd.category}', cli: '${cmd.cli}', addedInVersion: '${cmd.addedInVersion}'${cmd.detail ? `, detail: '${cmd.detail}'` : ''}${cmd.usage ? `, usage: '${cmd.usage}'` : ''} }`
+    `  { cmd: '${cmd.cmd}', desc: '${cmd.desc}', status: '${cmd.status}', category: '${cmd.category}', cli: ${JSON.stringify(cmd.cli)}, addedInVersion: '${cmd.addedInVersion}'${cmd.detail ? `, detail: '${cmd.detail}'` : ''}${cmd.usage ? `, usage: '${cmd.usage}'` : ''} }`
   ).join(',\n');
 
   // Find insertion point (before closing bracket of COMMANDS array)

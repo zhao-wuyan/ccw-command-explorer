@@ -1,0 +1,23 @@
+src/data/commands.ts
+  a279d1c8f4f62b57 205,209,220,244,272,278,286,290,294,298,306,310,314,318,322,326,330,334,338,342,346,362,378,398,500,504,508,512,516,520,524
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "b54a3de6bcc358c145a61b8f4ff6158b441b1471",
+  "prompts": {
+    "a279d1c8f4f62b57": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "12f8db6a-7261-425a-b927-82b3dc70859f",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 572,
+      "total_deletions": 572,
+      "accepted_lines": 542,
+      "overriden_lines": 0
+    }
+  }
+}

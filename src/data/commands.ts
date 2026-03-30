@@ -202,11 +202,11 @@ export const COMMANDS: Command[] = [
 
   // ==================== Claude Code Skills (独立技能) ====================
   // 头脑风暴类
-  { cmd: '/brainstorm', desc: '统一头脑风暴 - 自动流程或单角色分析', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.0',
+  { cmd: '/brainstorm', desc: '统一头脑风暴 - 自动流程或单角色分析', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.0',
     detail: '两种模式：①自动模式-理解需求→发散想法→收敛结论→执行；②单角色-只从某个专业视角分析（如架构师、产品经理）',
     usage: '需要创意发散、多角度思考、或从特定专业视角分析问题时'
   },
-  { cmd: '/team-brainstorm', desc: '团队头脑风暴 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
+  { cmd: '/team-brainstorm', desc: '团队头脑风暴 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: '5角色：创意者出点子→挑战者挑毛病→综合者整合→评估师打分排名。想法被挑战后自动改进，最多2轮。支持多人并行出点子',
     usage: '重要决策需要多人、多角度碰撞想法时'
   },
@@ -217,7 +217,7 @@ export const COMMANDS: Command[] = [
     detail: '菜单驱动管理：列出所有问题、查看详情、编辑内容、删除、批量操作。像用手机App一样简单',
     usage: '想查看、修改或删除已有的问题时'
   },
-  { cmd: '/team-issue', desc: '团队 Issue 解决 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
+  { cmd: '/team-issue', desc: '团队 Issue 解决 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: '6角色分工：探索者分析→规划师设计方案→实现者写代码→审查者检查→整合者合并。适合复杂问题',
     usage: '一个Issue涉及多个模块、需要多人分工协作时'
   },
@@ -241,7 +241,7 @@ export const COMMANDS: Command[] = [
     detail: '多维度同时审查：代码对不对、好读吗、性能如何、安全吗、测试够不够、好维护吗、符合最佳实践吗。发现问题可自动修复。支持会话/模块/修复三种模式',
     usage: '代码写完需要全面审查、PR合入前检查、审查完想自动改问题'
   },
-  { cmd: '/team-review', desc: '团队代码审查 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
+  { cmd: '/team-review', desc: '团队代码审查 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: '多角色审查：同时从安全、性能、架构等角度审查，生成综合报告。比单人审查更全面',
     usage: '重要代码合入前、大型PR需要全面审查时'
   },
@@ -269,13 +269,13 @@ export const COMMANDS: Command[] = [
   },
 
   // 规格生成
-  { cmd: '/spec-generator', desc: '规格生成器 - 6阶段文档链', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
+  { cmd: '/spec-generator', desc: '规格生成器 - 6阶段文档链', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: '生成6份文档：①产品简介；②需求文档PRD；③架构设计；④用户故事；⑤技术方案；⑥就绪检查。从想法到可执行的任务',
     usage: '新项目立项、需求评审前、或者要把想法变成具体开发任务'
   },
 
   // 团队协作
-  { cmd: '/team-frontend', desc: '团队前端开发 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
+  { cmd: '/team-frontend', desc: '团队前端开发 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: '5个角色分工协作：分析师(需求+设计智能)→架构师(设计令牌)→开发者(写代码)→QA(审查)。内置行业设计知识库，自动匹配最佳UI方案',
     usage: '开发前端页面或组件，需要从需求到上线全流程时'
   },
@@ -283,19 +283,19 @@ export const COMMANDS: Command[] = [
     detail: '完整生命周期：需求分析→架构设计→开发→测试→审查。包含多个模板文件(产品简介、PRD、架构文档、Epic模板)。自动使用最新的 team-lifecycle 版本',
     usage: '大项目从0到1，需要完整的需求→设计→开发→测试流程'
   },
-  { cmd: '/team-lifecycle-v4', desc: '团队全生命周期 v4 - 优化节拍版', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v6.4',
+  { cmd: '/team-lifecycle-v4', desc: '团队全生命周期 v4 - 优化节拍版', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.4',
     detail: '相比v3优化：内联讨论子代理、共享探索工具，规格阶段节拍从12降到6。更高效的团队协作',
     usage: '需要更高效的生命周期开发流程'
   },
-  { cmd: '/team-coordinate', desc: '通用团队协调 - 动态角色生成', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v6.4',
+  { cmd: '/team-coordinate', desc: '通用团队协调 - 动态角色生成', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.4',
     detail: '通用协调技能：分析任务→生成角色→派发→执行→交付。只有协调者是内置的，所有工作角色在运行时动态生成',
     usage: '需要灵活的团队协作，角色根据任务动态生成'
   },
-  { cmd: '/team-executor', desc: '轻量级会话执行 - 恢复并执行会话', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v6.4',
+  { cmd: '/team-executor', desc: '轻量级会话执行 - 恢复并执行会话', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.4',
     detail: '轻量执行：加载现有 team-coordinate 会话→协调状态→派发工作代理→执行→交付。无分析、无角色生成，纯执行',
     usage: '已有规划好的会话，需要恢复执行'
   },
-  { cmd: '/team-roadmap-dev', desc: '路线图驱动开发 - 分阶段执行流水线', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v6.4',
+  { cmd: '/team-roadmap-dev', desc: '路线图驱动开发 - 分阶段执行流水线', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.4',
     detail: '路线图驱动：协调者与用户讨论路线图→派发分阶段执行流水线（规划→执行→验证）。支持暂停/恢复',
     usage: '需要根据路线图分阶段开发'
   },
@@ -303,47 +303,47 @@ export const COMMANDS: Command[] = [
     detail: '2人流水线：规划师边规划边派任务，执行者边收任务边写代码。规划不等待执行完成，直接规划下一批，效率翻倍',
     usage: '需求明确的开发任务，想要边规划边执行'
   },
-  { cmd: '/team-quality-assurance', desc: '团队质量保证 - QA 角色协作', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
+  { cmd: '/team-quality-assurance', desc: '团队质量保证 - QA 角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: '6角色闭环：侦察兵扫描问题→策略师定测试方案→生成器写测试→执行器跑测试→分析师出报告。覆盖率不够自动补测试',
     usage: '功能开发完成后，需要全面的质量验证和测试覆盖'
   },
-  { cmd: '/team-arch-opt', desc: '团队架构优化 - 依赖循环、结构分析', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.2',
+  { cmd: '/team-arch-opt', desc: '团队架构优化 - 依赖循环、结构分析', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.2',
     detail: '5角色协作：分析员(架构问题)→设计师(策略)→重构工程师(实施)→验证者(测试)→审查员(报告)。 发现依赖循环、模块违规、死代码',
     usage: '项目架构混乱、依赖循环复杂，模块耦合过紧，需要系统性重构'
   },
-  { cmd: '/team-perf-opt', desc: '团队性能优化 - 分析瓶颈、设计策略', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.2',
+  { cmd: '/team-perf-opt', desc: '团队性能优化 - 分析瓶颈、设计策略', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.2',
     detail: '5角色协作：分析员(性能分析)→策略师(优化策略)→优化工程师(实施)→基准测试员(基准)→验证者(验证)→审查员(报告)。 发现性能瓶颈，设计优化方案，实施改进，验证效果',
     usage: '应用性能下降，响应变慢，需要系统性性能优化'
   },
-  { cmd: '/team-tech-debt', desc: '团队技术债务 - 债务管理协作', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
+  { cmd: '/team-tech-debt', desc: '团队技术债务 - 债务管理协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: '6角色治理：扫描器找问题→评估师算成本→规划师排优先级→执行者修代码→验证者测回归。独立工作分支，修完自动创建PR',
     usage: '项目代码质量下降，需要系统性清理技术债务'
   },
-  { cmd: '/workflow-lite-planex', desc: '轻量规划执行 - 规划+执行一体化', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.0',
+  { cmd: '/workflow-lite-planex', desc: '轻量规划执行 - 规划+执行一体化', status: 'new', category: 'skill', cli: ['codex'], addedInVersion: 'v7.2.0',
     detail: '2阶段快速流程：Phase 1 轻量规划生成 IMPL_PLAN.md；Phase 2 使用 Task tool执行任务。自动确认完成',
     usage: '中小型功能，想快速规划后立即执行，无需复杂流程'
   },
-  { cmd: '/team-testing', desc: '团队测试 - 多角色测试协作', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
+  { cmd: '/team-testing', desc: '团队测试 - 多角色测试协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: '测试团队协作，测试计划和执行',
     usage: '需要团队协作测试时'
   },
-  { cmd: '/team-uidesign', desc: '团队 UI 设计 - 设计角色协作', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
+  { cmd: '/team-uidesign', desc: '团队 UI 设计 - 设计角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: 'UI 设计团队协作，设计系统管理',
     usage: '需要团队协作 UI 设计时'
   },
-  { cmd: '/team-ultra-analyze', desc: '团队超深度分析 - 全面代码分析', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
+  { cmd: '/team-ultra-analyze', desc: '团队超深度分析 - 全面代码分析', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: '超深度代码分析，全面理解代码库',
     usage: '需要深度理解代码时'
   },
-  { cmd: '/team-designer', desc: '元技能 - 生成 v4 架构团队技能', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.2',
+  { cmd: '/team-designer', desc: '元技能 - 生成 v4 架构团队技能', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.2',
     detail: '生成团队技能包：收集需求 → 生成脚手架（SKILL.md、roles/、specs/、templates/）→ 验证。输出完整可用的团队技能',
     usage: '需要创建新的团队协作技能'
   },
-  { cmd: '/team-frontend-debug', desc: '前端调试团队 - Chrome DevTools MCP', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.2',
+  { cmd: '/team-frontend-debug', desc: '前端调试团队 - Chrome DevTools MCP', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.2',
     detail: '双模式前端调试：①功能清单测试模式（TEST→ANALYZE→FIX→VERIFY）；②Bug报告调试模式（REPRODUCE→ANALYZE→FIX→VERIFY）。使用 Chrome DevTools MCP',
     usage: '需要调试前端交互问题、无响应按钮、状态刷新问题'
   },
-  { cmd: '/team-ux-improve', desc: 'UX 改进团队 - 系统化发现和修复交互问题', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.2',
+  { cmd: '/team-ux-improve', desc: 'UX 改进团队 - 系统化发现和修复交互问题', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.2',
     detail: 'UX 改进流水线：扫描器（发现UI/UX问题）→ 诊断师（分析根因）→ 设计师（设计方案）→ 实现者（修复）→ 测试员（验证）',
     usage: '需要系统化发现和修复 UI/UX 交互问题'
   },
@@ -359,7 +359,7 @@ export const COMMANDS: Command[] = [
   },
 
   // 工作流技能
-  { cmd: '/workflow-execute', desc: '工作流执行技能 - 协调 Agent 执行', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.0',
+  { cmd: '/workflow-execute', desc: '工作流执行技能 - 协调 Agent 执行', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.0',
     detail: '按依赖顺序执行任务：A任务完成后才执行B任务，支持并行执行无依赖的任务、实时显示进度',
     usage: '有规划好的任务列表需要执行时'
   },
@@ -375,7 +375,7 @@ export const COMMANDS: Command[] = [
     detail: '同时用多个AI分析：Gemini、Codex、Claude同时分析同一问题，然后交叉验证，综合得出最佳方案',
     usage: '复杂问题需要多角度分析、单个AI结论不确定时'
   },
-  { cmd: '/workflow-plan', desc: '完整规划技能 - 5阶段规划', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.0',
+  { cmd: '/workflow-plan', desc: '完整规划技能 - 5阶段规划', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.0',
     detail: '5阶段详细规划：①启动会话；②收集项目上下文；③AI分析；④澄清不明确的地方；⑤生成任务文件。适合大项目',
     usage: '复杂功能、多模块开发、需要详细规划文档时'
   },
@@ -395,7 +395,7 @@ export const COMMANDS: Command[] = [
     detail: 'CSV Wave流程：①分解需求生成 explore.csv；②波浪式探索代码；③综合发现生成 tasks.csv；④波浪式执行任务。支持上下文传播',
     usage: '需要批量探索和执行任务，保持上下文连贯'
   },
-  { cmd: '/workflow-tdd-plan', desc: 'TDD 规划技能 - 6阶段规划+Red-Green-Refactor任务链', status: 'stable', category: 'tdd', cli: ['claude'], addedInVersion: 'v7.0.8',
+  { cmd: '/workflow-tdd-plan', desc: 'TDD 规划技能 - 6阶段规划+Red-Green-Refactor任务链', status: 'stable', category: 'tdd', cli: ['claude', 'codex'], addedInVersion: 'v7.0.8',
     detail: '统一 TDD 工作流：6阶段 TDD 规划 + Red-Green-Refactor 任务链生成 + 4阶段验证。触发词：workflow-tdd-plan、workflow-tdd-verify',
     usage: 'TDD 开发前规划测试用例，生成完整的 Red→Green→Refactor 执行任务链'
   },
@@ -497,31 +497,31 @@ export const COMMANDS: Command[] = [
   },
 
   // ==================== v7.2.28 新增 ====================
-  { cmd: '/investigate', desc: '系统化调试 - 铁律方法论，无确认根因不修复', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.28',
+  { cmd: '/investigate', desc: '系统化调试 - 铁律方法论，无确认根因不修复', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
     detail: '5阶段调查：收集证据→模式分析→假设测试(最多3次)→最小修复→验证报告。强制铁律：没有确认的根因禁止修复',
     usage: '遇到需要系统化排查的复杂bug'
   },
-  { cmd: '/security-audit', desc: '安全审计 - OWASP Top 10 + STRIDE 威胁建模', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.28',
+  { cmd: '/security-audit', desc: '安全审计 - OWASP Top 10 + STRIDE 威胁建模', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
     detail: '4阶段审计：供应链扫描→OWASP Top 10代码分析→STRIDE威胁建模→趋势追踪报告。产出结构化JSON报告',
     usage: '需要对代码进行安全审计和威胁评估'
   },
-  { cmd: '/ship', desc: '发布流水线 - 预检→审查→版本→更新日志→PR', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.28',
+  { cmd: '/ship', desc: '发布流水线 - 预检→审查→版本→更新日志→PR', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
     detail: '5阶段门控流水线：预检检查(git/分支/测试/构建)→AI代码审查→版本号更新→更新日志生成→PR创建。每个阶段必须通过才能进入下一阶段',
     usage: '代码开发完成，准备发布上线'
   },
-  { cmd: '/team-interactive-craft', desc: '交互组件团队 - 零依赖交互组件研发', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.28',
+  { cmd: '/team-interactive-craft', desc: '交互组件团队 - 零依赖交互组件研发', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
     detail: '4角色流水线：研究员→交互设计师→构建者→无障碍测试。Vanilla JS + CSS，零依赖。team-worker agent架构',
     usage: '需要构建纯原生交互组件，不依赖框架'
   },
-  { cmd: '/team-motion-design', desc: '动效设计团队 - 动画token系统与GPU加速', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.28',
+  { cmd: '/team-motion-design', desc: '动效设计团队 - 动画token系统与GPU加速', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
     detail: '4角色流水线：动效研究员→编舞师→动画师→性能测试。动画token系统、滚动编排、GPU加速、降级回退',
     usage: '需要设计系统化的动画和交互效果'
   },
-  { cmd: '/team-ui-polish', desc: 'UI精修团队 - 自动发现并修复UI设计问题', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.28',
+  { cmd: '/team-ui-polish', desc: 'UI精修团队 - 自动发现并修复UI设计问题', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
     detail: '4角色流水线：扫描器→诊断师→优化器→验证器。反AI痕迹检测、色彩/排版/间距质量、交互状态、视觉层次',
     usage: 'UI需要精修打磨，提升设计品质'
   },
-  { cmd: '/team-visual-a11y', desc: '视觉无障碍团队 - OKLCH色彩对比+WCAG审计', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.28',
+  { cmd: '/team-visual-a11y', desc: '视觉无障碍团队 - OKLCH色彩对比+WCAG审计', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
     detail: '3角色并行审计：色彩审计(OKLCH感知对比)→排版审计→焦点审计。WCAG AA/AAA合规检查',
     usage: '需要对视觉无障碍进行专业审计'
   },

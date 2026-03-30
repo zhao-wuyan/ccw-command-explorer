@@ -4,12 +4,13 @@
 
 功能：
 1. 扫描 .claude/commands、.claude/skills、.codex/prompts、.codex/skills 目录
-2. 从 src/data/commands.ts 提取已定义的命令
+2. 从 src/data/commands.ts 提取已定义的命令（含 CLI 数组）
 3. 从 src/data/deprecated.ts 提取废弃命令
 4. 从 src/data/patterns.ts 提取命令链引用
 5. 对比差异，输出缺失和多余的命令
 6. 检测残留旧命令（目录中存在但已被废弃）
-7. 支持自动修复模式
+7. 检测 CLI 类型不完整（命令存在多目录但 CLI 数组缺失类型）
+8. 支持自动修复模式
 
 使用方法：
   python scripts/sync-commands.py          # 仅检查
@@ -107,11 +108,11 @@ def get_codex_skills() -> Set[str]:
 
     return skills
 
-def get_ts_commands() -> Tuple[Set[str], Set[str]]:
-    """从 commands.ts 提取已定义的命令和废弃命令
+def get_ts_commands() -> Set[str]:
+    """从 commands.ts 提取已定义的命令
 
     Returns:
-        Tuple[Set[str], Set[str]]: (活跃命令, 废弃命令的旧名称)
+        Set[str]: 活跃命令集合
     """
     commands_file = DATA_DIR / 'commands.ts'
     active_commands = set()
@@ -125,6 +126,34 @@ def get_ts_commands() -> Tuple[Set[str], Set[str]]:
         active_commands = set(re.findall(pattern, content))
 
     return active_commands
+
+
+def get_ts_commands_with_cli() -> Dict[str, List[str]]:
+    """从 commands.ts 提取命令及其 CLI 数组
+
+    Returns:
+        Dict[str, List[str]]: {命令名: ['claude'] 或 ['codex'] 或 ['claude', 'codex']}
+    """
+    commands_file = DATA_DIR / 'commands.ts'
+    commands_with_cli = {}
+
+    if commands_file.exists():
+        with open(commands_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # 匹配命令对象块：{ cmd: '/xxx', ... cli: ['yyy', 'zzz'], ... }
+        # 使用非贪婪匹配提取每个命令对象
+        cmd_pattern = r"\{\s*cmd:\s*'(/[^']+)'[^}]*cli:\s*\[([^\]]*)\][^}]*\}"
+
+        for match in re.finditer(cmd_pattern, content, re.DOTALL):
+            cmd_name = match.group(1)
+            cli_content = match.group(2)
+
+            # 提取 CLI 数组中的值
+            cli_values = re.findall(r"'(claude|codex)'", cli_content)
+            commands_with_cli[cmd_name] = cli_values
+
+    return commands_with_cli
 
 def get_deprecated_commands() -> Dict[str, str]:
     """从 deprecated.ts 提取废弃命令
@@ -180,6 +209,64 @@ def get_command_source(cmd: str, claude_cmds: Set[str], claude_skls: Set[str],
         return 'codex/skills'
     return 'unknown'
 
+
+def get_command_expected_cli(cmd: str, claude_cmds: Set[str], claude_skls: Set[str],
+                              codex_prmts: Set[str], codex_skls: Set[str]) -> List[str]:
+    """根据命令所在目录推断应该支持的 CLI 类型
+
+    Returns:
+        List[str]: 应该支持的 CLI 列表，如 ['claude'], ['codex'], 或 ['claude', 'codex']
+    """
+    in_claude = cmd in claude_cmds or cmd in claude_skls
+    in_codex = cmd in codex_prmts or cmd in codex_skls
+
+    if in_claude and in_codex:
+        return ['claude', 'codex']
+    elif in_claude:
+        return ['claude']
+    elif in_codex:
+        return ['codex']
+    return []
+
+
+def detect_cli_mismatches(
+    ts_commands_with_cli: Dict[str, List[str]],
+    claude_cmds: Set[str], claude_skls: Set[str],
+    codex_prmts: Set[str], codex_skls: Set[str]
+) -> List[Dict]:
+    """检测 CLI 类型不完整的命令
+
+    检测 commands.ts 中记录的 CLI 数组是否与实际目录分布一致
+
+    Returns:
+        List[Dict]: [{cmd, expected_cli, actual_cli, missing_cli}]
+    """
+    mismatches = []
+
+    for cmd, actual_cli in ts_commands_with_cli.items():
+        expected_cli = get_command_expected_cli(
+            cmd, claude_cmds, claude_skls, codex_prmts, codex_skls
+        )
+
+        if not expected_cli:
+            # 命令不在任何目录中，这是 extra 的情况，单独处理
+            continue
+
+        # 检查是否有缺失的 CLI 类型
+        actual_set = set(actual_cli)
+        expected_set = set(expected_cli)
+        missing_cli = expected_set - actual_set
+
+        if missing_cli:
+            mismatches.append({
+                'cmd': cmd,
+                'expected_cli': sorted(expected_cli),
+                'actual_cli': actual_cli,
+                'missing_cli': sorted(missing_cli)
+            })
+
+    return mismatches
+
 def analyze_commands() -> Dict:
     """分析命令差异"""
     # 获取各来源的命令
@@ -193,6 +280,9 @@ def analyze_commands() -> Dict:
 
     # 获取 commands.ts 中定义的命令
     ts_commands = get_ts_commands()
+
+    # 获取 commands.ts 中的命令及其 CLI 数组
+    ts_commands_with_cli = get_ts_commands_with_cli()
 
     # 获取废弃命令
     deprecated = get_deprecated_commands()
@@ -213,6 +303,13 @@ def analyze_commands() -> Dict:
     # 检测 patterns.ts 中引用但实际不存在的命令
     pattern_orphans = pattern_commands - all_actual - ts_commands
 
+    # 检测 CLI 类型不完整
+    cli_mismatches = detect_cli_mismatches(
+        ts_commands_with_cli,
+        claude_commands, claude_skills,
+        codex_prompts, codex_skills
+    )
+
     return {
         'total_actual': len(all_actual),
         'total_ts': len(ts_commands),
@@ -225,10 +322,12 @@ def analyze_commands() -> Dict:
         'extra': extra,
         'all_actual': all_actual,
         'ts_commands': ts_commands,
+        'ts_commands_with_cli': ts_commands_with_cli,
         'deprecated': deprecated,
         'stale_in_dirs': stale_in_dirs,
         'pattern_commands': pattern_commands,
         'pattern_orphans': pattern_orphans,
+        'cli_mismatches': cli_mismatches,
     }
 
 def print_report(result: Dict):
@@ -238,6 +337,17 @@ def print_report(result: Dict):
     print(f"commands.ts 中定义的命令总数: {result['total_ts']}")
     print(f"deprecated.ts 中废弃命令总数: {result['total_deprecated']}")
     print("=" * 70)
+
+    # CLI 类型不完整
+    if result['cli_mismatches']:
+        print(f"\n[CLI 类型不完整 - 命令存在多目录但 cli 数组缺失类型] ({len(result['cli_mismatches'])}):")
+        for m in sorted(result['cli_mismatches'], key=lambda x: x['cmd']):
+            expected = '+'.join(m['expected_cli'])
+            actual = '+'.join(m['actual_cli']) if m['actual_cli'] else '[]'
+            missing = ', '.join(m['missing_cli'])
+            print(f"  {m['cmd']:40} 应为 [{expected}] 实际 [{actual}] 缺失: {missing}")
+    else:
+        print("\n[CLI 类型不完整]: 无")
 
     # 缺失的命令
     if result['missing']:
@@ -284,15 +394,29 @@ def print_report(result: Dict):
 
     # 最终状态
     print("\n" + "=" * 70)
-    issues = len(result['missing']) + len(result['extra']) + len(result['stale_in_dirs']) + len(result['pattern_orphans'])
+    issues = (len(result['missing']) + len(result['extra']) +
+              len(result['stale_in_dirs']) + len(result['pattern_orphans']) +
+              len(result['cli_mismatches']))
     if issues == 0:
         print("SUCCESS: 所有命令完全同步!")
     else:
-        print(f"NEEDS WORK: {len(result['missing'])} 缺失, {len(result['extra'])} 多余, {len(result['stale_in_dirs'])} 残留旧命令, {len(result['pattern_orphans'])} 孤立引用")
+        print(f"NEEDS WORK: {len(result['missing'])} 缺失, {len(result['extra'])} 多余, "
+              f"{len(result['stale_in_dirs'])} 残留旧命令, {len(result['pattern_orphans'])} 孤立引用, "
+              f"{len(result['cli_mismatches'])} CLI类型不完整")
 
 def generate_fix_suggestions(result: Dict) -> str:
     """生成修复建议"""
     suggestions = []
+
+    # CLI 类型不完整修复建议
+    if result['cli_mismatches']:
+        suggestions.append("\n## CLI 类型不完整 - 需要更新 cli 数组:\n")
+        suggestions.append("```typescript")
+        suggestions.append("// 在 src/data/commands.ts 中找到对应命令，更新 cli 数组:")
+        for m in sorted(result['cli_mismatches'], key=lambda x: x['cmd']):
+            expected_cli = json.dumps(m['expected_cli'])
+            suggestions.append(f"// {m['cmd']}: cli: {json.dumps(m['actual_cli'])} → cli: {expected_cli}")
+        suggestions.append("```\n")
 
     if result['extra']:
         suggestions.append("\n## 需要删除或移入废弃列表的命令:\n")
@@ -312,10 +436,17 @@ def generate_fix_suggestions(result: Dict) -> str:
                 result['codex_prompts'],
                 result['codex_skills']
             )
-            cli = 'claude' if 'claude' in source else 'codex'
+            # 根据目录推断正确的 cli 数组
+            expected_cli = get_command_expected_cli(
+                cmd,
+                result['claude_commands'],
+                result['claude_skills'],
+                result['codex_prompts'],
+                result['codex_skills']
+            )
             category = 'skill' if 'skill' in source else ('prompt' if 'prompt' in source else 'workflow')
             suggestions.append(f"  {cmd:40} [{source}]")
-            suggestions.append(f"    建议配置: category: '{category}', cli: ['{cli}']")
+            suggestions.append(f"    建议配置: category: '{category}', cli: {json.dumps(expected_cli)}")
 
     if result['stale_in_dirs']:
         suggestions.append("\n## 需要删除的残留旧命令目录:\n")
@@ -351,7 +482,9 @@ def main():
             'extra': sorted(list(result['extra'])),
             'stale_in_dirs': sorted(list(result['stale_in_dirs'])),
             'pattern_orphans': sorted(list(result['pattern_orphans'])),
-            'synced': not result['missing'] and not result['extra'] and not result['stale_in_dirs'],
+            'cli_mismatches': result['cli_mismatches'],
+            'synced': (not result['missing'] and not result['extra'] and
+                     not result['stale_in_dirs'] and not result['cli_mismatches']),
         }
         print(json.dumps(output, indent=2, ensure_ascii=False))
     else:

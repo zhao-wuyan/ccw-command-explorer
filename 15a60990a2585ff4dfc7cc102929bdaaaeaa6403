@@ -1,0 +1,25 @@
+scripts/sync-commands.py
+  7ab4014b124b3b3f 318
+.claude/skills/ccw-wiki-sync/templates/command-template.ts
+  7ab4014b124b3b3f 13,46,56,69,80,84-94,157,178,180-182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "15a60990a2585ff4dfc7cc102929bdaaaeaa6403",
+  "prompts": {
+    "7ab4014b124b3b3f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5587d77-14ce-445e-9ad6-1845856415bb",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 554,
+      "total_deletions": 540,
+      "accepted_lines": 548,
+      "overriden_lines": 0
+    }
+  }
+}

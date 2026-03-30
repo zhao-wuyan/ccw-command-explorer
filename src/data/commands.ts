@@ -40,20 +40,20 @@ export const COMMANDS: Command[] = [
   },
 
   // With-File 系列
-  { cmd: '/workflow:analyze-with-file', desc: '交互式协作分析', status: 'stable', category: 'workflow', cli: ['claude'], addedInVersion: 'v6.0',
-    detail: '深度分析并记录：边分析代码边记录理解，支持多轮问答。生成分析文档，方便以后查阅',
-    usage: '需要深入理解代码库、分析复杂模块'
+  { cmd: '/workflow:analyze-with-file', desc: '交互式协作分析 - CLI探索+多视角+文档化', status: 'stable', category: 'workflow', cli: ['claude'], addedInVersion: 'v6.0',
+    detail: '4阶段分析流程：①主题理解→②CLI探索(cli-explore-agent)+外部研究(workflow-research-agent)→③交互讨论(Intent Drift检测)→④综合结论(Findings Coverage Matrix)。支持多视角并行(Technical/Architectural/Business/Domain最多4个)、决策记录协议、产出discussion.md+conclusions.json',
+    usage: '需要深入分析代码库、理解复杂架构、研究技术方案、多角度评估决策'
   },
-  { cmd: '/workflow:debug-with-file', desc: '交互式调试', status: 'stable', category: 'workflow', cli: ['claude'], addedInVersion: 'v6.0',
-    detail: '科学调试：①猜测原因(假设)；②验证假设；③记录发现。系统化排查问题，不会漏掉线索',
+  { cmd: '/workflow:debug-with-file', desc: '交互式调试 - 假设驱动+理解演变记录', status: 'stable', category: 'workflow', cli: ['claude'], addedInVersion: 'v6.0',
+    detail: '证据驱动调试流程：Explore→Document→Log→Analyze→Correct→Fix→Verify。记录理解演变(understanding.md)，Gemini辅助纠正误解，保留学习成果',
     usage: '遇到难定位的复杂bug'
   },
   { cmd: '/workflow:collaborative-plan-with-file', desc: '协作式规划', status: 'stable', category: 'workflow', cli: ['claude'], addedInVersion: 'v6.0',
     detail: '多人协作规划：把大需求拆成多个领域，不同专业的人分别规划，最后自动检测冲突',
     usage: '涉及多个技术领域的复杂功能，需要不同专业的人分工规划'
   },
-  { cmd: '/workflow:brainstorm-with-file', desc: '交互式头脑风暴', status: 'stable', category: 'brainstorm', cli: ['claude'], addedInVersion: 'v6.0',
-    detail: '创意发散并记录：多角度思考，记录想法的演变过程。完成后可选择：创建规划、创建Issue、或继续分析',
+  { cmd: '/workflow:brainstorm-with-file', desc: '交互式头脑风暴 - 多CLI协作+发散收敛循环', status: 'stable', category: 'brainstorm', cli: ['claude'], addedInVersion: 'v6.0',
+    detail: '多CLI协作头脑风暴：cli-explore-agent探索 + Multi-CLI视角(Gemini/Codex/Claude或专业角色)，发散-收敛循环(Diverge-Converge)，记录想法演变。支持creative/structured模式',
     usage: '需要创意思考、功能设计、架构方案讨论'
   },
   { cmd: '/workflow:roadmap-with-file', desc: '路线图规划', status: 'new', category: 'workflow', cli: ['claude'], addedInVersion: 'v6.4',
@@ -207,7 +207,7 @@ export const COMMANDS: Command[] = [
     usage: '需要创意发散、多角度思考、或从特定专业视角分析问题时'
   },
   { cmd: '/team-brainstorm', desc: '团队头脑风暴 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
-    detail: '5角色：创意者出点子→挑战者挑毛病→综合者整合→评估师打分排名。想法被挑战后自动改进，最多2轮。支持多人并行出点子',
+    detail: '4角色协作：创意者(ideator)出点子→挑战者(challenger)挑毛病→综合者(synthesizer)整合→评估师(evaluator)打分。基于team-worker架构，支持Quick/Deep/Full流水线',
     usage: '重要决策需要多人、多角度碰撞想法时'
   },
 
@@ -241,8 +241,8 @@ export const COMMANDS: Command[] = [
     detail: '多维度同时审查：代码对不对、好读吗、性能如何、安全吗、测试够不够、好维护吗、符合最佳实践吗。发现问题可自动修复。支持会话/模块/修复三种模式',
     usage: '代码写完需要全面审查、PR合入前检查、审查完想自动改问题'
   },
-  { cmd: '/team-review', desc: '团队代码审查 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
-    detail: '多角色审查：同时从安全、性能、架构等角度审查，生成综合报告。比单人审查更全面',
+  { cmd: '/team-review', desc: '团队代码审查 - 3角色流水线', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
+    detail: '3角色流水线：扫描器(scanner)发现问题→审查者(reviewer)深度分析→修复者(fixer)自动修复。基于team-worker架构',
     usage: '重要代码合入前、大型PR需要全面审查时'
   },
 
@@ -269,14 +269,14 @@ export const COMMANDS: Command[] = [
   },
 
   // 规格生成
-  { cmd: '/spec-generator', desc: '规格生成器 - 6阶段文档链', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
-    detail: '生成6份文档：①产品简介；②需求文档PRD；③架构设计；④用户故事；⑤技术方案；⑥就绪检查。从想法到可执行的任务',
+  { cmd: '/spec-generator', desc: '规格生成器 - 7阶段文档链', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
+    detail: '7阶段文档链：规格研究→发现→产品简介→需求PRD→架构设计→Epic拆分→就绪检查。含Codex审查关卡，从想法到可执行任务',
     usage: '新项目立项、需求评审前、或者要把想法变成具体开发任务'
   },
 
   // 团队协作
   { cmd: '/team-frontend', desc: '团队前端开发 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
-    detail: '5个角色分工协作：分析师(需求+设计智能)→架构师(设计令牌)→开发者(写代码)→QA(审查)。内置行业设计知识库，自动匹配最佳UI方案',
+    detail: '4个角色分工协作：分析师(需求+设计智能)→架构师(设计令牌)→开发者(写代码)→QA(审查)。内置ui-ux-pro-max设计知识库，基于team-worker架构',
     usage: '开发前端页面或组件，需要从需求到上线全流程时'
   },
   { cmd: '/team-lifecycle', desc: '团队全生命周期 - spec/impl/test', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
@@ -312,7 +312,7 @@ export const COMMANDS: Command[] = [
     usage: '项目架构混乱、依赖循环复杂，模块耦合过紧，需要系统性重构'
   },
   { cmd: '/team-perf-opt', desc: '团队性能优化 - 分析瓶颈、设计策略', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.2',
-    detail: '5角色协作：分析员(性能分析)→策略师(优化策略)→优化工程师(实施)→基准测试员(基准)→验证者(验证)→审查员(报告)。 发现性能瓶颈，设计优化方案，实施改进，验证效果',
+    detail: '5角色协作：性能分析员(profiler)→策略师(strategist)→优化工程师(optimizer)→基准测试员(benchmarker)→审查员(reviewer)。基于team-worker架构',
     usage: '应用性能下降，响应变慢，需要系统性性能优化'
   },
   { cmd: '/team-tech-debt', desc: '团队技术债务 - 债务管理协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
@@ -323,16 +323,16 @@ export const COMMANDS: Command[] = [
     detail: '2阶段快速流程：Phase 1 轻量规划生成 IMPL_PLAN.md；Phase 2 使用 Task tool执行任务。自动确认完成',
     usage: '中小型功能，想快速规划后立即执行，无需复杂流程'
   },
-  { cmd: '/team-testing', desc: '团队测试 - 多角色测试协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
-    detail: '测试团队协作，测试计划和执行',
+  { cmd: '/team-testing', desc: '团队测试 - 渐进式测试协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
+    detail: '4角色流水线：策略师(strategist)规划测试→生成器(generator)写测试→执行器(executor)跑测试→分析师(analyst)出报告。基于team-worker架构',
     usage: '需要团队协作测试时'
   },
-  { cmd: '/team-uidesign', desc: '团队 UI 设计 - 设计角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
-    detail: 'UI 设计团队协作，设计系统管理',
+  { cmd: '/team-uidesign', desc: '团队 UI 设计 - 设计系统协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
+    detail: '4角色流水线：研究员(researcher)分析设计需求→设计师(designer)创建设计→审查者(reviewer)检查质量→实现者(implementer)构建组件。基于team-worker架构',
     usage: '需要团队协作 UI 设计时'
   },
-  { cmd: '/team-ultra-analyze', desc: '团队超深度分析 - 全面代码分析', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
-    detail: '超深度代码分析，全面理解代码库',
+  { cmd: '/team-ultra-analyze', desc: '团队超深度分析 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
+    detail: '4角色流水线：探索者(explorer)发现代码→分析师(analyst)深度分析→讨论者(discussant)交叉验证→综合者(synthesizer)提炼结论。基于team-worker架构',
     usage: '需要深度理解代码时'
   },
   { cmd: '/team-designer', desc: '元技能 - 生成 v4 架构团队技能', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.2',
@@ -375,8 +375,8 @@ export const COMMANDS: Command[] = [
     detail: '同时用多个AI分析：Gemini、Codex、Claude同时分析同一问题，然后交叉验证，综合得出最佳方案',
     usage: '复杂问题需要多角度分析、单个AI结论不确定时'
   },
-  { cmd: '/workflow-plan', desc: '完整规划技能 - 5阶段规划', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.0',
-    detail: '5阶段详细规划：①启动会话；②收集项目上下文；③AI分析；④澄清不明确的地方；⑤生成任务文件。适合大项目',
+  { cmd: '/workflow-plan', desc: '完整规划技能 - 4阶段规划+验证+重规划', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.0',
+    detail: '4阶段规划流程：启动会话→收集项目上下文→AI分析→生成任务文件。支持规划验证(workflow-plan-verify)和交互式重规划(workflow:replan)',
     usage: '复杂功能、多模块开发、需要详细规划文档时'
   },
   { cmd: '/workflow-skill-designer', desc: '工作流技能设计器 - 创建工作流', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
@@ -428,12 +428,12 @@ export const COMMANDS: Command[] = [
   },
 
   // 分析/头脑风暴类
-  { cmd: '/analyze-with-file', desc: '交互式协作分析 - 文档化讨论过程', status: 'stable', category: 'skill', cli: ['codex'], addedInVersion: 'v6.0',
-    detail: '深度分析并记录过程：边分析边记录理解，支持多轮问答，AI会纠正你的误解。生成完整的分析文档',
-    usage: '需要深入分析代码库、理解复杂架构、研究技术方案'
+  { cmd: '/analyze-with-file', desc: '交互式协作分析 - CLI探索+多视角+文档化', status: 'stable', category: 'skill', cli: ['codex'], addedInVersion: 'v6.0',
+    detail: '4阶段分析流程：①主题理解→②CLI探索(cli-explore-agent)+外部研究(workflow-research-agent)→③交互讨论(Intent Drift检测)→④综合结论(Findings Coverage Matrix)。支持多视角并行(Technical/Architectural/Business/Domain最多4个)、决策记录协议、产出discussion.md+conclusions.json',
+    usage: '需要深入分析代码库、理解复杂架构、研究技术方案、多角度评估决策'
   },
-  { cmd: '/brainstorm-with-file', desc: '交互式头脑风暴 - 并行多视角分析', status: 'stable', category: 'skill', cli: ['codex'], addedInVersion: 'v6.0',
-    detail: '3个AI同时思考：创意型(天马行空)、务实型(关注落地)、系统型(全局视角)，记录所有想法的演变过程',
+  { cmd: '/brainstorm-with-file', desc: '交互式头脑风暴 - 多CLI协作+发散收敛循环', status: 'stable', category: 'skill', cli: ['codex'], addedInVersion: 'v6.0',
+    detail: '多CLI协作头脑风暴：Gemini/Codex/Claude多视角分析，发散-收敛循环(Diverge-Converge)，记录想法演变全过程。支持创意模式和结构化模式',
     usage: '功能设计、架构方案需要多角度创意思考'
   },
 
@@ -457,8 +457,8 @@ export const COMMANDS: Command[] = [
 
   // 审查类
   // 调试类
-  { cmd: '/debug-with-file', desc: '假设驱动调试 - 文档化探索过程', status: 'stable', category: 'skill', cli: ['codex'], addedInVersion: 'v6.0',
-    detail: '科学调试方法：①猜测可能原因(假设)；②验证假设；③记录发现；④AI纠正错误理解。系统化定位问题',
+  { cmd: '/debug-with-file', desc: '假设驱动调试 - 文档化探索+理解演变', status: 'stable', category: 'skill', cli: ['codex'], addedInVersion: 'v6.0',
+    detail: '证据驱动调试流程：Explore→Document→Log→Analyze→Correct→Fix→Verify。记录理解演变(understanding.md)，Gemini辅助纠正误解，保留学习成果',
     usage: '遇到难定位的bug，需要系统化地分析和排查'
   },
 
@@ -521,8 +521,8 @@ export const COMMANDS: Command[] = [
     detail: '4角色流水线：扫描器→诊断师→优化器→验证器。反AI痕迹检测、色彩/排版/间距质量、交互状态、视觉层次',
     usage: 'UI需要精修打磨，提升设计品质'
   },
-  { cmd: '/team-visual-a11y', desc: '视觉无障碍团队 - OKLCH色彩对比+WCAG审计', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
-    detail: '3角色并行审计：色彩审计(OKLCH感知对比)→排版审计→焦点审计。WCAG AA/AAA合规检查',
+  { cmd: '/team-visual-a11y', desc: '视觉无障碍团队 - OKLCH色彩+WCAG审计+修复', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
+    detail: '6角色流水线：色彩审计(color-auditor, OKLCH感知对比)→排版审计(typo-auditor)→焦点审计(focus-auditor)→修复规划师(remediation-planner)→修复实施者(fix-implementer)。WCAG AA/AAA合规',
     usage: '需要对视觉无障碍进行专业审计'
   },
 

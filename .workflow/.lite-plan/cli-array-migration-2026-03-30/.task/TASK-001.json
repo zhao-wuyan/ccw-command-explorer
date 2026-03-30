@@ -1,0 +1,37 @@
+{
+  "id": "TASK-001",
+  "title": "修改 types.ts 类型定义",
+  "description": "将 Command 接口中的 cli 字段类型从 CLIType 改为 CLIType[]，同时更新 ExperienceTipCommand 接口",
+  "scope": "类型定义修改",
+  "files": [
+    {
+      "path": "src/data/types.ts",
+      "change": "cli: CLIType → cli: CLIType[]",
+      "lines": "26, 66"
+    }
+  ],
+  "implementation_steps": [
+    {
+      "step": 1,
+      "action": "修改 Command 接口中的 cli 字段类型",
+      "details": "将 `cli: CLIType;` 改为 `cli: CLIType[];`"
+    },
+    {
+      "step": 2,
+      "action": "修改 ExperienceTipCommand 接口中的 cli 字段类型",
+      "details": "将 `cli: CLIType;` 改为 `cli: CLIType[];`"
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "CLIType 类型保持不变 ('claude' | 'codex')",
+      "Command.cli 改为 CLIType[]",
+      "ExperienceTipCommand.cli 改为 CLIType[]",
+      "TypeScript 编译通过"
+    ],
+    "verification": "npx tsc --noEmit"
+  },
+  "depends_on": [],
+  "estimated_time": "5 minutes",
+  "risk": "Low"
+}

@@ -1,0 +1,42 @@
+{
+  "id": "TASK-002",
+  "title": "更新 commands.ts 命令数据",
+  "description": "将所有命令的 cli 字段从字符串改为数组格式，合并重复命令，更新 STATS 统计逻辑",
+  "scope": "数据层修改",
+  "files": [
+    {
+      "path": "src/data/commands.ts",
+      "change": "cli 字符串 → 数组, 合并重复命令, STATS 统计更新",
+      "lines": "7-555"
+    }
+  ],
+  "implementation_steps": [
+    {
+      "step": 1,
+      "action": "将所有 cli 字段从字符串改为数组",
+      "details": "例如: `cli: 'claude'` → `cli: ['claude']`，`cli: 'codex'` → `cli: ['codex']`"
+    },
+    {
+      "step": 2,
+      "action": "合并重复命令",
+      "details": "将 team-planex (行302,445)、team-lifecycle (行282,491)、review-cycle (行240,463) 的重复定义合并为一个条目，cli 设为 ['claude', 'codex']"
+    },
+    {
+      "step": 3,
+      "action": "更新 STATS 统计逻辑",
+      "details": "将 `c.cli === 'claude'` 改为 `c.cli.includes('claude')`，`c.cli === 'codex'` 改为 `c.cli.includes('codex')`"
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "所有 cli 字段为数组格式",
+      "重复命令已合并 (命令总数减少 3 条)",
+      "STATS 统计使用 .includes()",
+      "数据无冗余"
+    ],
+    "verification": "检查命令数量和 STATS 输出"
+  },
+  "depends_on": ["TASK-001"],
+  "estimated_time": "15 minutes",
+  "risk": "Low"
+}

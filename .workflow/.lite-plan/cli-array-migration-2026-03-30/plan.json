@@ -1,0 +1,30 @@
+{
+  "id": "PLAN-cli-array-migration",
+  "title": "CLI 字段数组化迁移",
+  "summary": "将 CLI 字段从单一字符串类型改为数组类型，支持同一命令适配多个 CLI（如 claude 和 codex）",
+  "approach": "类型修改 → 数据更新 → 组件适配，分 3 个任务顺序执行",
+  "complexity": "Medium",
+  "estimated_time": "30-45 minutes",
+  "recommended_execution": "Agent",
+  "task_ids": ["TASK-001", "TASK-002", "TASK-003"],
+  "dependencies": {
+    "TASK-002": ["TASK-001"],
+    "TASK-003": ["TASK-002"]
+  },
+  "convergence": {
+    "criteria": [
+      "TypeScript 编译通过无错误",
+      "所有 cli 字段为数组格式",
+      "CLIBadge 正确显示多个标签",
+      "CLI 过滤功能正常工作",
+      "STATS 统计正确"
+    ],
+    "verification": "npm run build + 手动测试"
+  },
+  "source_session": "ANL-cli-array-migration-2026-03-30",
+  "_metadata": {
+    "exploration_angles": [],
+    "created_at": "2026-03-30T15:30:00+08:00",
+    "handoff_source": "analyze-with-file"
+  }
+}

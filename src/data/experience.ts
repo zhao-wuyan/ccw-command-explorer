@@ -5,7 +5,7 @@ import type { ExperienceCategory, ExperienceTipCommand } from './types';
 import { COLORS } from './constants';
 
 // 辅助函数：创建命令引用
-const cmd = (c: string, cli: 'claude' | 'codex' = 'claude'): ExperienceTipCommand => ({ cmd: c, cli });
+const cmd = (c: string, cli: 'claude' | 'codex' = 'claude'): ExperienceTipCommand => ({ cmd: c, cli: [cli] });
 
 export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
   {

@@ -25,15 +25,17 @@ import './App.css';
 // 辅助函数：根据 cmd 和 cli 查找命令
 const findCommand = (cmd: string, cli?: CLIType): Command | undefined => {
   if (cli) {
-    return COMMANDS.find(c => c.cmd === cmd && c.cli === cli);
+    return COMMANDS.find(c => c.cmd === cmd && c.cli.includes(cli));
   }
   // 如果没有指定 cli，返回第一个匹配的命令（向后兼容）
   return COMMANDS.find(c => c.cmd === cmd);
 };
 
 // 辅助函数：生成命令的唯一键
-const getCommandKey = (cmd: string, cli?: CLIType): string => {
-  return cli ? `${cmd}-${cli}` : cmd;
+const getCommandKey = (cmd: string, cli?: CLIType | CLIType[]): string => {
+  if (!cli) return cmd;
+  if (Array.isArray(cli)) return `${cmd}-${cli.join('+')}`;
+  return `${cmd}-${cli}`;
 };
 
 // 获取主题感知的分类颜色
@@ -56,9 +58,7 @@ const useCategoryColor = (category: CommandCategory): string => {
   return COLORS[colorMap[category]] || COLORS.primary;
 };
 
-// 获取主题感知的 CLI 颜色
-const useCliColor = (cli: CLIType): string => {
-  const COLORS = useColors();
+const getCliColor = (cli: CLIType, COLORS: { cliClaude: string; cliCodex: string }): string => {
   return cli === 'claude' ? COLORS.cliClaude : COLORS.cliCodex;
 };
 
@@ -131,25 +131,33 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-// CLI 类型徽章
-const CLIBadge = ({ cli }: { cli: CLIType }) => {
-  const cliColor = useCliColor(cli);
-  const config = CLI_CONFIG[cli];
+// CLI 类型徽章（支持多 CLI 数组）
+const CLIBadge = ({ cli }: { cli: CLIType[] }) => {
+  const COLORS = useColors();
   return (
-    <span
-      style={{
-        fontSize: 10,
-        padding: '2px 6px',
-        borderRadius: 4,
-        backgroundColor: cliColor + '20',
-        color: cliColor,
-        fontWeight: 700,
-        letterSpacing: '0.3px',
-        border: `1px solid ${cliColor}40`,
-      }}
-      title={config.label}
-    >
-      {config.shortLabel}
+    <span style={{ display: 'inline-flex', gap: 3 }}>
+      {cli.map(c => {
+        const cliColor = getCliColor(c, COLORS);
+        const config = CLI_CONFIG[c];
+        return (
+          <span
+            key={c}
+            style={{
+              fontSize: 10,
+              padding: '2px 6px',
+              borderRadius: 4,
+              backgroundColor: cliColor + '20',
+              color: cliColor,
+              fontWeight: 700,
+              letterSpacing: '0.3px',
+              border: `1px solid ${cliColor}40`,
+            }}
+            title={config.label}
+          >
+            {config.shortLabel}
+          </span>
+        );
+      })}
     </span>
   );
 };
@@ -269,18 +277,18 @@ const CommandCard = ({ command, onClick }: { command: Command; onClick: () => vo
 // ============================================
 
 // 反向查找：此命令相关的案例
-function getRelatedCases(cmd: string, cli: CLIType): Case[] {
+function getRelatedCases(cmd: string, cli: CLIType[]): Case[] {
   return ALL_CASES.filter(c =>
-    c.commands.some(cc => cc.cmd === cmd && (cc.cli === cli || cc.cli === undefined))
+    c.commands.some(cc => cc.cmd === cmd && (cli.includes(cc.cli as CLIType) || cc.cli === undefined))
   );
 }
 
 // 反向查找：此命令相关的经验
-function getRelatedExperiences(cmd: string, cli: CLIType): { category: ExperienceCategory; tip: ExperienceTip }[] {
+function getRelatedExperiences(cmd: string, cli: CLIType[]): { category: ExperienceCategory; tip: ExperienceTip }[] {
   const result: { category: ExperienceCategory; tip: ExperienceTip }[] = [];
   for (const cat of EXPERIENCE_GUIDE) {
     for (const tip of cat.tips) {
-      if (tip.commands.some(c => c.cmd === cmd && c.cli === cli)) {
+      if (tip.commands.some(c => c.cmd === cmd && cli.some(cl => c.cli.includes(cl)))) {
         result.push({ category: cat, tip });
       }
     }
@@ -433,10 +441,10 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
   const COLORS = useColors();
   const isLight = COLORS.bg === '#ffffff';
   const categoryColor = useCategoryColor(command.category);
-  const cliColor = useCliColor(command.cli);
+  const cliColor = getCliColor(command.cli[0] || 'claude', COLORS);
   const levelColor = command.level ? useLevelColor(command.level) : null;
   const relatedCommands = COMMANDS.filter(
-    c => c.category === command.category && (c.cmd !== command.cmd || c.cli !== command.cli)
+    c => c.category === command.category && (c.cmd !== command.cmd || c.cli.join(',') !== command.cli.join(','))
   ).slice(0, 5);
 
   // 反向关联
@@ -578,7 +586,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
                 <span style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6,
                   backgroundColor: cliColor + '20', color: cliColor,
                   fontWeight: 600, border: `1px solid ${cliColor}40` }}>
-                  {CLI_CONFIG[command.cli].label}
+                  {command.cli.map(c => CLI_CONFIG[c].label).join(' + ')}
                 </span>
                 <StatusBadge status={command.status} />
                 <span style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6,
@@ -703,11 +711,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
             </div>
             <p style={{ fontSize: 16, color: COLORS.text, marginBottom: 16 }}>{command.desc}</p>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-              <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5,
-                backgroundColor: cliColor + '20', color: cliColor,
-                fontWeight: 600, border: `1px solid ${cliColor}40` }}>
-                {CLI_CONFIG[command.cli].label}
-              </span>
+              <CLIBadge cli={command.cli} />
               <StatusBadge status={command.status} />
               <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, backgroundColor: categoryColor + '20', color: categoryColor }}>
                 {CATEGORIES[command.category].label}
@@ -1343,7 +1347,7 @@ const CommandsTab = ({ filteredCommands, groupedCommands, searchQuery, onCommand
 };
 
 // 案例步骤渲染组件
-const CaseStepItem = ({ step, index, onCommandClick }: { step: CaseStep; index: number; onCommandClick?: (cmdRef: { cmd: string; cli?: CLIType }) => void }) => {
+const CaseStepItem = ({ step, index, onCommandClick }: { step: CaseStep; index: number; onCommandClick?: (cmdRef: { cmd: string; cli?: CLIType[] }) => void }) => {
   const COLORS = useColors();
   const isLight = COLORS.bg === '#ffffff';
   const bgAlpha = isLight ? 0.06 : 0.1;
@@ -1486,7 +1490,7 @@ const CaseStepItem = ({ step, index, onCommandClick }: { step: CaseStep; index: 
 };
 
 // 案例卡片组件
-const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onClick: () => void; onCommandClick?: (cmdRef: { cmd: string; cli?: CLIType }) => void }) => {
+const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onClick: () => void; onCommandClick?: (cmdRef: { cmd: string; cli?: CLIType[] }) => void }) => {
   const COLORS = useColors();
   const caseLevelColor = useCaseLevelColor(String(caseItem.level));
   const levelConfig = LEVEL_CONFIG[String(caseItem.level)] || LEVEL_CONFIG['2'];
@@ -1540,7 +1544,7 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
               onClick={(e) => {
                 e.stopPropagation();
                 if (cmdInfo && onCommandClick) {
-                  onCommandClick({ cmd: cmd.cmd, cli: cmd.cli });
+                  onCommandClick({ cmd: cmd.cmd, cli: cmd.cli ? [cmd.cli] : undefined });
                 }
               }}
               style={{
@@ -1574,7 +1578,7 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
 };
 
 // 案例详情弹窗
-const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onClose: () => void; onCommandClick?: (cmdRef: { cmd: string; cli?: CLIType }) => void }) => {
+const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onClose: () => void; onCommandClick?: (cmdRef: { cmd: string; cli?: CLIType[] }) => void }) => {
   const COLORS = useColors();
   const isLight = COLORS.bg === '#ffffff';
   const caseLevelColor = useCaseLevelColor(String(caseItem.level));
@@ -1681,7 +1685,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
                     onClick={(e) => {
                       e.stopPropagation();
                       if (cmdInfo && onCommandClick) {
-                        onCommandClick({ cmd: cmd.cmd, cli: cmd.cli });
+                        onCommandClick({ cmd: cmd.cmd, cli: cmd.cli ? [cmd.cli] : undefined });
                       }
                     }}
                     style={{
@@ -1739,7 +1743,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
                     onClick={(e) => {
                       e.stopPropagation();
                       if (onCommandClick) {
-                        onCommandClick({ cmd: cmd.cmd, cli: cmd.cli });
+                        onCommandClick({ cmd: cmd.cmd, cli: cmd.cli ? [cmd.cli] : undefined });
                       }
                     }}
                     style={{
@@ -2967,7 +2971,7 @@ const CasesSection = ({
   selectedLevel: string;
   onSelectLevel: (level: string) => void;
   onSelectCase: (caseItem: Case) => void;
-  onCommandClick?: (cmdRef: { cmd: string; cli?: CLIType }) => void;
+  onCommandClick?: (cmdRef: { cmd: string; cli?: CLIType[] }) => void;
 }) => {
   const COLORS = useColors();
   const filteredCases = selectedLevel === 'all'
@@ -3062,7 +3066,7 @@ const ExperienceCard = ({
   tip: ExperienceTip;
   category?: ExperienceCategory;
   categoryColor: string;
-  onCommandClick: (cmdRef: { cmd: string; cli: CLIType }) => void;
+  onCommandClick: (cmdRef: { cmd: string; cli: CLIType[] }) => void;
   onCardClick?: () => void;
 }) => {
   const COLORS = useColors();
@@ -3177,7 +3181,7 @@ const ExperienceSection = ({
   onCommandClick,
   onCardClick
 }: {
-  onCommandClick: (cmdRef: { cmd: string; cli: CLIType }) => void;
+  onCommandClick: (cmdRef: { cmd: string; cli: CLIType[] }) => void;
   onCardClick?: (item: { category: ExperienceCategory; tip: ExperienceTip }) => void;
 }) => {
   return (
@@ -3427,7 +3431,7 @@ function App() {
         cmd.desc.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || cmd.category === selectedCategory;
       const matchesLevel = selectedLevel === 'all' || cmd.level === selectedLevel;
-      const matchesCLI = selectedCLI === 'all' || cmd.cli === selectedCLI;
+      const matchesCLI = selectedCLI === 'all' || cmd.cli.includes(selectedCLI as CLIType);
       return matchesSearch && matchesCategory && matchesLevel && matchesCLI;
     });
   }, [searchQuery, selectedCategory, selectedLevel, selectedCLI]);
@@ -3714,7 +3718,7 @@ function App() {
                 onSelectLevel={setSelectedCaseLevel}
                 onSelectCase={setSelectedCase}
                 onCommandClick={(cmdRef) => {
-                  const command = findCommand(cmdRef.cmd, cmdRef.cli);
+                  const command = findCommand(cmdRef.cmd, cmdRef.cli?.[0]);
                   if (command) {
                     setSelectedCommand(command);
                   }
@@ -3734,7 +3738,7 @@ function App() {
             >
               <ExperienceSection
                 onCommandClick={(cmdRef) => {
-                  const command = findCommand(cmdRef.cmd, cmdRef.cli);
+                  const command = findCommand(cmdRef.cmd, cmdRef.cli?.[0]);
                   if (command) {
                     setSelectedCommand(command);
                   }

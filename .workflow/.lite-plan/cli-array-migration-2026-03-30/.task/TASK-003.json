@@ -1,0 +1,63 @@
+{
+  "id": "TASK-003",
+  "title": "更新 App.tsx 组件支持多 CLI",
+  "description": "更新 CLIBadge 组件、findCommand 函数、matchesCLI 过滤逻辑、useCliColor hook 等以支持 CLI 数组类型",
+  "scope": "组件层修改",
+  "files": [
+    {
+      "path": "src/App.tsx",
+      "change": "更新组件支持多 CLI 数组",
+      "lines": "全文"
+    }
+  ],
+  "implementation_steps": [
+    {
+      "step": 1,
+      "action": "更新 CLIBadge 组件",
+      "details": "修改为接受 CLIType[]，遍历数组渲染多个标签"
+    },
+    {
+      "step": 2,
+      "action": "更新 findCommand 函数 (行28)",
+      "details": "将 `c.cli === cli` 改为 `c.cli.includes(cli)`"
+    },
+    {
+      "step": 3,
+      "action": "更新 useCliColor hook (行60-62)",
+      "details": "修改为接受 CLIType[]，返回第一个 CLI 的颜色或处理多色场景"
+    },
+    {
+      "step": 4,
+      "action": "更新 matchesCLI 过滤逻辑 (行3430)",
+      "details": "将 `cmd.cli === selectedCLI` 改为 `cmd.cli.includes(selectedCLI)`"
+    },
+    {
+      "step": 5,
+      "action": "更新 getRelatedCases 函数",
+      "details": "修改 CLI 比较逻辑为数组 includes"
+    },
+    {
+      "step": 6,
+      "action": "更新 getRelatedExperiences 函数",
+      "details": "修改 CLI 比较逻辑为数组 includes"
+    },
+    {
+      "step": 7,
+      "action": "更新 CLI_CONFIG 访问逻辑",
+      "details": "将 `CLI_CONFIG[command.cli]` 改为遍历数组访问"
+    }
+  ],
+  "convergence": {
+    "criteria": [
+      "CLIBadge 正确显示多个标签",
+      "findCommand 支持数组查找",
+      "matchesCLI 过滤功能正常",
+      "useCliColor 返回正确颜色",
+      "相关案例/经验指南逻辑正确"
+    ],
+    "verification": "npm run build + 手动测试过滤和显示"
+  },
+  "depends_on": ["TASK-002"],
+  "estimated_time": "20 minutes",
+  "risk": "Medium"
+}

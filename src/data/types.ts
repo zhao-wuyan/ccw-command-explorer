@@ -23,7 +23,7 @@ export interface Command {
   desc: string;
   status: CommandStatus;
   category: CommandCategory;
-  cli: CLIType;  // 标注哪个 CLI 可用
+  cli: CLIType[];  // 支持多个 CLI
   level?: 1 | 2 | 3 | 4;
   addedInVersion?: string;
   detail?: string;  // 详细描述
@@ -63,7 +63,7 @@ export interface WorkflowLevel {
 
 export interface ExperienceTipCommand {
   cmd: string;
-  cli: CLIType;
+  cli: CLIType[];
 }
 
 export interface ExperienceTip {

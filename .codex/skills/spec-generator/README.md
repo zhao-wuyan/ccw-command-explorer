@@ -107,4 +107,4 @@ After Phase 6, choose execution path:
 - **Type-specialized**: Profiles adapt templates to service/api/library/platform requirements
 - **Iterative quality**: Phase 6.5 auto-fix repairs issues, max 2 iterations before handoff
 - **Terminology-first**: glossary.json ensures consistent terminology across all documents
-- **Agent-delegated**: Heavy document phases (2-5, 6.5) run in doc-generator agents to minimize main context usage
+- **Agent-delegated**: Heavy document phases (2-5, 6.5) run in doc-generator agents via `spawn_agent/wait_agent/close_agent` (Codex v4 API) to minimize main context usage

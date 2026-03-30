@@ -7,7 +7,7 @@ description: |
   interactive verification. Produces IMPL_PLAN.md with Red-Green-Refactor cycles,
   task JSONs, TODO_LIST.md.
 argument-hint: "[-y|--yes] [--session ID] \"task description\" | verify [--session ID]"
-allowed-tools: spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 ## Auto Mode
@@ -298,7 +298,7 @@ Format: {
 `
 })
 
-wait({ id: ctxAgent })
+wait_agent({ targets: [ctxAgent] })
 close_agent({ id: ctxAgent })
 
 // Parse outputs
@@ -367,7 +367,7 @@ Format: {
 `
 })
 
-wait({ id: testAgent })
+wait_agent({ targets: [testAgent] })
 close_agent({ id: testAgent })
 
 const testContext = JSON.parse(Read(`${sessionFolder}/.process/test-context-package.json`) || '{}')
@@ -500,7 +500,7 @@ Each task MUST include Red-Green-Refactor cycle:
 `
 })
 
-wait({ id: planAgent })
+wait_agent({ targets: [planAgent] })
 close_agent({ id: planAgent })
 
 console.log(`  TDD tasks generated`)
@@ -690,7 +690,7 @@ BLOCKED: Critical failures, must fix before execution
 `
   })
 
-  wait({ id: verifyAgent })
+  wait_agent({ targets: [verifyAgent] })
   close_agent({ id: verifyAgent })
 
   const report = Read(`${sessionFolder}/.process/TDD_COMPLIANCE_REPORT.md`)

@@ -91,9 +91,8 @@ MODE: analysis
 EXPECTED: JSON output with fields: problem_statement, target_users[], domain, constraints[], dimensions[], complexity
 CONSTRAINTS: Be specific and actionable, not vague
 " --tool gemini --mode analysis`,
-  run_in_background: true
 });
-// Wait for CLI result before continuing
+// Parse CLI result before continuing
 ```
 
 Parse the CLI output into structured `seedAnalysis`:
@@ -117,19 +116,29 @@ const hasCodebase = Glob('**/*.{ts,js,py,java,go,rs}').length > 0
   || Glob('Cargo.toml').length > 0;
 
 if (hasCodebase) {
-  Agent({
-    subagent_type: "cli-explore-agent",
-    run_in_background: false,
-    description: `Explore codebase for spec: ${slug}`,
-    prompt: `
+  spawn_agent({
+    task_name: "spec-explorer",
+    fork_context: false,
+    message: `
+## TASK ASSIGNMENT
+
+### MANDATORY FIRST STEPS (Agent Execute)
+1. **Read role definition**: ~/.codex/agents/cli-explore-agent.toml (MUST read first)
+2. Search for code related to topic keywords
+3. Read project config files (package.json, pyproject.toml, etc.) if they exist
+
+---
+
 ## Spec Generator Context
 Topic: ${seedInput}
 Dimensions: ${seedAnalysis.dimensions.join(', ')}
 Session: ${workDir}
 
-## MANDATORY FIRST STEPS
-1. Search for code related to topic keywords
-2. Read project config files (package.json, pyproject.toml, etc.) if they exist
+Goal: Explore codebase to inform specification decisions
+
+Scope:
+- Include: Source code files, config files, existing architecture
+- Exclude: node_modules, dist, build artifacts
 
 ## Exploration Focus
 - Identify existing implementations related to the topic
@@ -151,6 +160,16 @@ Schema:
 }
 `
   });
+
+  const exploreResult = wait_agent({ targets: ["spec-explorer"], timeout_ms: 300000 });
+  if (exploreResult.timed_out) {
+    assign_task({
+      target: "spec-explorer",
+      items: [{ type: "text", text: "Finalize current findings and write discovery-context.json immediately." }]
+    });
+    wait_agent({ targets: ["spec-explorer"], timeout_ms: 120000 });
+  }
+  close_agent({ target: "spec-explorer" });
 }
 ```
 
@@ -247,4 +266,4 @@ Write(`${workDir}/spec-config.json`, JSON.stringify(specConfig, null, 2));
 
 ## Next Phase
 
-Proceed to [Phase 2: Product Brief](02-product-brief.md) with the generated spec-config.json.
+Proceed to [Phase 1.5: Requirement Expansion](01-5-requirement-clarification.md) with the generated spec-config.json.

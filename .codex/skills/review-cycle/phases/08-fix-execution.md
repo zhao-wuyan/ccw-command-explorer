@@ -221,8 +221,8 @@ Use fix_strategy.test_pattern to run affected tests:
 });
 
 // Wait for completion
-const execResult = wait({
-  ids: [execAgentId],
+const execResult = wait_agent({
+  targets: [execAgentId],
   timeout_ms: 1200000  // 20 minutes per group
 });
 

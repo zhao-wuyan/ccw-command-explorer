@@ -242,8 +242,8 @@ while (shouldContinue && iteration < maxIterations) {
 
   // Step 2: Batch wait for all dimension agents
   const dimensionAgentIds = dimensionAgents.map(a => a.agentId);
-  const iterationResults = wait({
-    ids: dimensionAgentIds,
+  const iterationResults = wait_agent({
+    targets: dimensionAgentIds,
     timeout_ms: 600000  // 10 minutes
   });
 
@@ -297,7 +297,7 @@ while (shouldContinue && iteration < maxIterations) {
 │                                                             │
 │  2. Execute: Spawn agents for this iteration                │
 │     └─ Each agent: explore → collect → return summary       │
-│     └─ Lifecycle: spawn_agent → batch wait → close_agent    │
+│     └─ Lifecycle: spawn_agent → batch wait_agent → close_agent    │
 │                                                             │
 │  3. Analyze: Process iteration results                      │
 │     └─ New findings? Gaps? Contradictions?                  │

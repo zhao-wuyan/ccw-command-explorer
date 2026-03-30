@@ -204,11 +204,11 @@ Format:
   })
 
   // Wait with timeout handling
-  let result = wait({ ids: [exploreAgent], timeout_ms: 600000 })
+  let result = wait_agent({ targets: [exploreAgent], timeout_ms: 600000 })
 
   if (result.timed_out) {
-    send_input({ id: exploreAgent, message: 'Complete now and write cleanup-manifest.json.' })
-    result = wait({ ids: [exploreAgent], timeout_ms: 300000 })
+    assign_task({ target: exploreAgent, items: [{ type: "text", text: "Complete now and write cleanup-manifest.json." }] })
+    result = wait_agent({ targets: [exploreAgent], timeout_ms: 300000 })
     if (result.timed_out) throw new Error('Agent timeout')
   }
 

@@ -1,7 +1,7 @@
 {
   "_metadata": {
     "version": "4.0.0",
-    "generated": "2026-03-30T06:51:03.857Z",
+    "generated": "2026-03-30T08:35:24.962Z",
     "total_commands": 140,
     "sources": {
       "claude_commands": 42,
@@ -93,7 +93,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/brainstorm/SKILL.md",
-      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "brainstorm-with-file",
@@ -457,7 +457,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/issue-discover/SKILL.md",
-      "allowed_tools": "spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__exa__search"
+      "allowed_tools": "spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__exa__search"
     },
     {
       "name": "issue-manage",
@@ -597,7 +597,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/parallel-dev-cycle/SKILL.md",
-      "allowed_tools": "spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "plan",
@@ -919,7 +919,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/spec-generator/SKILL.md",
-      "allowed_tools": "Agent, request_user_input, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill"
+      "allowed_tools": ""
     },
     {
       "name": "spec-setup",
@@ -933,7 +933,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/spec-setup/SKILL.md",
-      "allowed_tools": "spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "start",
@@ -1801,7 +1801,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/workflow-plan/SKILL.md",
-      "allowed_tools": "spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-skill-designer",
@@ -1843,7 +1843,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/workflow-tdd-plan/SKILL.md",
-      "allowed_tools": "spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-tdd-plan-plan",
@@ -1885,7 +1885,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/workflow-test-fix-cycle/SKILL.md",
-      "allowed_tools": "spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-tune",

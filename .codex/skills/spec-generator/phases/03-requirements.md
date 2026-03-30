@@ -1,7 +1,7 @@
 # Phase 3: Requirements (PRD)
 
-> **Execution Mode: Agent Delegated**
-> This phase is executed by a `doc-generator` agent. The orchestrator (SKILL.md) passes session context via the Task tool. The agent reads this file for instructions, executes all steps, writes output files, and returns a JSON summary.
+> **Execution Mode: Agent Delegated (Codex v4)**
+> This phase is executed by a `doc-generator` agent. The orchestrator spawns the agent via `spawn_agent({ task_name: "doc-gen-p3", fork_context: false })` and retrieves results via `wait_agent`. The agent reads this file as part of its MANDATORY FIRST STEPS, executes all steps, writes output files, and returns a JSON summary.
 
 Generate a detailed Product Requirements Document with functional/non-functional requirements, acceptance criteria, and MoSCoW prioritization.
 
@@ -73,10 +73,9 @@ MODE: analysis
 EXPECTED: Structured requirements with: ID, title, description, user story, acceptance criteria, priority, traceability to goals
 CONSTRAINTS: Every requirement must be specific enough to estimate and test. No vague requirements like 'system should be fast'.
 " --tool gemini --mode analysis`,
-  run_in_background: true
 });
 
-// Wait for CLI result
+// Parse CLI result
 ```
 
 ### Step 2.5: Codex Requirements Review
@@ -106,10 +105,9 @@ MODE: analysis
 EXPECTED: Requirements review with: per-requirement feedback, testability assessment, scope violations, data model gaps, quality rating
 CONSTRAINTS: Be genuinely critical. Focus on requirements that would block implementation if left vague.
 " --tool codex --mode analysis`,
-  run_in_background: true
 });
 
-// Wait for Codex review result
+// Parse Codex review result
 // Integrate feedback into requirements before writing files:
 // - Fix vague acceptance criteria flagged by Codex
 // - Correct RFC 2119 keyword misuse

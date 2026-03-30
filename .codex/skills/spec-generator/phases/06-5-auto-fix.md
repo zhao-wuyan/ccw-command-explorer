@@ -1,7 +1,7 @@
 # Phase 6.5: Auto-Fix
 
-> **Execution Mode: Agent Delegated**
-> This phase is executed by a `doc-generator` agent when triggered by the orchestrator after Phase 6 identifies issues. The agent reads this file for instructions, applies fixes to affected documents, and returns a JSON summary.
+> **Execution Mode: Agent Delegated (Codex v4)**
+> This phase is executed by a `doc-generator` agent when triggered by the orchestrator after Phase 6 identifies issues. The orchestrator spawns via `spawn_agent({ task_name: "doc-gen-fix", fork_context: false })` and retrieves results via `wait_agent`. The agent reads this file as part of its MANDATORY FIRST STEPS, applies fixes to affected documents, and returns a JSON summary.
 
 Automatically repair specification issues identified in Phase 6 Readiness Check.
 
@@ -96,11 +96,10 @@ TASK:
 MODE: analysis
 EXPECTED: Corrected document content addressing all listed issues
 CONSTRAINTS: Minimal changes - only fix flagged issues, do not restructure unflagged sections
-" --tool gemini --mode analysis`,
-    run_in_background: true
+" --tool gemini --mode analysis`
   });
 
-  // Wait for result, apply fixes to document
+  // Parse result, apply fixes to document
   // Update document version in frontmatter
 }
 ```

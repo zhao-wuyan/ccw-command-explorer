@@ -1,7 +1,7 @@
 # Phase 4: Architecture
 
-> **Execution Mode: Agent Delegated**
-> This phase is executed by a `doc-generator` agent. The orchestrator (SKILL.md) passes session context via the Task tool. The agent reads this file for instructions, executes all steps, writes output files, and returns a JSON summary.
+> **Execution Mode: Agent Delegated (Codex v4)**
+> This phase is executed by a `doc-generator` agent. The orchestrator spawns the agent via `spawn_agent({ task_name: "doc-gen-p4", fork_context: false })` and retrieves results via `wait_agent`. The agent reads this file as part of its MANDATORY FIRST STEPS, executes all steps, writes output files, and returns a JSON summary.
 
 Generate technical architecture decisions, component design, and technology selections based on requirements.
 
@@ -109,10 +109,9 @@ MODE: analysis
 EXPECTED: Complete architecture with: style justification, component diagram, tech stack table, ADRs, data model, security controls, API overview
 CONSTRAINTS: Architecture must support all Must-have requirements. Prefer proven technologies over cutting-edge.
 " --tool gemini --mode analysis`,
-  run_in_background: true
 });
 
-// Wait for CLI result
+// Parse CLI result
 ```
 
 ### Step 3: Architecture Review via Codex CLI
@@ -142,10 +141,9 @@ MODE: analysis
 EXPECTED: Architecture review with: per-ADR feedback, scalability concerns, security gaps, technology risks, quality rating
 CONSTRAINTS: Be genuinely critical, not just validating. Focus on actionable improvements.
 " --tool codex --mode analysis`,
-  run_in_background: true
 });
 
-// Wait for CLI result
+// Parse CLI result
 ```
 
 ### Step 4: Interactive ADR Decisions (Optional)

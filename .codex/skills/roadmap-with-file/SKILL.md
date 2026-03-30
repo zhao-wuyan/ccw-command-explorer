@@ -56,33 +56,33 @@ ${deliverables}
 })
 ```
 
-### wait
+### wait_agent
 Get results from subagent (only way to retrieve results).
 
 ```javascript
-const result = wait({
-  ids: [agentId],
+const result = wait_agent({
+  targets: [agentId],
   timeout_ms: 600000  // 10 minutes
 })
 
 if (result.timed_out) {
-  // Handle timeout - can continue waiting or send_input to prompt completion
+  // Handle timeout - can use assign_task to prompt completion
 }
 ```
 
-### send_input
-Continue interaction with active subagent (for clarification or follow-up).
+### assign_task
+Assign new work to active subagent (for clarification or follow-up).
 
 ```javascript
-send_input({
-  id: agentId,
-  message: `
+assign_task({
+  target: agentId,
+  items: [{ type: "text", text: `
 ## CLARIFICATION ANSWERS
 ${answers}
 
 ## NEXT STEP
 Continue with plan generation.
-`
+` }]
 })
 ```
 
@@ -537,8 +537,8 @@ Return findings as JSON with schema:
 `
      })
 
-     const exploreResult = wait({
-       ids: [exploreAgentId],
+     const exploreResult = wait_agent({
+       targets: [exploreAgentId],
        timeout_ms: 120000
      })
 
@@ -629,8 +629,8 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 `
    })
 
-   const decompositionResult = wait({
-     ids: [decompositionAgentId],
+   const decompositionResult = wait_agent({
+     targets: [decompositionAgentId],
      timeout_ms: 300000  // 5 minutes for complex decomposition
    })
 

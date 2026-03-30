@@ -1,7 +1,7 @@
 # Phase 2: Product Brief
 
-> **Execution Mode: Agent Delegated**
-> This phase is executed by a `doc-generator` agent. The orchestrator (SKILL.md) passes session context via the Task tool. The agent reads this file for instructions, executes all steps, writes output files, and returns a JSON summary.
+> **Execution Mode: Agent Delegated (Codex v4)**
+> This phase is executed by a `doc-generator` agent. The orchestrator spawns the agent via `spawn_agent({ task_name: "doc-gen-p2", fork_context: false })` and retrieves results via `wait_agent`. The agent reads this file as part of its MANDATORY FIRST STEPS, executes all steps, writes output files, and returns a JSON summary.
 
 Generate a product brief through multi-perspective CLI analysis, establishing "what" and "why".
 
@@ -98,7 +98,6 @@ MODE: analysis
 EXPECTED: Structured product analysis with: vision, goals with metrics, scope, competitive positioning, assumptions
 CONSTRAINTS: Focus on 'what' and 'why', not 'how'
 " --tool gemini --mode analysis`,
-  run_in_background: true
 });
 ```
 
@@ -122,7 +121,6 @@ MODE: analysis
 EXPECTED: Technical analysis with: feasibility assessment, constraints, integration complexity, tech recommendations, risks
 CONSTRAINTS: Focus on feasibility and constraints, not detailed architecture
 " --tool codex --mode analysis`,
-  run_in_background: true
 });
 ```
 
@@ -146,7 +144,6 @@ MODE: analysis
 EXPECTED: User analysis with: personas, journey map, pain points, UX criteria, interaction recommendations
 CONSTRAINTS: Focus on user needs and experience, not implementation
 " --tool claude --mode analysis`,
-  run_in_background: true
 });
 
 // STOP: Wait for all 3 CLI results before continuing

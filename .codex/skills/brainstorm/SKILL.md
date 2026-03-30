@@ -5,7 +5,7 @@ description: |
   (spawn_agents_on_csv) → cross-role synthesis. Single role mode: individual role analysis.
   CSV-driven parallel coordination with NDJSON discovery board.
 argument-hint: "[-y|--yes] [--count N] [--session ID] [--skip-questions] [--style-skill PKG] \"topic\" | <role-name> [--session ID]"
-allowed-tools: spawn_agents_on_csv, spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: spawn_agents_on_csv, spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 ## Auto Mode
@@ -556,7 +556,7 @@ Follow the same analysis protocol as wave role analysis but with interactive ref
 `
   })
 
-  wait({ id: agentId })
+  wait_agent({ targets: [agentId] })
   close_agent({ id: agentId })
 
   console.log(`\n✓ ${roleName} analysis complete: ${roleDir}/analysis.md`)
@@ -631,7 +631,7 @@ Evaluate complexity score (0-8):
 `
    })
 
-   wait({ id: synthesisAgent })
+   wait_agent({ targets: [synthesisAgent] })
    close_agent({ id: synthesisAgent })
    ```
 

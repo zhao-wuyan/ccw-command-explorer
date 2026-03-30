@@ -173,8 +173,8 @@ ${getDimensionGuidance(dimension)}
 });
 
 // Step 2: Batch wait for all 7 agents
-const reviewResults = wait({
-  ids: reviewAgents,
+const reviewResults = wait_agent({
+  targets: reviewAgents,
   timeout_ms: 3600000  // 60 minutes
 });
 
@@ -296,8 +296,8 @@ ${getDimensionGuidance(dimension)}
 });
 
 // Step 2: Batch wait for all 7 agents
-const reviewResults = wait({
-  ids: reviewAgents,
+const reviewResults = wait_agent({
+  targets: reviewAgents,
   timeout_ms: 3600000  // 60 minutes
 });
 
@@ -407,8 +407,8 @@ Then apply **Deep Scan mode** for semantic analysis:
 });
 
 // Wait for completion
-const deepDiveResult = wait({
-  ids: [deepDiveAgentId],
+const deepDiveResult = wait_agent({
+  targets: [deepDiveAgentId],
   timeout_ms: 2400000  // 40 minutes
 });
 

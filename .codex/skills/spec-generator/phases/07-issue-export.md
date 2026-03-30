@@ -281,12 +281,12 @@ const answer = request_user_input({
 const selection = answer.answers.next_step.answers[0];
 if (selection === "Execute via team-planex(Recommended)") {
   const issueIds = createdIssues.map(i => i.issue_id).join(',');
-  Skill({ skill: "team-planex", args: `--issues ${issueIds}` });
+  invoke_skill("team-planex", `--issues ${issueIds}`);
 }
 
 if (selection === "Wave 1 only") {
   const wave1Ids = createdIssues.filter(i => i.wave === 1).map(i => i.issue_id).join(',');
-  Skill({ skill: "team-planex", args: `--issues ${wave1Ids}` });
+  invoke_skill("team-planex", `--issues ${wave1Ids}`);
 }
 
 if (selection === "Done") {

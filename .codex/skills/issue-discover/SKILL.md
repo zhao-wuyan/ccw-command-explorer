@@ -1,7 +1,7 @@
 ---
 name: issue-discover
 description: "Unified issue discovery and creation. Create issues from GitHub/text, discover issues via multi-perspective analysis, or prompt-driven iterative exploration. Triggers on \"issue:new\", \"issue:discover\", \"issue:discover-by-prompt\", \"create issue\", \"discover issues\", \"find issues\"."
-allowed-tools: spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__exa__search
+allowed-tools: spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__exa__search
 ---
 
 # Issue Discover
@@ -54,7 +54,7 @@ Unified issue discovery and creation skill covering three entry points: manual i
 2. **Progressive Phase Loading**: Only read the selected phase document
 3. **CLI-First Data Access**: All issue CRUD via `ccw issue` CLI commands
 4. **Auto Mode Support**: `-y` flag skips action selection with auto-detection
-5. **Subagent Lifecycle**: Explicit lifecycle management with spawn_agent → wait → close_agent
+5. **Subagent Lifecycle**: Explicit lifecycle management with spawn_agent → wait_agent → close_agent
 6. **Role Path Loading**: Subagent roles loaded via path reference in MANDATORY FIRST STEPS
 
 ## Auto Mode
@@ -130,7 +130,7 @@ Post-Phase:
 5. **Auto-Detect Input**: Smart input parsing reduces need for explicit --action flag
 6. **⚠️ CRITICAL: DO NOT STOP**: Continuous multi-phase workflow. After completing each phase, immediately proceed to next
 7. **Progressive Phase Loading**: Read phase docs ONLY when that phase is about to execute
-8. **Explicit Lifecycle**: Always close_agent after wait completes to free resources
+8. **Explicit Lifecycle**: Always close_agent after wait_agent completes to free resources
 
 ## Input Processing
 
@@ -246,18 +246,18 @@ ${deliverables}
 })
 ```
 
-### wait
+### wait_agent
 
 Get results from subagent (only way to retrieve results).
 
 ```javascript
-const result = wait({
-  ids: [agentId],
+const result = wait_agent({
+  targets: [agentId],
   timeout_ms: 600000  // 10 minutes
 })
 
 if (result.timed_out) {
-  // Handle timeout - can continue waiting or send_input to prompt completion
+  // Handle timeout - can use assign_task to prompt completion
 }
 
 // Check completion status
@@ -266,20 +266,20 @@ if (result.status[agentId].completed) {
 }
 ```
 
-### send_input
+### assign_task
 
-Continue interaction with active subagent (for clarification or follow-up).
+Assign new work to active subagent (for clarification or follow-up).
 
 ```javascript
-send_input({
-  id: agentId,
-  message: `
+assign_task({
+  target: agentId,
+  items: [{ type: "text", text: `
 ## CLARIFICATION ANSWERS
 ${answers}
 
 ## NEXT STEP
 Continue with plan generation.
-`
+` }]
 })
 ```
 

@@ -1,7 +1,7 @@
 ---
 name: parallel-dev-cycle
 description: Multi-agent parallel development cycle with requirement analysis, exploration planning, code development, and validation. Orchestration runs inline in main flow (no separate orchestrator agent). Supports continuous iteration with markdown progress documentation. Triggers on "parallel-dev-cycle".
-allowed-tools: spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Parallel Dev Cycle
@@ -111,7 +111,7 @@ Phase 3: Result Aggregation & Iteration
       ├─ Parse PHASE_RESULT from each agent
       ├─ Detect issues (test failures, blockers)
       ├─ Decision: Issues found AND iteration < max?
-      │   ├─ Yes → Send feedback via send_input, loop back to Phase 2
+      │   ├─ Yes → Send feedback via assign_task, loop back to Phase 2
       │   └─ No → Proceed to Phase 4
       └─ Output: parsedResults, iteration status
 
@@ -330,7 +330,7 @@ PHASE_RESULT:
 
 ### Main Flow → Agent Communication
 
-Feedback via `send_input` (file refs + issue summary, never full content):
+Feedback via `assign_task` (file refs + issue summary, never full content):
 ```
 ## FEEDBACK FROM [Source]
 [Issue summary with file:line references]
@@ -357,7 +357,7 @@ Feedback via `send_input` (file refs + issue summary, never full content):
 
 | Error Type | Recovery |
 |------------|----------|
-| Agent timeout | send_input requesting convergence, then retry |
+| Agent timeout | assign_task requesting convergence, then retry |
 | State corrupted | Rebuild from progress markdown files and changes.log |
 | Agent failed | Re-spawn agent with previous context |
 | Conflicting results | Main flow sends reconciliation request |

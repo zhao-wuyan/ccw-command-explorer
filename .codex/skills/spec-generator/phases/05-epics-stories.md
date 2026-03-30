@@ -1,7 +1,7 @@
 # Phase 5: Epics & Stories
 
-> **Execution Mode: Agent Delegated**
-> This phase is executed by a `doc-generator` agent. The orchestrator (SKILL.md) passes session context via the Task tool. The agent reads this file for instructions, executes all steps, writes output files, and returns a JSON summary.
+> **Execution Mode: Agent Delegated (Codex v4)**
+> This phase is executed by a `doc-generator` agent. The orchestrator spawns the agent via `spawn_agent({ task_name: "doc-gen-p5", fork_context: false })` and retrieves results via `wait_agent`. The agent reads this file as part of its MANDATORY FIRST STEPS, executes all steps, writes output files, and returns a JSON summary.
 
 Decompose the specification into executable Epics and Stories with dependency mapping.
 
@@ -83,10 +83,9 @@ CONSTRAINTS:
 - Dependencies should be minimized across Epics
 \${glossary ? \`- Maintain terminology consistency with glossary: \${glossary.terms.map(t => t.term).join(', ')}\` : ''}
 " --tool gemini --mode analysis`,
-  run_in_background: true
 });
 
-// Wait for CLI result
+// Parse CLI result
 ```
 
 ### Step 2.5: Codex Epics Review
@@ -117,10 +116,9 @@ MODE: analysis
 EXPECTED: Epic review with: coverage gaps, oversized stories, dependency issues, traceability gaps, quality rating
 CONSTRAINTS: Focus on issues that would block execution planning. Be specific about which Story/Epic has problems.
 " --tool codex --mode analysis`,
-  run_in_background: true
 });
 
-// Wait for Codex review result
+// Parse Codex review result
 // Integrate feedback into epics before writing files:
 // - Add missing Stories for uncovered Must requirements
 // - Split XL stories in MVP epics into smaller units

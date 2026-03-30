@@ -1,7 +1,7 @@
 ---
 name: workflow-test-fix-cycle
 description: "End-to-end test-fix workflow generate test sessions with progressive layers (L0-L3), then execute iterative fix cycles until pass rate >= 95%. Combines test-fix-gen and test-cycle-execute into a unified pipeline. Triggers on \"workflow:test-fix-cycle\"."
-allowed-tools: spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Workflow Test-Fix Cycle
@@ -64,7 +64,7 @@ Task Pipeline:
 1. **Two-Phase Pipeline**: Generation (Phase 1) creates session + tasks, Execution (Phase 2) runs iterative fix cycles
 2. **Pure Orchestrator**: Dispatch to phase docs, parse outputs, pass context between phases
 3. **Phase 1 Auto-Continue**: Sub-phases within Phase 1 run autonomously
-4. **Subagent Lifecycle**: Explicit lifecycle management with spawn_agent → wait → close_agent
+4. **Subagent Lifecycle**: Explicit lifecycle management with spawn_agent → wait_agent → close_agent
 5. **Progressive Test Layers**: L0 (Static) → L1 (Unit) → L2 (Integration) → L3 (E2E)
 6. **AI Code Issue Detection**: Validates against common AI-generated code problems
 7. **Intelligent Strategy Engine**: conservative → aggressive → surgical based on iteration context
@@ -99,33 +99,33 @@ ${deliverables}
 })
 ```
 
-### wait
+### wait_agent
 Get results from subagent (only way to retrieve results).
 
 ```javascript
-const result = wait({
-  ids: [agentId],
+const result = wait_agent({
+  targets: [agentId],
   timeout_ms: 600000  // 10 minutes
 })
 
 if (result.timed_out) {
-  // Handle timeout - can continue waiting or send_input to prompt completion
+  // Handle timeout - can use assign_task to prompt completion
 }
 ```
 
-### send_input
-Continue interaction with active subagent (for clarification or follow-up).
+### assign_task
+Assign new work to active subagent (for clarification or follow-up).
 
 ```javascript
-send_input({
-  id: agentId,
-  message: `
+assign_task({
+  target: agentId,
+  items: [{ type: "text", text: `
 ## CLARIFICATION ANSWERS
 ${answers}
 
 ## NEXT STEP
 Continue with plan generation.
-`
+` }]
 })
 ```
 
@@ -225,7 +225,7 @@ Phase 2: Test-Cycle Execution (phases/02-test-cycle-execute.md)
 6. **Task Attachment Model**: Sub-tasks ATTACH → execute → COLLAPSE
 7. **MANDATORY CONFIRMATION GATE**: After Phase 1 completes, you MUST stop and present the generated plan to the user. Wait for explicit user approval via request_user_input before starting Phase 2. NEVER auto-proceed from Phase 1 to Phase 2
 8. **Phase 2 Continuous**: Once user approves, Phase 2 runs continuously until pass rate >= 95% or max iterations reached
-9. **Explicit Lifecycle**: Always close_agent after wait completes to free resources
+9. **Explicit Lifecycle**: Always close_agent after wait_agent completes to free resources
 
 ## Phase Execution
 
@@ -235,9 +235,9 @@ Phase 2: Test-Cycle Execution (phases/02-test-cycle-execute.md)
 
 5 sub-phases that create a test session and generate task JSONs:
 1. Create Test Session → `testSessionId`
-2. Gather Test Context (spawn_agent → wait → close_agent) → `contextPath`
-3. Test Generation Analysis (spawn_agent → wait → close_agent) → `TEST_ANALYSIS_RESULTS.md`
-4. Generate Test Tasks (spawn_agent → wait → close_agent) → `IMPL-001.json`, `IMPL-001.3.json`, `IMPL-001.5.json`, `IMPL-002.json`, `IMPL_PLAN.md`, `TODO_LIST.md`
+2. Gather Test Context (spawn_agent → wait_agent → close_agent) → `contextPath`
+3. Test Generation Analysis (spawn_agent → wait_agent → close_agent) → `TEST_ANALYSIS_RESULTS.md`
+4. Generate Test Tasks (spawn_agent → wait_agent → close_agent) → `IMPL-001.json`, `IMPL-001.3.json`, `IMPL-001.5.json`, `IMPL-002.json`, `IMPL_PLAN.md`, `TODO_LIST.md`
 5. Phase 1 Summary → **⛔ MANDATORY: Present plan and wait for user confirmation before Phase 2**
 
 **Agents Used** (via spawn_agent):
@@ -343,7 +343,7 @@ Phase 2: Test-Cycle Execution (phases/02-test-cycle-execute.md)
 ```javascript
 try {
   const agentId = spawn_agent({ message: "..." });
-  const result = wait({ ids: [agentId], timeout_ms: 600000 });
+  const result = wait_agent({ targets: [agentId], timeout_ms: 600000 });
   // ... process result ...
   close_agent({ id: agentId });
 } catch (error) {
@@ -358,7 +358,7 @@ try {
 - Detect input type (session ID / description / file path / resume)
 - Initialize progress tracking with 2 top-level phases
 - Read `phases/01-test-fix-gen.md` for detailed sub-phase execution
-- Execute 5 sub-phases with spawn_agent → wait → close_agent lifecycle
+- Execute 5 sub-phases with spawn_agent → wait_agent → close_agent lifecycle
 - Verify all Phase 1 outputs (4+ task JSONs, IMPL_PLAN.md, TODO_LIST.md)
 - **Ensure all agents are closed** after each sub-phase completes
 - **⛔ MANDATORY: Present plan summary and request_user_input for confirmation**
@@ -371,7 +371,7 @@ try {
 **Phase 2 (Execution)**:
 - Read `phases/02-test-cycle-execute.md` for detailed execution logic
 - Load session state and task queue
-- Execute iterative test-fix cycles with spawn_agent → wait → close_agent
+- Execute iterative test-fix cycles with spawn_agent → wait_agent → close_agent
 - Track iterations in progress tracking
 - Auto-complete session on success (pass rate >= 95%)
 - **Ensure all agents are closed** after each iteration

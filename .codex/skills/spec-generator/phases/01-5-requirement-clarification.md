@@ -90,9 +90,8 @@ EXPECTED: JSON output:
 }
 CONSTRAINTS: 问题必须是开放式的，建议必须具体可执行，使用用户输入的语言
 " --tool gemini --mode analysis`,
-  run_in_background: true
 });
-// Wait for CLI result before continuing
+// Parse CLI result before continuing
 ```
 
 解析 CLI 输出为结构化数据：
@@ -186,10 +185,9 @@ EXPECTED: JSON output:
   }
 }
 CONSTRAINTS: 避免重复已回答的问题，聚焦未覆盖的领域
-" --tool gemini --mode analysis`,
-      run_in_background: true
+" --tool gemini --mode analysis`
     });
-    // Wait for CLI result, parse and continue
+    // Parse CLI result and continue
 
     // If status === "ready_for_confirmation", break to confirmation step
     // If status === "need_more_discussion", present follow-up questions
@@ -284,8 +282,7 @@ TASK:
 MODE: analysis
 EXPECTED: JSON output matching refined-requirements.json schema
 CONSTRAINTS: 保守推断，只添加高置信度的扩展
-" --tool gemini --mode analysis`,
-    run_in_background: true
+" --tool gemini --mode analysis`
   });
   // Parse output directly into refined-requirements.json
 }

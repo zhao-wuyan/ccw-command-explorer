@@ -1,0 +1,19 @@
+{
+  "synced_at": "2026-03-30T08:30:00Z",
+  "local_version": "7.2.29",
+  "previous_page_version": "v7.2.28",
+  "new_page_version": "v7.2.29",
+  "command_changes": {
+    "total_actual": 114,
+    "total_ts": 114,
+    "missing": [],
+    "extra": [],
+    "modified": []
+  },
+  "updates_applied": [
+    "STATS.latestVersion: v7.2.28 → v7.2.29",
+    "timeline.detail.version: v7.2.28 → v7.2.29",
+    "timeline.detail.highlights: 新增 v7.2.29 Codex v4 Agent API 统一化"
+  ],
+  "status": "completed"
+}

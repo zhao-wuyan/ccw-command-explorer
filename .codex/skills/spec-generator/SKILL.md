@@ -1,7 +1,8 @@
 ---
 name: spec-generator
 description: "Specification generator - 7 phase document chain producing product brief, PRD, architecture, epics, and issues. Agent-delegated heavy phases (2-5, 6.5) with Codex review gates. Triggers on \"generate spec\", \"create specification\", \"spec generator\", \"workflow:spec\"."
-allowed-tools: Agent, request_user_input, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill
+agents: doc-generator
+phases: 9
 ---
 
 # Spec Generator
@@ -27,22 +28,22 @@ Phase 5:   Epics & Stories         -> epics/  (_index.md + EPIC-*.md)           
            |                           (Gemini + Codex review)
 Phase 6:   Readiness Check         -> readiness-report.md + spec-summary.md             [Inline]
            |                           (Gemini + Codex dual validation + per-req verification)
-           ├── Pass (>=80%): Handoff or Phase 7
-           ├── Review (60-79%): Handoff with caveats or Phase 7
-           └── Fail (<60%): Phase 6.5 Auto-Fix (max 2 iterations)
+           +-- Pass (>=80%): Handoff or Phase 7
+           +-- Review (60-79%): Handoff with caveats or Phase 7
+           +-- Fail (<60%): Phase 6.5 Auto-Fix (max 2 iterations)
                  |
 Phase 6.5: Auto-Fix               -> Updated Phase 2-5 documents                       [Agent]
                  |
-                 └── Re-run Phase 6 validation
+                 +-- Re-run Phase 6 validation
                        |
 Phase 7:   Issue Export            -> issue-export-report.md                            [Inline]
-                                      (Epic→Issue mapping, ccw issue create, wave assignment)
+                                      (Epic->Issue mapping, ccw issue create, wave assignment)
 ```
 
 ## Key Design Principles
 
 1. **Document Chain**: Each phase builds on previous outputs, creating a traceable specification chain from idea to executable issues
-2. **Agent-Delegated**: Heavy document phases (2-5, 6.5) run in `doc-generator` agents, keeping main context lean (summaries only)
+2. **Agent-Delegated**: Heavy document phases (2-5, 6.5) run in `doc-generator` agents via `spawn_agent`, keeping main context lean (summaries only)
 3. **Multi-Perspective Analysis**: CLI tools (Gemini/Codex/Claude) provide product, technical, and user perspectives in parallel
 4. **Codex Review Gates**: Phases 3, 5, 6 include Codex CLI review for quality validation before output
 5. **Interactive by Default**: Each phase offers user confirmation points; `-y` flag enables full auto mode
@@ -52,6 +53,36 @@ Phase 7:   Issue Export            -> issue-export-report.md                    
 9. **Spec Type Specialization**: Templates adapt to spec type (service/api/library/platform) via profiles for domain-specific depth
 10. **Iterative Quality**: Phase 6.5 auto-fix loop repairs issues found in readiness check (max 2 iterations)
 11. **Terminology Consistency**: glossary.json generated in Phase 2, injected into all subsequent phases
+
+---
+
+## Agent Registry
+
+| Agent | task_name | Role File | Responsibility | Pattern | fork_context |
+|-------|-----------|-----------|----------------|---------|-------------|
+| doc-generator (Phase 2) | `doc-gen-p2` | ~/.codex/agents/doc-generator.toml | Product brief + glossary generation | 2.1 Standard | false |
+| doc-generator (Phase 3) | `doc-gen-p3` | ~/.codex/agents/doc-generator.toml | Requirements / PRD generation | 2.1 Standard | false |
+| doc-generator (Phase 4) | `doc-gen-p4` | ~/.codex/agents/doc-generator.toml | Architecture + ADR generation | 2.1 Standard | false |
+| doc-generator (Phase 5) | `doc-gen-p5` | ~/.codex/agents/doc-generator.toml | Epics & Stories generation | 2.1 Standard | false |
+| doc-generator (Phase 6.5) | `doc-gen-fix` | ~/.codex/agents/doc-generator.toml | Auto-fix readiness issues | 2.1 Standard | false |
+| cli-explore-agent (Phase 1) | `spec-explorer` | ~/.codex/agents/cli-explore-agent.toml | Codebase exploration | 2.1 Standard | false |
+
+> **COMPACT PROTECTION**: Agent files are execution documents. When context compression occurs and agent instructions are reduced to summaries, **you MUST immediately `Read` the corresponding agent file to reload before continuing execution**.
+
+---
+
+## Fork Context Strategy
+
+| Agent | task_name | fork_context | fork_from | Rationale |
+|-------|-----------|-------------|-----------|-----------|
+| cli-explore-agent | `spec-explorer` | false | — | Independent utility: codebase scan, isolated task |
+| doc-generator (P2) | `doc-gen-p2` | false | — | Sequential pipeline: context passed via file paths in message |
+| doc-generator (P3) | `doc-gen-p3` | false | — | Sequential pipeline: reads P2 output files from disk |
+| doc-generator (P4) | `doc-gen-p4` | false | — | Sequential pipeline: reads P2-P3 output files from disk |
+| doc-generator (P5) | `doc-gen-p5` | false | — | Sequential pipeline: reads P2-P4 output files from disk |
+| doc-generator (P6.5) | `doc-gen-fix` | false | — | Utility fix: reads readiness-report.md + affected phase files |
+
+**Why all `fork_context: false`**: This is a Pipeline pattern (2.5) — each phase produces files on disk and the next phase reads them. No agent needs the orchestrator's conversation history; all context is explicitly passed via file paths in the spawn message.
 
 ---
 
@@ -92,6 +123,9 @@ Phase 1: Discovery & Seed Analysis
    |- Parse input (text or file reference)
    |- Gemini CLI seed analysis (problem, users, domain, dimensions)
    |- Codebase exploration (conditional, if project detected)
+   |  |- spawn_agent({ task_name: "spec-explorer", fork_context: false, message: ... })
+   |  |- wait_agent({ targets: ["spec-explorer"], timeout_ms: 300000 })
+   |  |- close_agent({ target: "spec-explorer" })
    |- Spec type selection: service|api|library|platform (interactive, -y defaults to service)
    |- User confirmation (interactive, -y skips)
    |- Output: spec-config.json, discovery-context.json (optional)
@@ -107,35 +141,39 @@ Phase 1.5: Requirement Expansion & Clarification
    |- Output: refined-requirements.json
 
 Phase 2: Product Brief  [AGENT: doc-generator]
-   |- Delegate to Task(subagent_type="doc-generator")
+   |- spawn_agent({ task_name: "doc-gen-p2", fork_context: false, message: <context envelope> })
    |- Agent reads: phases/02-product-brief.md
    |- Agent executes: 3 parallel CLI analyses + synthesis + glossary generation
    |- Agent writes: product-brief.md, glossary.json
-   |- Agent returns: JSON summary {files_created, quality_notes, key_decisions}
+   |- wait_agent({ targets: ["doc-gen-p2"], timeout_ms: 600000 })
+   |- close_agent({ target: "doc-gen-p2" })
    |- Orchestrator validates: files exist, spec-config.json updated
 
 Phase 3: Requirements / PRD  [AGENT: doc-generator]
-   |- Delegate to Task(subagent_type="doc-generator")
+   |- spawn_agent({ task_name: "doc-gen-p3", fork_context: false, message: <context envelope> })
    |- Agent reads: phases/03-requirements.md
    |- Agent executes: Gemini expansion + Codex review (Step 2.5) + priority sorting
    |- Agent writes: requirements/ directory (_index.md + REQ-*.md + NFR-*.md)
-   |- Agent returns: JSON summary {files_created, codex_review_integrated, key_decisions}
+   |- wait_agent({ targets: ["doc-gen-p3"], timeout_ms: 600000 })
+   |- close_agent({ target: "doc-gen-p3" })
    |- Orchestrator validates: directory exists, file count matches
 
 Phase 4: Architecture  [AGENT: doc-generator]
-   |- Delegate to Task(subagent_type="doc-generator")
+   |- spawn_agent({ task_name: "doc-gen-p4", fork_context: false, message: <context envelope> })
    |- Agent reads: phases/04-architecture.md
    |- Agent executes: Gemini analysis + Codex review + codebase mapping
    |- Agent writes: architecture/ directory (_index.md + ADR-*.md)
-   |- Agent returns: JSON summary {files_created, codex_review_rating, key_decisions}
+   |- wait_agent({ targets: ["doc-gen-p4"], timeout_ms: 600000 })
+   |- close_agent({ target: "doc-gen-p4" })
    |- Orchestrator validates: directory exists, ADR files present
 
 Phase 5: Epics & Stories  [AGENT: doc-generator]
-   |- Delegate to Task(subagent_type="doc-generator")
+   |- spawn_agent({ task_name: "doc-gen-p5", fork_context: false, message: <context envelope> })
    |- Agent reads: phases/05-epics-stories.md
    |- Agent executes: Gemini decomposition + Codex review (Step 2.5) + validation
    |- Agent writes: epics/ directory (_index.md + EPIC-*.md)
-   |- Agent returns: JSON summary {files_created, codex_review_integrated, mvp_epic_count}
+   |- wait_agent({ targets: ["doc-gen-p5"], timeout_ms: 600000 })
+   |- close_agent({ target: "doc-gen-p5" })
    |- Orchestrator validates: directory exists, MVP epics present
 
 Phase 6: Readiness Check  [INLINE + ENHANCED]
@@ -150,16 +188,17 @@ Phase 6: Readiness Check  [INLINE + ENHANCED]
    |- Handoff options: Phase 7 (issue export), lite-plan, req-plan, plan, iterate
 
 Phase 6.5: Auto-Fix (conditional)  [AGENT: doc-generator]
-   |- Delegate to Task(subagent_type="doc-generator")
+   |- spawn_agent({ task_name: "doc-gen-fix", fork_context: false, message: <context envelope> })
    |- Agent reads: phases/06-5-auto-fix.md + readiness-report.md
    |- Agent executes: fix affected Phase 2-5 documents
-   |- Agent returns: JSON summary {files_modified, issues_fixed, phases_touched}
+   |- wait_agent({ targets: ["doc-gen-fix"], timeout_ms: 600000 })
+   |- close_agent({ target: "doc-gen-fix" })
    |- Re-run Phase 6 validation
    |- Max 2 iterations, then force handoff
 
 Phase 7: Issue Export  [INLINE]
    |- Ref: phases/07-issue-export.md
-   |- Read EPIC-*.md files, assign waves (MVP→wave-1, others→wave-2)
+   |- Read EPIC-*.md files, assign waves (MVP->wave-1, others->wave-2)
    |- Create issues via ccw issue create (one per Epic)
    |- Map Epic dependencies to issue dependencies
    |- Generate issue-export-report.md
@@ -168,21 +207,21 @@ Phase 7: Issue Export  [INLINE]
 
 Complete: Full specification package with issues ready for execution
 
-Phase 6/7 → Handoff Bridge (conditional, based on user selection):
-   ├─ team-planex: Execute issues via coordinated team workflow
-   ├─ lite-plan: Extract first MVP Epic description → direct text input
-   ├─ plan / req-plan: Create WFS session + .brainstorming/ bridge files
-   │   ├─ guidance-specification.md (synthesized from spec outputs)
-   │   ├─ feature-specs/feature-index.json (Epic → Feature mapping)
-   │   └─ feature-specs/F-{num}-{slug}.md (one per Epic)
-   └─ context-search-agent auto-discovers .brainstorming/
-       → context-package.json.brainstorm_artifacts populated
-       → action-planning-agent consumes: guidance_spec (P1) → feature_index (P2)
+Phase 6/7 -> Handoff Bridge (conditional, based on user selection):
+   +- team-planex: Execute issues via coordinated team workflow
+   +- lite-plan: Extract first MVP Epic description -> direct text input
+   +- plan / req-plan: Create WFS session + .brainstorming/ bridge files
+   |   +- guidance-specification.md (synthesized from spec outputs)
+   |   +- feature-specs/feature-index.json (Epic -> Feature mapping)
+   |   +-- feature-specs/F-{num}-{slug}.md (one per Epic)
+   +- context-search-agent auto-discovers .brainstorming/
+       -> context-package.json.brainstorm_artifacts populated
+       -> action-planning-agent consumes: guidance_spec (P1) -> feature_index (P2)
 ```
 
 ## Directory Setup
 
-```javascript
+```
 // Session ID generation
 const slug = topic.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').slice(0, 40);
 const date = new Date().toISOString().slice(0, 10);
@@ -196,24 +235,24 @@ Bash(`mkdir -p "${workDir}"`);
 
 ```
 .workflow/.spec/SPEC-{slug}-{YYYY-MM-DD}/
-├── spec-config.json              # Session configuration + phase state
-├── discovery-context.json        # Codebase exploration results (optional)
-├── refined-requirements.json     # Phase 1.5: Confirmed requirements after discussion
-├── glossary.json                 # Phase 2: Terminology glossary for cross-doc consistency
-├── product-brief.md              # Phase 2: Product brief
-├── requirements/                 # Phase 3: Detailed PRD (directory)
-│   ├── _index.md                 #   Summary, MoSCoW table, traceability, links
-│   ├── REQ-NNN-{slug}.md         #   Individual functional requirement
-│   └── NFR-{type}-NNN-{slug}.md  #   Individual non-functional requirement
-├── architecture/                 # Phase 4: Architecture decisions (directory)
-│   ├── _index.md                 #   Overview, components, tech stack, links
-│   └── ADR-NNN-{slug}.md         #   Individual Architecture Decision Record
-├── epics/                        # Phase 5: Epic/Story breakdown (directory)
-│   ├── _index.md                 #   Epic table, dependency map, MVP scope
-│   └── EPIC-NNN-{slug}.md        #   Individual Epic with Stories
-├── readiness-report.md           # Phase 6: Quality report (+ per-req verification table)
-├── spec-summary.md               # Phase 6: One-page executive summary
-└── issue-export-report.md        # Phase 7: Issue mapping table + spec links
++-- spec-config.json              # Session configuration + phase state
++-- discovery-context.json        # Codebase exploration results (optional)
++-- refined-requirements.json     # Phase 1.5: Confirmed requirements after discussion
++-- glossary.json                 # Phase 2: Terminology glossary for cross-doc consistency
++-- product-brief.md              # Phase 2: Product brief
++-- requirements/                 # Phase 3: Detailed PRD (directory)
+|   +-- _index.md                 #   Summary, MoSCoW table, traceability, links
+|   +-- REQ-NNN-{slug}.md         #   Individual functional requirement
+|   +-- NFR-{type}-NNN-{slug}.md  #   Individual non-functional requirement
++-- architecture/                 # Phase 4: Architecture decisions (directory)
+|   +-- _index.md                 #   Overview, components, tech stack, links
+|   +-- ADR-NNN-{slug}.md         #   Individual Architecture Decision Record
++-- epics/                        # Phase 5: Epic/Story breakdown (directory)
+|   +-- _index.md                 #   Epic table, dependency map, MVP scope
+|   +-- EPIC-NNN-{slug}.md        #   Individual Epic with Stories
++-- readiness-report.md           # Phase 6: Quality report (+ per-req verification table)
++-- spec-summary.md               # Phase 6: One-page executive summary
++-- issue-export-report.md        # Phase 7: Issue mapping table + spec links
 ```
 
 ## State Management
@@ -255,79 +294,134 @@ Bash(`mkdir -p "${workDir}"`);
 
 ## Core Rules
 
-1. **Start Immediately**: First action is TaskCreate initialization, then Phase 0 (spec study), then Phase 1
+1. **Start Immediately**: First action is Phase 0 (spec study), then Phase 1
 2. **Progressive Phase Loading**: Read phase docs ONLY when that phase is about to execute
-3. **Auto-Continue**: All phases run autonomously; check TaskList to execute next pending phase
+3. **Auto-Continue**: All phases run autonomously; proceed to next phase after current completes
 4. **Parse Every Output**: Extract required data from each phase for next phase context
 5. **DO NOT STOP**: Continuous 7-phase pipeline until all phases complete or user exits
-6. **Respect -y Flag**: When auto mode, skip all request_user_input calls, use recommended defaults
+6. **Respect -y Flag**: When auto mode, skip all user interaction calls, use recommended defaults
 7. **Respect -c Flag**: When continue mode, load spec-config.json and resume from checkpoint
 8. **Inject Glossary**: From Phase 3 onward, inject glossary.json terms into every CLI prompt
 9. **Load Profile**: Read templates/profiles/{spec_type}-profile.md and inject requirements into Phase 2-5 prompts
 10. **Iterate on Failure**: When Phase 6 score < 60%, auto-trigger Phase 6.5 (max 2 iterations)
-11. **Agent Delegation**: Phase 2-5 and 6.5 MUST be delegated to `doc-generator` agents via Task tool — never execute inline
-12. **Lean Context**: Orchestrator only sees agent return summaries (JSON), never the full document content
-13. **Validate Agent Output**: After each agent returns, verify files exist on disk and spec-config.json was updated
+11. **Agent Delegation**: Phase 2-5 and 6.5 MUST be delegated to `doc-generator` agents via `spawn_agent` — never execute inline
+12. **Lean Context**: Orchestrator only sees agent return summaries from `wait_agent`, never the full document content
+13. **Validate Agent Output**: After each `wait_agent` returns, verify files exist on disk and spec-config.json was updated
+14. **Lifecycle Balance**: Every `spawn_agent` MUST have a matching `close_agent` after `wait_agent` retrieves results
 
 ## Agent Delegation Protocol
 
-For Phase 2-5 and 6.5, the orchestrator delegates to a `doc-generator` agent via the Task tool. The orchestrator builds a lean context envelope — passing only paths, never file content.
+For Phase 2-5 and 6.5, the orchestrator delegates to a `doc-generator` agent via `spawn_agent`. The orchestrator builds a lean context envelope — passing only paths, never file content.
 
 ### Context Envelope Template
 
-```javascript
-Task({
-  subagent_type: "doc-generator",
-  run_in_background: false,
-  description: `Spec Phase ${N}: ${phaseName}`,
-  prompt: `
-## Spec Generator - Phase ${N}: ${phaseName}
+```
+spawn_agent({
+  task_name: "doc-gen-p<N>",
+  fork_context: false,
+  message: `
+## Spec Generator - Phase <N>: <phase-name>
+
+### MANDATORY FIRST STEPS (Agent Execute)
+1. **Read role definition**: ~/.codex/agents/doc-generator.toml (MUST read first)
+2. Read: <skill-dir>/phases/<phase-file>
+
+---
 
 ### Session
-- ID: ${sessionId}
-- Work Dir: ${workDir}
-- Auto Mode: ${autoMode}
-- Spec Type: ${specType}
+- ID: <session-id>
+- Work Dir: <work-dir>
+- Auto Mode: <auto-mode>
+- Spec Type: <spec-type>
 
 ### Input (read from disk)
-${inputFilesList}  // Only file paths — agent reads content itself
+<input-files-list>
 
 ### Instructions
-Read: ${skillDir}/phases/${phaseFile}  // Agent reads the phase doc for full instructions
-Apply template: ${skillDir}/templates/${templateFile}
+Read: <skill-dir>/phases/<phase-file>
+Apply template: <skill-dir>/templates/<template-file>
 
 ### Glossary (Phase 3+ only)
-Read: ${workDir}/glossary.json
+Read: <work-dir>/glossary.json
 
 ### Output
-Write files to: ${workDir}/${outputPath}
-Update: ${workDir}/spec-config.json (phasesCompleted)
+Write files to: <work-dir>/<output-path>
+Update: <work-dir>/spec-config.json (phasesCompleted)
 Return: JSON summary { files_created, quality_notes, key_decisions }
 `
-});
+})
 ```
 
 ### Orchestrator Post-Agent Validation
 
-After each agent returns:
+After each agent phase, the orchestrator validates output:
 
-```javascript
-// 1. Parse agent return summary
-const summary = JSON.parse(agentResult);
+```
+// 1. Wait for agent completion
+const result = wait_agent({ targets: ["doc-gen-p<N>"], timeout_ms: 600000 })
 
-// 2. Validate files exist
+// 2. Handle timeout
+if (result.timed_out) {
+  assign_task({
+    target: "doc-gen-p<N>",
+    items: [{ type: "text", text: "Please finalize current work and output results immediately." }]
+  })
+  const retryResult = wait_agent({ targets: ["doc-gen-p<N>"], timeout_ms: 120000 })
+  if (retryResult.timed_out) {
+    close_agent({ target: "doc-gen-p<N>" })
+    // Fall back to inline execution for this phase
+  }
+}
+
+// 3. Close agent (lifecycle balance)
+close_agent({ target: "doc-gen-p<N>" })
+
+// 4. Parse agent return summary
+const summary = parseJSON(result.status["doc-gen-p<N>"].completed)
+
+// 5. Validate files exist
 summary.files_created.forEach(file => {
-  const exists = Glob(`${workDir}/${file}`);
-  if (!exists.length) throw new Error(`Agent claimed to create ${file} but file not found`);
-});
+  const exists = Glob(`<work-dir>/${file}`)
+  if (!exists.length) → Error: agent claimed file but not found
+})
 
-// 3. Verify spec-config.json updated
-const config = JSON.parse(Read(`${workDir}/spec-config.json`));
-const phaseComplete = config.phasesCompleted.some(p => p.phase === N);
-if (!phaseComplete) throw new Error(`Agent did not update phasesCompleted for Phase ${N}`);
+// 6. Verify spec-config.json updated
+const config = JSON.parse(Read(`<work-dir>/spec-config.json`))
+const phaseComplete = config.phasesCompleted.some(p => p.phase === N)
+if (!phaseComplete) → Error: agent did not update phasesCompleted
 
-// 4. Store summary for downstream context (do NOT read full documents)
-phasesSummaries[N] = summary;
+// 7. Store summary for downstream context (do NOT read full documents)
+phasesSummaries[N] = summary
+```
+
+---
+
+## Lifecycle Management
+
+### Timeout Protocol
+
+| Phase | task_name | Default Timeout | On Timeout |
+|-------|-----------|-----------------|------------|
+| Phase 1 (explore) | `spec-explorer` | 300000ms (5min) | assign_task "finalize" → re-wait 120s → close |
+| Phase 2 | `doc-gen-p2` | 600000ms (10min) | assign_task "finalize" → re-wait 120s → close + inline fallback |
+| Phase 3 | `doc-gen-p3` | 600000ms (10min) | assign_task "finalize" → re-wait 120s → close + inline fallback |
+| Phase 4 | `doc-gen-p4` | 600000ms (10min) | assign_task "finalize" → re-wait 120s → close + inline fallback |
+| Phase 5 | `doc-gen-p5` | 600000ms (10min) | assign_task "finalize" → re-wait 120s → close + inline fallback |
+| Phase 6.5 | `doc-gen-fix` | 600000ms (10min) | assign_task "finalize" → re-wait 120s → close + force handoff |
+
+### Cleanup Protocol
+
+At the end of each agent-delegated phase, close the agent immediately after retrieving results. Each phase spawns a fresh agent — no agent persists across phases.
+
+```
+// Standard per-phase cleanup (after wait_agent succeeds)
+close_agent({ target: "doc-gen-p<N>" })
+
+// On workflow abort / user cancellation
+const activeAgents = ["doc-gen-p2", "doc-gen-p3", "doc-gen-p4", "doc-gen-p5", "doc-gen-fix", "spec-explorer"]
+activeAgents.forEach(name => {
+  try { close_agent({ target: name }) } catch { /* not active */ }
+})
 ```
 
 ---
@@ -387,7 +481,7 @@ phasesSummaries[N] = summary;
 ### Phase 7: Issue Export
 | Document | Purpose | When to Use |
 |----------|---------|-------------|
-| [phases/07-issue-export.md](phases/07-issue-export.md) | Epic→Issue mapping and export | Phase start |
+| [phases/07-issue-export.md](phases/07-issue-export.md) | Epic->Issue mapping and export | Phase start |
 | [specs/quality-gates.md](specs/quality-gates.md) | Issue export quality criteria | Validation |
 
 ### Debugging & Troubleshooting
@@ -403,6 +497,7 @@ phasesSummaries[N] = summary;
 |-------|-------|-----------|--------|
 | Phase 1 | Empty input | Yes | Error and exit |
 | Phase 1 | CLI seed analysis fails | No | Use basic parsing fallback |
+| Phase 1 | Codebase explore agent timeout | No | close_agent, proceed without discovery-context |
 | Phase 1.5 | Gap analysis CLI fails | No | Skip to user questions with basic prompts |
 | Phase 1.5 | User skips discussion | No | Proceed with seed_analysis as-is |
 | Phase 1.5 | Max rounds reached (5) | No | Force confirmation with current state |
@@ -417,8 +512,9 @@ phasesSummaries[N] = summary;
 | Phase 7 | ccw issue create fails for one Epic | No | Log error, continue with remaining Epics |
 | Phase 7 | No EPIC files found | Yes | Error and return to Phase 5 |
 | Phase 7 | All issue creations fail | Yes | Error with CLI diagnostic, suggest manual creation |
-| Phase 2-5 | Agent fails to return | Yes | Retry once, then fall back to inline execution |
+| Phase 2-5 | Agent timeout (wait_agent timed_out) | No | assign_task "finalize" → re-wait → close + inline fallback |
 | Phase 2-5 | Agent returns incomplete files | No | Log gaps, attempt inline completion for missing files |
+| Any | close_agent on non-existent agent | No | Catch error, continue (agent may have self-terminated) |
 
 ### CLI Fallback Chain
 

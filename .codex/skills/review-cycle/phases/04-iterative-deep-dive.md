@@ -163,8 +163,8 @@ Then apply **Deep Scan mode** for semantic analysis:
 });
 
 // Step 2: Batch wait for all deep-dive agents
-const deepDiveResults = wait({
-  ids: deepDiveAgents,
+const deepDiveResults = wait_agent({
+  targets: deepDiveAgents,
   timeout_ms: 2400000  // 40 minutes
 });
 
@@ -275,8 +275,8 @@ Then apply **Deep Scan mode** for semantic analysis:
 });
 
 // Step 2: Batch wait for all deep-dive agents
-const deepDiveResults = wait({
-  ids: deepDiveAgents,
+const deepDiveResults = wait_agent({
+  targets: deepDiveAgents,
   timeout_ms: 2400000  // 40 minutes
 });
 

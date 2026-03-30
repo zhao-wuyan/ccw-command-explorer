@@ -102,10 +102,9 @@ MODE: analysis
 EXPECTED: JSON-compatible output with: dimension scores, overall score, gate, issues list (severity + description + location), traceability matrix
 CONSTRAINTS: Be thorough but fair. Focus on actionable issues.
 " --tool gemini --mode analysis`,
-  run_in_background: true
 });
 
-// Wait for CLI result
+// Parse CLI result
 ```
 
 ### Step 2b: Codex Technical Depth Review
@@ -139,7 +138,6 @@ MODE: analysis
 EXPECTED: Technical depth review with: per-dimension scores (1-5), specific gaps, improvement recommendations, overall technical readiness assessment
 CONSTRAINTS: Focus on gaps that would cause implementation ambiguity. Ignore cosmetic issues.
 " --tool codex --mode analysis`,
-  run_in_background: true
 });
 
 // Codex result merged with Gemini result in Step 3
@@ -350,7 +348,9 @@ if (selection === "Execute via lite-plan") {
   const epicContent = Read(firstMvpFile);
   const title = extractTitle(epicContent);       // First # heading
   const description = extractSection(epicContent, "Description");
-  Skill(skill="workflow-lite-plan", args=`"${title}: ${description}"`)
+  // Invoke workflow-lite-plan skill with Epic description
+  // Codex: use skill invocation mechanism for the target skill
+  invoke_skill("workflow-lite-plan", `"${title}: ${description}"`)
 }
 
 if (selection === "Full planning" || selection === "Create roadmap") {
@@ -374,8 +374,8 @@ SCOPE: ${extractScope(specSummary)}
 CONTEXT: Generated from spec session ${specConfig.session_id}. Source: ${workDir}/`;
 
   // Step C: Create WFS session (provides session directory + .brainstorming/)
-  Skill(skill="workflow:session:start", args=`--auto "${structuredDesc}"`)
-  // → Produces sessionId (WFS-xxx) and session directory at .workflow/active/{sessionId}/
+  invoke_skill("workflow:session:start", `--auto "${structuredDesc}"`)
+  // -> Produces sessionId (WFS-xxx) and session directory at .workflow/active/{sessionId}/
 
   // Step D: Create .brainstorming/ bridge files
   const brainstormDir = `.workflow/active/${sessionId}/.brainstorming`;
@@ -476,9 +476,9 @@ ${extractSection(epicContent, "Architecture")}
   // → context-package.json.brainstorm_artifacts populated
   // → action-planning-agent loads guidance_specification (P1) + feature_index (P2)
   if (selection === "Full planning") {
-    Skill(skill="workflow-plan", args=`"${structuredDesc}"`)
+    invoke_skill("workflow-plan", `"${structuredDesc}"`)
   } else {
-    Skill(skill="workflow:req-plan-with-file", args=`"${extractGoal(specSummary)}"`)
+    invoke_skill("workflow:req-plan-with-file", `"${extractGoal(specSummary)}"`)
   }
 }
 

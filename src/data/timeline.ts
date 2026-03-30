@@ -191,7 +191,7 @@ export const TIMELINE: TimelineItem[] = [
     color: COLORS.primary,
     commands: 126,
     detail: {
-      version: 'v7.2.28',
+      version: 'v7.2.29',
       highlights: [
         '新 Skill: team-planex-v2 混合规划执行管道',
         '新 Skill: team-arch-opt 架构优化',
@@ -209,7 +209,8 @@ export const TIMELINE: TimelineItem[] = [
         'v7.2.20: 移除 DDD/IDAW 系列命令',
         'v7.2.28: 新增 investigate、security-audit、ship 技能',
         'v7.2.28: 新增 team-interactive-craft、team-motion-design、team-ui-polish、team-visual-a11y 团队技能',
-        'v7.2.28: 移除 team-iterdev、prep-plan、prep-cycle、unified-execute-with-file、collaborative-plan-with-file'
+        'v7.2.28: 移除 team-iterdev、prep-plan、prep-cycle、unified-execute-with-file、collaborative-plan-with-file',
+        'v7.2.29: Codex v4 Agent API 统一化 - wait/wait_agent/send_input/assign_task'
       ],
       newCommands: [
         '/team-planex-v2',

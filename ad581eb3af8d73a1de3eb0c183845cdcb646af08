@@ -1,0 +1,23 @@
+scripts/sync-commands.py
+  7ab4014b124b3b3f 7,12-13,111-112,115,130-157,212-269,284-286,306-312,325,330,341-351,397-399,403-405,411-420,439-446,449,485-487
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "ad581eb3af8d73a1de3eb0c183845cdcb646af08",
+  "prompts": {
+    "7ab4014b124b3b3f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5587d77-14ce-445e-9ad6-1845856415bb",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 506,
+      "total_deletions": 373,
+      "accepted_lines": 498,
+      "overriden_lines": 0
+    }
+  }
+}

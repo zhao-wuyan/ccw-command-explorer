@@ -23,7 +23,9 @@ CCW 百科数据自动化更新技能 - 从 npm 版本和 GitHub 仓库同步命
 │  Phase 2: Command Diff                                                   │
 │     ├─ Run scripts/sync-commands.py --json                               │
 │     ├─ Parse: missing (new), extra (deleted), stale (residue)            │
-│     └─ git diff for modified commands                                    │
+│     ├─ git diff for modified commands                                    │
+│     └─ ⚡ Logic Update Detection: detect SKILL.md content changes        │
+│        (staged area + recent commits) → description diff analysis        │
 │                                                                          │
 │  Phase 3: Command Update                                                 │
 │     ├─ New commands → Read .md/SKILL.md → Generate Command object        │
@@ -69,6 +71,11 @@ CCW 百科数据自动化更新技能 - 从 npm 版本和 GitHub 仓库同步命
     - **GitHub 验证（版本跳跃）**: 当版本号跳跃多个小版本时（如 v7.0 → v7.2.3），**必须**从 GitHub releases 验证
     - **GitHub 补充**: 本地无法判断时，从 GitHub release notes 搜索命令变动信息
     - **跳跃检测**: 大版本跳跃（6.x→7.x）、中版本跳跃（7.0→7.2）、修复版本跳跃>5 个（7.2.0→7.2.6）时触发验证
+14. **⚡ 逻辑更新检测**: 对于**已存在**的命令，当 CCW 更新了命令的 SKILL.md，标记需要重新提取描述：
+    - **检测方式**: `git diff` 检测 SKILL.md 变更 → 直接标记需要更新
+    - **⚠️ 不使用相似度检测**: SKILL.md 是详细文档（100-500字），commands.ts 是一句话总结（20-50字），两者天生不相似
+    - **检测范围**: 暂存区（`git diff --cached`）+ 最近 N 个提交（默认 5 个）
+    - **Phase 3 处理**: 重新读取 SKILL.md → 人工/自动生成新描述
 
 ---
 
@@ -264,4 +271,5 @@ python scripts/sync-commands.py --json
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.1 | 2026-03-30 | 新增逻辑更新检测 - 检测已存在命令的 SKILL.md 内容变化，使用 Jaccard 相似度判断描述更新需求 |
 | v1.0 | 2026-03-08 | 初始版本 - 5 阶段同步流程 |

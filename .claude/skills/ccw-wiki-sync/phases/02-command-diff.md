@@ -71,34 +71,156 @@ console.log(`  Stale commands: ${changes.staleCommands.length}`);
 console.log(`  Orphan references: ${changes.orphanRefs.length}`);
 ```
 
-### Step 3: Detect Modified Commands
+### Step 3: Detect Modified Commands (Logic Update Detection)
 
-> **重要**: git diff 只关注以下目录，忽略百科项目本身的 UI/组件变动：
-> - `.codex/` - Codex 命令和技能
-> - `.claude/` - Claude 命令和技能
-> - `src/data/` - 数据文件（commands.ts, timeline.ts 等）
+> **重要**: 此步骤检测**已存在命令的 SKILL.md 变更**，标记需要重新提取描述的命令。
+>
+> **⚠️ 核心逻辑**:
+> - SKILL.md 是**详细文档**（100-500字）
+> - commands.ts 是**一句话总结**（20-50字）
+> - **两者天生不相似**，无法用相似度算法对比
+>
+> **正确检测方式**:
+> - 只要 `git diff` 检测到 SKILL.md 变更 → 直接标记需要更新
+> - 不需要相似度计算
+>
+> **检测范围**:
+> - `.codex/skills/` - Codex 技能
+> - `.claude/skills/` - Claude 技能
+> - `.claude/commands/` - Claude 斜杠命令
+> - `.codex/prompts/` - Codex 提示词
+>
+> **检测来源**:
+> 1. 暂存区（`git diff --cached`）
+> 2. 最近 N 个提交（可配置，默认 5）
+>
+> **⚠️ 注意**: 此检测针对的是：
+> - CCW 发布新版本 → SKILL.md 被**外部修改**
+> - commands.ts 还是旧版本 → 需要重新提取描述
 
 ```javascript
-// Get list of modified files from relevant directories only
-// 注意：只检测 .codex/, .claude/, src/data/ 目录，忽略百科项目本身变动
-const modifiedResult = Bash(`git diff --name-only HEAD~1 -- .claude/commands/ .claude/skills/ .codex/prompts/ .codex/skills/ src/data/ 2>/dev/null || echo ""`);
+// ============================================
+// Step 3.1: 获取变更的 SKILL.md / 命令文件
+// ============================================
 
-const modifiedFiles = modifiedResult.split('\n').filter(f => f.trim());
+// 检测暂存区和最近提交中的变更
+const stagedResult = Bash(`git diff --name-only --cached -- .claude/commands/ .claude/skills/ .codex/prompts/ .codex/skills/ 2>/dev/null || echo ""`);
+const recentResult = Bash(`git diff --name-only HEAD~5 -- .claude/commands/ .claude/skills/ .codex/prompts/ .codex/skills/ 2>/dev/null || echo ""`);
 
-// Filter out new and deleted commands
-const modifiedCommands = modifiedFiles.filter(file => {
+const stagedFiles = stagedResult.split('\n').filter(f => f.trim());
+const recentFiles = recentResult.split('\n').filter(f => f.trim());
+
+// 合并去重
+const allModifiedFiles = [...new Set([...stagedFiles, ...recentFiles])];
+
+console.log(`检测到 ${allModifiedFiles.length} 个变更的命令文件`);
+
+// ============================================
+// Step 3.2: 过滤出已存在的命令（排除新增/删除）
+// ============================================
+
+const descUpdateNeeded = [];
+
+for (const file of allModifiedFiles) {
   const cmdName = extractCommandName(file);
-  return !changes.newCommands.includes(cmdName) &&
-         !changes.deletedCommands.includes(cmdName) &&
-         !changes.staleCommands.includes(cmdName);
-});
 
-changes.modifiedCommands = modifiedCommands.map(f => ({
-  file: f,
-  cmd: extractCommandName(f)
-}));
+  // 跳过新增/删除/废弃的命令（它们已经在其他列表中处理）
+  if (changes.newCommands.some(c => c.cmd === cmdName)) continue;
+  if (changes.deletedCommands.includes(cmdName)) continue;
+  if (changes.staleCommands.includes(cmdName)) continue;
 
-console.log(`  Modified commands: ${changes.modifiedCommands.length}`);
+  // 检查命令是否已存在于 commands.ts
+  const commandsContent = Read('src/data/commands.ts');
+  if (!commandsContent.includes(`cmd: '${cmdName}'`)) continue;
+
+  // ⚡ 直接标记需要更新，不需要相似度检测
+  // 原因：SKILL.md 是详细文档，commands.ts 是一句话总结，两者天生不相似
+  // 只要 SKILL.md 变了，就需要重新提取描述
+  descUpdateNeeded.push({
+    cmd: cmdName,
+    file,
+    source: detectSource(file),
+    updateReason: 'SKILL.md 内容已变更，需要重新提取描述'
+  });
+
+  console.log(`  📝 ${cmdName}: 需要重新提取描述 (${file})`);
+}
+
+changes.modifiedCommands = descUpdateNeeded.map(c => ({ cmd: c.cmd, file: c.file, source: c.source }));
+changes.descUpdateNeeded = descUpdateNeeded;
+
+console.log(`  需要更新描述的命令: ${descUpdateNeeded.length}`);
+```
+
+### Step 3.4: Description Diff Helper Functions
+
+```javascript
+/**
+ * 从 SKILL.md 提取描述
+ */
+function extractDescriptionFromSkill(content) {
+  // 优先从 frontmatter description 提取
+  const frontmatterDesc = content.match(/^---\n[\s\S]*?description:\s*(.+?)\n/);
+  if (frontmatterDesc) {
+    return frontmatterDesc[1].trim();
+  }
+
+  // 从标题后第一段提取
+  const titleMatch = content.match(/^#\s+.+?\n+(.+?)(?:\n\n|\n##)/s);
+  if (titleMatch) {
+    return titleMatch[1].trim().slice(0, 100);
+  }
+
+  return null;
+}
+
+/**
+ * 从 SKILL.md 提取详细描述
+ */
+function extractDetailFromSkill(content) {
+  // 从 Overview/描述/Description 段落提取
+  const patterns = [
+    /##\s*(?:Overview|描述|Description)\s*\n+([\s\S]+?)(?=\n##|\n---|$)/,
+    />\s*\*\*Core[^*]+\*\*:?\s*(.+?)(?:\n\n|\n##)/s
+  ];
+
+  for (const pattern of patterns) {
+    const match = content.match(pattern);
+    if (match) {
+      return match[1].trim().slice(0, 300);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * 从 commands.ts 获取当前描述
+ */
+function getCurrentDescFromCommands(cmdName) {
+  const content = Read('src/data/commands.ts');
+  const pattern = new RegExp(`cmd: '${escapeRegex(cmdName)}'[^}]*desc: '([^']*)'`);
+  const match = content.match(pattern);
+  return match ? match[1] : null;
+}
+
+/**
+ * 转义正则特殊字符
+ */
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * 检测命令来源
+ */
+function detectSource(filePath) {
+  if (filePath.includes('.claude/commands/')) return 'claude/commands';
+  if (filePath.includes('.claude/skills/')) return 'claude/skills';
+  if (filePath.includes('.codex/prompts/')) return 'codex/prompts';
+  if (filePath.includes('.codex/skills/')) return 'codex/skills';
+  return 'unknown';
+}
 ```
 
 ### Step 4: Categorize Commands by Source

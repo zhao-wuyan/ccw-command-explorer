@@ -354,10 +354,18 @@ function findReplacementCommand(oldCmd) {
 >           └─→ 兜底：使用 v7.0
 > ```
 
-### Step 5: Process Modified Commands
+### Step 5: Process Modified Commands (Including Logic Updates)
+
+> **重要**: 此步骤处理两类修改：
+> 1. **文件变更**：git diff 检测到的命令文件修改
+> 2. **逻辑更新**：Phase 2 检测到的描述差异（`descUpdateNeeded`）
 
 ```javascript
 const modifiedDetails = [];
+
+// ============================================
+// 5.1: 处理文件变更
+// ============================================
 
 for (const modCmd of modifiedCommands) {
   console.log(`Processing modified command: ${modCmd.cmd}`);
@@ -371,7 +379,38 @@ for (const modCmd of modifiedCommands) {
   if (Object.keys(updates).length > 0) {
     modifiedDetails.push({
       cmd: modCmd.cmd,
+      type: 'file_change',
       updates
+    });
+  }
+}
+
+// ============================================
+// 5.2: 处理逻辑更新（描述差异）
+// ============================================
+
+if (changes.descUpdateNeeded && changes.descUpdateNeeded.length > 0) {
+  console.log(`\n${'='.repeat(50)}`);
+  console.log(`处理 ${changes.descUpdateNeeded.length} 个命令的描述更新`);
+  console.log(`${'='.repeat(50)}`);
+
+  for (const descUpdate of changes.descUpdateNeeded) {
+    console.log(`\n📝 ${descUpdate.cmd}`);
+    console.log(`   当前: ${descUpdate.currentDesc?.slice(0, 50)}...`);
+    console.log(`   新的: ${descUpdate.newDesc?.slice(0, 50)}...`);
+    console.log(`   相似度: ${Math.round(descUpdate.descSimilarity * 100)}%`);
+    console.log(`   原因: ${descUpdate.updateReason}`);
+
+    modifiedDetails.push({
+      cmd: descUpdate.cmd,
+      type: 'logic_update',
+      file: descUpdate.file,
+      updates: {
+        desc: descUpdate.newDesc,
+        detail: descUpdate.newDetail,
+        updateReason: descUpdate.updateReason,
+        similarity: descUpdate.descSimilarity
+      }
     });
   }
 }

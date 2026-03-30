@@ -132,10 +132,12 @@ Find ready tasks, spawn workers, STOP.
 | SCOUT-* | scout | false |
 | QASTRAT-* | strategist | false |
 | QAGEN-* | generator | false |
-| QARUN-* | executor | true |
+| QARUN-* | executor | dynamic |
 | QAANA-* | analyst | false |
 
-   b. Check if inner loop role with active worker -> skip (worker picks up next task)
+   b. Check inner_loop: parse task description `InnerLoop:` field (NOT role.md default)
+      - InnerLoop: true AND same-role worker already active -> skip (worker picks up next task)
+      - InnerLoop: false OR no active same-role worker -> spawn new worker
    c. TaskUpdate -> in_progress
    d. team_msg log -> task_unblocked
    e. Spawn team-worker:

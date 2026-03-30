@@ -130,9 +130,10 @@ Execute built-in Phase 1 (task discovery) -> role-spec Phase 2-4 -> built-in Pha
 })
 ```
 
-**Inner Loop roles** (role has 2+ serial same-prefix tasks): Set `inner_loop: true`. The team-worker agent handles the loop internally.
-
-**Single-task roles**: Set `inner_loop: false`.
+**Inner Loop**: Determined per-task from task description `InnerLoop:` field, not per-role:
+- Serial chain (2+ tasks, each blockedBy previous): `inner_loop: true` — single worker loops
+- Parallel tasks (no mutual blockedBy): `inner_loop: false` — separate workers per task
+- Single-task roles: `inner_loop: false`
 
 ---
 

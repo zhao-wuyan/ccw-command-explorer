@@ -51,7 +51,7 @@ Worker completed. Process and advance.
    - Log team_msg with type "gc_loop_trigger" or "task_unblocked"
    - If skipping GC tasks, mark them as completed (skip)
 
-5. Close completed agent: `close_agent({ id: <agentId> })`
+5. Close completed agent: `close_agent({ target: <agentId> })`
 6. Proceed to handleSpawnNext
 
 ## handleCheck
@@ -68,6 +68,16 @@ Read-only status report, then STOP.
 ```
 
 ## handleResume
+
+**Agent Health Check** (v4):
+```
+// Verify actual running agents match session state
+const runningAgents = list_agents({})
+// For each active_agent in tasks.json:
+//   - If agent NOT in runningAgents -> agent crashed
+//   - Reset that task to pending, remove from active_agents
+// This prevents stale agent references from blocking the pipeline
+```
 
 1. Audit task list: Tasks stuck in "in_progress" -> reset to "pending"
 2. Proceed to handleSpawnNext
@@ -86,6 +96,7 @@ Find ready tasks, spawn workers, STOP.
       ```
       const agentId = spawn_agent({
         agent_type: "team_worker",
+        task_name: taskId,  // e.g., "IDEA-001" — enables named targeting
         items: [{ type: "text", text: `## Role Assignment
       role: <role>
       role_spec: ~  or <project>/.codex/skills/team-brainstorm/roles/<role>/role.md
@@ -99,10 +110,10 @@ Find ready tasks, spawn workers, STOP.
       Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).` }]
       })
       ```
-   d. Collect agent results: `wait_agent({ ids: [agentId], timeout_ms: 900000 })`
+   d. Collect agent results: `wait_agent({ targets: [taskId], timeout_ms: 900000 })`
    e. Read discoveries from output files
    f. Update tasks.json with results
-   g. Close agent: `close_agent({ id: agentId })`
+   g. Close agent: `close_agent({ target: taskId })`  // Use task_name, not agentId
 5. Parallel spawn rules:
 
 | Pipeline | Scenario | Spawn Behavior |
@@ -118,17 +129,47 @@ const agentIds = []
 for (const task of readyIdeatorTasks) {
   agentIds.push(spawn_agent({
     agent_type: "team_worker",
+    task_name: task.id,  // e.g., "IDEA-001" — enables named targeting
     items: [{ type: "text", text: `...role: ideator-<N>...` }]
   }))
 }
-const results = wait_agent({ ids: agentIds, timeout_ms: 900000 })
-// Process results, close agents
-for (const id of agentIds) { close_agent({ id }) }
+// Use task_name for stable targeting (v4)
+const taskNames = readyIdeatorTasks.map(t => t.id)
+const results = wait_agent({ targets: taskNames, timeout_ms: 900000 })
+if (results.timed_out) {
+  for (const taskId of taskNames) { state.tasks[taskId].status = 'timed_out'; close_agent({ target: taskId }) }
+} else {
+  // Process results, close agents
+  for (const taskId of taskNames) { close_agent({ target: taskId }) }
+}
 ```
+
+**Cross-Agent Supplementary Context** (v4):
+
+When spawning workers in a later pipeline phase, send upstream results as supplementary context to already-running workers:
+
+```
+// Example: Send ideation results to running challenger
+send_message({
+  target: "<running-agent-task-name>",
+  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+})
+// Note: send_message queues info without interrupting the agent's current work
+```
+
+Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
 
 6. Update session, output summary, STOP
 
 ## handleComplete
+
+**Cleanup Verification** (v4):
+```
+// Verify all agents are properly closed
+const remaining = list_agents({})
+// If any team agents still running -> close_agent each
+// Ensures clean session shutdown
+```
 
 Pipeline done. Generate report and completion action.
 

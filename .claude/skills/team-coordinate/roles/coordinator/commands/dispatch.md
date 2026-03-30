@@ -95,9 +95,10 @@ RoleSpec: <session-folder>/role-specs/<role-name>.md
 
 | Condition | InnerLoop |
 |-----------|-----------|
-| Role has 2+ serial same-prefix tasks | true |
+| Role has 2+ same-prefix tasks forming a serial chain (each blockedBy the previous) | true |
 | Role has 1 task | false |
-| Tasks are parallel (no dependency between them) | false |
+| Role has 2+ same-prefix tasks but they are parallel (no mutual blockedBy) | false |
+| Mixed: some serial, some parallel within same role | Set per-task: true for serial chain members, false for parallel members |
 
 ### Dependency Validation
 

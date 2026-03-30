@@ -69,6 +69,20 @@ For each issue from scan report:
 | No error handling | Missing catch block | Add try/catch with error state |
 | Race condition | Multiple concurrent requests | Add request cancellation or debounce |
 
+### Visual Design Diagnosis
+
+| Pattern | Root Cause | Fix Strategy |
+|---------|------------|--------------|
+| Pure black/white colors | No intentional color system | Introduce OKLCH palette with tinted neutrals |
+| Generic font usage | Default font selection | Replace with distinctive alternatives from recommended list |
+| Missing interaction states | Incomplete component design | Add all 8 states per Impeccable spec |
+| Layout animations | Wrong animation properties | Switch to transform + opacity, add will-change via JS |
+| No reduced-motion | Accessibility oversight | Add @media (prefers-reduced-motion: reduce) global query |
+| All buttons primary | No hierarchy design | Establish primary/secondary/tertiary button system |
+| Monotonous spacing | No spacing system | Implement 4pt scale with rhythm variation |
+| Nested cards | Over-containment | Flatten to spacing + dividers |
+| Missing focus-visible | Outdated focus handling | Replace :focus with :focus-visible, add ring spec |
+
 ## Phase 4: Diagnosis Report
 
 1. Generate root cause analysis for each issue and write to `<session>/artifacts/diagnosis.md`
@@ -87,7 +101,8 @@ If new root cause patterns discovered:
               pattern_types: {
                 state_management: <count>,
                 event_binding: <count>,
-                async_handling: <count>
+                async_handling: <count>,
+                visual_design: <count>
               }
             })
    ```

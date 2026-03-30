@@ -5,7 +5,7 @@ Synchronous pipeline coordination using spawn_agent + wait_agent.
 ## Constants
 
 - WORKER_AGENT: tlv4_worker
-- SUPERVISOR_AGENT: tlv4_supervisor (resident, woken via send_input)
+- SUPERVISOR_AGENT: tlv4_supervisor (resident, woken via assign_task)
 
 ## Handler Router
 
@@ -35,6 +35,16 @@ Output:
 
 ## handleResume
 
+**Agent Health Check** (v4):
+```
+// Verify actual running agents match session state
+const runningAgents = list_agents({})
+// For each active_agent in tasks.json:
+//   - If agent NOT in runningAgents -> agent crashed
+//   - Reset that task to pending, remove from active_agents
+// This prevents stale agent references from blocking the pipeline
+```
+
 1. Read tasks.json, check active_agents
 2. No active agents -> handleSpawnNext
 3. Has active agents -> check each:
@@ -63,6 +73,7 @@ state.tasks[task.id].status = 'in_progress'
 // 2) Spawn worker
 const agentId = spawn_agent({
   agent_type: "tlv4_worker",
+  task_name: task.id,  // e.g., "PLAN-001" — enables named targeting
   items: [
     { type: "text", text: `## Role Assignment
 role: ${task.role}
@@ -92,29 +103,51 @@ state.active_agents[task.id] = { agentId, role: task.role, started_at: now }
 After spawning all ready regular tasks:
 
 ```javascript
-// 4) Batch wait for all spawned workers
-const agentIds = Object.values(state.active_agents)
-  .filter(a => !a.resident)
-  .map(a => a.agentId)
-wait_agent({ ids: agentIds, timeout_ms: 900000 })
-
-// 5) Collect results from discoveries/{task_id}.json
-for (const [taskId, agent] of Object.entries(state.active_agents)) {
-  if (agent.resident) continue
-  try {
-    const disc = JSON.parse(Read(`${sessionFolder}/discoveries/${taskId}.json`))
-    state.tasks[taskId].status = disc.status || 'completed'
-    state.tasks[taskId].findings = disc.findings || ''
-    state.tasks[taskId].quality_score = disc.quality_score || null
-    state.tasks[taskId].error = disc.error || null
-  } catch {
-    state.tasks[taskId].status = 'failed'
-    state.tasks[taskId].error = 'No discovery file produced'
+// 4) Batch wait — use task_name for stable targeting (v4)
+const taskNames = Object.entries(state.active_agents)
+  .filter(([_, a]) => !a.resident)
+  .map(([taskId]) => taskId)
+const waitResult = wait_agent({ targets: taskNames, timeout_ms: 900000 })
+if (waitResult.timed_out) {
+  for (const taskId of taskNames) {
+    state.tasks[taskId].status = 'timed_out'
+    close_agent({ target: taskId })
+    delete state.active_agents[taskId]
   }
-  close_agent({ id: agent.agentId })
-  delete state.active_agents[taskId]
+} else {
+  // 5) Collect results from discoveries/{task_id}.json
+  for (const [taskId, agent] of Object.entries(state.active_agents)) {
+    if (agent.resident) continue
+    try {
+      const disc = JSON.parse(Read(`${sessionFolder}/discoveries/${taskId}.json`))
+      state.tasks[taskId].status = disc.status || 'completed'
+      state.tasks[taskId].findings = disc.findings || ''
+      state.tasks[taskId].quality_score = disc.quality_score || null
+      state.tasks[taskId].error = disc.error || null
+    } catch {
+      state.tasks[taskId].status = 'failed'
+      state.tasks[taskId].error = 'No discovery file produced'
+    }
+    close_agent({ target: taskId })  // Use task_name, not agentId
+    delete state.active_agents[taskId]
+  }
 }
 ```
+
+**Cross-Agent Supplementary Context** (v4):
+
+When spawning workers in a later pipeline phase, send upstream results as supplementary context to already-running workers:
+
+```
+// Example: Send planning results to running implementers
+send_message({
+  target: "<running-agent-task-name>",
+  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+})
+// Note: send_message queues info without interrupting the agent's current work
+```
+
+Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
 
 ### Handle CHECKPOINT Tasks
 
@@ -125,7 +158,7 @@ For each ready CHECKPOINT task:
 2. Determine scope: list task IDs that this checkpoint depends on (its deps)
 3. Wake supervisor:
    ```javascript
-   send_input({
+   assign_task({
      id: supervisorId,
      items: [
        { type: "text", text: `## Checkpoint Request
@@ -134,7 +167,8 @@ For each ready CHECKPOINT task:
    pipeline_progress: ${completedCount}/${totalCount} tasks completed` }
      ]
    })
-   wait_agent({ ids: [supervisorId], timeout_ms: 300000 })
+   const cpResult = wait_agent({ targets: [supervisorId], timeout_ms: 300000 })
+   if (cpResult.timed_out) { /* mark checkpoint timed_out, close supervisor, STOP */ }
    ```
 4. Read checkpoint report from artifacts/${task.id}-report.md
 5. Parse verdict (pass / warn / block):
@@ -153,11 +187,19 @@ After processing all results:
 
 ## handleComplete
 
+**Cleanup Verification** (v4):
+```
+// Verify all agents are properly closed
+const remaining = list_agents({})
+// If any team agents still running -> close_agent each
+// Ensures clean session shutdown
+```
+
 Pipeline done. Generate report and completion action.
 
 1. Shutdown resident supervisor (if active):
    ```javascript
-   close_agent({ id: supervisorId })
+   close_agent({ target: supervisorId })
    ```
    Remove from active_agents in tasks.json
 2. Generate summary (deliverables, stats, discussions)

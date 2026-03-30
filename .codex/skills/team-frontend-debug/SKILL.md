@@ -1,7 +1,7 @@
 ---
 name: team-frontend-debug
 description: Frontend debugging team using Chrome DevTools MCP. Dual-mode — feature-list testing or bug-report debugging. Triggers on "team-frontend-debug", "frontend debug".
-allowed-tools: spawn_agent(*), wait_agent(*), send_input(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__chrome-devtools__*(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__chrome-devtools__*(*)
 ---
 
 # Frontend Debug Team
@@ -56,6 +56,31 @@ Parse `$ARGUMENTS`:
 - Has `--role <name>` → Read `roles/<name>/role.md`, execute Phase 2-4
 - No `--role` → `roles/coordinator/role.md`, execute entry router
 
+## Delegation Lock
+
+**Coordinator is a PURE ORCHESTRATOR. It coordinates, it does NOT do.**
+
+Before calling ANY tool, apply this check:
+
+| Tool Call | Verdict | Reason |
+|-----------|---------|--------|
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `list_agents` | ALLOWED | Agent health check |
+| `request_user_input` | ALLOWED | User interaction |
+| `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
+| `Read/Write` on `.workflow/.team/` files | ALLOWED | Session state |
+| `Read` on `roles/`, `commands/`, `specs/` | ALLOWED | Loading own instructions |
+| `Read/Grep/Glob` on project source code | BLOCKED | Delegate to worker |
+| `Edit` on any file outside `.workflow/` | BLOCKED | Delegate to worker |
+| `Bash("ccw cli ...")` | BLOCKED | Only workers call CLI |
+| `Bash` running build/test/lint commands | BLOCKED | Delegate to worker |
+
+**If a tool call is BLOCKED**: STOP. Create a task, spawn a worker.
+
+**No exceptions for "simple" tasks.** Even a single-file read-and-report MUST go through spawn_agent.
+
+---
+
 ## Shared Constants
 
 - **Session prefix**: `TFD`
@@ -107,6 +132,8 @@ Coordinator spawns workers using this template:
 ```
 spawn_agent({
   agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
   items: [
     { type: "text", text: `## Role Assignment
 role: <role>
@@ -130,7 +157,20 @@ pipeline_phase: <pipeline-phase>` },
 })
 ```
 
-After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ id })` each worker.
+After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+
+
+### Model Selection Guide
+
+Debug workflows require tool-heavy interaction (Chrome DevTools MCP). Reasoning effort varies by role.
+
+| Role | reasoning_effort | Rationale |
+|------|-------------------|-----------|
+| tester | medium | Systematic feature testing via DevTools, follows test plan |
+| reproducer | medium | Reproduce bugs via DevTools interaction steps |
+| analyzer | high | Root cause analysis requires deep reasoning about evidence |
+| fixer | high | Code fixes must address root cause precisely |
+| verifier | medium | Verification follows defined success criteria via DevTools |
 
 ## User Commands
 
@@ -141,6 +181,53 @@ After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect 
 | `revise <TASK-ID> [feedback]` | Revise specific task |
 | `feedback <text>` | Inject feedback for revision |
 | `retry <TASK-ID>` | Re-run a failed task |
+
+## v4 Agent Coordination
+
+### Message Semantics
+
+| Intent | API | Example |
+|--------|-----|---------|
+| Queue supplementary info (don't interrupt) | `send_message` | Send DevTools evidence to running analyzer |
+| Assign new work / trigger debug round | `assign_task` | Assign re-fix after verification failure |
+| Check running agents | `list_agents` | Verify agent health during resume |
+
+### Agent Health Check
+
+Use `list_agents({})` in handleResume and handleComplete:
+
+```
+// Reconcile session state with actual running agents
+const running = list_agents({})
+// Compare with team-session.json active tasks
+// Reset orphaned tasks (in_progress but agent gone) to pending
+```
+
+### Named Agent Targeting
+
+Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
+- `send_message({ target: "ANALYZE-001", items: [...] })` -- send evidence from reproducer to analyzer
+- `assign_task({ target: "FIX-001", items: [...] })` -- assign fix based on analysis results
+- `close_agent({ target: "VERIFY-001" })` -- cleanup after verification
+
+### Iterative Debug Loop Pattern
+
+When verifier reports a fix did not resolve the issue, coordinator uses `assign_task` to trigger re-analysis and re-fix:
+```
+// Verifier reports failure -> coordinator dispatches re-fix
+assign_task({
+  target: "FIX-001",   // reuse existing fixer if inner_loop, or spawn new
+  items: [
+    { type: "text", text: `## Re-fix Assignment
+verification_result: FAIL
+failure_evidence: <verifier's screenshot/console evidence>
+previous_fix_summary: <what was tried>
+instruction: Analyze verification failure and apply corrected fix.` }
+  ]
+})
+```
+
+This pattern enables iterative debug rounds: FIX -> VERIFY -> re-FIX -> re-VERIFY (max 3 rounds).
 
 ## Completion Action
 

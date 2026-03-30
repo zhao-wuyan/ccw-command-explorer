@@ -1,7 +1,7 @@
 ---
 name: team-roadmap-dev
 description: Unified team skill for roadmap-driven development workflow. Coordinator discusses roadmap with user, then dispatches phased execution pipeline (plan -> execute -> verify). All roles invoke this skill with --role arg. Triggers on "team roadmap-dev".
-allowed-tools: spawn_agent(*), wait_agent(*), send_input(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
 ---
 
 # Team Roadmap Dev
@@ -51,6 +51,31 @@ Parse `$ARGUMENTS`:
 - Has `--role <name>` → Read `roles/<name>/role.md`, execute Phase 2-4
 - No `--role` → `roles/coordinator/role.md`, execute entry router
 
+## Delegation Lock
+
+**Coordinator is a PURE ORCHESTRATOR. It coordinates, it does NOT do.**
+
+Before calling ANY tool, apply this check:
+
+| Tool Call | Verdict | Reason |
+|-----------|---------|--------|
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `list_agents` | ALLOWED | Agent health check |
+| `request_user_input` | ALLOWED | User interaction |
+| `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
+| `Read/Write` on `.workflow/.team/` files | ALLOWED | Session state |
+| `Read` on `roles/`, `commands/`, `specs/` | ALLOWED | Loading own instructions |
+| `Read/Grep/Glob` on project source code | BLOCKED | Delegate to worker |
+| `Edit` on any file outside `.workflow/` | BLOCKED | Delegate to worker |
+| `Bash("ccw cli ...")` | BLOCKED | Only workers call CLI |
+| `Bash` running build/test/lint commands | BLOCKED | Delegate to worker |
+
+**If a tool call is BLOCKED**: STOP. Create a task, spawn a worker.
+
+**No exceptions for "simple" tasks.** Even a single-file read-and-report MUST go through spawn_agent.
+
+---
+
 ## Shared Constants
 
 - **Session prefix**: `RD`
@@ -66,6 +91,8 @@ Coordinator spawns workers using this template:
 ```
 spawn_agent({
   agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
   items: [
     { type: "text", text: `## Role Assignment
 role: <role>
@@ -89,9 +116,22 @@ pipeline_phase: <pipeline-phase>` },
 })
 ```
 
-After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ id })` each worker.
+After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
 
 **All worker roles** (planner, executor, verifier): Set `inner_loop: true`.
+
+
+### Model Selection Guide
+
+Roadmap development is context-heavy with multi-phase execution. All roles use inner_loop and need high reasoning for complex planning/execution.
+
+| Role | reasoning_effort | Rationale |
+|------|-------------------|-----------|
+| planner | high | Phase planning requires understanding full roadmap context |
+| executor | high | Implementation must align with phase plan precisely |
+| verifier | high | Gap detection requires thorough verification against plan |
+
+All roles are inner_loop=true, enabling coordinator to send additional context via `assign_task` as phases progress.
 
 ## User Commands
 
@@ -125,6 +165,42 @@ After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect 
     +-- messages.jsonl          # Team message bus log
     +-- meta.json               # Session metadata + shared state
 ```
+
+## v4 Agent Coordination
+
+### Message Semantics
+
+| Intent | API | Example |
+|--------|-----|---------|
+| Queue supplementary info (don't interrupt) | `send_message` | Send phase context to running executor |
+| Assign phase work / gap closure | `assign_task` | Assign gap closure iteration to executor after verify |
+| Check running agents | `list_agents` | Verify agent health during resume |
+
+### Agent Health Check
+
+Use `list_agents({})` in handleResume and handleComplete:
+
+```
+// Reconcile session state with actual running agents
+const running = list_agents({})
+// Compare with state.md and config.json active tasks
+// Reset orphaned tasks (in_progress but agent gone) to pending
+```
+
+### Named Agent Targeting
+
+Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
+- `send_message({ target: "EXEC-N01", items: [...] })` -- send supplementary context to executor
+- `assign_task({ target: "PLAN-N01", items: [...] })` -- assign next phase planning
+- `close_agent({ target: "VERIFY-N01" })` -- cleanup after verification
+
+### Multi-Phase Context Accumulation
+
+Each phase builds on previous phase results. Coordinator accumulates context across phases:
+- Phase N planner receives: roadmap.md + state.md + all previous phase summaries
+- Phase N executor receives: phase plan + previous phase implementation context
+- Phase N verifier receives: phase plan + executor results + success criteria from roadmap
+- On gap closure: verifier findings are sent back to executor via `assign_task` (max 3 iterations)
 
 ## Completion Action
 

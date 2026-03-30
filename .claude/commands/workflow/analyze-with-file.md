@@ -230,23 +230,37 @@ Do NOT write files.
 }
 ```
 
-**Phase B — Perspective Deep-Dive** (parallel, only for multi-perspective, max 4):
+**Phase B — Perspective Deep-Dive** (PARALLEL, only for multi-perspective, max 4):
 Each perspective agent receives shared Layer 1 results, performs only Layer 2-3 on its relevant subset.
 Skip if single-perspective (single mode proceeds directly to Step 2 CLI analysis with Layer 1 results).
+
+**CRITICAL — Parallel Execution**: Launch ALL perspective Agent() calls in the SAME response block so Claude Code executes them concurrently. Do NOT use a loop that waits for each agent before starting the next.
 
 ```javascript
 // Per-perspective Layer 2-3 — receives shared discovery, avoids re-scanning
 // Only runs in multi-perspective mode
+// PARALLEL: All Agent() calls MUST appear in ONE response — Claude Code runs them concurrently
 const sharedDiscovery = readJSON(`${sessionFolder}/exploration-codebase.json`)
-const perspectiveFiles = sharedDiscovery.relevant_files
-  .filter(f => f.dimensions.includes(perspective.dimension))
 
-selectedPerspectives.forEach(perspective => {
-  Agent({
-    subagent_type: "cli-explore-agent",
-    run_in_background: false,
-    description: `Deep-dive: ${perspective.name}`,
-    prompt: `
+// Prepare per-perspective file lists
+const perspectiveFileLists = Object.fromEntries(
+  selectedPerspectives.map(p => [
+    p.name,
+    sharedDiscovery.relevant_files.filter(f => f.dimensions.includes(p.dimension))
+  ])
+)
+
+// Launch ALL agents in a SINGLE response block (not sequentially):
+// Agent({ ..perspective1.. })  ← call 1
+// Agent({ ..perspective2.. })  ← call 2 (same response)
+// Agent({ ..perspective3.. })  ← call 3 (same response)
+
+// Each agent call follows this template:
+Agent({
+  subagent_type: "cli-explore-agent",
+  run_in_background: false,
+  description: `Deep-dive: ${perspective.name}`,
+  prompt: `
 ## Analysis Context
 Topic: ${topic_or_question}
 Perspective: ${perspective.name} - ${perspective.focus}
@@ -254,7 +268,7 @@ Session: ${sessionFolder}
 
 ## SHARED DISCOVERY (Layer 1 already completed — DO NOT re-scan)
 Relevant files for this perspective:
-${perspectiveFiles.map(f => `- ${f.path}: ${f.annotation}`).join('\n')}
+${perspectiveFileLists[perspective.name].map(f => `- ${f.path}: ${f.annotation}`).join('\n')}
 Patterns found: ${sharedDiscovery.patterns.join(', ')}
 
 ## Layer 2 — Structure Tracing (Depth)
@@ -270,7 +284,6 @@ Patterns found: ${sharedDiscovery.patterns.join(', ')}
 Write to: ${sessionFolder}/explorations/${perspective.name}.json
 Schema: {perspective, relevant_files, key_findings, code_anchors: [{file, lines, snippet, significance}], call_chains: [{entry, chain, files}], questions_for_user, _metadata}
 `
-  })
 })
 ```
 
@@ -731,7 +744,7 @@ ${implScope.map((item, i) => `${i+1}. **${item.objective}** [${item.priority}]
 | **Business** | Codex | Value, ROI, stakeholder impact | Business implications |
 | **Domain Expert** | Gemini | Domain patterns, best practices, standards | Industry knowledge |
 
-User multi-selects up to 4 in Phase 1, default: single comprehensive view.
+User multi-selects up to 4 in Phase 1. Default: if dimensions >= 2, pre-select Technical + Architectural; if dimensions == 1, single comprehensive view.
 
 ### Dimension-Direction Mapping
 

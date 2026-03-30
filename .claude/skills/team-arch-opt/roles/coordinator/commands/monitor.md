@@ -82,7 +82,9 @@ Find ready tasks, spawn workers, STOP.
 2. No ready + work in progress -> report waiting, STOP
 3. No ready + nothing in progress -> handleComplete
 4. Has ready -> for each:
-   a. Check if inner loop role with active worker -> skip (worker picks up)
+   a. Check inner_loop: parse task description `InnerLoop:` field (NOT role.md default)
+      - InnerLoop: true AND same-role worker already active -> skip (worker picks up)
+      - InnerLoop: false OR no active same-role worker -> spawn new worker
    b. TaskUpdate -> in_progress
    c. team_msg log -> task_unblocked
    d. Spawn team-worker (see SKILL.md Spawn Template):

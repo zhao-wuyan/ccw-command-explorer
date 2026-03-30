@@ -78,7 +78,7 @@ Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 
 })
 ```
 
-**Inner Loop roles** (refactorer): Set `inner_loop: true`.
+**Inner Loop roles** (refactorer): Set `inner_loop` dynamically — `true` for single mode, `false` for fan-out/independent (parallel branches).
 **Single-task roles** (analyzer, designer, validator, reviewer): Set `inner_loop: false`.
 
 ## User Commands

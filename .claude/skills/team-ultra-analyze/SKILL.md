@@ -1,6 +1,6 @@
 ---
 name: team-ultra-analyze
-description: Deep collaborative analysis team skill. All roles route via this SKILL.md. Beat model is coordinator-only (monitor.md). Structure is roles/ + specs/. Triggers on "team ultra-analyze", "team analyze".
+description: Deep collaborative analysis team skill. Multi-role investigation with coordinator-driven synthesis. Triggers on "team ultra-analyze", "team analyze".
 allowed-tools: TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
 ---
 

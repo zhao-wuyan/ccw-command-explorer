@@ -1,7 +1,7 @@
 ---
 name: team-coordinate
 description: Universal team coordination skill with dynamic role generation. Uses team-worker agent architecture with role-spec files. Only coordinator is built-in -- all worker roles are generated at runtime as role-specs and spawned via team-worker agent. Beat/cadence model for orchestration. Triggers on "Team Coordinate ".
-allowed-tools: spawn_agent(*), wait_agent(*), send_input(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
 ---
 
 # Team Coordinate
@@ -31,6 +31,31 @@ Universal team coordination skill: analyze task -> generate role-specs -> dispat
     ccw cli --mode analysis  - analysis and exploration
     ccw cli --mode write     - code generation and modification
 ```
+
+## Delegation Lock
+
+**Coordinator is a PURE ORCHESTRATOR. It coordinates, it does NOT do.**
+
+Before calling ANY tool, apply this check:
+
+| Tool Call | Verdict | Reason |
+|-----------|---------|--------|
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `list_agents` | ALLOWED | Agent health check |
+| `request_user_input` | ALLOWED | User interaction |
+| `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
+| `Read/Write` on `.workflow/.team/` files | ALLOWED | Session state |
+| `Read` on `roles/`, `commands/`, `specs/` | ALLOWED | Loading own instructions |
+| `Read/Grep/Glob` on project source code | BLOCKED | Delegate to worker |
+| `Edit` on any file outside `.workflow/` | BLOCKED | Delegate to worker |
+| `Bash("ccw cli ...")` | BLOCKED | Only workers call CLI |
+| `Bash` running build/test/lint commands | BLOCKED | Delegate to worker |
+
+**If a tool call is BLOCKED**: STOP. Create a task, spawn a worker.
+
+**No exceptions for "simple" tasks.** Even a single-file read-and-report MUST go through spawn_agent. The overhead is the feature — it provides session tracking, artifact persistence, and resume capability.
+
+---
 
 ## Shared Constants
 
@@ -112,6 +137,8 @@ When coordinator spawns workers, use `team-worker` agent with role-spec path:
 ```
 spawn_agent({
   agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
   items: [
     { type: "text", text: `## Role Assignment
 role: <role>
@@ -135,13 +162,78 @@ pipeline_phase: <pipeline-phase>` },
 })
 ```
 
-After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ id })` each worker.
+After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target: <name> })` each worker.
 
 **Inner Loop roles** (role has 2+ serial same-prefix tasks): Set `inner_loop: true`. The team-worker agent handles the loop internally.
 
 **Single-task roles**: Set `inner_loop: false`.
 
 ---
+
+
+### Model Selection Guide
+
+Roles are **dynamically generated** at runtime. Select model/reasoning_effort based on the generated role's `responsibility_type`:
+
+| responsibility_type | model | reasoning_effort | Rationale |
+|---------------------|-------|-------------------|-----------|
+| exploration | (default) | medium | Read-heavy, less reasoning needed |
+| analysis | (default) | high | Deep analysis requires full reasoning |
+| implementation | (default) | high | Code generation needs precision |
+| synthesis | (default) | medium | Aggregation over generation |
+| review | (default) | high | Quality assessment needs deep reasoning |
+
+Map each generated role's `responsibility_type` (from `team-session.json#roles`) to the table above.
+
+Override model/reasoning_effort in spawn_agent when cost optimization is needed:
+```
+spawn_agent({
+  agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
+  model: "<model-override>",
+  reasoning_effort: "<effort-level>",
+  items: [...]
+})
+```
+
+## v4 Agent Coordination
+
+### Message Semantics
+
+| Intent | API | Example |
+|--------|-----|---------|
+| Queue supplementary info (don't interrupt) | `send_message` | Send upstream task findings to a running downstream worker |
+| Not used in this skill | `assign_task` | No resident agents -- all workers are one-shot |
+| Check running agents | `list_agents` | Verify agent health during resume |
+
+**Note**: Since roles are dynamically generated, the coordinator must resolve task prefixes and role names from `team-session.json#roles` at runtime. There are no hardcoded role-specific examples.
+
+### fork_context Strategy
+
+`fork_context: false` is the default. Consider `fork_context: true` only when:
+- Runtime analysis reveals the task requires deep familiarity with the full conversation context
+- The dynamically-generated role-spec indicates the worker needs project-wide understanding
+- The coordinator has already accumulated significant context about the codebase
+
+This decision should be made per-task during Phase 4 based on the role's `responsibility_type`.
+
+### Agent Health Check
+
+Use `list_agents({})` in handleResume and handleComplete:
+
+```
+// Reconcile session state with actual running agents
+const running = list_agents({})
+// Compare with team-session.json active_workers
+// Reset orphaned tasks (in_progress but agent gone) to pending
+```
+
+### Named Agent Targeting
+
+Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
+- `send_message({ target: "<TASK-ID>", items: [...] })` -- queue upstream context without interrupting
+- `close_agent({ target: "<TASK-ID>" })` -- cleanup by name
 
 ## Completion Action
 

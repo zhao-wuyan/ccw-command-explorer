@@ -1,6 +1,6 @@
 ---
 name: issue-discover
-description: Unified issue discovery and creation. Create issues from GitHub/text, discover issues via multi-perspective analysis, or prompt-driven iterative exploration. Triggers on "issue:new", "issue:discover", "issue:discover-by-prompt", "create issue", "discover issues", "find issues".
+description: "Unified issue discovery and creation. Create issues from GitHub/text, discover issues via multi-perspective analysis, or prompt-driven iterative exploration. Triggers on \"issue:new\", \"issue:discover\", \"issue:discover-by-prompt\", \"create issue\", \"discover issues\", \"find issues\"."
 allowed-tools: spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__exa__search
 ---
 

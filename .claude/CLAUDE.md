@@ -36,6 +36,26 @@ Available CLI endpoints are dynamically defined by the config file
 - **Key scenarios**: Self-repair fails, ambiguous requirements, architecture decisions, pattern uncertainty, critical code paths
 - **Principles**: Default `--mode analysis`, no confirmation needed, wait for completion, flexible rule selection
 
+## Workflow Session Awareness
+
+### Artifact Locations
+
+| Workflow | Directory | Summary File |
+|----------|-----------|-------------|
+| `workflow-plan` | `.workflow/active/WFS-*/` | `workflow-session.json` |
+| `workflow-lite-plan` | `.workflow/.lite-plan/{slug}-{date}/` | `plan.json` |
+| `analyze-with-file` | `.workflow/.analysis/ANL-*/` | `conclusions.json` |
+| `multi-cli-plan` | `.workflow/.multi-cli-plan/*/` | `session-state.json` |
+| `lite-fix` | `.workflow/.lite-fix/*/` | `fix-plan.json` |
+| Other | `.workflow/.debug/`, `.workflow/.scratchpad/`, `.workflow/archives/` | — |
+
+### Pre-Task Discovery
+
+Before starting any workflow skill, scan recent sessions (7 days) to avoid conflicts and reuse prior work:
+- If overlapping file scope found: warn user, suggest `--continue` or reference prior session
+- If complementary: feed prior findings into new session context
+- `memory/MEMORY.md` for cross-session knowledge; `.workflow/` for session-specific artifacts — reference session IDs, don't duplicate
+
 ## Code Diagnostics
 
 - **Prefer `mcp__ide__getDiagnostics`** for code error checking over shell-based TypeScript compilation

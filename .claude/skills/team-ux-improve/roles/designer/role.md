@@ -101,6 +101,36 @@ const handleSubmit = async () => {
 | Text input for folder path | Add directory picker: `<input type="file" webkitdirectory />` |
 | No validation | Add validation rules and error messages |
 
+### Visual Design Solutions
+
+Reference `specs/design-standards.md` for target standards.
+
+| Issue | Solution Design |
+|-------|-----------------|
+| Pure black/white | Define OKLCH neutral scale tinted toward brand hue (chroma 0.005-0.01) |
+| Generic fonts | Select from: Instrument Sans, Plus Jakarta Sans, DM Sans, Space Grotesk, Fraunces |
+| No modular scale | Choose ratio (1.200 or 1.250), derive all sizes from base 16px |
+| Missing fluid sizing | Apply clamp() to display sizes (xl+): `clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem)` |
+| All buttons primary | Define: primary (filled), secondary (outline/ghost), tertiary (text link) |
+| Monotonous spacing | Apply 4pt scale with rhythm: tight (4-8px), comfortable (16-24px), generous (48-96px) |
+| Nested cards | Flatten: remove inner card, use spacing + subtle border-bottom divider |
+| Layout animations | Replace with transform: translateX/Y/scale + opacity transitions |
+| No reduced-motion | Add global `@media (prefers-reduced-motion: reduce)` reset |
+| Missing focus-visible | Add `:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }` |
+| Bounce easing | Replace with ease-out-quart: `cubic-bezier(0.25, 1, 0.5, 1)` |
+| Missing interaction states | Define all 8 states per component with CSS selectors and ARIA attributes |
+
+### UX Writing Solutions
+
+| Issue | Solution |
+|-------|----------|
+| Generic button labels | Replace with verb+object: "Save changes", "Create project", "Delete 3 items" |
+| Error without guidance | Apply formula: what happened + why + how to fix. Template per error type |
+| Empty state without action | Three parts: acknowledge → explain value → provide action button |
+| Loading text generic | Be specific: "Saving your draft..." not "Loading..." Show progress for multi-step |
+| Confirmation too generic | Title: what will happen. Body: consequences. Buttons: specific actions (not OK/Cancel) |
+| Redundant copy | Remove intro paragraph if heading is self-explanatory. Labels ≠ values |
+
 ## Phase 4: Design Document Generation
 
 1. Generate implementation guide for each issue and write to `<session>/artifacts/design-guide.md`

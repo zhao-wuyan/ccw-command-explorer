@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-03-30T03:00:00Z",
+  "version": {
+    "old": "v7.2.20",
+    "new": "v7.2.28",
+    "isMajorUpdate": false,
+    "updateType": "c-change (minor patch)"
+  },
+  "stats": {
+    "totalCommands": "dynamic (COMMANDS.length)",
+    "claudeCommands": "dynamic (filter)",
+    "codexCommands": "dynamic (filter)",
+    "newCommands": "dynamic (filter)",
+    "latestVersion": "v7.2.28"
+  },
+  "filesUpdated": [
+    "src/data/commands.ts",
+    "src/data/deprecated.ts",
+    "src/data/cases.ts",
+    "src/data/timeline.ts"
+  ],
+  "changes": {
+    "total": 12,
+    "new": 7,
+    "deleted": 5,
+    "stale": 0,
+    "modified": 0
+  },
+  "newCommands": [
+    "/investigate",
+    "/security-audit",
+    "/ship",
+    "/team-interactive-craft",
+    "/team-motion-design",
+    "/team-ui-polish",
+    "/team-visual-a11y"
+  ],
+  "deletedCommands": [
+    "/prep-cycle",
+    "/prep-plan",
+    "/team-iterdev",
+    "/unified-execute-with-file",
+    "/collaborative-plan-with-file"
+  ],
+  "caseUpdates": {
+    "deleted": ["MCLI-001", "MCLI-002"],
+    "reason": "MCLI-001: Codex执行命令已废弃; MCLI-002: IDAW命令全部废弃"
+  }
+}

@@ -261,6 +261,7 @@ Ready tasks found?
 ```
 spawn_agent({
   agent_type: "team_worker",
+  task_name: taskId,  // e.g., "PLAN-101" — enables named targeting
   items: [{
     description: "Spawn <role> worker for <subject>",
     team_name: "roadmap-dev",
@@ -286,7 +287,22 @@ Execute built-in Phase 1 -> role-spec Phase 2-4 -> built-in Phase 5.`
 })
 ```
 
-Workers report results via `report_agent_job_result()`. Coordinator receives results via `wait_agent({ ids })`.
+Workers report results via `report_agent_job_result()`. Coordinator receives results via `wait_agent({ targets: [taskId], timeout_ms: 900000 })`. If `result.timed_out`, mark tasks as `timed_out` and close agents. Use `close_agent({ target: taskId })` with task_name for cleanup.
+
+**Cross-Agent Supplementary Context** (v4):
+
+When spawning workers in a later pipeline phase, send upstream results as supplementary context to already-running workers:
+
+```
+// Example: Send planning results to running executor
+send_message({
+  target: "<running-agent-task-name>",
+  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+})
+// Note: send_message queues info without interrupting the agent's current work
+```
+
+Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
 
 ---
 
@@ -330,6 +346,16 @@ Then STOP.
 
 ### Handler: handleResume
 
+**Agent Health Check** (v4):
+```
+// Verify actual running agents match session state
+const runningAgents = list_agents({})
+// For each active_agent in tasks.json:
+//   - If agent NOT in runningAgents -> agent crashed
+//   - Reset that task to pending, remove from active_agents
+// This prevents stale agent references from blocking the pipeline
+```
+
 Check active worker completion, process results, advance pipeline. Also handles resume from paused state.
 
 ```
@@ -353,6 +379,14 @@ Check coordinates.status:
 ---
 
 ### Handler: handleComplete
+
+**Cleanup Verification** (v4):
+```
+// Verify all agents are properly closed
+const remaining = list_agents({})
+// If any team agents still running -> close_agent each
+// Ensures clean session shutdown
+```
 
 All phases done. Generate final project summary and finalize session.
 

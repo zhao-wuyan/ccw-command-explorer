@@ -63,6 +63,48 @@ Scan strategy:
 | Input without validation | Form input without validation rules | Low |
 | Missing file selector | Text input for file/folder path without picker | Medium |
 
+### Visual Design Scanning
+
+In addition to interaction issues, scan for visual design quality problems.
+Reference `specs/design-standards.md` and `specs/anti-patterns.md`.
+
+| Category | Detection Pattern | Severity |
+|----------|-------------------|----------|
+| AI color palette | Cyan (#00d4ff, #06b6d4), purple-blue gradients on dark | High |
+| Pure black/white | #000, #fff, rgb(0,0,0), rgb(255,255,255) as primary colors | High |
+| Generic font | Inter, Roboto, Open Sans, Arial as primary font-family | Medium |
+| All buttons primary | Every button has same fill treatment, no hierarchy | High |
+| Nested cards | border/shadow inside border/shadow containers | Medium |
+| No focus-visible | Using :focus or outline:none without :focus-visible | High |
+| Layout animations | Animating width/height/margin/padding | Medium |
+| No reduced-motion | Missing @media(prefers-reduced-motion) | Medium |
+| Bounce easing | cubic-bezier with negative values, spring/bounce | Medium |
+| Monotonous spacing | >70% same padding/margin value | Low |
+| Missing 8 states | Interactive elements with <5 defined states | Medium |
+| Glassmorphism overuse | backdrop-filter:blur on >2 components | Medium |
+| Generic button labels | "OK", "Submit", "Yes/No", "Cancel" without specific verb+object | Medium |
+| Error messages without fix guidance | Error shows "Something went wrong" with no next step | High |
+| Empty states without action | Data list shows "No data" without create/import action | Medium |
+| Redundant copy | Heading text repeated in first paragraph (>50% word overlap) | Low |
+
+### Heuristic UX Scanning
+
+Apply Nielsen's 10 usability heuristics as a structured scan checklist.
+Reference: `specs/heuristics.md`
+
+| Heuristic | What to Check | Severity |
+|-----------|---------------|----------|
+| Visibility of system status | Loading indicators, progress bars, state feedback, timestamps | High |
+| Match between system and real world | Jargon-free labels, familiar metaphors, logical ordering | Medium |
+| User control and freedom | Undo/redo, back navigation, cancel actions, escape from modals | High |
+| Consistency and standards | Same terms/icons for same actions, platform conventions | Medium |
+| Error prevention | Confirmation for destructive actions, input validation, disable invalid options | High |
+| Recognition over recall | Visible options, recent items, search suggestions, breadcrumbs | Medium |
+| Flexibility and efficiency | Keyboard shortcuts, power-user features, bulk actions | Low |
+| Aesthetic and minimalist design | Information density, noise reduction, visual hierarchy | Medium |
+| Help users recover from errors | Error messages with fix guidance (what+why+fix), retry options | High |
+| Help and documentation | Tooltips, onboarding, contextual help, empty states with guidance | Low |
+
 For each component file:
 1. Read file content
 2. Scan for interaction patterns using Grep
@@ -73,7 +115,7 @@ For each component file:
 ## Phase 4: Issue Report Generation
 
 1. Classify issues by severity (High/Medium/Low)
-2. Group by category (unresponsive, missing feedback, state issues, input UX)
+2. Group by category (unresponsive, missing feedback, state issues, input UX, visual design)
 3. Generate structured report and write to `<session>/artifacts/scan-report.md`
 4. Share state via team_msg:
    ```

@@ -1,11 +1,13 @@
 ---
 role: refactorer
 prefix: REFACTOR
-inner_loop: true
+inner_loop: dynamic
 message_types: [state_update]
 ---
 
 # Code Refactorer
+
+> **inner_loop: dynamic** — Dispatch sets per-task: `true` for single mode (one REFACTOR task with iterative fix cycles), `false` for fan-out/independent modes (REFACTOR-B01..N run as separate parallel workers). When false, each branch gets its own worker.
 
 Implement architecture refactoring changes following the design plan. For FIX tasks, apply targeted corrections based on review/validation feedback.
 

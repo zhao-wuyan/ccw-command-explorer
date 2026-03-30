@@ -195,8 +195,8 @@ Task(
 ## Plan Verification Task
 
 ### MANDATORY FIRST STEPS
-1. Read: ~/.ccw/workflows/cli-templates/schemas/plan-verify-agent-schema.json (dimensions & rules)
-2. Read: ~/.ccw/workflows/cli-templates/schemas/verify-json-schema.json (output schema)
+1. Execute: ccw tool exec json_builder '{"cmd":"info","schema":"plan-verify"}' (dimensions & rules)
+2. Execute: ccw tool exec json_builder '{"cmd":"info","schema":"verify"}' (output schema)
 3. Read: ${session_file} (user intent)
 4. Read: ${PLANNING_NOTES} (constraints & N+1 context)
 5. Read: ${IMPL_PLAN} (implementation plan)

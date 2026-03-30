@@ -1,6 +1,6 @@
 ---
 name: workflow-test-fix-cycle
-description: End-to-end test-fix workflow generate test sessions with progressive layers (L0-L3), then execute iterative fix cycles until pass rate >= 95%. Combines test-fix-gen and test-cycle-execute into a unified pipeline. Triggers on "workflow:test-fix-cycle".
+description: "End-to-end test-fix workflow generate test sessions with progressive layers (L0-L3), then execute iterative fix cycles until pass rate >= 95%. Combines test-fix-gen and test-cycle-execute into a unified pipeline. Triggers on \"workflow:test-fix-cycle\"."
 allowed-tools: spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---
 

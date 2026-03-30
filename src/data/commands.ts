@@ -295,10 +295,6 @@ export const COMMANDS: Command[] = [
     detail: '轻量执行：加载现有 team-coordinate 会话→协调状态→派发工作代理→执行→交付。无分析、无角色生成，纯执行',
     usage: '已有规划好的会话，需要恢复执行'
   },
-  { cmd: '/team-iterdev', desc: '团队迭代开发 - 生成器-批评者循环', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
-    detail: '迭代开发团队：开发者-审查者循环（最多3轮）、任务账本实时进度、共享内存跨冲刺学习、动态流水线选择增量交付',
-    usage: '需要迭代式开发，持续改进代码质量'
-  },
   { cmd: '/team-roadmap-dev', desc: '路线图驱动开发 - 分阶段执行流水线', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v6.4',
     detail: '路线图驱动：协调者与用户讨论路线图→派发分阶段执行流水线（规划→执行→验证）。支持暂停/恢复',
     usage: '需要根据路线图分阶段开发'
@@ -423,21 +419,9 @@ export const COMMANDS: Command[] = [
   },
 
   // ==================== Codex 预检清单 (Prompts) ====================
-  { cmd: '/prep-plan', desc: 'workflow-plan 预检清单 - 环境验证、任务质量评估、执行配置', status: 'stable', category: 'prompt', cli: 'codex', addedInVersion: 'v6.2',
-    detail: '执行前检查5项：①项目环境OK吗；②目标清晰吗；③成功标准明确吗；④范围边界清楚吗；⑤有什么限制。避免执行到一半发现问题',
-    usage: '重要任务执行前想确保万无一失'
-  },
-  { cmd: '/prep-cycle', desc: 'parallel-dev-cycle 预检清单 - 0→1→100 迭代配置', status: 'stable', category: 'prompt', cli: 'codex', addedInVersion: 'v6.2',
-    detail: '配置两阶段迭代：0→1先做出能跑的原型；1→100打磨到生产质量(测试90%通过、代码覆盖80%)',
-    usage: '大型功能想分阶段交付：先快速出原型，再逐步完善'
-  },
 
   // ==================== Codex 技能 (Skills) ====================
   // 规划类
-  { cmd: '/collaborative-plan-with-file', desc: '串行协作规划 - Plan Note架构，自动冲突检测', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.0',
-    detail: '多人协作规划：先把大需求拆成多个技术领域，每人负责一个领域规划，最后自动检测各领域的冲突和依赖',
-    usage: '涉及多个技术领域(前端/后端/数据库等)的复杂功能，需要不同专业的人分工规划'
-  },
   { cmd: '/roadmap-with-file', desc: '路线图规划 - Codex 版', status: 'new', category: 'skill', cli: 'codex', addedInVersion: 'v6.4',
     detail: '交互式路线图：与AI讨论需求，生成项目路线图和里程碑规划',
     usage: '需要规划项目路线图'
@@ -454,10 +438,6 @@ export const COMMANDS: Command[] = [
   },
 
   // 执行类
-  { cmd: '/unified-execute-with-file', desc: '统一执行引擎 - 消费 .task/*.json 目录', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
-    detail: '任务执行器：读取任务JSON文件，按依赖顺序执行，支持并行执行无依赖的任务，实时显示进度',
-    usage: '有准备好的任务文件需要执行'
-  },
   { cmd: '/parallel-dev-cycle', desc: '多Agent并行开发循环 (RA→EP→CD→VAS)', status: 'stable', category: 'skill', cli: 'codex', addedInVersion: 'v6.2',
     detail: '4个AI同时工作：需求分析师(RA)理解需求→探索规划师(EP)设计方案→代码开发(CD)写代码→验证归档(VAS)测试。可并行推进',
     usage: '大型功能开发，想同时推进需求分析、设计、开发、测试'
@@ -529,17 +509,47 @@ export const COMMANDS: Command[] = [
     usage: 'Codex 环境下初始化项目规格'
   },
 
+  // ==================== v7.2.28 新增 ====================
+  { cmd: '/investigate', desc: '系统化调试 - 铁律方法论，无确认根因不修复', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.28',
+    detail: '5阶段调查：收集证据→模式分析→假设测试(最多3次)→最小修复→验证报告。强制铁律：没有确认的根因禁止修复',
+    usage: '遇到需要系统化排查的复杂bug'
+  },
+  { cmd: '/security-audit', desc: '安全审计 - OWASP Top 10 + STRIDE 威胁建模', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.28',
+    detail: '4阶段审计：供应链扫描→OWASP Top 10代码分析→STRIDE威胁建模→趋势追踪报告。产出结构化JSON报告',
+    usage: '需要对代码进行安全审计和威胁评估'
+  },
+  { cmd: '/ship', desc: '发布流水线 - 预检→审查→版本→更新日志→PR', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.28',
+    detail: '5阶段门控流水线：预检检查(git/分支/测试/构建)→AI代码审查→版本号更新→更新日志生成→PR创建。每个阶段必须通过才能进入下一阶段',
+    usage: '代码开发完成，准备发布上线'
+  },
+  { cmd: '/team-interactive-craft', desc: '交互组件团队 - 零依赖交互组件研发', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.28',
+    detail: '4角色流水线：研究员→交互设计师→构建者→无障碍测试。Vanilla JS + CSS，零依赖。team-worker agent架构',
+    usage: '需要构建纯原生交互组件，不依赖框架'
+  },
+  { cmd: '/team-motion-design', desc: '动效设计团队 - 动画token系统与GPU加速', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.28',
+    detail: '4角色流水线：动效研究员→编舞师→动画师→性能测试。动画token系统、滚动编排、GPU加速、降级回退',
+    usage: '需要设计系统化的动画和交互效果'
+  },
+  { cmd: '/team-ui-polish', desc: 'UI精修团队 - 自动发现并修复UI设计问题', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.28',
+    detail: '4角色流水线：扫描器→诊断师→优化器→验证器。反AI痕迹检测、色彩/排版/间距质量、交互状态、视觉层次',
+    usage: 'UI需要精修打磨，提升设计品质'
+  },
+  { cmd: '/team-visual-a11y', desc: '视觉无障碍团队 - OKLCH色彩对比+WCAG审计', status: 'new', category: 'skill', cli: 'claude', addedInVersion: 'v7.2.28',
+    detail: '3角色并行审计：色彩审计(OKLCH感知对比)→排版审计→焦点审计。WCAG AA/AAA合规检查',
+    usage: '需要对视觉无障碍进行专业审计'
+  },
+
 ];
 
 // ============================================
 // 统计数据
 // ============================================
 export const STATS = {
-  totalCommands: 116,
+  totalCommands: COMMANDS.length,
   categories: Object.keys(CATEGORIES).length,
   claudeCommands: COMMANDS.filter(c => c.cli === 'claude').length,
   codexCommands: COMMANDS.filter(c => c.cli === 'codex').length,
   newCommands: COMMANDS.filter(c => c.status === 'new').length,
   recommendedCommands: COMMANDS.filter(c => c.status === 'recommended').length,
-  latestVersion: 'v7.2.20',  // 当前最新版本
+  latestVersion: 'v7.2.28',  // 当前最新版本
 };

@@ -1,6 +1,6 @@
 ---
 name: spec-generator
-description: Specification generator - 6 phase document chain producing product brief, PRD, architecture, and epics. Triggers on "generate spec", "create specification", "spec generator", "workflow:spec".
+description: "Specification generator - 7 phase document chain producing product brief, PRD, architecture, epics, and issues with Codex review gates. Triggers on generate spec, create specification, spec generator, workflow:spec."
 allowed-tools: Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Read, Write, Edit, Bash, Glob, Grep, Skill
 ---
 

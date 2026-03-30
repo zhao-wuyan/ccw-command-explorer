@@ -1,7 +1,7 @@
 ---
 name: team-frontend
 description: Unified team skill for frontend development. Pure router — all roles read this file. Beat model is coordinator-only in monitor.md. Built-in ui-ux-pro-max design intelligence. Triggers on "team frontend".
-allowed-tools: spawn_agent(*), wait_agent(*), send_input(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), WebFetch(*), WebSearch(*), mcp__ace-tool__search_context(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), WebFetch(*), WebSearch(*), mcp__ace-tool__search_context(*)
 ---
 
 # Team Frontend Development
@@ -46,6 +46,31 @@ Parse `$ARGUMENTS`:
 - Has `--role <name>` → Read `roles/<name>/role.md`, execute Phase 2-4
 - No `--role` → `roles/coordinator/role.md`, execute entry router
 
+## Delegation Lock
+
+**Coordinator is a PURE ORCHESTRATOR. It coordinates, it does NOT do.**
+
+Before calling ANY tool, apply this check:
+
+| Tool Call | Verdict | Reason |
+|-----------|---------|--------|
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `list_agents` | ALLOWED | Agent health check |
+| `request_user_input` | ALLOWED | User interaction |
+| `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
+| `Read/Write` on `.workflow/.team/` files | ALLOWED | Session state |
+| `Read` on `roles/`, `commands/`, `specs/` | ALLOWED | Loading own instructions |
+| `Read/Grep/Glob` on project source code | BLOCKED | Delegate to worker |
+| `Edit` on any file outside `.workflow/` | BLOCKED | Delegate to worker |
+| `Bash("ccw cli ...")` | BLOCKED | Only workers call CLI |
+| `Bash` running build/test/lint commands | BLOCKED | Delegate to worker |
+
+**If a tool call is BLOCKED**: STOP. Create a task, spawn a worker.
+
+**No exceptions for "simple" tasks.** Even a single-file read-and-report MUST go through spawn_agent.
+
+---
+
 ## Shared Constants
 
 - **Session prefix**: `FE`
@@ -60,6 +85,8 @@ Coordinator spawns workers using this template:
 ```
 spawn_agent({
   agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
   items: [
     { type: "text", text: `## Role Assignment
 role: <role>
@@ -83,7 +110,29 @@ pipeline_phase: <pipeline-phase>` },
 })
 ```
 
-After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ id })` each worker.
+After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+
+
+### Model Selection Guide
+
+| Role | model | reasoning_effort | Rationale |
+|------|-------|-------------------|-----------|
+| Analyst (ANALYZE-*) | (default) | high | Design intelligence requires deep UI/UX reasoning |
+| Architect (ARCH-*) | (default) | high | Component spec and design token generation needs precision |
+| Developer (DEV-*) | (default) | high | Frontend code generation needs full reasoning |
+| QA (QA-*) | (default) | high | 5-dimension audit requires thorough analysis |
+
+Override model/reasoning_effort in spawn_agent when cost optimization is needed:
+```
+spawn_agent({
+  agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
+  model: "<model-override>",
+  reasoning_effort: "<effort-level>",
+  items: [...]
+})
+```
 
 ## User Commands
 
@@ -116,6 +165,55 @@ After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect 
 ## Specs Reference
 
 - [specs/pipelines.md](specs/pipelines.md) — Pipeline definitions and task registry
+
+## v4 Agent Coordination
+
+### Message Semantics
+
+| Intent | API | Example |
+|--------|-----|---------|
+| Send architecture specs to running developer | `send_message` | Queue design tokens and component specs to DEV-* |
+| Not used in this skill | `assign_task` | No resident agents -- all workers are one-shot |
+| Check running agents | `list_agents` | Verify agent health during resume |
+
+### Pipeline Pattern
+
+Sequential pipeline with GC loops: analyst -> architect -> developer -> QA. In **system mode**, architect revision (ARCH-002) and developer (DEV-001) may run in parallel after QA-001 arch review.
+
+### fork_context Consideration
+
+Developer workers (DEV-*) benefit from `fork_context: true` when the coordinator has accumulated significant design context (analysis results, architecture specs, design tokens). This avoids the developer needing to re-read all upstream artifacts:
+
+```
+// Consider fork_context: true for developer in feature/system modes
+spawn_agent({
+  agent_type: "team_worker",
+  task_name: "DEV-001",
+  fork_context: true,  // Developer gets full coordinator context including design decisions
+  items: [...]
+})
+```
+
+### GC Loop (QA Fix Cycle)
+
+QA may flag FIX_REQUIRED, creating DEV-fix + QA-recheck tasks (max 2 rounds). If QA score remains < 6 after 2 rounds, escalate to user.
+
+### Agent Health Check
+
+Use `list_agents({})` in handleResume and handleComplete:
+
+```
+// Reconcile session state with actual running agents
+const running = list_agents({})
+// Compare with tasks.json active_agents
+// Reset orphaned tasks (in_progress but agent gone) to pending
+```
+
+### Named Agent Targeting
+
+Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
+- `send_message({ target: "DEV-001", items: [...] })` -- queue architecture specs to running developer
+- `close_agent({ target: "ARCH-001" })` -- cleanup by name after completion
 
 ## Error Handling
 

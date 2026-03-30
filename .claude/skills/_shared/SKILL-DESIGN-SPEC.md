@@ -18,6 +18,8 @@
 10. [质量控制规范](#10-质量控制规范)
 11. [最佳实践清单](#11-最佳实践清单)
 12. [示例模板](#12-示例模板)
+13. [Completion Status Protocol](#13-completion-status-protocol)
+14. [Escalation Protocol](#14-escalation-protocol)
 
 ---
 
@@ -662,6 +664,144 @@ Generate XXX through multi-phase analysis.
 | [phases/02-analysis.md](phases/02-analysis.md) | 代码分析 |
 | [phases/03-assembly.md](phases/03-assembly.md) | 文档组装 |
 ```
+
+---
+
+## 13. Completion Status Protocol
+
+### 13.1 Status Definitions
+
+Every Skill execution MUST terminate with one of the following four statuses:
+
+| Status | Exit Code | Definition |
+|--------|-----------|------------|
+| **DONE** | 0 | All acceptance criteria met, outputs generated successfully |
+| **DONE_WITH_CONCERNS** | 0 | Completed but with warnings or non-blocking issues |
+| **BLOCKED** | 1 | Cannot proceed, requires external action or resource |
+| **NEEDS_CONTEXT** | 2 | Missing information needed to make a decision |
+
+### 13.2 When to Use
+
+| Status | Use When |
+|--------|----------|
+| **DONE** | All phases completed, quality gates passed, outputs validated |
+| **DONE_WITH_CONCERNS** | Core task completed but: deprecation warnings found, quality score 60-79%, non-critical checks failed, partial data used as fallback |
+| **BLOCKED** | Required file/service unavailable, dependency not installed, permission denied, prerequisite task not completed |
+| **NEEDS_CONTEXT** | Ambiguous user requirement, multiple valid interpretations, missing configuration value, unclear scope boundary |
+
+### 13.3 Output Format
+
+Each status MUST use the following structured output at the end of Skill execution:
+
+```
+## STATUS: {DONE|DONE_WITH_CONCERNS|BLOCKED|NEEDS_CONTEXT}
+
+**Summary**: {one-line description of outcome}
+
+### Details
+{status-specific content — see below}
+
+### Outputs
+- {list of files created/modified, if any}
+```
+
+**DONE details**:
+```
+### Details
+- Phases completed: {N}/{N}
+- Quality score: {score}%
+- Key outputs: {list of primary deliverables}
+```
+
+**DONE_WITH_CONCERNS details**:
+```
+### Details
+- Phases completed: {N}/{N}
+- Concerns:
+  1. {concern description} — Impact: {low|medium} — Suggested fix: {action}
+  2. ...
+```
+
+**BLOCKED details**:
+```
+### Details
+- Blocked at: Phase {N}, Step {M}
+- Blocker: {specific description of what is blocking}
+- Need: {specific action or resource required to unblock}
+- Attempted: {what was tried before declaring blocked}
+```
+
+**NEEDS_CONTEXT details**:
+```
+### Details
+- Paused at: Phase {N}, Step {M}
+- Questions:
+  1. {specific question requiring user/caller input}
+  2. ...
+- Context available: {what is already known}
+- Impact: {what cannot proceed without answers}
+```
+
+---
+
+## 14. Escalation Protocol
+
+### 14.1 Three-Strike Rule
+
+When a Skill encounters consecutive failures on the **same step**, the following escalation applies:
+
+| Strike | Action |
+|--------|--------|
+| 1st failure | Log error, retry with adjusted approach |
+| 2nd failure | Log error, try alternative strategy |
+| 3rd failure | **STOP execution immediately**, output diagnostic dump, request human intervention |
+
+### 14.2 Failure Tracking
+
+Track failures per step, not globally. A success on any step resets that step's failure counter.
+
+```
+Step failure counter:
+  Phase 2, Step 3: [fail] [fail] [STOP]  → escalate
+  Phase 2, Step 4: [fail] [success]       → counter reset, continue
+```
+
+### 14.3 Diagnostic Dump Format
+
+On the 3rd consecutive failure, output the following diagnostic block:
+
+```
+## ESCALATION: 3-Strike Limit Reached
+
+### Failed Step
+- Phase: {phase_number} — {phase_name}
+- Step: {step_number} — {step_name}
+
+### Error History
+1. Attempt 1: {error message or description}
+   Strategy: {what was tried}
+2. Attempt 2: {error message or description}
+   Strategy: {alternative approach tried}
+3. Attempt 3: {error message or description}
+   Strategy: {final approach tried}
+
+### Current State
+- Last successful phase/step: {phase.step}
+- Files generated so far: {list}
+- Files touched in failed attempts: {list}
+
+### Diagnosis
+- Likely root cause: {assessment}
+- Suggested human action: {specific recommendation}
+```
+
+### 14.4 Post-Escalation Behavior
+
+After outputting the diagnostic dump:
+1. Set Skill status to **BLOCKED** (see Section 13)
+2. Do NOT attempt further retries
+3. Preserve all intermediate outputs for debugging
+4. Wait for human intervention before resuming
 
 ---
 

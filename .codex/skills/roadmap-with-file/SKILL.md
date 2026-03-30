@@ -1,6 +1,6 @@
 ---
 name: roadmap-with-file
-description: Strategic requirement roadmap with iterative decomposition and issue creation. Outputs roadmap.md (human-readable, single source) + issues.jsonl (machine-executable). Handoff to csv-wave-pipeline.
+description: Strategic requirement roadmap with iterative decomposition and issue creation. Outputs roadmap.md (human-readable, single source) + issues.jsonl (machine-executable).
 argument-hint: "[-y|--yes] [-c|--continue] [-m progressive|direct|auto] \"requirement description\""
 ---
 

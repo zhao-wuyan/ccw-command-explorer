@@ -1,7 +1,7 @@
 ---
 name: team-executor
 description: Lightweight session execution skill. Resumes existing team-coordinate sessions for pure execution via team-worker agents. No analysis, no role generation -- only loads and executes. Session path required. Triggers on "Team Executor".
-allowed-tools: spawn_agent(*), wait_agent(*), send_input(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
 ---
 
 # Team Executor
@@ -109,6 +109,8 @@ When executor spawns workers, use `team-worker` agent with role-spec path:
 ```
 spawn_agent({
   agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
   items: [
     { type: "text", text: `## Role Assignment
 role: <role>
@@ -132,9 +134,34 @@ pipeline_phase: <pipeline-phase>` },
 })
 ```
 
-After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ id })` each worker.
+After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target: <name> })` each worker.
 
 ---
+
+
+### Model Selection Guide
+
+team-executor loads roles dynamically from session role-specs. Use reasoning_effort based on the role type defined in the session:
+- Implementation/fix roles: `reasoning_effort: "high"`
+- Verification/test roles: `reasoning_effort: "medium"`
+- Default when role type is unclear: `reasoning_effort: "high"`
+
+## v4 Agent Coordination
+
+### State Reconciliation
+
+On resume, executor reconciles session state with actual running agents:
+```
+const running = list_agents({})
+// Compare with session's task-analysis.json active tasks
+// Reset orphaned tasks (in_progress but agent gone) to pending
+```
+
+### Worker Communication
+
+- `send_message({ target: "<task-id>", items: [...] })` -- queue supplementary context
+- `assign_task({ target: "<task-id>", items: [...] })` -- assign new work to inner_loop worker
+- `close_agent({ target: "<task-id>" })` -- cleanup completed worker
 
 ## Completion Action
 

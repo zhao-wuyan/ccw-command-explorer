@@ -23,7 +23,7 @@
     "reviewer": {
       "task_prefix": "AUDIT",
       "additional_prefixes": [],
-      "responsibility": "Design consistency audit, accessibility compliance, visual review",
+      "responsibility": "8-dimension Impeccable-aligned audit (anti-slop, color, typography, spacing, motion, interaction, hierarchy, responsive)",
       "message_types": ["audit_result", "audit_passed", "fix_required", "error"]
     },
     "implementer": {

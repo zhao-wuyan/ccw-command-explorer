@@ -37,7 +37,7 @@ The SKILL.md follows a strict template. Every generated SKILL.md contains these 
 ```yaml
 ---
 name: ${teamConfig.skillName}
-description: ${teamConfig.domain}. Triggers on "${teamConfig.skillName}".
+description: "${teamConfig.domain}. Triggers on ${teamConfig.skillName}."
 allowed-tools: TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
 ---
 ```

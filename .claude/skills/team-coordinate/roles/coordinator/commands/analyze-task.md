@@ -130,7 +130,7 @@ For each role, determine frontmatter and generation hints:
 | Field | Derivation |
 |-------|------------|
 | `prefix` | From capability prefix (e.g., RESEARCH, DRAFT, IMPL) |
-| `inner_loop` | `true` if role has 2+ serial same-prefix tasks |
+| `inner_loop` | `true` if role has 2+ same-prefix tasks AND they form a serial chain (each blockedBy the previous). `false` if tasks are parallel (no mutual blockedBy) or role has only 1 task |
 | `CLI tools` | Suggested, not mandatory — coordinator may adjust based on task needs |
 | `pattern_hint` | Reference pattern name from role-spec-template (research/document/code/analysis/validation) — guides coordinator's Phase 2-4 composition, NOT a rigid template selector |
 | `output_type` | `artifact` (new files in session/artifacts/) / `codebase` (modify existing project files) / `mixed` (both) — determines verification strategy in Behavioral Traits |

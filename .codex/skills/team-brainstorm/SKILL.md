@@ -1,7 +1,7 @@
 ---
 name: team-brainstorm
 description: Unified team skill for brainstorming team. Uses team-worker agent architecture with role directories for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on "team brainstorm".
-allowed-tools: spawn_agent(*), wait_agent(*), send_input(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
 ---
 
 # Team Brainstorm
@@ -45,6 +45,31 @@ Parse `$ARGUMENTS`:
 - Has `--role <name>` -> Read `roles/<name>/role.md`, execute Phase 2-4
 - No `--role` -> `roles/coordinator/role.md`, execute entry router
 
+## Delegation Lock
+
+**Coordinator is a PURE ORCHESTRATOR. It coordinates, it does NOT do.**
+
+Before calling ANY tool, apply this check:
+
+| Tool Call | Verdict | Reason |
+|-----------|---------|--------|
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `list_agents` | ALLOWED | Agent health check |
+| `request_user_input` | ALLOWED | User interaction |
+| `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
+| `Read/Write` on `.workflow/.team/` files | ALLOWED | Session state |
+| `Read` on `roles/`, `commands/`, `specs/` | ALLOWED | Loading own instructions |
+| `Read/Grep/Glob` on project source code | BLOCKED | Delegate to worker |
+| `Edit` on any file outside `.workflow/` | BLOCKED | Delegate to worker |
+| `Bash("ccw cli ...")` | BLOCKED | Only workers call CLI |
+| `Bash` running build/test/lint commands | BLOCKED | Delegate to worker |
+
+**If a tool call is BLOCKED**: STOP. Create a task, spawn a worker.
+
+**No exceptions for "simple" tasks.** Even a single-file read-and-report MUST go through spawn_agent.
+
+---
+
 ## Shared Constants
 
 - **Session prefix**: `BRS`
@@ -59,6 +84,8 @@ Coordinator spawns workers using this template:
 ```
 spawn_agent({
   agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
   items: [
     { type: "text", text: `## Role Assignment
 role: <role>
@@ -82,7 +109,7 @@ pipeline_phase: <pipeline-phase>` },
 })
 ```
 
-After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ id })` each worker.
+After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target: <name> })` each worker.
 
 **Parallel ideator spawn** (Full pipeline with N angles):
 
@@ -91,6 +118,8 @@ When Full pipeline has N parallel IDEA tasks, spawn N distinct team-worker agent
 ```
 spawn_agent({
   agent_type: "team_worker",
+  task_name: "ideator-<N>",
+  fork_context: false,
   items: [
     { type: "text", text: `## Role Assignment
 role: ideator
@@ -115,7 +144,29 @@ pipeline_phase: <pipeline-phase>` },
 })
 ```
 
-After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ id })` each worker.
+After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target: <name> })` each worker.
+
+
+### Model Selection Guide
+
+| Role | model | reasoning_effort | Rationale |
+|------|-------|-------------------|-----------|
+| Ideator (IDEA-*) | (default) | high | Creative divergent thinking requires full reasoning |
+| Challenger (CHALLENGE-*) | (default) | high | Critical analysis of ideas needs deep reasoning |
+| Synthesizer (SYNTH-*) | (default) | medium | Aggregation and convergence over generation |
+| Evaluator (EVAL-*) | (default) | medium | Scoring and ranking against criteria |
+
+Override model/reasoning_effort in spawn_agent when cost optimization is needed:
+```
+spawn_agent({
+  agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
+  model: "<model-override>",
+  reasoning_effort: "<effort-level>",
+  items: [...]
+})
+```
 
 ## User Commands
 
@@ -153,6 +204,47 @@ After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect 
 ## Specs Reference
 
 - [specs/pipelines.md](specs/pipelines.md) — Pipeline definitions and task registry
+
+## v4 Agent Coordination
+
+### Message Semantics
+
+| Intent | API | Example |
+|--------|-----|---------|
+| Share idea context across ideators | `send_message` | Send seed ideas to running ideator for cross-pollination |
+| Not used in this skill | `assign_task` | No resident agents -- all workers are one-shot |
+| Check running agents | `list_agents` | Verify parallel ideator health during Full pipeline |
+
+### Parallel Ideator Coordination (Full Pipeline)
+
+Full pipeline spawns N parallel ideators for different brainstorming angles. Use batch spawn + wait:
+
+```
+// Spawn N ideators in parallel, each with a different angle
+const ideatorNames = ["IDEA-001", "IDEA-002", "IDEA-003"]
+for (const name of ideatorNames) {
+  spawn_agent({ agent_type: "team_worker", task_name: name, fork_context: false, ... })
+}
+wait_agent({ targets: ideatorNames, timeout_ms: 900000 })
+// Collect all idea outputs, feed to challenger as upstream context
+```
+
+### Agent Health Check
+
+Use `list_agents({})` in handleResume and handleComplete:
+
+```
+// Reconcile session state with actual running agents
+const running = list_agents({})
+// Compare with tasks.json active_agents
+// Reset orphaned tasks (in_progress but agent gone) to pending
+```
+
+### Named Agent Targeting
+
+Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
+- `send_message({ target: "IDEA-002", items: [...] })` -- share context from another ideator
+- `close_agent({ target: "IDEA-001" })` -- cleanup by name after wait_agent returns
 
 ## Error Handling
 

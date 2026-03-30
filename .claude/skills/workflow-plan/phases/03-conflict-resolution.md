@@ -70,7 +70,7 @@ Task(subagent_type="cli-execution-agent", run_in_background=false, prompt=`
   ## Analysis Steps
 
   ### 0. Load Output Schema (MANDATORY)
-  Execute: cat ~/.ccw/workflows/cli-templates/schemas/conflict-resolution-schema.json
+  Execute: ccw tool exec json_builder '{"cmd":"info","schema":"conflict"}' (get schema summary)
 
   ### 1. Load Context
   - Read existing files from conflict_detection.existing_files
@@ -119,7 +119,7 @@ Task(subagent_type="cli-execution-agent", run_in_background=false, prompt=`
 
   Output to conflict-resolution.json (generated in Phase 4)
 
-  **Schema Reference**: Execute cat ~/.ccw/workflows/cli-templates/schemas/conflict-resolution-schema.json to get full schema
+  **Schema Reference**: Execute ccw tool exec json_builder '{"cmd":"info","schema":"conflict"}' to get schema summary
 
   Return JSON following the schema. Key requirements:
   - Minimum 2 strategies per conflict, max 4

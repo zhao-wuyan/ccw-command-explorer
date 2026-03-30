@@ -34,8 +34,20 @@ RoleSpec: ~  or <project>/.claude/skills/team-lifecycle-v4/roles/<role>/role.md
 
 ## InnerLoop Flag Rules
 
-- true: Role has 2+ serial same-prefix tasks (writer: DRAFT-001->004)
-- false: Role has 1 task, or tasks are parallel
+- true: Role has 2+ serial same-prefix tasks (writer: DRAFT-001->004) where each blockedBy the previous
+- false: Role has 1 task, or tasks are parallel (no mutual blockedBy)
+
+### Parallel Detection for IMPL Tasks
+
+When creating IMPL-{1..N} tasks from PLAN-001 output:
+
+1. Read plan.json → extract `tasks[]` with their `depends_on` fields
+2. Build dependency graph among IMPL tasks only
+3. Classify:
+   - **Serial chain**: IMPL-002 blockedBy IMPL-001 → both get `InnerLoop: true`, single worker
+   - **Parallel set**: IMPL-001..N all blockedBy PLAN-001 only (no mutual deps) → each gets `InnerLoop: false`, separate workers
+   - **Mixed DAG**: Some parallel, some serial → group into independent chains, each chain gets one worker with `InnerLoop: true`; independent chains spawn in parallel
+4. Set `InnerLoop` in each task description accordingly
 
 ## CHECKPOINT Task Rules
 

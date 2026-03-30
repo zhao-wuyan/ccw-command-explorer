@@ -38,17 +38,19 @@ Phase 3-N: monitor.md
 
 ## Dependency Graph Structure
 
-task-analysis.json encodes the pipeline:
+task-analysis.json encodes the pipeline as adjacency list (task ID -> blockedBy array):
 
 ```json
 {
   "dependency_graph": {
-    "RESEARCH-001": { "role": "researcher", "blockedBy": [], "priority": "P0" },
-    "IMPL-001":     { "role": "developer",  "blockedBy": ["RESEARCH-001"], "priority": "P1" },
-    "TEST-001":     { "role": "tester",     "blockedBy": ["IMPL-001"], "priority": "P2" }
+    "RESEARCH-001": [],
+    "IMPL-001": ["RESEARCH-001"],
+    "TEST-001": ["IMPL-001"]
   }
 }
 ```
+
+Role mapping comes from `task-analysis.json#capabilities[].tasks[]`, not from the dependency graph itself.
 
 ## Role-Worker Map
 
@@ -64,6 +66,7 @@ Role-spec files contain YAML frontmatter:
 role: <role-name>
 prefix: <PREFIX>
 inner_loop: <true|false>
+output_tag: "[<role-name>]"
 message_types:
   success: <type>
   error: error

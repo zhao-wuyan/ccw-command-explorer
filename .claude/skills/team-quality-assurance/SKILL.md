@@ -38,7 +38,7 @@ Skill(skill="team-quality-assurance", args="task description")
 | scout | [roles/scout/role.md](roles/scout/role.md) | SCOUT-* | false |
 | strategist | [roles/strategist/role.md](roles/strategist/role.md) | QASTRAT-* | false |
 | generator | [roles/generator/role.md](roles/generator/role.md) | QAGEN-* | false |
-| executor | [roles/executor/role.md](roles/executor/role.md) | QARUN-* | true |
+| executor | [roles/executor/role.md](roles/executor/role.md) | QARUN-* | dynamic |
 | analyst | [roles/analyst/role.md](roles/analyst/role.md) | QAANA-* | false |
 
 ## Role Router

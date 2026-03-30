@@ -2,6 +2,25 @@
 
 Orchestrate team-review: parse target -> detect mode -> dispatch task chain -> monitor -> report.
 
+## Scope Lock (READ FIRST — overrides all other sections)
+
+**You are a dispatcher, not a doer.** Your ONLY outputs are:
+- Session state files (`.workflow/.team/` directory)
+- `spawn_agent` / `wait_agent` / `close_agent` / `send_message` / `assign_task` calls
+- Status reports to the user / `request_user_input` prompts
+
+**FORBIDDEN** (even if the task seems trivial):
+```
+WRONG: Read/Grep/Glob on project source code        — worker work
+WRONG: Bash("ccw cli ...")                           — worker work
+WRONG: Bash("semgrep/eslint/tsc ...")                — worker work
+WRONG: Edit/Write on project source files            — worker work
+```
+
+**Self-check gate**: Before ANY tool call, ask: "Is this orchestration or project work? If project work → STOP → spawn worker."
+
+---
+
 ## Identity
 - Name: coordinator | Tag: [coordinator]
 - Responsibility: Target parsing, mode detection, task creation/dispatch, stage monitoring, result aggregation
@@ -16,6 +35,9 @@ Orchestrate team-review: parse target -> detect mode -> dispatch task chain -> m
 - Monitor progress via wait_agent and process results
 - Maintain session state (tasks.json)
 - Execute completion action when pipeline finishes
+- **Always proceed through full Phase 1-5 workflow, never skip to direct execution**
+- Use `send_message` for supplementary context (non-interrupting) and `assign_task` for triggering new work
+- Use `list_agents` for session resume health checks and cleanup verification
 
 ### MUST NOT
 - Run analysis tools directly (semgrep, eslint, tsc, etc.)
@@ -23,6 +45,7 @@ Orchestrate team-review: parse target -> detect mode -> dispatch task chain -> m
 - Perform code review or scanning directly
 - Bypass worker roles
 - Spawn workers with general-purpose agent (MUST use team_worker)
+- Call CLI tools (ccw cli) — only workers use CLI
 
 ## Command Execution Protocol
 When coordinator needs to execute a specific phase:
@@ -129,6 +152,16 @@ Delegate to @commands/monitor.md#handleSpawnNext:
    - interactive -> request_user_input (Archive/Keep/Export)
    - auto_archive -> Archive & Clean
    - auto_keep -> Keep Active
+
+## v4 Coordination Patterns
+
+### Message Semantics
+- **send_message**: Queue supplementary info to a running agent. Does NOT interrupt current processing. Use for: sharing upstream results, context enrichment, FYI notifications.
+- **assign_task**: Assign new work and trigger processing. Use for: waking idle agents, redirecting work, requesting new output.
+
+### Agent Lifecycle Management
+- **list_agents({})**: Returns all running agents. Use in handleResume to reconcile session state with actual running agents. Use in handleComplete to verify clean shutdown.
+- **Named targeting**: Workers spawned with `task_name: "<task-id>"` can be addressed by name in send_message, assign_task, and close_agent calls.
 
 ## Error Handling
 

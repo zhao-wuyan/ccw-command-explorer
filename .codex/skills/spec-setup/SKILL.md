@@ -1,6 +1,6 @@
 ---
 name: spec-setup
-description: Initialize project-level state and configure specs via interactive questionnaire using cli-explore-agent
+description: Initialize project-level state and configure specs via interactive questionnaire.
 argument-hint: "[--regenerate] [--skip-specs] [--reset]"
 allowed-tools: spawn_agent, wait, send_input, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---

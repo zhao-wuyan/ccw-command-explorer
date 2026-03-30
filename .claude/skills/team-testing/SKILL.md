@@ -37,7 +37,7 @@ Skill(skill="team-testing", args="task description")
 | coordinator | [roles/coordinator/role.md](roles/coordinator/role.md) | — | — |
 | strategist | [roles/strategist/role.md](roles/strategist/role.md) | STRATEGY-* | false |
 | generator | [roles/generator/role.md](roles/generator/role.md) | TESTGEN-* | true |
-| executor | [roles/executor/role.md](roles/executor/role.md) | TESTRUN-* | true |
+| executor | [roles/executor/role.md](roles/executor/role.md) | TESTRUN-* | dynamic |
 | analyst | [roles/analyst/role.md](roles/analyst/role.md) | TESTANA-* | false |
 
 ## Role Router

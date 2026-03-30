@@ -19,7 +19,7 @@
 | Worker spawn | `Agent({ subagent_type: "team-worker", prompt })` | `spawn_agent({ agent_type: "tlv4_worker", items })` |
 | Supervisor spawn | `Agent({ subagent_type: "team-supervisor", prompt })` | `spawn_agent({ agent_type: "tlv4_supervisor", items })` |
 | Supervisor wake | `SendMessage({ recipient: "supervisor", content })` | `send_input({ id: supervisorId, items })` |
-| Supervisor shutdown | `SendMessage({ type: "shutdown_request" })` | `close_agent({ id: supervisorId })` |
+| Supervisor shutdown | `SendMessage({ type: "shutdown_request" })` | `close_agent({ target: supervisorId })` |
 | 等待完成 | 后台回调 -> monitor.md | `wait_agent({ ids, timeout_ms })` |
 | 任务状态 | `TaskCreate` / `TaskUpdate` | `tasks.json` 文件读写 |
 | 团队管理 | `TeamCreate` / `TeamDelete` | session folder init / cleanup |
@@ -222,14 +222,14 @@ scope: [${task.deps}]
 pipeline_progress: ${done}/${total} tasks completed` }
   ]
 })
-wait_agent({ ids: [supervisorId], timeout_ms: 300000 })
+wait_agent({ targets: [supervisorId], timeout_ms: 300000 })
 ```
 
 ### Supervisor Shutdown
 
 ```javascript
 // 对齐 Claude Code SendMessage({ type: "shutdown_request" })
-close_agent({ id: supervisorId })
+close_agent({ target: supervisorId })
 ```
 
 ### Wave 执行引擎
@@ -300,7 +300,7 @@ pipeline_phase: ${task.pipeline_phase}` },
 
   // 2) 批量等待
   if (agentMap.length > 0) {
-    wait_agent({ ids: agentMap.map(a => a.agentId), timeout_ms: 900000 })
+    wait_agent({ targets: agentMap.map(a => a.agentId), timeout_ms: 900000 })
   }
 
   // 3) 收集结果，合并到 tasks.json
@@ -315,7 +315,7 @@ pipeline_phase: ${task.pipeline_phase}` },
       state.tasks[taskId].status = 'failed'
       state.tasks[taskId].error = 'No discovery file produced'
     }
-    close_agent({ id: agentId })
+    close_agent({ target: agentId })
   }
 
   // 4) 执行 CHECKPOINT 任务 (send_input 唤醒 supervisor)
@@ -329,7 +329,7 @@ scope: [${task.deps.join(', ')}]
 pipeline_progress: ${completedCount}/${totalCount} tasks completed` }
       ]
     })
-    wait_agent({ ids: [supervisorId], timeout_ms: 300000 })
+    wait_agent({ targets: [supervisorId], timeout_ms: 300000 })
 
     // 读取 checkpoint 报告
     try {

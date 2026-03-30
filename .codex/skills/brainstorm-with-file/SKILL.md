@@ -1,56 +1,105 @@
 ---
 name: brainstorm-with-file
-description: Interactive brainstorming with parallel subagent collaboration, idea expansion, and documented thought evolution. Parallel multi-perspective analysis for Codex.
+description: Interactive brainstorming with documented thought evolution, multi-perspective analysis, and iterative refinement. Serial execution with no agent delegation.
 argument-hint: "TOPIC=\"<idea or topic>\" [--perspectives=creative,pragmatic,systematic] [--max-ideas=<n>]"
 ---
 
-# Codex Brainstorm-With-File Workflow
-
-## Quick Start
-
-Interactive brainstorming workflow with **documented thought evolution**. Expands initial ideas through questioning, **parallel subagent analysis**, and iterative refinement.
-
-**Core workflow**: Seed Idea → Expand → Parallel Subagent Explore → Synthesize → Refine → Crystallize
-
-**Key features**:
-- **brainstorm.md**: Complete thought evolution timeline
-- **Parallel multi-perspective**: Creative + Pragmatic + Systematic (concurrent subagents)
-- **Idea expansion**: Progressive questioning and exploration
-- **Diverge-Converge cycles**: Generate options then focus on best paths
-
-**Codex-Specific Features**:
-- Parallel subagent execution via `spawn_agent` + batch `wait({ ids: [...] })`
-- Role loading via TOML agent definition (agent_type parameter in spawn_agent)
-- Deep interaction with `send_input` for multi-round refinement within single agent
-- Explicit lifecycle management with `close_agent`
+# Codex Brainstorm-With-File Prompt
 
 ## Overview
 
-This workflow enables iterative exploration and refinement of ideas through parallel-capable phases:
+Interactive brainstorming workflow with **documented thought evolution**. Expands initial ideas through questioning, inline multi-perspective analysis, and iterative refinement.
 
-1. **Seed Understanding** - Parse the initial idea and identify exploration vectors
-2. **Divergent Exploration** - Gather codebase context and execute parallel multi-perspective analysis
-3. **Interactive Refinement** - Multi-round idea selection, deep-dive, and refinement via send_input
-4. **Convergence & Crystallization** - Synthesize final ideas and generate recommendations
+**Core workflow**: Seed Idea → Expand → Multi-Perspective Explore → Synthesize → Refine → Crystallize
 
-The key innovation is **documented thought evolution** that captures how ideas develop, perspectives differ, and insights emerge across all phases.
+**Key features**:
+- **brainstorm.md**: Complete thought evolution timeline
+- **Multi-perspective analysis**: Creative + Pragmatic + Systematic (serial, inline)
+- **Idea expansion**: Progressive questioning and exploration
+- **Diverge-Converge cycles**: Generate options then focus on best paths
 
-## Output Structure
+## Auto Mode
+
+When `--yes` or `-y`: Auto-confirm exploration decisions, use recommended perspectives, skip interactive scoping.
+
+## Quick Start
+
+```bash
+# Basic usage
+/codex:brainstorm-with-file TOPIC="How to improve developer onboarding experience"
+
+# With perspective selection
+/codex:brainstorm-with-file TOPIC="New caching strategy" --perspectives=creative,pragmatic,systematic
+
+# Continue existing session
+/codex:brainstorm-with-file TOPIC="caching strategy" --continue
+
+# Auto mode (skip confirmations)
+/codex:brainstorm-with-file -y TOPIC="Plugin architecture ideas"
+```
+
+## Target Topic
+
+**$TOPIC**
+
+## Configuration
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-y, --yes` | false | Auto-confirm all decisions |
+| `--continue` | false | Continue existing session |
+| `--perspectives` | creative,pragmatic,systematic | Comma-separated perspective list |
+| `--max-ideas` | 15 | Maximum ideas to track |
+
+**Session ID format**: `BS-{slug}-{YYYY-MM-DD}`
+- slug: lowercase, alphanumeric + CJK characters, max 40 chars
+- date: YYYY-MM-DD (UTC+8)
+- Auto-detect continue: session folder + brainstorm.md exists → continue mode
+
+## Brainstorm Flow
 
 ```
-{projectRoot}/.workflow/.brainstorm/BS-{slug}-{date}/
-├── brainstorm.md                  # ⭐ Complete thought evolution timeline
-├── exploration-codebase.json      # Phase 2: Codebase context
-├── perspectives/                  # Phase 2: Individual perspective outputs
-│   ├── creative.json
-│   ├── pragmatic.json
-│   └── systematic.json
-├── perspectives.json              # Phase 2: Aggregated parallel findings with synthesis
-├── synthesis.json                 # Phase 4: Final synthesis
-└── ideas/                         # Phase 3: Individual idea deep-dives
-    ├── idea-1.md
-    ├── idea-2.md
-    └── merged-idea-1.md
+Step 0: Session Setup
+   ├─ Parse topic, flags (--perspectives, --continue, -y)
+   ├─ Generate session ID: BS-{slug}-{date}
+   └─ Create session folder (or detect existing → continue mode)
+
+Step 1: Seed Understanding
+   ├─ Parse topic, identify brainstorm dimensions
+   ├─ Role/perspective selection with user (or auto)
+   ├─ Initial scoping (mode, focus areas, constraints)
+   ├─ Expand seed into exploration vectors
+   └─ Initialize brainstorm.md
+
+Step 2: Divergent Exploration (Inline, No Agents)
+   ├─ Detect codebase → search relevant modules, patterns
+   │   ├─ Run `ccw spec load --category exploration` (if spec system available)
+   │   └─ Use Grep, Glob, Read, mcp__ace-tool__search_context
+   ├─ Multi-perspective analysis (serial, inline)
+   │   ├─ Creative perspective: innovation, cross-domain, challenge assumptions
+   │   ├─ Pragmatic perspective: feasibility, effort, blockers
+   │   └─ Systematic perspective: decomposition, patterns, scalability
+   ├─ Aggregate findings → perspectives.json
+   ├─ Update brainstorm.md with Round 1
+   └─ Initial Idea Coverage Check
+
+Step 3: Interactive Refinement (Multi-Round, max 6)
+   ├─ Present current ideas and perspectives
+   ├─ Gather user feedback
+   ├─ Process response:
+   │   ├─ Deep Dive → deeper inline analysis on selected ideas
+   │   ├─ Diverge → new inline analysis with different angles
+   │   ├─ Challenge → devil's advocate inline analysis
+   │   ├─ Merge → synthesize complementary ideas inline
+   │   └─ Converge → exit loop for synthesis
+   ├─ Update brainstorm.md with round details
+   └─ Repeat until user selects converge or max rounds
+
+Step 4: Convergence & Crystallization
+   ├─ Consolidate all insights → synthesis.json
+   ├─ Update brainstorm.md with final synthesis
+   ├─ Interactive Top-Idea Review (per-idea confirm/modify/reject)
+   └─ Offer options: show next-step commands / export / done
 ```
 
 ## Output Artifacts
@@ -67,16 +116,17 @@ The key innovation is **documented thought evolution** that captures how ideas d
 | Artifact | Purpose |
 |----------|---------|
 | `exploration-codebase.json` | Codebase context: relevant files, patterns, architecture constraints |
-| `perspectives/*.json` | Individual perspective outputs from parallel subagents |
-| `perspectives.json` | Aggregated parallel findings with synthesis (convergent/conflicting themes) |
-| Updated `brainstorm.md` | Round 2: Exploration results and multi-perspective analysis |
+| `perspectives/*.json` | Individual perspective outputs (creative, pragmatic, systematic) |
+| `perspectives.json` | Aggregated findings with synthesis (convergent/conflicting themes) |
+| Updated `brainstorm.md` | Round 1: Exploration results and multi-perspective analysis |
 
 ### Phase 3: Interactive Refinement
 
 | Artifact | Purpose |
 |----------|---------|
 | `ideas/{idea-slug}.md` | Deep-dive analysis for selected ideas |
-| Updated `brainstorm.md` | Round 3-6: User feedback, idea selections, refinement cycles |
+| `ideas/merged-idea-{n}.md` | Merged idea documents |
+| Updated `brainstorm.md` | Round 2-6: User feedback, idea selections, refinement cycles |
 
 ### Phase 4: Convergence & Crystallization
 
@@ -87,68 +137,97 @@ The key innovation is **documented thought evolution** that captures how ideas d
 
 ---
 
-## Implementation Details
+## Recording Protocol
 
-### Session Initialization
+**CRITICAL**: During brainstorming, the following situations **MUST** trigger immediate recording to brainstorm.md:
 
-##### Step 0: Determine Project Root
+| Trigger | What to Record | Target Section |
+|---------|---------------|----------------|
+| **Idea generated** | Idea content, source perspective, novelty/feasibility ratings | `#### Ideas Generated` |
+| **Perspective shift** | Old framing → new framing, trigger reason | `#### Decision Log` |
+| **User feedback** | User's original input, which ideas selected/rejected | `#### User Input` |
+| **Assumption challenged** | Original assumption → challenge result, survivability | `#### Challenged Assumptions` |
+| **Ideas merged** | Source ideas, merged concept, what was preserved/discarded | `#### Decision Log` |
+| **Scope adjustment** | Before/after scope, trigger reason | `#### Decision Log` |
 
-检测项目根目录，确保 `.workflow/` 产物位置正确：
+### Decision Record Format
 
-```bash
-PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+```markdown
+> **Decision**: [Description of the decision]
+> - **Context**: [What triggered this decision]
+> - **Options considered**: [Alternatives evaluated]
+> - **Chosen**: [Selected approach] — **Reason**: [Rationale]
+> - **Rejected**: [Why other options were discarded]
+> - **Impact**: [Effect on brainstorming direction]
 ```
 
-优先通过 git 获取仓库根目录；非 git 项目回退到 `pwd` 取当前绝对路径。
-存储为 `{projectRoot}`，后续所有 `.workflow/` 路径必须以此为前缀。
+### Narrative Synthesis Format
 
-The workflow automatically generates a unique session identifier and directory structure based on the topic and current date (UTC+8).
+Append after each round update:
 
-**Session ID Format**: `BS-{slug}-{date}`
-- `slug`: Lowercase alphanumeric + Chinese characters, max 40 chars
-- `date`: YYYY-MM-DD format (UTC+8)
+```markdown
+### Round N: Narrative Synthesis
+**Starting point**: Based on previous round's [conclusions/questions], this round explored [starting point].
+**Key progress**: [New ideas/findings] [confirmed/refuted/expanded] previous understanding of [topic area].
+**Decision impact**: User selected [feedback type], directing brainstorming toward [adjusted/deepened/maintained].
+**Current state**: After this round, top ideas are [updated idea rankings].
+**Open directions**: [remaining exploration angles for next round]
+```
 
-**Session Directory**: `{projectRoot}/.workflow/.brainstorm/{sessionId}/`
+## Implementation Details
 
-**Auto-Detection**: If session folder exists with brainstorm.md, automatically enters continue mode. Otherwise, creates new session.
+### Phase 0: Session Initialization
 
-**Brainstorm Modes**:
-- `creative`: Emphasize novelty and innovation, relaxed constraints
-- `structured`: Balance creativity with feasibility, realistic scope
-- `balanced`: Default, moderate innovation with practical considerations
+```javascript
+const getUtc8ISOString = () => new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
 
----
+// Parse flags
+const autoYes = $ARGUMENTS.includes('--yes') || $ARGUMENTS.includes('-y')
+const continueMode = $ARGUMENTS.includes('--continue')
+const perspectivesMatch = $ARGUMENTS.match(/--perspectives[=\s]([\w,]+)/)
+const selectedPerspectiveNames = perspectivesMatch
+  ? perspectivesMatch[1].split(',')
+  : ['creative', 'pragmatic', 'systematic']
 
-## Phase 1: Seed Understanding
+// Extract topic
+const topic = $ARGUMENTS.replace(/--yes|-y|--continue|--perspectives[=\s][\w,]+|--max-ideas[=\s]\d+|TOPIC=/g, '').replace(/^["']|["']$/g, '').trim()
+
+// Determine project root
+const projectRoot = Bash('git rev-parse --show-toplevel 2>/dev/null || pwd').trim()
+
+const slug = topic.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').substring(0, 40)
+const dateStr = getUtc8ISOString().substring(0, 10)
+const sessionId = `BS-${slug}-${dateStr}`
+const sessionFolder = `${projectRoot}/.workflow/.brainstorm/${sessionId}`
+
+// Auto-detect continue: session folder + brainstorm.md exists → continue mode
+// If continue → load brainstorm.md + perspectives, resume from last round
+Bash(`mkdir -p ${sessionFolder}`)
+```
+
+### Phase 1: Seed Understanding
 
 **Objective**: Parse the initial idea, identify exploration vectors, scope preferences, and initialize the brainstorm document.
 
-### Step 1.1: Parse Seed & Identify Dimensions
+##### Step 1.1: Parse Seed & Identify Dimensions
 
-The workflow analyzes the topic text against predefined brainstorm dimensions.
+Match topic keywords against brainstorm dimensions (see [Dimensions Reference](#brainstorm-dimensions)):
 
-**Brainstorm Dimensions**:
+```javascript
+// Match topic text against keyword lists from Dimensions Reference
+// If multiple dimensions match, include all
+// If none match, default to "technical" and "innovation"
+const dimensions = identifyDimensions(topic, BRAINSTORM_DIMENSIONS)
+```
 
-| Dimension | Keywords |
-|-----------|----------|
-| technical | 技术, technical, implementation, code, 实现, architecture |
-| ux | 用户, user, experience, UX, UI, 体验, interaction |
-| business | 业务, business, value, ROI, 价值, market |
-| innovation | 创新, innovation, novel, creative, 新颖 |
-| feasibility | 可行, feasible, practical, realistic, 实际 |
-| scalability | 扩展, scale, growth, performance, 性能 |
-| security | 安全, security, risk, protection, 风险 |
-
-**Matching Logic**: Compare topic text against keyword lists to identify relevant dimensions.
-
-### Step 1.2: Role Selection
+##### Step 1.2: Role Selection
 
 Recommend roles based on topic keywords, then let user confirm or override.
 
 **Professional Roles** (recommended based on topic keywords):
 
-| Role | Perspective Agent Focus | Keywords |
-|------|------------------------|----------|
+| Role | Perspective Focus | Keywords |
+|------|------------------|----------|
 | system-architect | Architecture, patterns | 架构, architecture, system, 系统, design pattern |
 | product-manager | Business value, roadmap | 产品, product, feature, 功能, roadmap |
 | ui-designer | Visual design, interaction | UI, 界面, interface, visual, 视觉 |
@@ -157,7 +236,7 @@ Recommend roles based on topic keywords, then let user confirm or override.
 | test-strategist | Quality, testing | 测试, test, quality, 质量, QA |
 | subject-matter-expert | Domain knowledge | 领域, domain, industry, 行业, expert |
 
-**Simple Perspectives** (fallback - always available):
+**Simple Perspectives** (fallback — always available):
 
 | Perspective | Focus | Best For |
 |-------------|-------|----------|
@@ -170,30 +249,56 @@ Recommend roles based on topic keywords, then let user confirm or override.
 2. **Manual mode**: Present recommended roles + "Use simple perspectives" option
 3. **Continue mode**: Use roles from previous session
 
-### Step 1.3: Initial Scoping (New Session Only)
+##### Step 1.3: Initial Scoping (New Session Only)
 
-For new brainstorm sessions, gather user preferences before exploration.
+For new brainstorm sessions, gather user preferences before exploration (skipped in auto mode or continue mode):
 
-**Brainstorm Mode** (Single-select):
-- 创意模式 (Creative mode - 15-20 minutes, 1 subagent)
-- 平衡模式 (Balanced mode - 30-60 minutes, 3 parallel subagents)
-- 深度模式 (Deep mode - 1-2+ hours, 3 parallel subagents + deep refinement)
+```javascript
+if (!autoYes && !continueMode) {
+  // 1. Brainstorm Mode (single-select)
+  const mode = request_user_input({
+    questions: [{
+      header: "Brainstorm Mode",
+      id: "mode",
+      question: "Select brainstorming intensity:",
+      options: [
+        { label: "Creative Mode", description: "Fast, high novelty, 1 perspective" },
+        { label: "Balanced Mode(Recommended)", description: "Moderate, 3 perspectives" },
+        { label: "Deep Mode", description: "Comprehensive, 3 perspectives + deep refinement" }
+      ]
+    }]
+  })
 
-**Focus Areas** (Multi-select):
-- 技术方案 (Technical solutions)
-- 用户体验 (User experience)
-- 创新突破 (Innovation breakthroughs)
-- 可行性评估 (Feasibility assessment)
+  // 2. Focus Areas (multi-select)
+  const focusAreas = request_user_input({
+    questions: [{
+      header: "Focus Areas",
+      id: "focus",
+      question: "Select brainstorming focus:",
+      options: generateFocusOptions(dimensions) // Dynamic based on dimensions
+    }]
+  })
 
-**Constraints** (Multi-select):
-- 现有架构 (Existing architecture constraints)
-- 时间限制 (Time constraints)
-- 资源限制 (Resource constraints)
-- 无约束 (No constraints)
+  // 3. Constraints (multi-select)
+  const constraints = request_user_input({
+    questions: [{
+      header: "Constraints",
+      id: "constraints",
+      question: "Any constraints to consider?",
+      options: [
+        { label: "Existing Architecture", description: "Must fit current system" },
+        { label: "Time Constraints", description: "Short implementation timeline" },
+        { label: "Resource Constraints", description: "Limited team/budget" },
+        { label: "No Constraints", description: "Blue-sky thinking" }
+      ]
+    }]
+  })
+}
+```
 
-### Step 1.4: Expand Seed into Exploration Vectors
+##### Step 1.4: Expand Seed into Exploration Vectors
 
-Generate key questions that guide the brainstorming exploration. Use a subagent for vector generation.
+Generate key questions that guide the brainstorming exploration. Done inline — no agent delegation.
 
 **Exploration Vectors**:
 1. **Core question**: What is the fundamental problem/opportunity?
@@ -204,578 +309,368 @@ Generate key questions that guide the brainstorming exploration. Use a subagent 
 6. **Innovation angle**: What would make this 10x better?
 7. **Integration**: How does this fit with existing systems/processes?
 
-**Subagent for Vector Generation**:
+Analyze the topic inline against user focus areas and constraints to produce 5-7 exploration vectors.
+
+##### Step 1.5: Initialize brainstorm.md
 
 ```javascript
-const vectorAgent = spawn_agent({
-  agent_type: "cli_explore_agent",
-  message: `
-## TASK ASSIGNMENT
+const brainstormMd = `# Brainstorm Session
+
+**Session ID**: ${sessionId}
+**Topic**: ${topic}
+**Started**: ${getUtc8ISOString()}
+**Dimensions**: ${dimensions.join(', ')}
+**Mode**: ${brainstormMode}
+
+## Table of Contents
+<!-- TOC: Auto-updated after each round/phase. -->
+- [Session Context](#session-context)
+- [Current Ideas](#current-ideas)
+- [Thought Evolution Timeline](#thought-evolution-timeline)
+
+## Current Ideas
+<!-- REPLACEABLE BLOCK: Overwrite (not append) after each round with latest ranked ideas. -->
+
+> To be populated after exploration.
+
+## Session Context
+- Focus areas: ${focusAreas.join(', ')}
+- Perspectives: ${selectedPerspectiveNames.join(', ')}
+- Constraints: ${constraints.join(', ')}
+- Mode: ${brainstormMode}
+
+## Exploration Vectors
+${explorationVectors.map((v, i) => `${i+1}. ${v}`).join('\n')}
+
+## Initial Decisions
+> Record why these perspectives and focus areas were selected.
 
 ---
 
-## Context
-Topic: ${idea_or_topic}
-User focus areas: ${userFocusAreas.join(', ')}
-Constraints: ${constraints.join(', ')}
+## Thought Evolution Timeline
 
-## Task
-Generate 5-7 exploration vectors (questions/directions) to expand this idea:
-1. Core question: What is the fundamental problem/opportunity?
-2. User perspective: Who benefits and how?
-3. Technical angle: What enables this technically?
-4. Alternative approaches: What other ways could this be solved?
-5. Challenges: What could go wrong or block success?
-6. Innovation angle: What would make this 10x better?
-7. Integration: How does this fit with existing systems/processes?
+> Rounds will be appended below as brainstorming progresses.
 
-## Deliverables
-Return structured exploration vectors for multi-perspective analysis.
+---
+
+## Decision Trail
+
+> Consolidated critical decisions across all rounds (populated in Phase 4).
 `
-})
-
-const result = wait({ ids: [vectorAgent], timeout_ms: 120000 })
-close_agent({ id: vectorAgent })
+Write(`${sessionFolder}/brainstorm.md`, brainstormMd)
 ```
-
-**Purpose**: These vectors guide each perspective subagent's analysis and ensure comprehensive exploration.
-
-### Step 1.5: Initialize brainstorm.md
-
-Create the main brainstorm document with session metadata and expansion content.
-
-**brainstorm.md Structure**:
-- **Header**: Session ID, topic, start time, brainstorm mode, dimensions
-- **Initial Context**: Focus areas, depth level, constraints
-- **Roles**: Selected roles (professional or simple perspectives)
-- **Seed Expansion**: Original idea + exploration vectors
-- **Thought Evolution Timeline**: Round-by-round findings
-- **Current Ideas**: To be populated after exploration
 
 **Success Criteria**:
-- Session folder created successfully
-- brainstorm.md initialized with all metadata
-- 1-3 roles selected (professional or simple perspectives)
-- Brainstorm mode and dimensions identified
+- Session folder created with brainstorm.md initialized
+- Brainstorm dimensions identified and user preferences captured
+- **Initial decisions recorded**: Perspective selection rationale, excluded options with reasons
 - Exploration vectors generated
-- User preferences captured
+- 1-3 perspectives selected
 
----
+### Phase 2: Divergent Exploration
 
-## Phase 2: Divergent Exploration
+**Objective**: Gather codebase context and execute multi-perspective analysis to generate diverse viewpoints. All exploration done inline — no agent delegation.
 
-**Objective**: Gather codebase context and execute parallel multi-perspective analysis via subagents to generate diverse viewpoints.
+##### Step 2.1: Detect Codebase & Explore
 
-**Execution Model**: Parallel subagent execution - spawn 3 perspective agents simultaneously, batch wait for all results, then aggregate.
+```javascript
+const hasCodebase = Bash(`
+  test -f package.json && echo "nodejs" ||
+  test -f go.mod && echo "golang" ||
+  test -f Cargo.toml && echo "rust" ||
+  test -f pyproject.toml && echo "python" ||
+  test -f pom.xml && echo "java" ||
+  test -d src && echo "generic" ||
+  echo "none"
+`).trim()
 
-**Key API Pattern**:
+if (hasCodebase !== 'none') {
+  // 1. Read project metadata (if exists)
+  //    - Run `ccw spec load --category exploration` (load project specs)
+  //    - Run `ccw spec load --category debug` (known issues and root-cause notes)
+  //    - .workflow/specs/*.md (project conventions)
+
+  // 2. Search codebase for relevant content
+  //    Use: Grep, Glob, Read, or mcp__ace-tool__search_context
+  //    Focus on: modules/components, patterns/structure, integration points, config/dependencies
+
+  // 3. Write findings
+  Write(`${sessionFolder}/exploration-codebase.json`, JSON.stringify({
+    project_type: hasCodebase,
+    relevant_files: [...],    // [{path, relevance, summary}]
+    existing_patterns: [...], // [{pattern, files, description}]
+    architecture_constraints: [...], // Constraints found
+    integration_points: [...], // [{location, description}]
+    key_findings: [...],      // Main insights from code search
+    _metadata: { timestamp: getUtc8ISOString(), exploration_scope: '...' }
+  }, null, 2))
+}
 ```
-spawn_agent × 3 → wait({ ids: [...] }) → aggregate → close_agent × 3
-```
 
-### Step 2.1: Codebase Context Gathering
+##### Step 2.2: Multi-Perspective Analysis (Serial, Inline)
 
-Use built-in tools to understand the codebase structure before spawning perspective agents.
-
-**Context Gathering Activities**:
-1. **Get project structure** - Execute `ccw tool exec get_modules_by_depth '{}'`
-2. **Search for related code** - Use Grep/Glob to find files matching topic keywords
-3. **Read project tech context** - Run `ccw spec load --category "exploration planning"` if spec system available
-4. **Analyze patterns** - Identify common code patterns and architecture decisions
-
-**exploration-codebase.json Structure**:
-- `relevant_files[]`: Files related to the topic with relevance indicators
-- `existing_patterns[]`: Common code patterns and architectural styles
-- `architecture_constraints[]`: Project-level constraints
-- `integration_points[]`: Key integration patterns between modules
-- `_metadata`: Timestamp and context information
-
-### Step 2.2: Parallel Multi-Perspective Analysis
-
-**⚠️ IMPORTANT**: Role files are NOT read by main process. Pass path in message, agent reads itself.
-
-Spawn 3 perspective agents in parallel: Creative + Pragmatic + Systematic.
+Analyze from each selected perspective. All analysis done inline by the AI — no agents.
 
 **Perspective Definitions**:
 
-| Perspective | Role File | Focus |
-|-------------|-----------|-------|
-| Creative | `cli_explore_agent` | Innovation, cross-domain inspiration, challenging assumptions |
-| Pragmatic | `cli_explore_agent` | Implementation feasibility, effort estimates, blockers |
-| Systematic | `cli_explore_agent` | Problem decomposition, patterns, scalability |
+| Perspective | Focus | Tasks |
+|-------------|-------|-------|
+| Creative | Innovation, cross-domain | Think beyond obvious, explore cross-domain inspiration, challenge assumptions, generate moonshot ideas |
+| Pragmatic | Implementation reality | Evaluate feasibility, identify existing patterns/libraries, estimate complexity, highlight blockers |
+| Systematic | Architecture thinking | Decompose problem, identify architectural patterns, map dependencies, consider scalability |
 
-**Parallel Subagent Execution**:
+**Serial execution** — analyze each perspective sequentially:
 
 ```javascript
-// Build shared context from codebase exploration
-const explorationContext = `
-CODEBASE CONTEXT:
-- Key files: ${explorationResults.relevant_files.slice(0,5).map(f => f.path).join(', ')}
-- Existing patterns: ${explorationResults.existing_patterns.slice(0,3).join(', ')}
-- Architecture constraints: ${explorationResults.architecture_constraints.slice(0,3).join(', ')}`
+const perspectives = ['creative', 'pragmatic', 'systematic']
 
-// Define perspectives
-const perspectives = [
-  {
-    name: 'creative',
-    focus: 'Innovation and novelty',
-    tasks: [
-      'Think beyond obvious solutions - what would be surprising/delightful?',
-      'Explore cross-domain inspiration',
-      'Challenge assumptions - what if the opposite were true?',
-      'Generate moonshot ideas alongside practical ones'
-    ]
-  },
-  {
-    name: 'pragmatic',
-    focus: 'Implementation reality',
-    tasks: [
-      'Evaluate technical feasibility of core concept',
-      'Identify existing patterns/libraries that could help',
-      'Estimate implementation complexity',
-      'Highlight potential technical blockers'
-    ]
-  },
-  {
-    name: 'systematic',
-    focus: 'Architecture thinking',
-    tasks: [
-      'Decompose the problem into sub-problems',
-      'Identify architectural patterns that apply',
-      'Map dependencies and interactions',
-      'Consider scalability implications'
-    ]
-  }
-]
-
-// Parallel spawn - all agents start immediately
-const agentIds = perspectives.map(perspective => {
-  return spawn_agent({
-    agent_type: "cli_explore_agent",
-    message: `
-## TASK ASSIGNMENT
-
-### MANDATORY FIRST STEPS (Agent Execute)
-1. Run: `ccw spec load --category "exploration planning"`
-2. Read project tech context from loaded specs
-
----
-
-## Brainstorm Context
-Topic: ${idea_or_topic}
-Perspective: ${perspective.name} - ${perspective.focus}
-Session: ${sessionFolder}
-
-${explorationContext}
-
-## ${perspective.name.toUpperCase()} Perspective Tasks
-${perspective.tasks.map(t => `• ${t}`).join('\n')}
-
-## Deliverables
-Write findings to: ${sessionFolder}/perspectives/${perspective.name}.json
-
-Schema: {
-  perspective: "${perspective.name}",
-  ideas: [{ title, description, novelty, feasibility, rationale }],
-  key_findings: [],
-  challenged_assumptions: [],
-  open_questions: [],
-  _metadata: { perspective, timestamp }
-}
-
-## Success Criteria
-- [ ] Role definition read
-- [ ] 3-5 ideas generated with ratings
-- [ ] Key findings documented
-- [ ] JSON output follows schema
-`
-  })
+perspectives.forEach(perspective => {
+  // Analyze inline using exploration-codebase.json as context
+  // Generate ideas from this perspective's focus
+  Write(`${sessionFolder}/perspectives/${perspective}.json`, JSON.stringify({
+    perspective: perspective,
+    ideas: [        // 3-5 ideas per perspective
+      { title: '...', description: '...', novelty: 1-5, feasibility: 1-5, rationale: '...' }
+    ],
+    key_findings: [...],
+    challenged_assumptions: [...],
+    open_questions: [...],
+    _metadata: { perspective, timestamp: getUtc8ISOString() }
+  }, null, 2))
 })
-
-// Batch wait - TRUE PARALLELISM (key Codex advantage)
-const results = wait({
-  ids: agentIds,
-  timeout_ms: 600000  // 10 minutes for all
-})
-
-// Handle timeout
-if (results.timed_out) {
-  // Some agents may still be running
-  // Option: continue waiting or use completed results
-}
-
-// Collect results from all perspectives
-const completedFindings = {}
-agentIds.forEach((agentId, index) => {
-  const perspective = perspectives[index]
-  if (results.status[agentId].completed) {
-    completedFindings[perspective.name] = results.status[agentId].completed
-  }
-})
-
-// Batch cleanup
-agentIds.forEach(id => close_agent({ id }))
 ```
 
-### Step 2.3: Aggregate Multi-Perspective Findings
-
-Consolidate results from all three parallel perspective agents.
-
-**perspectives.json Structure**:
-- `session_id`: Reference to brainstorm session
-- `timestamp`: Completion time
-- `topic`: Original idea/topic
-- `creative`: Creative perspective findings (ideas with novelty ratings)
-- `pragmatic`: Pragmatic perspective findings (approaches with effort ratings)
-- `systematic`: Systematic perspective findings (architectural options)
-- `synthesis`: {convergent_themes, conflicting_views, unique_contributions}
-- `aggregated_ideas[]`: Merged ideas from all perspectives
-- `key_findings[]`: Main insights across all perspectives
-
-**Aggregation Activities**:
-1. Extract ideas and findings from each perspective's output
-2. Identify themes all perspectives agree on (convergent)
-3. Note conflicting views and tradeoffs
-4. Extract unique contributions from each perspective
-5. Merge and deduplicate similar ideas
+##### Step 2.3: Aggregate Multi-Perspective Findings
 
 ```javascript
 const synthesis = {
   session_id: sessionId,
-  timestamp: new Date().toISOString(),
-  topic: idea_or_topic,
+  timestamp: getUtc8ISOString(),
+  topic,
 
   // Individual perspective findings
-  creative: completedFindings.creative || {},
-  pragmatic: completedFindings.pragmatic || {},
-  systematic: completedFindings.systematic || {},
+  creative: readJson(`${sessionFolder}/perspectives/creative.json`),
+  pragmatic: readJson(`${sessionFolder}/perspectives/pragmatic.json`),
+  systematic: readJson(`${sessionFolder}/perspectives/systematic.json`),
 
   // Cross-perspective synthesis
   synthesis: {
-    convergent_themes: extractConvergentThemes(completedFindings),
-    conflicting_views: extractConflicts(completedFindings),
-    unique_contributions: extractUniqueInsights(completedFindings)
+    convergent_themes: [...],    // What all perspectives agree on
+    conflicting_views: [...],    // Where perspectives differ
+    unique_contributions: [...]  // Insights unique to specific perspectives
   },
 
   // Aggregated for refinement
-  aggregated_ideas: mergeAllIdeas(completedFindings),
-  key_findings: mergeKeyFindings(completedFindings)
+  aggregated_ideas: [...],  // Merged and deduplicated ideas from all perspectives
+  key_findings: [...]       // Main insights across all perspectives
 }
+Write(`${sessionFolder}/perspectives.json`, JSON.stringify(synthesis, null, 2))
 ```
 
-### Step 2.4: Update brainstorm.md
+##### Step 2.4: Update brainstorm.md
 
-Append exploration results to the brainstorm timeline.
+Append Round 1 with exploration results using the [Round Documentation Pattern](#round-documentation-pattern).
 
-**Round 2 Sections** (Multi-Perspective Exploration):
+**Round 1 Sections** (Multi-Perspective Exploration):
 - **Creative Perspective**: Novel ideas with novelty/impact ratings
 - **Pragmatic Perspective**: Practical approaches with effort/risk ratings
 - **Systematic Perspective**: Architectural options with tradeoff analysis
 - **Perspective Synthesis**: Convergent themes, conflicts, unique contributions
 
-**Documentation Standards**:
-- Include evidence from codebase exploration
-- Organize findings by perspective
-- Highlight areas of agreement and disagreement
-- Note key assumptions and reasoning
+##### Step 2.5: Initial Idea Coverage Check
+
+```javascript
+// Check exploration vectors against Round 1 findings
+appendToBrainstorm(`
+#### Initial Idea Coverage Check (Post-Exploration)
+${explorationVectors.map((vector, i) => {
+  const status = assessCoverage(vector, explorationFindings)
+  return `- ${status.icon} Vector ${i+1}: ${vector} — ${status.detail}`
+}).join('\n')}
+
+> Next rounds will focus on uncovered and in-progress vectors.
+`)
+```
 
 **Success Criteria**:
-- All 3 subagents spawned and completed (or timeout handled)
-- `exploration-codebase.json` created with comprehensive context
-- `perspectives/*.json` created for each perspective
-- `perspectives.json` created with aggregated findings and synthesis
-- `brainstorm.md` updated with Round 2 results
-- All agents closed properly
-- Ready for interactive refinement phase
+- exploration-codebase.json created with codebase context (if codebase exists)
+- perspectives/*.json created for each perspective
+- perspectives.json created with aggregated findings and synthesis
+- brainstorm.md updated with Round 1 results
+- **Initial Idea Coverage Check** completed
+- **Key findings recorded** with evidence and ratings
 
----
+### Phase 3: Interactive Refinement
 
-## Phase 3: Interactive Refinement
+**Objective**: Iteratively refine ideas through multi-round user-guided exploration cycles. **Max Rounds**: 6. All analysis done inline.
 
-**Objective**: Iteratively refine ideas through multi-round user-guided exploration cycles with deep dives, challenge testing, and idea merging.
+**Auto mode behavior** (`--yes`):
+- Balanced/Deep mode: Run 2 auto-rounds (1× Deep Dive on top 2 ideas, 1× Challenge on top 3 ideas), then auto-converge
+- Creative mode: Run 1 auto-round (1× Diverge), then auto-converge
+- Skip user direction prompts; auto-select based on idea scores
 
-**Max Rounds**: 6 refinement rounds (can exit earlier if user indicates completion)
+##### Step 3.1: Present Findings & Gather User Direction
 
-**Execution Model**: Use `send_input` for deep interaction within same agent context, or spawn new agent for significantly different exploration angles.
-
-### Step 3.1: Present Findings & Gather User Direction
-
-Display current ideas and perspectives to the user.
-
-**Presentation Content**:
-- Top ideas from each perspective with ratings
-- Convergent themes and areas of agreement
-- Conflicting views and tradeoffs
-- Open questions for further exploration
-
-**User Feedback Options** (Single-select):
-
-| Option | Purpose | Next Action |
-|--------|---------|------------|
-| **深入探索** | Explore selected ideas in detail | `send_input` to active agent OR spawn deep-dive agent |
-| **继续发散** | Generate more ideas | Spawn new agent with different angles |
-| **挑战验证** | Test ideas critically | Spawn challenge agent (devil's advocate) |
-| **合并综合** | Combine multiple ideas | Spawn merge agent to synthesize |
-| **准备收敛** | Begin convergence | Exit refinement loop for synthesis |
-
-### Step 3.2: Deep Dive on Selected Ideas (via send_input or new agent)
-
-When user selects "deep dive", provide comprehensive analysis.
-
-**Option A: send_input to Existing Agent** (preferred if agent still active)
+**Current Understanding Summary** (Round >= 2, BEFORE presenting new findings):
+- Generate 1-2 sentence recap of top ideas and last round's direction
+- Example: "Top ideas so far: [idea1], [idea2]. Last round [deepened/challenged/merged]. Here are the latest findings:"
 
 ```javascript
-// Continue with existing agent context
-send_input({
-  id: perspectiveAgent,  // Reuse agent from Phase 2 if not closed
-  message: `
-## CONTINUATION: Deep Dive Analysis
-
-Based on your initial exploration, the user wants deeper investigation on these ideas:
-${selectedIdeas.map((idea, i) => `${i+1}. ${idea.title}`).join('\n')}
-
-## Deep Dive Tasks
-• Elaborate each concept in detail
-• Identify implementation requirements and dependencies
-• Analyze potential challenges and propose mitigations
-• Suggest proof-of-concept approach
-• Define success metrics
-
-## Deliverables
-Write to: ${sessionFolder}/ideas/{idea-slug}.md for each selected idea
-
-## Success Criteria
-- [ ] Each idea has detailed breakdown
-- [ ] Technical requirements documented
-- [ ] Risk analysis with mitigations
-`
-})
-
-const deepDiveResult = wait({ ids: [perspectiveAgent], timeout_ms: 600000 })
-```
-
-**Option B: Spawn New Deep-Dive Agent** (if prior agents closed)
-
-```javascript
-const deepDiveAgent = spawn_agent({
-  agent_type: "cli_explore_agent",
-  message: `
-## TASK ASSIGNMENT
-
-### MANDATORY FIRST STEPS (Agent Execute)
-1. Read: ${sessionFolder}/perspectives.json (prior findings)
-2. Run: `ccw spec load --category "exploration planning"`
-
----
-
-## Deep Dive Context
-Topic: ${idea_or_topic}
-Selected Ideas: ${selectedIdeas.map(i => i.title).join(', ')}
-
-## Deep Dive Tasks
-${selectedIdeas.map(idea => `
-### ${idea.title}
-• Elaborate the core concept in detail
-• Identify implementation requirements
-• List potential challenges and mitigations
-• Suggest proof-of-concept approach
-• Define success metrics
-`).join('\n')}
-
-## Deliverables
-Write: ${sessionFolder}/ideas/{idea-slug}.md for each idea
-
-Include for each:
-- Detailed concept description
-- Technical requirements list
-- Risk/challenge matrix
-- MVP definition
-- Success criteria
-`
-})
-
-const result = wait({ ids: [deepDiveAgent], timeout_ms: 600000 })
-close_agent({ id: deepDiveAgent })
-```
-
-### Step 3.3: Devil's Advocate Challenge (spawn new agent)
-
-When user selects "challenge", spawn a dedicated challenge agent.
-
-```javascript
-const challengeAgent = spawn_agent({
-  agent_type: "cli_explore_agent",
-  message: `
-## TASK ASSIGNMENT
-
-### MANDATORY FIRST STEPS (Agent Execute)
-1. Read: ${sessionFolder}/perspectives.json (ideas to challenge)
-
----
-
-## Challenge Context
-Topic: ${idea_or_topic}
-Ideas to Challenge:
-${selectedIdeas.map((idea, i) => `${i+1}. ${idea.title}: ${idea.description}`).join('\n')}
-
-## Devil's Advocate Tasks
-• For each idea, identify 3 strongest objections
-• Challenge core assumptions
-• Identify scenarios where this fails
-• Consider competitive/alternative solutions
-• Assess whether this solves the right problem
-• Rate survivability after challenge (1-5)
-
-## Deliverables
-Return structured challenge results:
-{
-  challenges: [{
-    idea: "...",
-    objections: [],
-    challenged_assumptions: [],
-    failure_scenarios: [],
-    alternatives: [],
-    survivability_rating: 1-5,
-    strengthened_version: "..."
-  }]
+if (!autoYes) {
+  const feedback = request_user_input({
+    questions: [{
+      header: "Brainstorm Direction",
+      id: "direction",
+      question: `Brainstorm round ${round}: What would you like to do next?`,
+      options: [
+        { label: "Deep Dive", description: "Explore selected ideas in detail" },
+        { label: "Diverge More", description: "Generate more ideas from different angles" },
+        { label: "Challenge", description: "Devil's advocate — test ideas critically" },
+        { label: "Merge Ideas", description: "Combine complementary ideas" },
+        { label: "Ready to Converge", description: "Sufficient ideas, proceed to synthesis" }
+      ]
+    }]
+  })
 }
-
-## Success Criteria
-- [ ] 3+ objections per idea
-- [ ] Assumptions explicitly challenged
-- [ ] Survivability ratings assigned
-`
-})
-
-const result = wait({ ids: [challengeAgent], timeout_ms: 300000 })
-close_agent({ id: challengeAgent })
 ```
 
-### Step 3.4: Merge Multiple Ideas (spawn merge agent)
+##### Step 3.2: Process User Response
 
-When user selects "merge", synthesize complementary ideas.
+**Recording Checkpoint**: Regardless of option selected, MUST record to brainstorm.md:
+- User's original choice and expression
+- Impact on brainstorming direction
+- If direction changed, record a full Decision Record
+
+| Response | Action |
+|----------|--------|
+| **Deep Dive** | Ask which ideas to explore. Inline analysis: elaborate concept, identify requirements/dependencies, analyze challenges, suggest PoC approach, define success metrics. Write to `ideas/{idea-slug}.md`. |
+| **Diverge More** | Inline analysis with different angles: alternative framings, cross-domain inspiration, what-if scenarios, constraint relaxation. Generate new ideas. |
+| **Challenge** | Inline devil's advocate analysis: 3 strongest objections per idea, challenge assumptions, failure scenarios, competitive alternatives, survivability rating (1-5). |
+| **Merge Ideas** | Ask which ideas to merge. Inline synthesis: identify complementary elements, resolve contradictions, create unified concept, preserve strengths. Write to `ideas/merged-idea-{n}.md`. |
+| **Ready to Converge** | Record why concluding. Exit loop → Phase 4. |
+
+##### Step 3.3: Deep Dive on Selected Ideas
+
+When user selects "deep dive", provide comprehensive inline analysis:
 
 ```javascript
-const mergeAgent = spawn_agent({
-  agent_type: "cli_explore_agent",
-  message: `
-## TASK ASSIGNMENT
-
-### MANDATORY FIRST STEPS (Agent Execute)
-1. Read: ${sessionFolder}/perspectives.json (source ideas)
-
----
-
-## Merge Context
-Topic: ${idea_or_topic}
-Ideas to Merge:
-${selectedIdeas.map((idea, i) => `
-${i+1}. ${idea.title} (${idea.source_perspective})
-   ${idea.description}
-   Strengths: ${idea.strengths?.join(', ') || 'N/A'}
-`).join('\n')}
-
-## Merge Tasks
-• Identify complementary elements
-• Resolve contradictions
-• Create unified concept
-• Preserve key strengths from each
-• Describe the merged solution
-• Assess viability of merged idea
-
-## Deliverables
-Write to: ${sessionFolder}/ideas/merged-idea-{n}.md
-
-Include:
-- Merged concept description
-- Elements taken from each source idea
-- Contradictions resolved (or noted as tradeoffs)
-- New combined strengths
-- Implementation considerations
-
-## Success Criteria
-- [ ] Coherent merged concept
-- [ ] Source attributions clear
-- [ ] Contradictions addressed
-`
+// For each selected idea, analyze inline
+selectedIdeas.forEach(idea => {
+  const deepDive = {
+    title: idea.title,
+    detailed_description: '...',     // Elaborated concept
+    technical_requirements: [...],   // Implementation needs
+    dependencies: [...],             // What this depends on
+    challenges: [                    // Risk/challenge matrix
+      { challenge: '...', severity: 'high|medium|low', mitigation: '...' }
+    ],
+    poc_approach: '...',             // Proof-of-concept suggestion
+    success_metrics: [...],          // How to measure success
+    source_perspectives: [...]       // Which perspectives contributed
+  }
+  Write(`${sessionFolder}/ideas/${ideaSlug}.md`, formatIdeaMarkdown(deepDive))
 })
-
-const result = wait({ ids: [mergeAgent], timeout_ms: 300000 })
-close_agent({ id: mergeAgent })
 ```
 
-### Step 3.5: Document Each Round
+##### Step 3.4: Devil's Advocate Challenge
 
-Update brainstorm.md with results from each refinement round.
+When user selects "challenge", perform inline critical analysis:
 
-**Round N Sections** (Rounds 3-6):
+```javascript
+selectedIdeas.forEach(idea => {
+  const challenge = {
+    idea: idea.title,
+    objections: [...],               // 3+ strongest objections
+    challenged_assumptions: [...],   // Core assumptions tested
+    failure_scenarios: [...],        // When/how this fails
+    alternatives: [...],             // Competitive/alternative solutions
+    survivability_rating: 1-5,       // How well idea survives challenge
+    strengthened_version: '...'      // Improved version post-challenge
+  }
+  // Record in brainstorm.md
+})
+```
 
-| Section | Content |
-|---------|---------|
-| User Direction | Action taken and ideas selected |
-| Findings | New findings and clarifications |
-| Idea Updates | Changes to idea scores and status |
-| Insights | Key learnings and realizations |
-| Next Directions | Suggested follow-up investigations |
+##### Step 3.5: Merge Multiple Ideas
 
-**Documentation Standards**:
-- Clear timestamps and action taken
-- Evidence-based findings with code references
-- Updated idea rankings and status changes
-- Explicit tracking of assumption changes
-- Organized by exploration vector
+When user selects "merge", synthesize inline:
+
+```javascript
+const merged = {
+  title: '...',                     // New merged concept name
+  description: '...',              // Unified concept description
+  source_ideas: [...],             // Which ideas were merged
+  elements_from_each: [...],       // What was taken from each source
+  contradictions_resolved: [...],  // How conflicts were handled
+  combined_strengths: [...],       // New combined advantages
+  implementation_considerations: '...'
+}
+Write(`${sessionFolder}/ideas/merged-idea-${n}.md`, formatMergedIdeaMarkdown(merged))
+```
+
+##### Step 3.6: Document Each Round
+
+Update brainstorm.md using the [Round Documentation Pattern](#round-documentation-pattern).
+
+**Append** to Thought Evolution Timeline: User Direction, Decision Log, Ideas Generated/Updated, Analysis Results, Challenged Assumptions, Open Items, Narrative Synthesis.
+
+**Replace** (not append):
+
+| Section | Update Rule |
+|---------|-------------|
+| `## Current Ideas` | Overwrite with latest ranked idea list |
+| `## Table of Contents` | Update links to include new Round N sections |
 
 **Success Criteria**:
 - User feedback processed for each round
-- `brainstorm.md` updated with all refinement rounds
+- brainstorm.md updated with all refinement rounds
 - Ideas in `ideas/` folder for selected deep-dives
-- All spawned agents closed properly
 - Exit condition reached (user selects converge or max rounds)
 
----
-
-## Phase 4: Convergence & Crystallization
+### Phase 4: Convergence & Crystallization
 
 **Objective**: Synthesize final ideas, generate conclusions and recommendations, and offer next steps.
 
-### Step 4.1: Consolidate Insights
+##### Step 4.1: Consolidate Insights
 
-Extract and synthesize all findings from refinement rounds into final conclusions.
+```javascript
+const synthesis = {
+  session_id: sessionId,
+  topic,
+  completed: getUtc8ISOString(),
+  total_rounds: roundCount,
+  top_ideas: [                    // Top 5 ranked ideas
+    {
+      title: '...', description: '...',
+      source_perspective: '...',
+      score: 1-10,                // Final viability score
+      novelty: 1-5,              // Innovation rating
+      feasibility: 1-5,          // Implementation feasibility
+      key_strengths: [...],
+      main_challenges: [...],
+      next_steps: [...],
+      review_status: 'accepted|modified|rejected|pending'
+    }
+  ],
+  parked_ideas: [...],           // Ideas for future consideration
+  key_insights: [...],           // Key learnings from brainstorming
+  recommendations: {
+    primary: '...',              // Best path forward
+    alternatives: [...]          // Other viable options
+  },
+  follow_up: [                   // Suggested next steps
+    { type: 'implement|research|validate', summary: '...' }
+  ],
+  decision_trail: [              // Consolidated from all phases
+    { round: 1, decision: '...', context: '...', chosen: '...', reason: '...', impact: '...' }
+  ]
+}
+Write(`${sessionFolder}/synthesis.json`, JSON.stringify(synthesis, null, 2))
+```
 
-**Consolidation Activities**:
-1. Review all refinement rounds and accumulated findings
-2. Rank ideas by score, feasibility, and impact
-3. Identify top 5 viable ideas
-4. Extract key learnings and insights
-5. Generate recommendations with rationale
+##### Step 4.2: Final brainstorm.md Update
 
-**synthesis.json Structure**:
-- `session_id`: Session identifier
-- `topic`: Original idea/topic
-- `completed`: Completion timestamp
-- `total_rounds`: Number of refinement rounds
-- `top_ideas[]`: Top 5 ranked ideas with scores and next steps
-- `parked_ideas[]`: Ideas parked for future consideration
-- `key_insights[]`: Key learnings from brainstorming process
-- `recommendations`: Primary recommendation and alternatives
-- `follow_up[]`: Suggested next steps (implementation, research, validation)
-
-**Idea Format**:
-- `title`: Clear, descriptive title
-- `description`: Complete concept description
-- `source_perspective`: Which perspective(s) contributed
-- `score`: Final viability score (1-10)
-- `novelty`: Novelty/innovation rating (1-5)
-- `feasibility`: Implementation feasibility (1-5)
-- `key_strengths`: Main advantages and benefits
-- `main_challenges`: Key challenges and limitations
-- `next_steps`: Recommended actions to pursue
-
-### Step 4.2: Final brainstorm.md Update
-
-Append conclusions section and finalize the thinking document.
-
-**Synthesis & Conclusions Section**:
+**Synthesis & Conclusions**:
 - **Executive Summary**: High-level overview of brainstorming results
 - **Top Ideas**: Ranked list with descriptions and strengths/challenges
 - **Primary Recommendation**: Best path forward with clear rationale
@@ -783,24 +678,67 @@ Append conclusions section and finalize the thinking document.
 - **Parked Ideas**: Future considerations with potential triggers
 - **Key Insights**: Important learnings from the process
 
-**Session Statistics**:
-- Total refinement rounds completed
-- Ideas generated and evaluated
-- Ideas survived challenges
-- Perspectives used (creative, pragmatic, systematic)
-- Artifacts generated
+**Current Ideas (Final)**:
 
-### Step 4.3: Post-Completion Options
+| Subsection | Content |
+|------------|---------|
+| Top Ideas | Ranked by score with strengths/challenges |
+| Idea Evolution | How top ideas developed across rounds |
+| Key Insights | Valuable learnings for future reference |
 
-Offer user follow-up actions based on brainstorming results.
+**Decision Trail**:
+
+| Subsection | Content |
+|------------|---------|
+| Critical Decisions | Pivotal decisions that shaped the outcome |
+| Direction Changes | Timeline of scope/focus adjustments with rationale |
+| Trade-offs Made | Key trade-offs and why certain paths were chosen |
+
+**Session Statistics**: Total rounds, ideas generated, ideas survived challenges, perspectives used, artifacts generated.
+
+##### Step 4.3: Interactive Top-Idea Review (skip in auto mode)
+
+Walk through top ideas one-by-one (ordered by score):
+
+```javascript
+for (const [index, idea] of rankedIdeas.entries()) {
+  const review = request_user_input({
+    questions: [{
+      header: `Idea #${index + 1}`,
+      id: `idea_${index + 1}`,
+      question: `Idea #${index + 1}: "${idea.title}" (score: ${idea.score}, novelty: ${idea.novelty}, feasibility: ${idea.feasibility}). Your decision:`,
+      options: [
+        { label: "Accept(Recommended)", description: "Keep this idea in final recommendations" },
+        { label: "Modify", description: "Adjust scope, description, or priority" },
+        { label: "Reject", description: "Remove from final recommendations" }
+      ]
+    }]
+  })
+  // Accept → "accepted" | Modify → gather text → "modified" | Reject → gather reason → "rejected"
+  // Accept All Remaining → mark all remaining as "accepted", break loop
+  // Record review decision to brainstorm.md Decision Log + update synthesis.json
+}
+```
+
+**Review Summary** (append to brainstorm.md):
+```markdown
+### Top Idea Review Summary
+| # | Idea | Score | Novelty | Feasibility | Review Status | Notes |
+|---|------|-------|---------|-------------|---------------|-------|
+| 1 | [title] | 8 | 4 | 3 | Accepted | |
+| 2 | [title] | 7 | 5 | 2 | Modified | [notes] |
+| 3 | [title] | 6 | 3 | 4 | Rejected | [reason] |
+```
+
+##### Step 4.4: Post-Completion Options
 
 **Available Options** (this skill is brainstorming-only — NEVER auto-launch other skills):
 
 | Option | Purpose | Action |
 |--------|---------|--------|
-| **显示后续命令** | Show available next-step commands | Display command list for user to manually run |
-| **导出分享** | Generate shareable report | Create formatted report document |
-| **完成** | No further action | End workflow |
+| **Show Next-Step Commands** | Show available commands | Display command list for user to manually run |
+| **Export Report** | Generate shareable report | Create formatted report document |
+| **Done** | No further action | End workflow |
 
 **Next-step commands to display** (user runs manually, NOT auto-launched):
 - `/workflow-lite-plan "..."` → Generate implementation plan
@@ -808,49 +746,128 @@ Offer user follow-up actions based on brainstorming results.
 - `/workflow:analyze-with-file "..."` → Analyze top idea in detail
 
 **Success Criteria**:
-- `synthesis.json` created with complete synthesis
-- `brainstorm.md` finalized with all conclusions
+- synthesis.json created with complete synthesis
+- brainstorm.md finalized with all conclusions
 - User offered meaningful next step options
 - Session complete and all artifacts available
 
----
+## Templates
 
-## Configuration
+### Round Documentation Pattern
 
-### Brainstorm Dimensions Reference
+Each round follows this structure in brainstorm.md:
 
-Dimensions guide brainstorming scope and focus:
+```markdown
+### Round N - [DeepDive|Diverge|Challenge|Merge] (timestamp)
 
-| Dimension | Keywords | Best For |
-|-----------|----------|----------|
-| technical | 技术, technical, implementation, code | Implementation approaches |
-| ux | 用户, user, experience, UI | User-facing design ideas |
-| business | 业务, business, value | Business model innovations |
-| innovation | 创新, innovation, novel | Breakthrough ideas |
-| feasibility | 可行, feasible, practical | Realistic approaches |
-| scalability | 扩展, scale, growth | Large-scale solutions |
-| security | 安全, security, risk | Security considerations |
+#### User Input
+What the user indicated they wanted to focus on
+
+#### Decision Log
+<!-- Use Decision Record Format from Recording Protocol -->
+
+#### Ideas Generated
+New ideas from this round with ratings
+
+#### Analysis Results
+Detailed findings from this round's analysis
+- Finding 1 (evidence: file:line or rationale)
+- Finding 2 (evidence: file:line or rationale)
+
+#### Challenged Assumptions
+- ~~Previous assumption~~ → New understanding
+  - Reason: Why the assumption was wrong
+
+#### Open Items
+Remaining questions or exploration directions
+
+#### Narrative Synthesis
+<!-- Use Narrative Synthesis Format from Recording Protocol -->
+```
+
+### brainstorm.md Evolution Summary
+
+- **Header**: Session ID, topic, start time, dimensions, mode
+- **Session Context**: Focus areas, perspectives, constraints
+- **Exploration Vectors**: Key questions guiding exploration
+- **Initial Decisions**: Why these perspectives and focus areas were selected
+- **Thought Evolution Timeline**: Round-by-round findings
+  - Round 1: Exploration Results + Decision Log + Narrative Synthesis
+  - Round 2-N: Current Ideas Summary + User feedback + direction adjustments + new ideas + Decision Log + Narrative Synthesis
+- **Decision Trail**: Consolidated critical decisions across all rounds
+- **Synthesis & Conclusions**: Summary, top ideas, recommendations
+- **Current Ideas (Final)**: Consolidated ranked ideas
+- **Session Statistics**: Rounds completed, ideas generated, artifacts produced
+
+## Reference
+
+### Output Structure
+
+```
+{projectRoot}/.workflow/.brainstorm/BS-{slug}-{date}/
+├── brainstorm.md                  # Complete thought evolution timeline
+├── exploration-codebase.json      # Phase 2: Codebase context
+├── perspectives/                  # Phase 2: Individual perspective outputs
+│   ├── creative.json
+│   ├── pragmatic.json
+│   └── systematic.json
+├── perspectives.json              # Phase 2: Aggregated findings with synthesis
+├── synthesis.json                 # Phase 4: Final synthesis
+└── ideas/                         # Phase 3: Individual idea deep-dives
+    ├── idea-1.md
+    ├── idea-2.md
+    └── merged-idea-1.md
+```
+
+| File | Phase | Description |
+|------|-------|-------------|
+| `brainstorm.md` | 1-4 | Session metadata → thought evolution → conclusions |
+| `exploration-codebase.json` | 2 | Codebase context: relevant files, patterns, constraints |
+| `perspectives/*.json` | 2 | Per-perspective idea generation results |
+| `perspectives.json` | 2 | Aggregated findings with cross-perspective synthesis |
+| `ideas/*.md` | 3 | Individual idea deep-dives and merged ideas |
+| `synthesis.json` | 4 | Final synthesis: top ideas, recommendations, insights |
+
+### Brainstorm Dimensions
+
+| Dimension | Keywords | Description |
+|-----------|----------|-------------|
+| technical | 技术, technical, implementation, code, 实现, architecture | Implementation approaches |
+| ux | 用户, user, experience, UX, UI, 体验, interaction | User-facing design ideas |
+| business | 业务, business, value, ROI, 价值, market | Business model innovations |
+| innovation | 创新, innovation, novel, creative, 新颖 | Breakthrough ideas |
+| feasibility | 可行, feasible, practical, realistic, 实际 | Realistic approaches |
+| scalability | 扩展, scale, growth, performance, 性能 | Large-scale solutions |
+| security | 安全, security, risk, protection, 风险 | Security considerations |
+
+### Brainstorm Perspectives
+
+| Perspective | Focus | Best For |
+|-------------|-------|----------|
+| **Creative** | Innovation, cross-domain inspiration, challenging assumptions | Generating novel and surprising ideas |
+| **Pragmatic** | Implementation feasibility, effort estimates, blockers | Reality-checking ideas |
+| **Systematic** | Problem decomposition, patterns, scalability, architecture | Organizing and structuring solutions |
 
 ### Brainstorm Modes
 
-| Mode | Duration | Intensity | Subagents |
-|------|----------|-----------|-----------|
-| Creative | 15-20 min | High novelty | 1 agent, short timeout |
-| Balanced | 30-60 min | Mixed | 3 parallel agents |
-| Deep | 1-2+ hours | Comprehensive | 3 parallel agents + deep refinement |
+| Mode | Intensity | Perspectives | Description |
+|------|-----------|-------------|-------------|
+| Creative | High novelty | 1 perspective | Fast, focus on novel ideas |
+| Balanced | Mixed | 3 perspectives | Moderate, balanced exploration (default) |
+| Deep | Comprehensive | 3 perspectives + deep refinement | Thorough multi-round investigation |
 
 ### Collaboration Patterns
 
 | Pattern | Usage | Description |
 |---------|-------|-------------|
-| Parallel Divergence | New topic | All perspectives explore simultaneously via parallel subagents |
-| Sequential Deep-Dive | Promising idea | `send_input` to one agent for elaboration, others critique via new agents |
-| Debate Mode | Controversial approach | Spawn opposing agents to argue for/against |
-| Synthesis Mode | Ready to decide | Spawn synthesis agent combining insights from all perspectives |
+| Parallel Divergence | New topic | All perspectives explored serially for comprehensive coverage |
+| Sequential Deep-Dive | Promising idea | One perspective elaborates, others critique |
+| Debate Mode | Controversial approach | Inline analysis arguing for/against |
+| Synthesis Mode | Ready to decide | Inline synthesis combining insights from all perspectives |
 
 ### Context Overflow Protection
 
-**Per-Agent Limits**:
+**Per-Perspective Limits**:
 - Main analysis output: < 3000 words
 - Sub-document (if any): < 2000 words each
 - Maximum sub-documents: 5 per perspective
@@ -860,143 +877,33 @@ Dimensions guide brainstorming scope and focus:
 - Large ideas automatically split into separate idea documents in ideas/ folder
 
 **Recovery Steps**:
-1. Check agent outputs for truncation or overflow
+1. Check outputs for truncation or overflow
 2. Reduce scope: fewer perspectives or simpler topic
 3. Use structured brainstorm mode for more focused output
 4. Split complex topics into multiple sessions
 
----
-
-## Error Handling & Recovery
+### Error Handling
 
 | Situation | Action | Recovery |
 |-----------|--------|----------|
-| **Subagent timeout** | Check `results.timed_out`, continue `wait()` or use partial results | Reduce scope, use 2 perspectives instead of 3 |
-| **Agent closed prematurely** | Cannot recover closed agent | Spawn new agent with prior context from perspectives.json |
-| **Parallel agent partial failure** | Some perspectives complete, some fail | Use completed results, note gaps in synthesis |
-| **send_input to closed agent** | Error: agent not found | Spawn new agent with prior findings as context |
-| **No good ideas** | Reframe problem or adjust constraints | Try new exploration angles |
-| **User disengaged** | Summarize progress and offer break | Save state, keep agents alive for resume |
-| **Perspectives conflict** | Present as tradeoff options | Let user select preferred direction |
-| **Max rounds reached** | Force synthesis phase | Highlight unresolved questions |
-| **Session folder conflict** | Append timestamp suffix | Create unique folder |
-
-### Codex-Specific Error Patterns
-
-```javascript
-// Safe parallel execution with error handling
-try {
-  const agentIds = perspectives.map(p => spawn_agent({ agent_type: "cli_explore_agent", message: buildPrompt(p) }))
-
-  const results = wait({ ids: agentIds, timeout_ms: 600000 })
-
-  if (results.timed_out) {
-    // Handle partial completion
-    const completed = agentIds.filter(id => results.status[id].completed)
-    const pending = agentIds.filter(id => !results.status[id].completed)
-
-    // Option 1: Continue waiting for pending
-    // const moreResults = wait({ ids: pending, timeout_ms: 300000 })
-
-    // Option 2: Use partial results
-    // processPartialResults(completed, results)
-  }
-
-  // Process all results
-  processResults(agentIds, results)
-
-} finally {
-  // ALWAYS cleanup, even on errors
-  agentIds.forEach(id => {
-    try { close_agent({ id }) } catch (e) { /* ignore */ }
-  })
-}
-```
-
----
-
-## Iteration Patterns
-
-### First Brainstorm Session (Parallel Mode)
-
-```
-User initiates: TOPIC="idea or topic"
-   ├─ No session exists → New session mode
-   ├─ Parse topic and identify dimensions
-   ├─ Scope with user (focus, depth, mode)
-   ├─ Create brainstorm.md
-   ├─ Expand seed into vectors
-   ├─ Gather codebase context
-   │
-   ├─ Execute parallel perspective exploration:
-   │   ├─ spawn_agent × 3 (Creative + Pragmatic + Systematic)
-   │   ├─ wait({ ids: [...] })  ← TRUE PARALLELISM
-   │   └─ close_agent × 3
-   │
-   ├─ Aggregate findings with synthesis
-   └─ Enter multi-round refinement loop
-```
-
-### Continue Existing Session
-
-```
-User resumes: TOPIC="same topic"
-   ├─ Session exists → Continue mode
-   ├─ Load previous brainstorm.md
-   ├─ Load perspectives.json
-   └─ Resume from last refinement round
-```
-
-### Refinement Loop (Rounds 3-6)
-
-```
-Each round:
-   ├─ Present current findings and top ideas
-   ├─ Gather user feedback (deep dive/diverge/challenge/merge/converge)
-   ├─ Process response:
-   │   ├─ Deep Dive → send_input to active agent OR spawn deep-dive agent
-   │   ├─ Diverge → spawn new agent with different angles
-   │   ├─ Challenge → spawn challenge agent (devil's advocate)
-   │   ├─ Merge → spawn merge agent to synthesize
-   │   └─ Converge → Exit loop for synthesis
-   ├─ wait({ ids: [...] }) for result
-   ├─ Update brainstorm.md
-   └─ Repeat until user selects converge or max rounds reached
-```
-
-### Agent Lifecycle Management
-
-```
-Subagent lifecycle:
-   ├─ spawn_agent({ message }) → Create with role path + task
-   ├─ wait({ ids, timeout_ms }) → Get results (ONLY way to get output)
-   ├─ send_input({ id, message }) → Continue interaction (if not closed)
-   └─ close_agent({ id }) → Cleanup (MUST do, cannot recover)
-
-Key rules:
-   ├─ NEVER close before you're done with an agent
-   ├─ ALWAYS use wait() to get results, NOT close_agent()
-   ├─ Batch wait for parallel agents: wait({ ids: [a, b, c] })
-   └─ Consider keeping agents alive for send_input during refinement
-```
-
-### Completion Flow
-
-```
-Final synthesis:
-   ├─ Consolidate all findings into top ideas
-   ├─ Generate synthesis.json
-   ├─ Update brainstorm.md with final conclusions
-   ├─ close_agent for any remaining active agents
-   ├─ Offer follow-up options
-   └─ Archive session artifacts
-```
-
----
+| No codebase detected | Normal flow, pure topic brainstorming | Proceed without exploration-codebase.json |
+| Codebase search fails | Continue with available context | Note limitation in brainstorm.md |
+| No good ideas | Reframe problem or adjust constraints | Try new exploration angles |
+| Perspectives conflict | Present as tradeoff options | Let user select preferred direction |
+| Max rounds reached (6) | Force synthesis phase | Highlight unresolved questions |
+| Session folder conflict | Append timestamp suffix | Create unique folder |
+| User timeout | Save state, show resume command | Use `--continue` to resume |
 
 ## Best Practices
 
-### Before Starting Brainstorm
+### Core Principles
+
+1. **No code modifications**: This skill is strictly read-only. It produces analysis and idea documents but NEVER modifies source code.
+2. **Record Decisions Immediately**: Capture decisions as they happen using the Decision Record format
+3. **Evidence-Based**: Ideas referencing codebase patterns should include file:line evidence
+4. **Embrace Conflicts**: Perspective conflicts often reveal important tradeoffs
+
+### Before Starting
 
 1. **Clear Topic Definition**: Detailed topics lead to better dimension identification
 2. **User Context**: Understanding preferences helps guide brainstorming intensity
@@ -1004,30 +911,33 @@ Final synthesis:
 
 ### During Brainstorming
 
-1. **Review Perspectives**: Check all three perspectives before refinement rounds
+1. **Review Perspectives**: Check all perspective results before refinement rounds
 2. **Document Assumptions**: Track what you think is true for correction later
 3. **Use Continue Mode**: Resume sessions to build on previous exploration
-4. **Embrace Conflicts**: Perspective conflicts often reveal important tradeoffs
-5. **Iterate Thoughtfully**: Each refinement round should meaningfully advance ideas
-
-### Codex Subagent Best Practices
-
-1. **Agent Type, Not Path**: Use `agent_type` parameter in spawn_agent, not manual file path reading
-2. **Parallel for Perspectives**: Use batch spawn + wait for 3 perspective agents
-3. **Delay close_agent for Refinement**: Keep perspective agents alive for `send_input` reuse
-4. **Batch wait**: Use `wait({ ids: [a, b, c] })` for parallel agents, not sequential waits
-5. **Handle Timeouts**: Check `results.timed_out` and decide: continue waiting or use partial results
-6. **Explicit Cleanup**: Always `close_agent` when done, even on errors (use try/finally pattern)
-7. **send_input vs spawn**: Prefer `send_input` for same-context deep-dive, `spawn` for new exploration angles
+4. **Iterate Thoughtfully**: Each refinement round should meaningfully advance ideas
+5. **Track Idea Evolution**: Document how ideas changed across rounds
 
 ### Documentation Practices
 
-1. **Evidence-Based**: Every idea should reference codebase patterns or feasibility analysis
-2. **Perspective Diversity**: Capture viewpoints from all three perspectives
-3. **Timeline Clarity**: Use clear timestamps for traceability
-4. **Evolution Tracking**: Document how ideas changed and evolved
-5. **Action Items**: Generate specific, implementable recommendations
-6. **Synthesis Quality**: Ensure convergent/conflicting themes are clearly documented
+1. **Timeline Clarity**: Use clear timestamps for traceability
+2. **Evolution Tracking**: Document how ideas developed and morphed
+3. **Multi-Perspective Synthesis**: Document convergent/conflicting themes
+4. **Action Items**: Generate specific, implementable recommendations
+
+## When to Use
+
+**Use brainstorm-with-file when:**
+- Generating new ideas and solutions for a topic
+- Need multi-perspective exploration of possibilities
+- Want documented thought evolution showing how ideas develop
+- Exploring creative solutions before committing to implementation
+- Need diverge-converge cycles to refine ideas
+
+**Consider alternatives when:**
+- Analyzing existing code/architecture → use `analyze-with-file`
+- Specific bug diagnosis needed → use `debug-with-file`
+- Complex planning with requirements → use `collaborative-plan-with-file`
+- Ready to implement → use `lite-plan`
 
 ---
 

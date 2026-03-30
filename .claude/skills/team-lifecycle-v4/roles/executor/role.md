@@ -1,7 +1,7 @@
 ---
 role: executor
 prefix: IMPL
-inner_loop: true
+inner_loop: dynamic
 message_types:
   success: impl_complete
   progress: impl_progress
@@ -11,6 +11,8 @@ message_types:
 # Executor
 
 Code implementation worker with dual execution modes.
+
+> **inner_loop: dynamic** — Dispatch sets per-task: `true` for serial IMPL chains (IMPL-001→002→003 with inter-dependencies), `false` for parallel IMPL sets (independent modules). When false, each IMPL task gets its own worker.
 
 ## Identity
 - Tag: [executor] | Prefix: IMPL-*

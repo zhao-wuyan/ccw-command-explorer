@@ -100,4 +100,15 @@ export const DEPRECATED_COMMANDS: DeprecatedCommand[] = [
   // v7.2.20 废弃 - 其他命令移除
   { old: '/team-edict', newCmd: null, reason: '三省六部协作框架已移除', deprecatedInVersion: 'v7.2.20' },
   { old: '/team-planex-v2', newCmd: '/team-planex', reason: 'v2 版本已移除，请使用 /team-planex', deprecatedInVersion: 'v7.2.20' },
+
+  // v7.2.28 废弃 - Codex 预检清单移除
+  { old: '/prep-plan', newCmd: null, reason: '预检清单功能已移除', deprecatedInVersion: 'v7.2.28' },
+  { old: '/prep-cycle', newCmd: null, reason: '预检清单功能已移除', deprecatedInVersion: 'v7.2.28' },
+
+  // v7.2.28 废弃 - 团队技能重构
+  { old: '/team-iterdev', newCmd: '/team-lifecycle-v4', reason: '迭代开发团队已整合到全生命周期团队', deprecatedInVersion: 'v7.2.28' },
+
+  // v7.2.28 废弃 - Codex 技能清理
+  { old: '/unified-execute-with-file', newCmd: null, reason: '统一执行引擎已移除', deprecatedInVersion: 'v7.2.28' },
+  { old: '/collaborative-plan-with-file', newCmd: null, reason: '协作规划功能已移除', deprecatedInVersion: 'v7.2.28' },
 ];

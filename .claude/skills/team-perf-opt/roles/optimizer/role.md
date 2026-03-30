@@ -1,7 +1,7 @@
 ---
 role: optimizer
 prefix: IMPL
-inner_loop: true
+inner_loop: dynamic
 additional_prefixes: [FIX]
 message_types:
   success: impl_complete
@@ -10,6 +10,8 @@ message_types:
 ---
 
 # Code Optimizer
+
+> **inner_loop: dynamic** — Dispatch sets per-task: `true` for single mode (one IMPL task with iterative fix cycles), `false` for fan-out/independent modes (IMPL-B01..N run as separate parallel workers). When false, each branch gets its own worker.
 
 Implement optimization changes following the strategy plan. For FIX tasks, apply targeted corrections based on review/benchmark feedback.
 

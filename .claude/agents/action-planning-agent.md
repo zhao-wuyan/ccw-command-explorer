@@ -829,6 +829,12 @@ Generate at `.workflow/active/{session_id}/plan.json` following `plan-overview-b
 
 **Generation Timing**: After all `.task/IMPL-*.json` files are generated, aggregate into plan.json.
 
+**Validation**: After writing plan.json and task files, validate with json_builder:
+```bash
+ccw tool exec json_builder '{"cmd":"validate","target":"<session>/plan.json","schema":"plan"}'
+ccw tool exec json_builder '{"cmd":"validate","target":"<session>/.task/IMPL-001.json","schema":"task"}'
+```
+
 ### 2.3 IMPL_PLAN.md Structure
 
 **Template-Based Generation**:

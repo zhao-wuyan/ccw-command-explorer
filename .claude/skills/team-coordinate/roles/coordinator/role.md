@@ -207,15 +207,9 @@ Regardless of complexity score or role count, coordinator MUST:
    - `project_root` = result of `Bash({ command: "pwd" })`
    - `skill_root` = `<project_root>/.claude/skills/team-coordinate`
 
-2. **Check `needs_research` flag** from task-analysis.json:
-   - If `true`: **Spawn researcher worker first** to gather codebase context
-     - Wait for researcher callback
-     - Merge research findings into task context
-     - Update task-analysis.json with enriched context
+2. **Generate session ID**: `TC-<slug>-<date>` (slug from first 3 meaningful words of task)
 
-3. **Generate session ID**: `TC-<slug>-<date>` (slug from first 3 meaningful words of task)
-
-4. **Create session folder structure**:
+3. **Create session folder structure**:
    ```
    .workflow/.team/<session-id>/
    +-- role-specs/
@@ -226,11 +220,11 @@ Regardless of complexity score or role count, coordinator MUST:
    +-- .msg/
    ```
 
-5. **Call TeamCreate** with team name derived from session ID
+4. **Call TeamCreate** with team name derived from session ID
 
-6. **Read `specs/role-spec-template.md`** for Behavioral Traits + Reference Patterns
+5. **Read `specs/role-spec-template.md`** for Behavioral Traits + Reference Patterns
 
-7. **For each role in task-analysis.json#roles**:
+6. **For each role in task-analysis.json#roles**:
    - Fill YAML frontmatter: role, prefix, inner_loop, additional_members, message_types
    - **Compose Phase 2-4 content** (NOT copy from template):
      - Phase 2: Derive input sources and context loading steps from **task description + upstream dependencies**
@@ -239,14 +233,14 @@ Regardless of complexity score or role count, coordinator MUST:
      - Reference Patterns may guide phase structure, but task description determines specific content
    - Write generated role-spec to `<session>/role-specs/<role-name>.md`
 
-8. **Register roles** in team-session.json#roles (with `role_spec` path instead of `role_file`)
+7. **Register roles** in team-session.json#roles (with `role_spec` path instead of `role_file`)
 
-9. **Initialize shared infrastructure**:
+8. **Initialize shared infrastructure**:
    - `wisdom/learnings.md`, `wisdom/decisions.md`, `wisdom/issues.md` (empty with headers)
    - `explorations/cache-index.json` (`{ "entries": [] }`)
    - `discussions/` (empty directory)
 
-10. **Initialize pipeline metadata** via team_msg:
+9. **Initialize pipeline metadata** via team_msg:
 ```typescript
 // 使用 team_msg 将 pipeline 元数据写入 .msg/meta.json
 // 注意: 此处为动态角色，执行时需将 <placeholders> 替换为 task-analysis.json 中生成的实际角色列表
@@ -265,7 +259,14 @@ mcp__ccw-tools__team_msg({
 })
 ```
 
-11. **Write team-session.json** with: session_id, task_description, status="active", roles, pipeline (empty), active_workers=[], completion_action="interactive", created_at
+10. **Write team-session.json** with: session_id, task_description, status="active", roles, pipeline (empty), active_workers=[], completion_action="interactive", created_at
+
+11. **Check `needs_research` flag** from task-analysis.json:
+    - If `true`: Spawn researcher worker (role-spec now exists from step 6) to gather codebase context
+      - Wait for researcher callback
+      - Merge research findings into task context
+      - Update task-analysis.json with enriched context
+    - If `false`: Skip, proceed to Phase 3
 
 **Success**: Session created, role-spec files generated, shared infrastructure initialized.
 

@@ -61,7 +61,7 @@ Worker completed. Process and advance.
    - Create BUILD-001..M tasks dynamically (add to tasks.json per dispatch.md Batch Pipeline BUILD section)
    - Proceed to handleSpawnNext
 
-6. Close completed agent: `close_agent({ id: <agentId> })`
+6. Close completed agent: `close_agent({ target: <agentId> })`
 7. Proceed to handleSpawnNext
 
 ## handleCheck
@@ -78,6 +78,16 @@ Read-only status report, then STOP.
 ```
 
 ## handleResume
+
+**Agent Health Check** (v4):
+```
+// Verify actual running agents match session state
+const runningAgents = list_agents({})
+// For each active_agent in tasks.json:
+//   - If agent NOT in runningAgents -> agent crashed
+//   - Reset that task to pending, remove from active_agents
+// This prevents stale agent references from blocking the pipeline
+```
 
 1. Audit task list: Tasks stuck in "in_progress" -> reset to "pending"
 2. Proceed to handleSpawnNext
@@ -96,6 +106,7 @@ Find ready tasks, spawn workers, STOP.
       ```
       const agentId = spawn_agent({
         agent_type: "team_worker",
+        task_name: taskId,  // e.g., "EXPLORE-001" — enables named targeting
         items: [{ type: "text", text: `## Role Assignment
       role: <role>
       role_spec: ~  or <project>/.codex/skills/team-issue/roles/<role>/role.md
@@ -109,10 +120,10 @@ Find ready tasks, spawn workers, STOP.
       Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).` }]
       })
       ```
-   d. Collect results: `wait_agent({ ids: [agentId], timeout_ms: 900000 })`
+   d. Collect results: `wait_agent({ targets: [taskId], timeout_ms: 900000 })`
    e. Read discoveries from output files
    f. Update tasks.json with results
-   g. Close agent: `close_agent({ id: agentId })`
+   g. Close agent: `close_agent({ target: taskId })`  // Use task_name, not agentId
 
 5. Parallel spawn rules:
 
@@ -130,6 +141,7 @@ const agentIds = []
 for (const task of readyTasks) {
   agentIds.push(spawn_agent({
     agent_type: "team_worker",
+    task_name: task.id,  // e.g., "EXPLORE-001" — enables named targeting
     items: [{ type: "text", text: `## Role Assignment
 role: <role>
 role_spec: ~  or <project>/.codex/skills/team-issue/roles/<role>/role.md
@@ -144,14 +156,43 @@ Read role_spec file to load Phase 2-4 domain instructions.
 Execute built-in Phase 1 (task discovery, owner=<role>-<N>) -> role Phase 2-4 -> built-in Phase 5 (report).` }]
   }))
 }
-const results = wait_agent({ ids: agentIds, timeout_ms: 900000 })
-// Process results, close agents
-for (const id of agentIds) { close_agent({ id }) }
+// Use task_name for stable targeting (v4)
+const taskNames = readyTasks.map(t => t.id)
+const results = wait_agent({ targets: taskNames, timeout_ms: 900000 })
+if (results.timed_out) {
+  for (const taskId of taskNames) { state.tasks[taskId].status = 'timed_out'; close_agent({ target: taskId }) }
+} else {
+  // Process results, close agents
+  for (const taskId of taskNames) { close_agent({ target: taskId }) }
+}
 ```
+
+**Cross-Agent Supplementary Context** (v4):
+
+When spawning workers in a later pipeline phase, send upstream results as supplementary context to already-running workers:
+
+```
+// Example: Send exploration results to running planner
+send_message({
+  target: "<running-agent-task-name>",
+  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+})
+// Note: send_message queues info without interrupting the agent's current work
+```
+
+Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
 
 6. Update session, output summary, STOP
 
 ## handleComplete
+
+**Cleanup Verification** (v4):
+```
+// Verify all agents are properly closed
+const remaining = list_agents({})
+// If any team agents still running -> close_agent each
+// Ensures clean session shutdown
+```
 
 Pipeline done. Generate report and completion action.
 

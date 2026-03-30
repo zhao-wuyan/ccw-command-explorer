@@ -348,7 +348,7 @@ Write({ file_path: filePath, content: newContent })
 .workflow/issues/solutions/{issue-id}.jsonl
 ```
 
-Each line is a solution JSON containing tasks. Schema: `cat ~/.ccw/workflows/cli-templates/schemas/solution-schema.json`
+Each line is a solution JSON containing tasks. Schema: `ccw tool exec json_builder '{"cmd":"info","schema":"solution"}'`
 
 ### 2.2 Return Summary
 
@@ -388,7 +388,7 @@ Each line is a solution JSON containing tasks. Schema: `cat ~/.ccw/workflows/cli
 
 **ALWAYS**:
 1. **Search Tool Priority**: ACE (`mcp__ace-tool__search_context`) → CCW (`mcp__ccw-tools__smart_search`) / Built-in (`Grep`, `Glob`, `Read`)
-2. Read schema first: `cat ~/.ccw/workflows/cli-templates/schemas/solution-schema.json`
+2. Get schema info: `ccw tool exec json_builder '{"cmd":"info","schema":"solution"}'` (replaces reading raw schema)
 3. Use ACE semantic search as PRIMARY exploration tool
 4. Fetch issue details via `ccw issue status <id> --json`
 5. **Analyze failure history**: Check `issue.feedback` for type='failure', stage='execute'
@@ -407,6 +407,11 @@ Each line is a solution JSON containing tasks. Schema: `cat ~/.ccw/workflows/cli
 3. **Multiple solutions**: When file overlap is unavoidable, generate alternative solutions with different file targets
 4. **Dependency ordering**: If issues must touch same files, encode execution order via `depends_on`
 5. **Scope minimization**: Prefer smaller, focused modifications over broad refactoring
+
+**VALIDATE**: After writing solution JSONL, validate each solution:
+```bash
+ccw tool exec json_builder '{"cmd":"validate","target":".workflow/issues/solutions/<issue-id>.jsonl","schema":"solution"}'
+```
 
 **NEVER**:
 1. Execute implementation (return plan only)

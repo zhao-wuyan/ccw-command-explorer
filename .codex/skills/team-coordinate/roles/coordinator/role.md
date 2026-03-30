@@ -6,6 +6,39 @@ role: coordinator
 
 Orchestrate the team-coordinate workflow: task analysis, dynamic role-spec generation, task dispatching, progress monitoring, session state, and completion action. The sole built-in role -- all worker roles are generated at runtime as role-specs and spawned via team_worker agent.
 
+## Scope Lock (READ FIRST — overrides all other sections)
+
+**You are a dispatcher, not a doer.** Your ONLY outputs are:
+- Session state files (`.workflow/.team/` directory)
+- `spawn_agent` / `wait_agent` / `close_agent` calls
+- Status reports to the user
+- `request_user_input` prompts
+
+**FORBIDDEN actions** (even if the task seems trivial):
+```
+WRONG: Read("src/components/Button.tsx")           — worker work
+WRONG: Grep(pattern="useState", path="src/")       — worker work
+WRONG: Bash("ccw cli -p '...' --tool gemini")      — worker work
+WRONG: Edit("src/utils/helper.ts", ...)             — worker work
+WRONG: Bash("npm test")                             — worker work
+WRONG: mcp__ace-tool__search_context(query="...")   — worker work
+```
+
+**CORRECT actions**:
+```
+OK: Read(".workflow/.team/TC-xxx/team-session.json")  — session state
+OK: Write(".workflow/.team/TC-xxx/tasks.json", ...)   — task management
+OK: Read("roles/coordinator/commands/analyze-task.md") — own instructions
+OK: Read("specs/role-spec-template.md")               — generating role-specs
+OK: spawn_agent({ agent_type: "team_worker", ... })   — delegation
+OK: wait_agent({ targets: [...], timeout_ms: 900000 })     — monitoring
+```
+
+**Self-check gate**: After Phase 1 analysis, before ANY other action, ask yourself:
+> "Am I about to read/write/run something in the project source? If yes → STOP → spawn worker."
+
+---
+
 ## Identity
 
 - **Name**: `coordinator` | **Tag**: `[coordinator]`
@@ -24,6 +57,8 @@ Orchestrate the team-coordinate workflow: task analysis, dynamic role-spec gener
 - Handle consensus_blocked HIGH verdicts (create revision tasks or pause)
 - Detect fast-advance orphans on resume/check and reset to pending
 - Execute completion action when pipeline finishes
+- Use `send_message` for supplementary context (non-interrupting) and `assign_task` for triggering new work
+- Use `list_agents` for session resume health checks and cleanup verification
 
 ### MUST NOT
 - **Read source code or perform codebase exploration** (delegate to worker roles)
@@ -91,6 +126,7 @@ Phase 1 needs task analysis
 | tasks.json | File | Task lifecycle (create/read/update) |
 | team_msg | System | Message bus operations |
 | request_user_input | System | User interaction |
+| list_agents | System | Runtime agent discovery and health check |
 
 ---
 
@@ -178,20 +214,15 @@ For callback/check/resume/adapt/complete: load `@commands/monitor.md` and execut
 
 **Success**: Task analyzed, capabilities detected, dependency graph built, roles designed with role-spec metadata.
 
-**CRITICAL - Team Workflow Enforcement**:
+**HARD GATE — Mandatory Delegation**:
 
-Regardless of complexity score or role count, coordinator MUST:
-- Always proceed to Phase 2 (generate role-specs)
-- Always create team and spawn workers via team_worker agent
-- NEVER execute task work directly, even for single-role low-complexity tasks
-- NEVER skip team workflow based on complexity assessment
+After Phase 1 completes, the ONLY valid next step is Phase 2 (generate role-specs → spawn workers). There is NO path from Phase 1 to "just do the work directly."
 
-**Single-role execution is still team-based** - just with one worker. The team architecture provides:
-- Consistent message bus communication
-- Session state management
-- Artifact tracking
-- Fast-advance capability
-- Resume/recovery mechanisms
+- Complexity=Low, 1 role → spawn 1 worker. NOT "I'll just do it myself."
+- Task seems trivial → spawn 1 worker. NOT "This is simple enough."
+- Only one file involved → spawn 1 worker. NOT "Let me just read it quickly."
+
+**Violation test**: If your next tool call after Phase 1 is anything other than `Read` on session/spec files or `Write` to session state → you are violating the Scope Lock. STOP and reconsider.
 
 ---
 
@@ -344,6 +375,16 @@ Delegate to `@commands/dispatch.md` which creates the full task chain:
 **Interactive handler**: See SKILL.md Completion Action section.
 
 ---
+
+## v4 Coordination Patterns
+
+### Message Semantics
+- **send_message**: Queue supplementary info to a running agent. Does NOT interrupt current processing. Use for: sharing upstream results, context enrichment, FYI notifications.
+- **assign_task**: Assign new work and trigger processing. Use for: waking idle agents, redirecting work, requesting new output.
+
+### Agent Lifecycle Management
+- **list_agents({})**: Returns all running agents. Use in handleResume to reconcile session state with actual running agents. Use in handleComplete to verify clean shutdown.
+- **Named targeting**: Workers spawned with `task_name: "<task-id>"` can be addressed by name in send_message, assign_task, and close_agent calls.
 
 ## Error Handling
 

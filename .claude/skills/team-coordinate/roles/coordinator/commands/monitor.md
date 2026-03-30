@@ -144,9 +144,10 @@ Ready tasks found?
   +- NONE + work in progress -> report waiting -> STOP
   +- NONE + nothing in progress -> PIPELINE_COMPLETE -> handleComplete
   +- HAS ready tasks -> for each:
-      +- Is task owner an Inner Loop role AND that role already has an active_worker?
+      +- Parse task description `InnerLoop:` field (NOT session.roles[].inner_loop)
+      +- InnerLoop: true AND same-role worker already in active_workers?
       |   +- YES -> SKIP spawn (existing worker will pick it up via inner loop)
-      |   +- NO -> normal spawn below
+      |   +- NO -> normal spawn below (InnerLoop: false OR no active same-role worker)
       +- TaskUpdate -> in_progress
       +- team_msg log -> task_unblocked (session_id=<session-id>)
       +- Spawn team-worker (see spawn tool call below)

@@ -64,10 +64,10 @@
       "type": "code_generation",
       "description": "Implements architecture refactoring changes following the design plan",
       "role_spec": "roles/refactorer/role.md",
-      "inner_loop": true,
+      "inner_loop": "dynamic",
       "frontmatter": {
         "prefix": "REFACTOR",
-        "inner_loop": true,
+        "inner_loop": "dynamic",
         "additional_prefixes": ["FIX"],
         "discuss_rounds": [],
         "cli_tools": ["explore"],

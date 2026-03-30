@@ -25,9 +25,6 @@ $csv-wave-pipeline --continue "auth-20260228"
 - `-c, --concurrency N`: Max concurrent agents within each wave (default: 4)
 - `--continue`: Resume existing session
 
-**Output Directory**: `.workflow/.csv-wave/{session-id}/`
-**Core Output**: `tasks.csv` (master state) + `results.csv` (final) + `discoveries.ndjson` (shared exploration) + `context.md` (human-readable report)
-
 ---
 
 ## Overview
@@ -37,34 +34,74 @@ Wave-based batch execution using `spawn_agents_on_csv` with **cross-wave context
 **Core workflow**: Decompose → Compute Waves → Execute Wave-by-Wave → Aggregate
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    CSV BATCH EXECUTION WORKFLOW                          │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  Phase 1: Requirement → CSV                                              │
-│     ├─ Parse requirement into subtasks (3-10 tasks)                      │
-│     ├─ Identify dependencies (deps column)                               │
-│     ├─ Compute dependency waves (topological sort → depth grouping)      │
-│     ├─ Generate tasks.csv with wave column                               │
-│     └─ User validates task breakdown (skip if -y)                        │
-│                                                                          │
-│  Phase 2: Wave Execution Engine                                          │
-│     ├─ For each wave (1..N):                                             │
-│     │   ├─ Build wave CSV (filter rows for this wave)                    │
-│     │   ├─ Inject previous wave findings into prev_context column        │
-│     │   ├─ spawn_agents_on_csv(wave CSV)                                 │
-│     │   ├─ Collect results, merge into master tasks.csv                  │
-│     │   └─ Check: any failed? → skip dependents or retry                 │
-│     └─ discoveries.ndjson shared across all waves (append-only)          │
-│                                                                          │
-│  Phase 3: Results Aggregation                                            │
-│     ├─ Export final results.csv                                          │
-│     ├─ Generate context.md with all findings                             │
-│     ├─ Display summary: completed/failed/skipped per wave                │
-│     └─ Offer: view results | retry failed | done                         │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
+Phase 1: Requirement → CSV
+   ├─ Parse requirement into subtasks (3-10 tasks)
+   ├─ Identify dependencies (deps column)
+   ├─ Compute dependency waves (topological sort → depth grouping)
+   ├─ Generate tasks.csv with wave column
+   └─ User validates task breakdown (skip if -y)
+
+Phase 2: Wave Execution Engine
+   ├─ For each wave (1..N):
+   │   ├─ Build wave CSV (filter rows for this wave)
+   │   ├─ Inject previous wave findings into prev_context column
+   │   ├─ spawn_agents_on_csv(wave CSV)
+   │   ├─ Collect results, merge into master tasks.csv
+   │   └─ Check: any failed? → skip dependents or retry
+   └─ discoveries.ndjson shared across all waves (append-only)
+
+Phase 3: Results Aggregation
+   ├─ Export final results.csv
+   ├─ Generate context.md with all findings
+   ├─ Display summary: completed/failed/skipped per wave
+   └─ Offer: view results | retry failed | done
 ```
+
+### Context Propagation
+
+Two context channels flow across waves:
+
+1. **CSV findings** (structured): `context_from` column → `prev_context` injection — task-specific directed context
+2. **NDJSON discoveries** (broadcast): `discoveries.ndjson` — general exploration findings available to all
+
+```
+Wave 1 agents:
+  ├─ Execute tasks (no prev_context)
+  ├─ Write findings to report_agent_job_result
+  └─ Append discoveries to discoveries.ndjson
+        ↓ merge results into master CSV
+Wave 2 agents:
+  ├─ Read discoveries.ndjson (exploration sharing)
+  ├─ Read prev_context column (wave 1 findings from context_from)
+  ├─ Execute tasks with full upstream context
+  ├─ Write findings to report_agent_job_result
+  └─ Append new discoveries to discoveries.ndjson
+        ↓ merge results into master CSV
+Wave 3+ agents: same pattern, accumulated context from all prior waves
+```
+
+---
+
+## Session & Output Structure
+
+```
+.workflow/.csv-wave/{session-id}/
+├── tasks.csv                  # Master state (updated per wave)
+├── results.csv                # Final results export (Phase 3)
+├── discoveries.ndjson         # Shared discovery board (all agents, append-only)
+├── context.md                 # Human-readable report (Phase 3)
+├── wave-{N}.csv               # Temporary per-wave input (cleaned up after merge)
+└── wave-{N}-results.csv       # Temporary per-wave output (cleaned up after merge)
+```
+
+| File | Purpose | Lifecycle |
+|------|---------|-----------|
+| `tasks.csv` | Master state — all tasks with status/findings | Updated after each wave |
+| `wave-{N}.csv` | Per-wave input with prev_context column | Created before wave, deleted after |
+| `wave-{N}-results.csv` | Per-wave output from spawn_agents_on_csv | Created during wave, deleted after merge |
+| `results.csv` | Final export of all task results | Created in Phase 3 |
+| `discoveries.ndjson` | Shared exploration board across all agents | Append-only, carries across waves |
+| `context.md` | Human-readable execution report | Created in Phase 3 |
 
 ---
 
@@ -104,7 +141,7 @@ id,title,description,test,acceptance_criteria,scope,hints,execution_directives,d
 
 ### Per-Wave CSV (Temporary)
 
-Each wave generates a temporary `wave-{N}.csv` with an extra `prev_context` column:
+Each wave generates a temporary `wave-{N}.csv` with an extra `prev_context` column built from `context_from` by looking up completed tasks' `findings` in the master CSV:
 
 ```csv
 id,title,description,test,acceptance_criteria,scope,hints,execution_directives,deps,context_from,wave,prev_context
@@ -112,32 +149,37 @@ id,title,description,test,acceptance_criteria,scope,hints,execution_directives,d
 "3","Add JWT tokens","Implement JWT","Unit test: sign/verify round-trip; Edge test: expired token returns 401","generateToken() returns valid JWT; verifyToken() rejects expired/tampered tokens","src/auth/jwt/**","Use jsonwebtoken library; Set default expiry 1h || src/config/auth.ts","Ensure tsc --noEmit passes","1","1","2","[Task 1] Created auth/ with index.ts and types.ts"
 ```
 
-The `prev_context` column is built from `context_from` by looking up completed tasks' `findings` in the master CSV.
-
 ---
 
-## Output Artifacts
+## Shared Discovery Board Protocol
 
-| File | Purpose | Lifecycle |
-|------|---------|-----------|
-| `tasks.csv` | Master state — all tasks with status/findings | Updated after each wave |
-| `wave-{N}.csv` | Per-wave input (temporary) | Created before wave, deleted after |
-| `results.csv` | Final export of all task results | Created in Phase 3 |
-| `discoveries.ndjson` | Shared exploration board across all agents | Append-only, carries across waves |
-| `context.md` | Human-readable execution report | Created in Phase 3 |
+All agents across all waves share `discoveries.ndjson`. This eliminates redundant codebase exploration.
 
----
+**Lifecycle**: Created by the first agent to write a discovery. Carries over across waves — never cleared. Agents append via `echo '...' >> discoveries.ndjson`.
 
-## Session Structure
+**Format**: NDJSON, each line is a self-contained JSON:
 
+```jsonl
+{"ts":"2026-02-28T10:00:00+08:00","worker":"1","type":"code_pattern","data":{"name":"repository-pattern","file":"src/repos/Base.ts","description":"Abstract CRUD repository"}}
+{"ts":"2026-02-28T10:01:00+08:00","worker":"2","type":"integration_point","data":{"file":"src/auth/index.ts","description":"Auth module entry","exports":["authenticate","authorize"]}}
 ```
-.workflow/.csv-wave/{session-id}/
-├── tasks.csv                  # Master state (updated per wave)
-├── results.csv                # Final results export
-├── discoveries.ndjson         # Shared discovery board (all agents)
-├── context.md                 # Human-readable report
-└── wave-{N}.csv               # Temporary per-wave input (cleaned up)
-```
+
+**Discovery Types**:
+
+| type | Dedup Key | Description |
+|------|-----------|-------------|
+| `code_pattern` | `data.name` | Reusable code pattern found |
+| `integration_point` | `data.file` | Module connection point |
+| `convention` | singleton | Code style conventions |
+| `blocker` | `data.issue` | Blocking issue encountered |
+| `tech_stack` | singleton | Project technology stack |
+| `test_command` | singleton | Test commands discovered |
+
+**Protocol Rules**:
+1. Read board before own exploration → skip covered areas
+2. Write discoveries immediately via `echo >>` → don't batch
+3. Deduplicate — check existing entries; skip if same type + dedup key exists
+4. Append-only — never modify or delete existing lines
 
 ---
 
@@ -154,17 +196,19 @@ const continueMode = $ARGUMENTS.includes('--continue')
 const concurrencyMatch = $ARGUMENTS.match(/(?:--concurrency|-c)\s+(\d+)/)
 const maxConcurrency = concurrencyMatch ? parseInt(concurrencyMatch[1]) : 4
 
-// Clean requirement text (remove flags)
+// Clean requirement text (remove flags — word-boundary safe)
 const requirement = $ARGUMENTS
-  .replace(/--yes|-y|--continue|--concurrency\s+\d+|-c\s+\d+/g, '')
+  .replace(/--yes|(?:^|\s)-y(?=\s|$)|--continue|--concurrency\s+\d+|-c\s+\d+/g, '')
   .trim()
+
+let sessionId, sessionFolder
 
 const slug = requirement.toLowerCase()
   .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
   .substring(0, 40)
 const dateStr = getUtc8ISOString().substring(0, 10).replace(/-/g, '')
-const sessionId = `cwp-${slug}-${dateStr}`
-const sessionFolder = `.workflow/.csv-wave/${sessionId}`
+sessionId = `cwp-${slug}-${dateStr}`
+sessionFolder = `.workflow/.csv-wave/${sessionId}`
 
 // Continue mode: find existing session
 if (continueMode) {
@@ -179,6 +223,60 @@ if (continueMode) {
 }
 
 Bash(`mkdir -p ${sessionFolder}`)
+```
+
+### CSV Utility Functions
+
+```javascript
+// Escape a value for CSV (wrap in quotes, double internal quotes)
+function csvEscape(value) {
+  const str = String(value ?? '')
+  return str.replace(/"/g, '""')
+}
+
+// Parse CSV string into array of objects (header row → keys)
+function parseCsv(csvString) {
+  const lines = csvString.trim().split('\n')
+  if (lines.length < 2) return []
+  const headers = parseCsvLine(lines[0]).map(h => h.replace(/^"|"$/g, ''))
+  return lines.slice(1).map(line => {
+    const cells = parseCsvLine(line).map(c => c.replace(/^"|"$/g, '').replace(/""/g, '"'))
+    const obj = {}
+    headers.forEach((h, i) => { obj[h] = cells[i] ?? '' })
+    return obj
+  })
+}
+
+// Parse a single CSV line respecting quoted fields with commas/newlines
+function parseCsvLine(line) {
+  const cells = []
+  let current = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') {
+        current += '"'
+        i++ // skip escaped quote
+      } else if (ch === '"') {
+        inQuotes = false
+      } else {
+        current += ch
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true
+      } else if (ch === ',') {
+        cells.push(current)
+        current = ''
+      } else {
+        current += ch
+      }
+    }
+  }
+  cells.push(current)
+  return cells
+}
 ```
 
 ---
@@ -222,11 +320,28 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
    // Parse JSON from CLI output → decomposedTasks[]
    ```
 
-2. **Compute Waves** (Topological Sort → Depth Grouping)
+2. **Compute Waves** (Kahn's BFS topological sort with depth tracking)
 
    ```javascript
+   // Algorithm:
+   // 1. Build in-degree map and adjacency list from deps
+   // 2. Enqueue all tasks with in-degree 0 at wave 1
+   // 3. BFS: for each dequeued task at wave W, for each dependent D:
+   //    - Decrement D's in-degree
+   //    - D.wave = max(D.wave, W + 1)
+   //    - If D's in-degree reaches 0, enqueue D
+   // 4. Any task without wave assignment → circular dependency error
+   //
+   // Wave properties:
+   //   Wave 1: no dependencies — fully independent
+   //   Wave N: all deps in waves 1..(N-1) — guaranteed completed before start
+   //   Within a wave: tasks are independent → safe for concurrent execution
+   //
+   // Example:
+   //   A(no deps)→W1, B(no deps)→W1, C(deps:A)→W2, D(deps:A,B)→W2, E(deps:C,D)→W3
+   //   Wave 1: [A,B] concurrent → Wave 2: [C,D] concurrent → Wave 3: [E]
+
    function computeWaves(tasks) {
-     // Build adjacency: task.deps → predecessors
      const taskMap = new Map(tasks.map(t => [t.id, t]))
      const inDegree = new Map(tasks.map(t => [t.id, 0]))
      const adjList = new Map(tasks.map(t => [t.id, []]))
@@ -267,7 +382,7 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
        }
      }
 
-     // Detect cycles: any task without wave assignment
+     // Detect cycles
      for (const task of tasks) {
        if (!waveAssignment.has(task.id)) {
          throw new Error(`Circular dependency detected involving task ${task.id}`)
@@ -344,10 +459,7 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
    }
    ```
 
-**Success Criteria**:
-- tasks.csv created with valid schema and wave assignments
-- No circular dependencies
-- User approved (or AUTO_YES)
+**Success Criteria**: tasks.csv created with valid schema and wave assignments, no circular dependencies, user approved (or AUTO_YES).
 
 ---
 
@@ -378,7 +490,6 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
        const deps = task.deps.split(';').filter(Boolean)
        if (deps.some(d => failedIds.has(d) || skippedIds.has(d))) {
          skippedIds.add(task.id)
-         // Update master CSV: mark as skipped
          updateMasterCsvRow(sessionFolder, task.id, {
            status: 'skipped',
            error: 'Dependency failed or skipped'
@@ -394,7 +505,7 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
        continue
      }
 
-     // 4. Build prev_context for each task
+     // 4. Build prev_context for each task (from context_from → master CSV findings)
      for (const task of executableTasks) {
        const contextIds = task.context_from.split(';').filter(Boolean)
        const prevFindings = contextIds
@@ -465,8 +576,8 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
        }
      }
 
-     // 8. Cleanup temporary wave CSV
-     Bash(`rm -f "${sessionFolder}/wave-${wave}.csv"`)
+     // 8. Cleanup temporary wave CSVs
+     Bash(`rm -f "${sessionFolder}/wave-${wave}.csv" "${sessionFolder}/wave-${wave}-results.csv"`)
 
      console.log(`  Wave ${wave} done: ${waveResults.filter(r => r.status === 'completed').length} completed, ${waveResults.filter(r => r.status === 'failed').length} failed`)
    }
@@ -535,6 +646,8 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
 - \`integration_point\`: {file, description, exports[]} — module connection points
 - \`convention\`: {naming, imports, formatting} — code style conventions
 - \`blocker\`: {issue, severity, impact} — blocking issues encountered
+- \`tech_stack\`: {runtime, framework, language} — project technology stack
+- \`test_command\`: {command, scope, description} — test commands discovered
 
 ---
 
@@ -587,11 +700,7 @@ Otherwise set status to "failed" with details in error field.
    }
    ```
 
-**Success Criteria**:
-- All waves executed in order
-- Each wave's results merged into master CSV before next wave starts
-- Dependent tasks skipped when predecessor failed
-- discoveries.ndjson accumulated across all waves
+**Success Criteria**: All waves executed in order, each wave's results merged into master CSV before next wave starts, dependent tasks skipped when predecessor failed, discoveries.ndjson accumulated across all waves.
 
 ---
 
@@ -741,120 +850,7 @@ ${[...new Set(tasks.flatMap(t => (t.files_modified || '').split(';')).filter(Boo
    }
    ```
 
-**Success Criteria**:
-- results.csv exported
-- context.md generated
-- Summary displayed to user
-
----
-
-## Shared Discovery Board Protocol
-
-All agents across all waves share `discoveries.ndjson`. This eliminates redundant codebase exploration.
-
-**Lifecycle**:
-- Created by the first agent to write a discovery
-- Carries over across waves — never cleared
-- Agents append via `echo '...' >> discoveries.ndjson`
-
-**Format**: NDJSON, each line is a self-contained JSON:
-
-```jsonl
-{"ts":"2026-02-28T10:00:00+08:00","worker":"1","type":"code_pattern","data":{"name":"repository-pattern","file":"src/repos/Base.ts","description":"Abstract CRUD repository"}}
-{"ts":"2026-02-28T10:01:00+08:00","worker":"2","type":"integration_point","data":{"file":"src/auth/index.ts","description":"Auth module entry","exports":["authenticate","authorize"]}}
-```
-
-**Discovery Types**:
-
-| type | Dedup Key | Description |
-|------|-----------|-------------|
-| `code_pattern` | `data.name` | Reusable code pattern found |
-| `integration_point` | `data.file` | Module connection point |
-| `convention` | singleton | Code style conventions |
-| `blocker` | `data.issue` | Blocking issue encountered |
-| `tech_stack` | singleton | Project technology stack |
-| `test_command` | singleton | Test commands discovered |
-
-**Protocol Rules**:
-1. Read board before own exploration → skip covered areas
-2. Write discoveries immediately via `echo >>` → don't batch
-3. Deduplicate — check existing entries; skip if same type + dedup key exists
-4. Append-only — never modify or delete existing lines
-
----
-
-## Wave Computation Details
-
-### Algorithm
-
-Kahn's BFS topological sort with depth tracking:
-
-```
-Input:  tasks[] with deps[]
-Output: waveAssignment (taskId → wave number)
-
-1. Build in-degree map and adjacency list from deps
-2. Enqueue all tasks with in-degree 0 at wave 1
-3. BFS: for each dequeued task at wave W:
-   - For each dependent task D:
-     - Decrement D's in-degree
-     - D.wave = max(D.wave, W + 1)
-     - If D's in-degree reaches 0, enqueue D
-4. Any task without wave assignment → circular dependency error
-```
-
-### Wave Properties
-
-- **Wave 1**: No dependencies — all tasks in wave 1 are fully independent
-- **Wave N**: All dependencies are in waves 1..(N-1) — guaranteed completed before wave N starts
-- **Within a wave**: Tasks are independent of each other → safe for concurrent execution
-
-### Example
-
-```
-Task A (no deps)      → Wave 1
-Task B (no deps)      → Wave 1
-Task C (deps: A)      → Wave 2
-Task D (deps: A, B)   → Wave 2
-Task E (deps: C, D)   → Wave 3
-
-Execution:
-  Wave 1: [A, B]  ← concurrent
-  Wave 2: [C, D]  ← concurrent, sees A+B findings
-  Wave 3: [E]     ← sees A+B+C+D findings
-```
-
----
-
-## Context Propagation Flow
-
-```
-Wave 1 agents:
-  ├─ Execute tasks (no prev_context)
-  ├─ Write findings to report_agent_job_result
-  └─ Append discoveries to discoveries.ndjson
-
-        ↓ merge results into master CSV
-
-Wave 2 agents:
-  ├─ Read discoveries.ndjson (exploration sharing)
-  ├─ Read prev_context column (wave 1 findings from context_from)
-  ├─ Execute tasks with full upstream context
-  ├─ Write findings to report_agent_job_result
-  └─ Append new discoveries to discoveries.ndjson
-
-        ↓ merge results into master CSV
-
-Wave 3 agents:
-  ├─ Read discoveries.ndjson (accumulated from waves 1+2)
-  ├─ Read prev_context column (wave 1+2 findings from context_from)
-  ├─ Execute tasks
-  └─ ...
-```
-
-**Two context channels**:
-1. **CSV findings** (structured): `context_from` column → `prev_context` injection — task-specific directed context
-2. **NDJSON discoveries** (broadcast): `discoveries.ndjson` — general exploration findings available to all
+**Success Criteria**: results.csv exported, context.md generated, summary displayed to user.
 
 ---
 
@@ -872,7 +868,9 @@ Wave 3 agents:
 
 ---
 
-## Core Rules
+## Rules & Best Practices
+
+### Core Rules
 
 1. **Start Immediately**: First action is session initialization, then Phase 1
 2. **Wave Order is Sacred**: Never execute wave N before wave N-1 completes and results are merged
@@ -880,22 +878,18 @@ Wave 3 agents:
 4. **Context Propagation**: prev_context built from master CSV, not from memory
 5. **Discovery Board is Append-Only**: Never clear, modify, or recreate discoveries.ndjson
 6. **Skip on Failure**: If a dependency failed, skip the dependent task (don't attempt)
-7. **Cleanup Temp Files**: Remove wave-{N}.csv after results are merged
+7. **Cleanup Temp Files**: Remove wave-{N}.csv and wave-{N}-results.csv after results are merged
 8. **DO NOT STOP**: Continuous execution until all waves complete or all remaining tasks are skipped
 
----
+### Task Design
 
-## Best Practices
+- **Granularity**: 3-10 tasks optimal; too many = overhead, too few = no parallelism benefit
+- **Minimize Cross-Wave Deps**: More tasks in wave 1 = more parallelism
+- **Specific Descriptions**: Agent sees only its CSV row + prev_context — make description self-contained
+- **Context From ≠ Deps**: `deps` = execution order constraint; `context_from` = information flow. A task can have `context_from` without `deps` (it just reads previous findings but doesn't require them to be done first in its wave)
+- **Concurrency Tuning**: `-c 1` for serial execution (maximum context sharing); `-c 8` for I/O-bound tasks
 
-1. **Task Granularity**: 3-10 tasks optimal; too many = overhead, too few = no parallelism benefit
-2. **Minimize Cross-Wave Deps**: More tasks in wave 1 = more parallelism
-3. **Specific Descriptions**: Agent sees only its CSV row + prev_context — make description self-contained
-4. **Context From ≠ Deps**: `deps` = execution order constraint; `context_from` = information flow. A task can have `context_from` without `deps` (it just reads previous findings but doesn't require them to be done first in its wave)
-5. **Concurrency Tuning**: `-c 1` for serial execution (maximum context sharing); `-c 8` for I/O-bound tasks
-
----
-
-## Usage Recommendations
+### Scenario Recommendations
 
 | Scenario | Recommended Approach |
 |----------|---------------------|

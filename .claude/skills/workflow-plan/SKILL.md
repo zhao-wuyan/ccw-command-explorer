@@ -1,6 +1,6 @@
 ---
 name: workflow-plan
-description: Unified planning skill - 4-phase planning workflow, plan verification, and interactive replanning. Triggers on "workflow-plan", "workflow-plan-verify", "workflow:replan".
+description: "Unified planning skill - 4-phase planning workflow, plan verification, and interactive replanning. Triggers on \"workflow-plan\", \"workflow-plan-verify\", \"workflow:replan\"."
 allowed-tools: Skill, Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
 ---
 

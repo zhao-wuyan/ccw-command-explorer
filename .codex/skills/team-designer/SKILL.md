@@ -1,7 +1,7 @@
 ---
 name: team-designer
 description: Meta-skill for generating team skills following the v4 architecture pattern. Produces complete skill packages with SKILL.md router, coordinator, worker roles, specs, and templates. Triggers on "team-designer", "design team".
-allowed-tools: spawn_agent(*), wait_agent(*), send_input(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
 ---
 
 # Team Skill Designer

@@ -1,6 +1,6 @@
 ---
 name: team-review
-description: Unified team skill for code review. 3-role pipeline: scanner, reviewer, fixer. Triggers on "team-review".
+description: "Unified team skill for code review. 3-role pipeline: scanner, reviewer, fixer. Triggers on team-review."
 allowed-tools: TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)
 ---
 

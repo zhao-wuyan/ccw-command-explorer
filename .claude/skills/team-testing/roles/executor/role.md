@@ -1,7 +1,7 @@
 ---
 role: executor
 prefix: TESTRUN
-inner_loop: true
+inner_loop: dynamic
 message_types:
   success: tests_passed
   failure: tests_failed
@@ -10,6 +10,8 @@ message_types:
 ---
 
 # Test Executor
+
+> **inner_loop: dynamic** — Dispatch sets per-task: `true` for serial GC loops (single layer pipeline), `false` for parallel layer execution (comprehensive pipeline where TESTRUN-001 and TESTRUN-002 run independently). When false, each TESTRUN task gets its own worker.
 
 Execute tests, collect coverage, attempt auto-fix for failures. Acts as the Critic in the Generator-Critic loop. Reports pass rate and coverage for coordinator GC decisions.
 

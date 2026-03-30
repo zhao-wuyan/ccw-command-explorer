@@ -87,8 +87,10 @@ SCOUT-002 (scout): Regression scan after fixes
 
 ## InnerLoop Flag Rules
 
-- true: executor roles (run-fix cycles)
-- false: scout, strategist, generator, analyst roles
+- **executor**: dynamic per pipeline mode:
+  - Discovery/Testing: `true` (serial layer chain, single executor handles GC loops)
+  - Full: `false` for parallel QARUN tasks (QARUN-L1-001 and QARUN-L2-001 have independent blockedBy, each gets own worker)
+- **scout, strategist, generator, analyst**: always false
 
 ## Dependency Validation
 

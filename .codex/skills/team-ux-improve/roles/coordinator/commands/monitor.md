@@ -79,6 +79,16 @@ Output status -- do NOT advance pipeline.
 
 ## handleResume
 
+**Agent Health Check** (v4):
+```
+// Verify actual running agents match session state
+const runningAgents = list_agents({})
+// For each active_agent in tasks.json:
+//   - If agent NOT in runningAgents -> agent crashed
+//   - Reset that task to pending, remove from active_agents
+// This prevents stale agent references from blocking the pipeline
+```
+
 1. Audit task list for inconsistencies:
    - Tasks stuck in "in_progress" -> reset to "pending"
    - Tasks with completed blockers but still "pending" -> include in spawn list
@@ -101,6 +111,7 @@ Find ready tasks, spawn workers, STOP.
 ```
 spawn_agent({
   agent_type: "team_worker",
+  task_name: taskId,  // e.g., "SCAN-001" — enables named targeting
   items: [{
     description: "Spawn <role> worker for <task-id>",
     team_name: "ux-improve",
@@ -133,8 +144,32 @@ Inner loop roles: implementer (inner_loop: true)
 Single-task roles: scanner, diagnoser, designer, tester (inner_loop: false)
 
 5. Add to active_workers, update session, output summary, STOP
+6. Use `wait_agent({ targets: [<spawned-task-names>], timeout_ms: 900000 })` to wait for callbacks. If `result.timed_out`, mark tasks as `timed_out` and close agents. Use `close_agent({ target: taskId })` with task_name for cleanup.
+
+**Cross-Agent Supplementary Context** (v4):
+
+When spawning workers in a later pipeline phase, send upstream results as supplementary context to already-running workers:
+
+```
+// Example: Send scan results to running diagnoser
+send_message({
+  target: "<running-agent-task-name>",
+  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+})
+// Note: send_message queues info without interrupting the agent's current work
+```
+
+Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
 
 ## handleComplete
+
+**Cleanup Verification** (v4):
+```
+// Verify all agents are properly closed
+const remaining = list_agents({})
+// If any team agents still running -> close_agent each
+// Ensures clean session shutdown
+```
 
 Pipeline done. Generate report and completion action.
 

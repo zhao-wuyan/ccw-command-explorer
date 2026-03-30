@@ -1,7 +1,7 @@
 ---
 role: executor
 prefix: QARUN
-inner_loop: true
+inner_loop: dynamic
 additional_prefixes: [QARUN-gc]
 message_types:
   success: tests_passed
@@ -11,6 +11,8 @@ message_types:
 ---
 
 # Test Executor
+
+> **inner_loop: dynamic** — Dispatch sets per-task: `true` for serial layer chains (discovery/testing mode), `false` for parallel layer execution (full mode where QARUN-L1-001 and QARUN-L2-001 run independently). When false, each QARUN task gets its own worker.
 
 Run test suites, collect coverage data, and perform automatic fix cycles when tests fail. Implements the execution side of the Generator-Executor (GC) loop.
 

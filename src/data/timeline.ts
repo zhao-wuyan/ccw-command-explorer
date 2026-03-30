@@ -191,7 +191,7 @@ export const TIMELINE: TimelineItem[] = [
     color: COLORS.primary,
     commands: 126,
     detail: {
-      version: 'v7.2.7',
+      version: 'v7.2.28',
       highlights: [
         '新 Skill: team-planex-v2 混合规划执行管道',
         '新 Skill: team-arch-opt 架构优化',
@@ -205,7 +205,11 @@ export const TIMELINE: TimelineItem[] = [
         '新命令: workflow:spec:setup、workflow:spec:add、workflow:spec:load',
         '依赖循环、耦合内聚分析',
         '分层违规、God Class 检测',
-        '废弃: team-lifecycle-v3/v5, team-coordinate-v2, team-executor-v2'
+        '废弃: team-lifecycle-v3/v5, team-coordinate-v2, team-executor-v2',
+        'v7.2.20: 移除 DDD/IDAW 系列命令',
+        'v7.2.28: 新增 investigate、security-audit、ship 技能',
+        'v7.2.28: 新增 team-interactive-craft、team-motion-design、team-ui-polish、team-visual-a11y 团队技能',
+        'v7.2.28: 移除 team-iterdev、prep-plan、prep-cycle、unified-execute-with-file、collaborative-plan-with-file'
       ],
       newCommands: [
         '/team-planex-v2',
@@ -227,9 +231,16 @@ export const TIMELINE: TimelineItem[] = [
         '/team-ux-improve',
         '/skill-simplify',
         '/skill-iter-tune',
-        '/workflow-lite-execute'
+        '/workflow-lite-execute',
+        '/investigate',
+        '/security-audit',
+        '/ship',
+        '/team-interactive-craft',
+        '/team-motion-design',
+        '/team-ui-polish',
+        '/team-visual-a11y'
       ],
-      usage: '重大更新！DDD 文档驱动开发流水线上线，用 /ddd:auto 一键完成规划→执行→同步！新增三省六部协作框架、前端调试团队、UX 改进团队等新技能！v7.2.3 新增 team-planex-v2 混合规划执行管道！'
+      usage: 'v7.2.28 新增系统化调试、安全审计、发布流水线技能，以及4个专业团队技能(交互组件、动效设计、UI精修、视觉无障碍)。移除了 DDD/IDAW 系列和 prep 预检清单等过时命令。'
     }
   },
 ];

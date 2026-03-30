@@ -1,6 +1,6 @@
 ---
 name: team-lifecycle-v4
-description: Full lifecycle team skill with clean architecture. SKILL.md is a universal router — all roles read it. Beat model is coordinator-only. Structure is roles/ + specs/ + templates/. Triggers on "team lifecycle v4".
+description: Full lifecycle team skill — plan, develop, test, review in one coordinated session. Role-based architecture with coordinator-driven beat model. Triggers on "team lifecycle v4".
 allowed-tools: TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
 ---
 
@@ -40,7 +40,7 @@ Skill(skill="team-lifecycle-v4", args="task description")
 | analyst | [roles/analyst/role.md](roles/analyst/role.md) | RESEARCH-* | false |
 | writer | [roles/writer/role.md](roles/writer/role.md) | DRAFT-* | true |
 | planner | [roles/planner/role.md](roles/planner/role.md) | PLAN-* | true |
-| executor | [roles/executor/role.md](roles/executor/role.md) | IMPL-* | true |
+| executor | [roles/executor/role.md](roles/executor/role.md) | IMPL-* | dynamic |
 | tester | [roles/tester/role.md](roles/tester/role.md) | TEST-* | false |
 | reviewer | [roles/reviewer/role.md](roles/reviewer/role.md) | REVIEW-*, QUALITY-*, IMPROVE-* | false |
 | supervisor | [roles/supervisor/role.md](roles/supervisor/role.md) | CHECKPOINT-* | false |

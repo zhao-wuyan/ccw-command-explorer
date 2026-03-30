@@ -65,10 +65,10 @@
       "type": "code_generation",
       "description": "Implements optimization changes following the strategy plan",
       "role_spec": "roles/optimizer/role.md",
-      "inner_loop": true,
+      "inner_loop": "dynamic",
       "frontmatter": {
         "prefix": "IMPL",
-        "inner_loop": true,
+        "inner_loop": "dynamic",
         "additional_prefixes": ["FIX"],
         "discuss_rounds": [],
         "delegates_to": [],

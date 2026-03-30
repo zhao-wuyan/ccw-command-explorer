@@ -1,6 +1,6 @@
 ---
 name: workflow-multi-cli-plan
-description: Multi-CLI collaborative planning with ACE context gathering, iterative cross-verification, and execution handoff
+description: Multi-CLI collaborative planning with codebase context gathering, iterative cross-verification, and execution handoff.
 allowed-tools: Skill, Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
 ---
 
@@ -246,8 +246,8 @@ Agent({
   description: "Generate implementation plan",
   prompt: `
 ## Schema Reference
-Execute: cat ~/.ccw/workflows/cli-templates/schemas/plan-overview-base-schema.json
-Execute: cat ~/.ccw/workflows/cli-templates/schemas/task-schema.json
+Execute: ccw tool exec json_builder '{"cmd":"info","schema":"plan"}'
+Execute: ccw tool exec json_builder '{"cmd":"info","schema":"task"}'
 
 ## Output Format: Two-Layer Structure
 - plan.json: Overview with task_ids[] referencing .task/ files (NO tasks[] array)

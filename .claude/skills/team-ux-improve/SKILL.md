@@ -98,6 +98,9 @@ Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 
 ## Specs Reference
 
 - [specs/pipelines.md](specs/pipelines.md) — Pipeline definitions and task registry
+- [specs/design-standards.md](specs/design-standards.md) — Impeccable visual design standards
+- [specs/anti-patterns.md](specs/anti-patterns.md) — AI slop detection catalog (20 items)
+- [specs/heuristics.md](specs/heuristics.md) — Nielsen's 10 usability heuristics evaluation framework
 
 ## Session Directory
 

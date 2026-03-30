@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-03-30T03:00:00Z",
+  "summary": {
+    "total": 12,
+    "new": 7,
+    "deleted": 5,
+    "stale": 0,
+    "modified": 0
+  },
+  "details": {
+    "newCommands": [
+      { "cmd": "/investigate", "source": "claude/skills", "cli": "claude", "type": "skill" },
+      { "cmd": "/security-audit", "source": "claude/skills", "cli": "claude", "type": "skill" },
+      { "cmd": "/ship", "source": "claude/skills", "cli": "claude", "type": "skill" },
+      { "cmd": "/team-interactive-craft", "source": "claude/skills", "cli": "claude", "type": "skill" },
+      { "cmd": "/team-motion-design", "source": "claude/skills", "cli": "claude", "type": "skill" },
+      { "cmd": "/team-ui-polish", "source": "claude/skills", "cli": "claude", "type": "skill" },
+      { "cmd": "/team-visual-a11y", "source": "claude/skills", "cli": "claude", "type": "skill" }
+    ],
+    "deletedCommands": [
+      { "cmd": "/prep-cycle", "cli": "codex", "type": "prompt", "reason": "文件已删除" },
+      { "cmd": "/prep-plan", "cli": "codex", "type": "prompt", "reason": "文件已删除" },
+      { "cmd": "/team-iterdev", "cli": "claude", "type": "skill", "reason": "SKILL.md已删除，空目录残留" },
+      { "cmd": "/unified-execute-with-file", "cli": "codex", "type": "skill", "reason": "SKILL.md已删除，空目录残留" },
+      { "cmd": "/collaborative-plan-with-file", "cli": "codex", "type": "skill", "reason": "SKILL.md已删除，空目录残留" }
+    ],
+    "staleCommands": [],
+    "modifiedCommands": [],
+    "orphanRefs": []
+  }
+}

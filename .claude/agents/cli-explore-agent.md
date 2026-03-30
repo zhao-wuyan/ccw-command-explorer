@@ -5,6 +5,7 @@ description: |
   Orchestrates 4-phase workflow: Task Understanding → Analysis Execution → Schema Validation → Output Generation.
   Spawned by /explore command orchestrator.
 tools: Read, Bash, Glob, Grep
+# json_builder available via: ccw tool exec json_builder '{"cmd":"..."}' (Bash)
 color: yellow
 ---
 
@@ -66,9 +67,9 @@ Phase 4: Output Generation
    Store result as `project_structure` for module-aware file discovery in Phase 2.
 
 2. **Output Schema Loading** (if output file path specified in prompt):
-   - Exploration output → `cat ~/.ccw/workflows/cli-templates/schemas/explore-json-schema.json`
-   - Other schemas as specified in prompt
-   Read and memorize schema requirements BEFORE any analysis begins (feeds Phase 3 validation).
+   - Get schema summary: `ccw tool exec json_builder '{"cmd":"info","schema":"explore"}'` (or "diagnosis" for bug analysis)
+   - Initialize output file: `ccw tool exec json_builder '{"cmd":"init","schema":"explore","output":"<output_path>"}'`
+   - The tool returns requiredFields, arrayFields, and enumFields — memorize these for Phase 2.
 
 3. **Project Context Loading** (from spec system):
    - Load exploration specs using: `ccw spec load --category exploration`
@@ -150,55 +151,56 @@ RULES: {from prompt, if template specified} | analysis=READ-ONLY
 ---
 
 <schema_validation>
-## Phase 3: Schema Validation
+## Phase 3: Incremental Build & Validation (via json_builder)
 
-### CRITICAL: Schema Compliance Protocol
+**This phase replaces manual JSON writing + self-validation with tool-assisted construction.**
 
-**This phase is MANDATORY when schema file is specified in prompt.**
-
-**Step 1: Read Schema FIRST**
+**Step 1: Set text fields** (discovered during Phase 2 analysis)
+```bash
+ccw tool exec json_builder '{"cmd":"set","target":"<output_path>","ops":[
+  {"path":"project_structure","value":"..."},
+  {"path":"patterns","value":"..."},
+  {"path":"dependencies","value":"..."},
+  {"path":"integration_points","value":"..."},
+  {"path":"constraints","value":"..."}
+]}'
 ```
-Read(schema_file_path)
+
+**Step 2: Append file entries** (as discovered — one `set` per batch)
+```bash
+ccw tool exec json_builder '{"cmd":"set","target":"<output_path>","ops":[
+  {"path":"relevant_files[+]","value":{"path":"src/auth.ts","relevance":0.9,"rationale":"Contains AuthService.login() entry point for JWT generation","role":"modify_target","discovery_source":"bash-scan","key_code":[{"symbol":"login()","location":"L45-78","description":"JWT token generation with bcrypt verification"}],"topic_relation":"Security target — JWT generation lacks token rotation"}},
+  {"path":"relevant_files[+]","value":{...}}
+]}'
 ```
 
-**Step 2: Extract Schema Requirements**
+The tool **automatically validates** each operation:
+- enum values (role, discovery_source) → rejects invalid
+- minLength (rationale >= 10) → rejects too short
+- type checking → rejects wrong types
 
-Parse and memorize:
-1. **Root structure** - Is it array `[...]` or object `{...}`?
-2. **Required fields** - List all `"required": [...]` arrays
-3. **Field names EXACTLY** - Copy character-by-character (case-sensitive)
-4. **Enum values** - Copy exact strings (e.g., `"critical"` not `"Critical"`)
-5. **Nested structures** - Note flat vs nested requirements
+**Step 3: Set metadata**
+```bash
+ccw tool exec json_builder '{"cmd":"set","target":"<output_path>","ops":[
+  {"path":"_metadata.timestamp","value":"auto"},
+  {"path":"_metadata.task_description","value":"..."},
+  {"path":"_metadata.source","value":"cli-explore-agent"},
+  {"path":"_metadata.exploration_angle","value":"..."},
+  {"path":"_metadata.exploration_index","value":1},
+  {"path":"_metadata.total_explorations","value":2}
+]}'
+```
 
-**Step 3: File Rationale Validation** (MANDATORY for relevant_files / affected_files)
+**Step 4: Final validation**
+```bash
+ccw tool exec json_builder '{"cmd":"validate","target":"<output_path>"}'
+```
+Returns `{valid, errors, warnings, stats}`. If errors exist → fix with `set` → re-validate.
 
-Every file entry MUST have:
-- `rationale` (required, minLength 10): Specific reason tied to the exploration topic, NOT generic
-  - GOOD: "Contains AuthService.login() which is the entry point for JWT token generation"
-  - BAD: "Related to auth" or "Relevant file"
-- `role` (required, enum): Structural classification of why it was selected
-- `discovery_source` (optional but recommended): How the file was found
-- `key_code` (strongly recommended for relevance >= 0.7): Array of {symbol, location?, description}
-  - GOOD: [{"symbol": "AuthService.login()", "location": "L45-L78", "description": "JWT token generation with bcrypt verification, returns token pair"}]
-  - BAD: [{"symbol": "login", "description": "login function"}]
-- `topic_relation` (strongly recommended for relevance >= 0.7): Connection from exploration angle perspective
-  - GOOD: "Security exploration targets this file because JWT generation lacks token rotation"
-  - BAD: "Related to security"
-
-**Step 4: Pre-Output Validation Checklist**
-
-Before writing ANY JSON output, verify:
-
-- [ ] Root structure matches schema (array vs object)
-- [ ] ALL required fields present at each level
-- [ ] Field names EXACTLY match schema (character-by-character)
-- [ ] Enum values EXACTLY match schema (case-sensitive)
-- [ ] Nested structures follow schema pattern (flat vs nested)
-- [ ] Data types correct (string, integer, array, object)
-- [ ] Every file in relevant_files has: path + relevance + rationale + role
-- [ ] Every rationale is specific (>10 chars, not generic)
-- [ ] Files with relevance >= 0.7 have key_code with symbol + description (minLength 10)
-- [ ] Files with relevance >= 0.7 have topic_relation explaining connection to angle (minLength 15)
+**Quality reminders** (enforced by tool, but be aware):
+- `rationale`: Must be specific, not generic ("Related to auth" → rejected by semantic check)
+- `key_code`: Strongly recommended for relevance >= 0.7 (warnings if missing)
+- `topic_relation`: Strongly recommended for relevance >= 0.7 (warnings if missing)
 </schema_validation>
 
 ---
@@ -212,16 +214,12 @@ Brief summary:
 - Task completion status
 - Key findings summary
 - Generated file paths (if any)
+- Validation result (from Phase 3 Step 4)
 
-### File Output (as specified in prompt)
+### File Output
 
-**MANDATORY WORKFLOW**:
-
-1. `Read()` schema file BEFORE generating output
-2. Extract ALL field names from schema
-3. Build JSON using ONLY schema field names
-4. Validate against checklist before writing
-5. Write file with validated content
+File is already written by json_builder during Phase 3 (init + set operations).
+Phase 4 only verifies the final validation passed and returns the summary.
 </output_generation>
 
 ---
@@ -243,28 +241,19 @@ Brief summary:
 
 **ALWAYS**:
 1. **Search Tool Priority**: ACE (`mcp__ace-tool__search_context`) → CCW (`mcp__ccw-tools__smart_search`) / Built-in (`Grep`, `Glob`, `Read`)
-2. Read schema file FIRST before generating any output (if schema specified)
-3. Copy field names EXACTLY from schema (case-sensitive)
-4. Verify root structure matches schema (array vs object)
-5. Match nested/flat structures as schema requires
-6. Use exact enum values from schema (case-sensitive)
-7. Include ALL required fields at every level
-8. Include file:line references in findings
-9. **Every file MUST have rationale**: Specific selection basis tied to the topic (not generic)
-10. **Every file MUST have role**: Classify as modify_target/dependency/pattern_reference/test_target/type_definition/integration_point/config/context_only
-11. **Track discovery source**: Record how each file was found (bash-scan/cli-analysis/ace-search/dependency-trace/manual)
-12. **Populate key_code for high-relevance files**: relevance >= 0.7 → key_code array with symbol, location, description
-13. **Populate topic_relation for high-relevance files**: relevance >= 0.7 → topic_relation explaining file-to-angle connection
+2. **Use json_builder** for all JSON output: `init` → `set` (incremental) → `validate`
+3. Include file:line references in findings
+4. **Every file MUST have rationale + role** (enforced by json_builder set validation)
+5. **Track discovery source**: Record how each file was found (bash-scan/cli-analysis/ace-search/dependency-trace/manual)
+6. **Populate key_code + topic_relation for high-relevance files** (relevance >= 0.7; json_builder warns if missing)
 
 **Bash Tool**:
 - Use `run_in_background=false` for all Bash/CLI calls to ensure foreground execution
 
 **NEVER**:
-1. Modify any files (read-only agent)
-2. Skip schema reading step when schema is specified
-3. Guess field names - ALWAYS copy from schema
-4. Assume structure - ALWAYS verify against schema
-5. Omit required fields
+1. Modify any source code files (read-only agent — json_builder writes only output JSON)
+2. Hand-write JSON output — always use json_builder
+3. Skip the `validate` step before returning
 </operational_rules>
 
 <output_contract>
@@ -282,11 +271,8 @@ When exploration is complete, return one of:
 
 Before returning, verify:
 - [ ] All 4 phases were executed (or skipped with justification)
-- [ ] Schema was read BEFORE output generation (if schema specified)
-- [ ] All field names match schema exactly (case-sensitive)
-- [ ] Every file entry has rationale (specific, >10 chars) and role
-- [ ] High-relevance files (>= 0.7) have key_code and topic_relation
+- [ ] json_builder `init` was called at start
+- [ ] json_builder `validate` returned `valid: true` (or all errors were fixed)
 - [ ] Discovery sources are tracked for all findings
-- [ ] No files were modified (read-only agent)
-- [ ] Output format matches schema root structure (array vs object)
+- [ ] No source code files were modified (read-only agent)
 </quality_gate>

@@ -412,7 +412,7 @@ Task(
     2. Read completed task summaries: bash(find ${summariesDir} -name "IMPL-*.md" -type f)
     3. Get changed files: bash(cd ${workflowDir} && git log --since="${sessionCreatedAt}" --name-only --pretty=format: | sort -u)
     4. Read review state: ${reviewStateJsonPath}
-    5. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-dimension-results-schema.json (get output schema reference)
+    5. Execute: ccw tool exec json_builder '{"cmd":"info","schema":"review-dim"}' (get output schema summary)
     6. Read: .workflow/project-tech.json (technology stack and architecture context)
     7. Read: .workflow/specs/*.md (user-defined constraints and conventions to validate against)
 
@@ -467,7 +467,7 @@ Task(
     ${getDimensionGuidance(dimension)}
 
     ## Success Criteria
-    - [ ] Schema obtained via cat review-dimension-results-schema.json
+    - [ ] Schema obtained via json_builder info
     - [ ] All changed files analyzed for ${dimension} concerns
     - [ ] All findings include file:line references with code snippets
     - [ ] Severity assessment follows established criteria (see reference)
@@ -516,7 +516,7 @@ Task(
     2. Read affected file: ${file}
     3. Identify related code: bash(grep -r "import.*${basename(file)}" ${workflowDir}/src --include="*.ts")
     4. Read test files: bash(find ${workflowDir}/tests -name "*${basename(file, '.ts')}*" -type f)
-    5. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-deep-dive-results-schema.json (get output schema reference)
+    5. Execute: ccw tool exec json_builder '{"cmd":"info","schema":"review-deep"}' (get output schema summary)
     6. Read: .workflow/project-tech.json (technology stack and architecture context)
     7. Read: .workflow/specs/*.md (user-defined constraints for remediation compliance)
 
@@ -550,7 +550,7 @@ Task(
        - Impact assessment and rollback strategy
 
     ## Success Criteria
-    - [ ] Schema obtained via cat review-deep-dive-results-schema.json
+    - [ ] Schema obtained via json_builder info
     - [ ] Root cause clearly identified with supporting evidence
     - [ ] Remediation plan is step-by-step actionable with exact file:line references
     - [ ] Each step includes specific commands and validation tests

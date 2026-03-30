@@ -42,7 +42,7 @@ Receive result from wait_agent for [<role>]
   |   +- YES -> Update session -> STOP
   +- Task status = completed?
   |   +- YES -> remove from active_workers -> update session
-  |   |   +- Close agent: close_agent({ id: <agentId> })
+  |   |   +- Close agent: close_agent({ target: <agentId> })
   |   |   +- role = planner?
   |   |   |   +- Check for new EXEC-* tasks in tasks.json (planner creates them)
   |   |   |   +- -> handleSpawnNext (spawn executor for new EXEC-* tasks)
@@ -87,6 +87,16 @@ Then STOP.
 
 ### Handler: handleResume
 
+**Agent Health Check** (v4):
+```
+// Verify actual running agents match session state
+const runningAgents = list_agents({})
+// For each active_agent in tasks.json:
+//   - If agent NOT in runningAgents -> agent crashed
+//   - Reset that task to pending, remove from active_agents
+// This prevents stale agent references from blocking the pipeline
+```
+
 ```
 Load active_workers
   +- No active workers -> handleSpawnNext
@@ -120,6 +130,7 @@ Collect task states from tasks.json
       +- Spawn team_worker:
          const agentId = spawn_agent({
            agent_type: "team_worker",
+           task_name: taskId,  // e.g., "PLAN-001" — enables named targeting
            items: [{ type: "text", text: `## Role Assignment
 role: <role>
 role_spec: ~  or <project>/.codex/skills/team-planex/roles/<role>/role.md
@@ -130,13 +141,48 @@ requirement: <task-description>
 inner_loop: true
 execution_method: <method>` }]
          })
-         // Collect results:
-         const result = wait_agent({ ids: [agentId], timeout_ms: 900000 })
-         // Process result, update tasks.json
-         close_agent({ id: agentId })
+         // Collect results — use task_name for stable targeting (v4):
+         const result = wait_agent({ targets: [taskId], timeout_ms: 900000 })
+         if (result.timed_out) {
+           state.tasks[taskId].status = 'timed_out'
+           close_agent({ target: taskId })
+           // Report timeout, STOP
+         } else {
+           // Process result, update tasks.json
+           close_agent({ target: taskId })  // Use task_name, not agentId
+         }
       +- Add to session.active_workers
       Update session -> output summary -> STOP
 ```
+
+**Cross-Agent Supplementary Context** (v4):
+
+When spawning workers in a later pipeline phase, send upstream results as supplementary context to already-running workers:
+
+```
+// Example: Send planning results to running executors
+send_message({
+  target: "<running-agent-task-name>",
+  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+})
+// Note: send_message queues info without interrupting the agent's current work
+```
+
+Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
+
+---
+
+### Pipeline Complete (PIPELINE_COMPLETE -> Phase 5)
+
+**Cleanup Verification** (v4):
+```
+// Verify all agents are properly closed
+const remaining = list_agents({})
+// If any team agents still running -> close_agent each
+// Ensures clean session shutdown
+```
+
+When all tasks are completed (no pending, no in_progress), transition to coordinator Phase 5.
 
 ---
 

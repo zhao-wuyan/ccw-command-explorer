@@ -27,7 +27,7 @@ Event-driven pipeline coordination. Beat model: coordinator wake -> process -> s
 |--------|------|-----------|------------|
 | STRATEGY-* | strategist | `~  or <project>/.claude/skills/team-testing/roles/strategist/role.md` | false |
 | TESTGEN-* | generator | `~  or <project>/.claude/skills/team-testing/roles/generator/role.md` | true |
-| TESTRUN-* | executor | `~  or <project>/.claude/skills/team-testing/roles/executor/role.md` | true |
+| TESTRUN-* | executor | `~  or <project>/.claude/skills/team-testing/roles/executor/role.md` | dynamic |
 | TESTANA-* | analyst | `~  or <project>/.claude/skills/team-testing/roles/analyst/role.md` | false |
 
 ## handleCallback
@@ -136,7 +136,9 @@ Find ready tasks, spawn workers, STOP.
 3. No ready + nothing in progress -> handleComplete
 4. Has ready -> for each ready task:
    a. Determine role from prefix (use Role-Worker Map)
-   b. Check if inner loop role (generator/executor) with active worker -> skip (worker picks up next task)
+   b. Check inner_loop: parse task description `InnerLoop:` field (NOT role.md default)
+      - InnerLoop: true AND same-role worker already active -> skip (worker picks up next task)
+      - InnerLoop: false OR no active same-role worker -> spawn new worker
    c. TaskUpdate -> in_progress
    d. team_msg log -> task_unblocked
    e. Spawn team-worker:

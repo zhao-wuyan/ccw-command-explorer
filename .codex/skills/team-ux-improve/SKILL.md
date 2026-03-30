@@ -1,7 +1,7 @@
 ---
 name: team-ux-improve
 description: Unified team skill for UX improvement. Systematically discovers and fixes UI/UX interaction issues including unresponsive buttons, missing feedback, and state refresh problems. Uses team-worker agent architecture with roles/ for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on "team ux improve".
-allowed-tools: spawn_agent(*), wait_agent(*), send_input(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)
 ---
 
 # Team UX Improve
@@ -55,6 +55,31 @@ Parse `$ARGUMENTS`:
 - Has `--role <name>` → Read `roles/<name>/role.md`, execute Phase 2-4
 - No `--role` → `roles/coordinator/role.md`, execute entry router
 
+## Delegation Lock
+
+**Coordinator is a PURE ORCHESTRATOR. It coordinates, it does NOT do.**
+
+Before calling ANY tool, apply this check:
+
+| Tool Call | Verdict | Reason |
+|-----------|---------|--------|
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `list_agents` | ALLOWED | Agent health check |
+| `request_user_input` | ALLOWED | User interaction |
+| `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
+| `Read/Write` on `.workflow/.team/` files | ALLOWED | Session state |
+| `Read` on `roles/`, `commands/`, `specs/` | ALLOWED | Loading own instructions |
+| `Read/Grep/Glob` on project source code | BLOCKED | Delegate to worker |
+| `Edit` on any file outside `.workflow/` | BLOCKED | Delegate to worker |
+| `Bash("ccw cli ...")` | BLOCKED | Only workers call CLI |
+| `Bash` running build/test/lint commands | BLOCKED | Delegate to worker |
+
+**If a tool call is BLOCKED**: STOP. Create a task, spawn a worker.
+
+**No exceptions for "simple" tasks.** Even a single-file read-and-report MUST go through spawn_agent.
+
+---
+
 ## Shared Constants
 
 - **Session prefix**: `ux-improve`
@@ -70,6 +95,8 @@ Coordinator spawns workers using this template:
 ```
 spawn_agent({
   agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
   items: [
     { type: "text", text: `## Role Assignment
 role: <role>
@@ -93,7 +120,21 @@ pipeline_phase: <pipeline-phase>` },
 })
 ```
 
-After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ id })` each worker.
+After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+
+
+### Model Selection Guide
+
+UX improvement has an explorer utility member and a scan-diagnose-design-implement-test pipeline.
+
+| Role | reasoning_effort | Rationale |
+|------|-------------------|-----------|
+| explorer | low | File reading and pattern summarization only (utility member) |
+| scanner | medium | Broad UI/UX issue scanning, pattern-based detection |
+| diagnoser | high | Root cause diagnosis of UX issues requires deep analysis |
+| designer | high | UX improvement design needs careful user experience reasoning |
+| implementer | high | UI code changes must preserve existing behavior |
+| tester | medium | Test execution follows defined UX verification criteria |
 
 ## User Commands
 
@@ -126,6 +167,50 @@ After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect 
     ├── principles/
     ├── patterns/
     └── anti-patterns/
+```
+
+## v4 Agent Coordination
+
+### Message Semantics
+
+| Intent | API | Example |
+|--------|-----|---------|
+| Queue supplementary info (don't interrupt) | `send_message` | Send explorer findings to running scanner |
+| Assign implementation from design | `assign_task` | Assign IMPL task from designer output |
+| Check running agents | `list_agents` | Verify agent health during resume |
+
+### Agent Health Check
+
+Use `list_agents({})` in handleResume and handleComplete:
+
+```
+// Reconcile session state with actual running agents
+const running = list_agents({})
+// Compare with meta.json active tasks
+// Reset orphaned tasks (in_progress but agent gone) to pending
+```
+
+### Named Agent Targeting
+
+Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
+- `send_message({ target: "SCAN-001", items: [...] })` -- send explorer findings to scanner
+- `assign_task({ target: "IMPL-001", items: [...] })` -- assign UX fix from designer output
+- `close_agent({ target: "TEST-001" })` -- cleanup after UX testing
+
+### Explorer-Assisted Scanning
+
+Coordinator spawns explorer (utility member) early to gather codebase context, then sends findings to scanner via upstream context:
+```
+// Explorer results inform scanner's scope
+send_message({
+  target: "SCAN-001",
+  items: [
+    { type: "text", text: `## Explorer Findings
+component_patterns: <explorer's component inventory>
+framework: <detected framework>
+ui_library: <detected UI library>` }
+  ]
+})
 ```
 
 ## Error Handling

@@ -1,7 +1,7 @@
 ---
 name: team-perf-opt
 description: Unified team skill for performance optimization. Coordinator orchestrates pipeline, workers are team-worker agents. Supports single/fan-out/independent parallel modes. Triggers on "team perf-opt".
-allowed-tools: spawn_agent(*), wait_agent(*), send_input(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)
 ---
 
 # Team Performance Optimization
@@ -57,6 +57,31 @@ Parse `$ARGUMENTS`:
 - Has `--role <name>` → Read `roles/<name>/role.md`, execute Phase 2-4
 - No `--role` → `roles/coordinator/role.md`, execute entry router
 
+## Delegation Lock
+
+**Coordinator is a PURE ORCHESTRATOR. It coordinates, it does NOT do.**
+
+Before calling ANY tool, apply this check:
+
+| Tool Call | Verdict | Reason |
+|-----------|---------|--------|
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `list_agents` | ALLOWED | Agent health check |
+| `request_user_input` | ALLOWED | User interaction |
+| `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
+| `Read/Write` on `.workflow/.team/` files | ALLOWED | Session state |
+| `Read` on `roles/`, `commands/`, `specs/` | ALLOWED | Loading own instructions |
+| `Read/Grep/Glob` on project source code | BLOCKED | Delegate to worker |
+| `Edit` on any file outside `.workflow/` | BLOCKED | Delegate to worker |
+| `Bash("ccw cli ...")` | BLOCKED | Only workers call CLI |
+| `Bash` running build/test/lint commands | BLOCKED | Delegate to worker |
+
+**If a tool call is BLOCKED**: STOP. Create a task, spawn a worker.
+
+**No exceptions for "simple" tasks.** Even a single-file read-and-report MUST go through spawn_agent.
+
+---
+
 ## Shared Constants
 
 - **Session prefix**: `PERF-OPT`
@@ -72,6 +97,8 @@ Coordinator spawns workers using this template:
 ```
 spawn_agent({
   agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
   items: [
     { type: "text", text: `## Role Assignment
 role: <role>
@@ -95,10 +122,36 @@ pipeline_phase: <pipeline-phase>` },
 })
 ```
 
-After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ id })` each worker.
+After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
 
 **Inner Loop roles** (optimizer): Set `inner_loop: true`.
 **Single-task roles** (profiler, strategist, benchmarker, reviewer): Set `inner_loop: false`.
+
+
+### Model Selection Guide
+
+Performance optimization is measurement-driven. Profiler and benchmarker need consistent context for before/after comparison.
+
+| Role | reasoning_effort | Rationale |
+|------|-------------------|-----------|
+| profiler | high | Must identify subtle bottlenecks from profiling data |
+| strategist | high | Optimization strategy requires understanding tradeoffs |
+| optimizer | high | Performance-critical code changes need precision |
+| benchmarker | medium | Benchmark execution follows defined measurement plan |
+| reviewer | high | Must verify optimizations don't introduce regressions |
+
+### Benchmark Context Sharing with fork_context
+
+For before/after comparison, benchmarker should share context with profiler's baseline:
+```
+spawn_agent({
+  agent_type: "team_worker",
+  task_name: "BENCH-001",
+  fork_context: true,   // Share context so benchmarker sees profiler's baseline metrics
+  reasoning_effort: "medium",
+  items: [...]
+})
+```
 
 ## User Commands
 
@@ -130,6 +183,42 @@ After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect 
 +-- .msg/messages.jsonl             # Team message bus
 +-- .msg/meta.json                  # Session metadata
 ```
+
+## v4 Agent Coordination
+
+### Message Semantics
+
+| Intent | API | Example |
+|--------|-----|---------|
+| Queue supplementary info (don't interrupt) | `send_message` | Send baseline metrics to running optimizer |
+| Assign fix after benchmark regression | `assign_task` | Assign FIX task when benchmark shows regression |
+| Check running agents | `list_agents` | Verify agent health during resume |
+
+### Agent Health Check
+
+Use `list_agents({})` in handleResume and handleComplete:
+
+```
+// Reconcile session state with actual running agents
+const running = list_agents({})
+// Compare with session.json active tasks
+// Reset orphaned tasks (in_progress but agent gone) to pending
+```
+
+### Named Agent Targeting
+
+Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
+- `send_message({ target: "IMPL-001", items: [...] })` -- send strategy details to optimizer
+- `assign_task({ target: "IMPL-001", items: [...] })` -- assign fix after benchmark regression
+- `close_agent({ target: "BENCH-001" })` -- cleanup after benchmarking completes
+
+### Baseline-to-Result Pipeline
+
+Profiler baseline metrics flow through the pipeline and must reach benchmarker for comparison:
+1. PROFILE-001 produces `baseline-metrics.json` in artifacts/
+2. Coordinator includes baseline reference in upstream context for all downstream workers
+3. BENCH-001 reads baseline and compares against post-optimization measurements
+4. If regression detected, coordinator auto-creates FIX task with regression details
 
 ## Completion Action
 

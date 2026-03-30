@@ -89,6 +89,10 @@ Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 
 ## Specs Reference
 
 - [specs/pipelines.md](specs/pipelines.md) — Pipeline definitions and task registry
+- [specs/design-standards.md](specs/design-standards.md) — Impeccable design standards (OKLCH, typography, spacing, motion, interaction)
+- [specs/anti-patterns.md](specs/anti-patterns.md) — AI slop detection catalog (20 items)
+- [specs/scoring-guide.md](specs/scoring-guide.md) — 8-dimension quality scoring rubric
+- [specs/ux-writing.md](specs/ux-writing.md) — UX writing standards (labels, errors, empty states, voice)
 
 ## Session Directory
 
@@ -101,7 +105,8 @@ Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 
 │   ├── design-system-analysis.json
 │   ├── component-inventory.json
 │   ├── accessibility-audit.json
-│   └── design-intelligence.json
+│   ├── design-intelligence.json
+│   └── visual-quality-baseline.json
 ├── design/                    # Designer output
 │   ├── design-tokens.json
 │   ├── component-specs/

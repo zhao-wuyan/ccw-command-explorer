@@ -54,6 +54,16 @@ Then STOP.
 
 ## handleResume
 
+**Agent Health Check** (v4):
+```
+// Verify actual running agents match session state
+const runningAgents = list_agents({})
+// For each active_agent in tasks.json:
+//   - If agent NOT in runningAgents -> agent crashed
+//   - Reset that task to pending, remove from active_agents
+// This prevents stale agent references from blocking the pipeline
+```
+
 1. Read tasks.json, check active_agents
 2. No active agents -> handleSpawnNext
 3. Has active agents -> check each status
@@ -88,6 +98,7 @@ state.tasks[taskId].status = 'in_progress'
 // 2) Spawn worker
 const agentId = spawn_agent({
   agent_type: "team_worker",
+  task_name: taskId,  // e.g., "SCAN-001" — enables named targeting
   items: [
     { type: "text", text: `## Role Assignment
 role: ${role}
@@ -109,12 +120,18 @@ Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 
 // 3) Track agent
 state.active_agents[taskId] = { agentId, role, started_at: now }
 
-// 4) Wait for completion
-wait_agent({ ids: [agentId] })
-
-// 5) Collect results
-state.tasks[taskId].status = 'completed'
-delete state.active_agents[taskId]
+// 4) Wait for completion — use task_name for stable targeting (v4)
+const waitResult = wait_agent({ targets: [taskId], timeout_ms: 900000 })
+if (waitResult.timed_out) {
+  state.tasks[taskId].status = 'timed_out'
+  close_agent({ target: taskId })
+  delete state.active_agents[taskId]
+} else {
+  // 5) Collect results
+  state.tasks[taskId].status = 'completed'
+  close_agent({ target: taskId })  // Use task_name, not agentId
+  delete state.active_agents[taskId]
+}
 ```
 
    e. Check for checkpoints after worker completes:
@@ -136,7 +153,30 @@ delete state.active_agents[taskId]
 
 5. Update tasks.json, output summary, STOP
 
+**Cross-Agent Supplementary Context** (v4):
+
+When spawning workers in a later pipeline phase, send upstream results as supplementary context to already-running workers:
+
+```
+// Example: Send scan results to running reviewer
+send_message({
+  target: "<running-agent-task-name>",
+  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+})
+// Note: send_message queues info without interrupting the agent's current work
+```
+
+Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
+
 ## handleComplete
+
+**Cleanup Verification** (v4):
+```
+// Verify all agents are properly closed
+const remaining = list_agents({})
+// If any team agents still running -> close_agent each
+// Ensures clean session shutdown
+```
 
 Pipeline done. Generate report and completion action.
 

@@ -43,6 +43,16 @@ Output status -- do NOT advance pipeline.
 
 ## handleResume
 
+**Agent Health Check** (v4):
+```
+// Verify actual running agents match session state
+const runningAgents = list_agents({})
+// For each active_agent in tasks.json:
+//   - If agent NOT in runningAgents -> agent crashed
+//   - Reset that task to pending, remove from active_agents
+// This prevents stale agent references from blocking the pipeline
+```
+
 1. Read tasks.json, check active_agents
 2. Tasks stuck in "in_progress" -> reset to "pending"
 3. Tasks with completed deps but still "pending" -> include in spawn list
@@ -72,6 +82,7 @@ state.tasks[taskId].status = 'in_progress'
 // 2) Spawn worker
 const agentId = spawn_agent({
   agent_type: "team_worker",
+  task_name: taskId,  // e.g., "TDSCAN-001" — enables named targeting
   items: [
     { type: "text", text: `## Role Assignment
 role: ${task.role}
@@ -112,15 +123,22 @@ Stage-to-role mapping:
 After spawning all ready tasks:
 
 ```javascript
-// 4) Batch wait for all spawned workers
-const agentIds = Object.values(state.active_agents).map(a => a.agentId)
-wait_agent({ ids: agentIds, timeout_ms: 900000 })
-
-// 5) Collect results
-for (const [taskId, agent] of Object.entries(state.active_agents)) {
-  state.tasks[taskId].status = 'completed'
-  close_agent({ id: agent.agentId })
-  delete state.active_agents[taskId]
+// 4) Batch wait — use task_name for stable targeting (v4)
+const taskNames = Object.keys(state.active_agents)
+const waitResult = wait_agent({ targets: taskNames, timeout_ms: 900000 })
+if (waitResult.timed_out) {
+  for (const taskId of taskNames) {
+    state.tasks[taskId].status = 'timed_out'
+    close_agent({ target: taskId })
+    delete state.active_agents[taskId]
+  }
+} else {
+  // 5) Collect results
+  for (const [taskId, agent] of Object.entries(state.active_agents)) {
+    state.tasks[taskId].status = 'completed'
+    close_agent({ target: taskId })  // Use task_name, not agentId
+    delete state.active_agents[taskId]
+  }
 }
 ```
 
@@ -188,6 +206,21 @@ After task completion, check for checkpoints:
   }
   ```
 
+**Cross-Agent Supplementary Context** (v4):
+
+When spawning workers in a later pipeline phase, send upstream results as supplementary context to already-running workers:
+
+```
+// Example: Send scan results to running assessor
+send_message({
+  target: "<running-agent-task-name>",
+  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+})
+// Note: send_message queues info without interrupting the agent's current work
+```
+
+Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
+
 ### Persist and Loop
 
 After processing all results:
@@ -198,6 +231,14 @@ After processing all results:
 5. If no more ready but some still blocked -> report status, STOP
 
 ## handleComplete
+
+**Cleanup Verification** (v4):
+```
+// Verify all agents are properly closed
+const remaining = list_agents({})
+// If any team agents still running -> close_agent each
+// Ensures clean session shutdown
+```
 
 Pipeline done. Generate report and completion action.
 

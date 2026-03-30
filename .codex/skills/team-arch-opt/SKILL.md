@@ -1,7 +1,7 @@
 ---
 name: team-arch-opt
 description: Unified team skill for architecture optimization. Uses team-worker agent architecture with role directories for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on "team arch-opt".
-allowed-tools: spawn_agent(*), wait_agent(*), send_input(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)
 ---
 
 # Team Architecture Optimization
@@ -46,6 +46,31 @@ Parse `$ARGUMENTS`:
 - Has `--role <name>` -> Read `roles/<name>/role.md`, execute Phase 2-4
 - No `--role` -> `roles/coordinator/role.md`, execute entry router
 
+## Delegation Lock
+
+**Coordinator is a PURE ORCHESTRATOR. It coordinates, it does NOT do.**
+
+Before calling ANY tool, apply this check:
+
+| Tool Call | Verdict | Reason |
+|-----------|---------|--------|
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `list_agents` | ALLOWED | Agent health check |
+| `request_user_input` | ALLOWED | User interaction |
+| `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
+| `Read/Write` on `.workflow/.team/` files | ALLOWED | Session state |
+| `Read` on `roles/`, `commands/`, `specs/` | ALLOWED | Loading own instructions |
+| `Read/Grep/Glob` on project source code | BLOCKED | Delegate to worker |
+| `Edit` on any file outside `.workflow/` | BLOCKED | Delegate to worker |
+| `Bash("ccw cli ...")` | BLOCKED | Only workers call CLI |
+| `Bash` running build/test/lint commands | BLOCKED | Delegate to worker |
+
+**If a tool call is BLOCKED**: STOP. Create a task, spawn a worker.
+
+**No exceptions for "simple" tasks.** Even a single-file read-and-report MUST go through spawn_agent.
+
+---
+
 ## Shared Constants
 
 - **Session prefix**: `TAO`
@@ -60,6 +85,8 @@ Coordinator spawns workers using this template:
 ```
 spawn_agent({
   agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
   items: [
     { type: "text", text: `## Role Assignment
 role: <role>
@@ -83,10 +110,33 @@ pipeline_phase: <pipeline-phase>` },
 })
 ```
 
-After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ id })` each worker.
+After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target: <name> })` each worker.
 
 **Inner Loop roles** (refactorer): Set `inner_loop: true`.
 **Single-task roles** (analyzer, designer, validator, reviewer): Set `inner_loop: false`.
+
+### Model Selection Guide
+
+Architecture optimization is reasoning-intensive. All analysis and design roles need high reasoning effort.
+
+| Role | reasoning_effort | Rationale |
+|------|-------------------|-----------|
+| analyzer | high | Deep structural analysis of codebase architecture |
+| designer | high | Architecture redesign requires careful reasoning about tradeoffs |
+| refactorer | high | Code transformations must preserve correctness |
+| validator | high | Validation must thoroughly check refactoring correctness |
+| reviewer | high | Code quality review demands deep understanding |
+
+Override in spawn_agent when needed:
+```
+spawn_agent({
+  agent_type: "team_worker",
+  task_name: "<task-id>",
+  fork_context: false,
+  reasoning_effort: "high",
+  items: [...]
+})
+```
 
 ## User Commands
 
@@ -136,6 +186,47 @@ After spawning, use `wait_agent({ ids: [...], timeout_ms: 900000 })` to collect 
 ## Specs Reference
 
 - [specs/pipelines.md](specs/pipelines.md) — Pipeline definitions, task registry, parallel modes
+
+## v4 Agent Coordination
+
+### Message Semantics
+
+| Intent | API | Example |
+|--------|-----|---------|
+| Queue supplementary info (don't interrupt) | `send_message` | Send codebase patterns to running analyzer |
+| Assign new work / trigger processing | `assign_task` | Assign fix task to refactorer after review feedback |
+| Check running agents | `list_agents` | Verify agent health during resume |
+
+### Agent Health Check
+
+Use `list_agents({})` in handleResume and handleComplete:
+
+```
+// Reconcile session state with actual running agents
+const running = list_agents({})
+// Compare with session.json active tasks
+// Reset orphaned tasks (in_progress but agent gone) to pending
+```
+
+### Named Agent Targeting
+
+Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
+- `send_message({ target: "ANALYZE-001", items: [...] })` -- queue analysis context without interrupting
+- `assign_task({ target: "REFACTOR-001", items: [...] })` -- assign fix task after review feedback
+- `close_agent({ target: "VALIDATE-001" })` -- cleanup by name
+
+### Merged Exploration Pattern
+
+For architecture analysis, analyzer may need broad codebase exploration. Consider spawning analyzer with `fork_context: true` when deep structural analysis of interconnected modules is needed:
+```
+spawn_agent({
+  agent_type: "team_worker",
+  task_name: "ANALYZE-001",
+  fork_context: true,   // Share coordinator's codebase context
+  reasoning_effort: "high",
+  items: [...]
+})
+```
 
 ## Error Handling
 

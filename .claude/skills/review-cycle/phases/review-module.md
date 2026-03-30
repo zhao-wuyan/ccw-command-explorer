@@ -401,7 +401,7 @@ Task(
     1. Read review state: ${reviewStateJsonPath}
     2. Get target files: Read resolved_files from review-state.json
     3. Validate file access: bash(ls -la ${targetFiles.join(' ')})
-    4. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-dimension-results-schema.json (get output schema reference)
+    4. Execute: ccw tool exec json_builder '{"cmd":"info","schema":"review-dim"}' (get output schema summary)
     5. Read: .workflow/project-tech.json (technology stack and architecture context)
     6. Read: .workflow/specs/*.md (user-defined constraints and conventions to validate against)
 
@@ -456,7 +456,7 @@ Task(
     ${getDimensionGuidance(dimension)}
 
     ## Success Criteria
-    - [ ] Schema obtained via cat review-dimension-results-schema.json
+    - [ ] Schema obtained via json_builder info
     - [ ] All target files analyzed for ${dimension} concerns
     - [ ] All findings include file:line references with code snippets
     - [ ] Severity assessment follows established criteria (see reference)
@@ -505,7 +505,7 @@ Task(
     2. Read affected file: ${file}
     3. Identify related code: bash(grep -r "import.*${basename(file)}" ${projectDir}/src --include="*.ts")
     4. Read test files: bash(find ${projectDir}/tests -name "*${basename(file, '.ts')}*" -type f)
-    5. Execute: cat ~/.ccw/workflows/cli-templates/schemas/review-deep-dive-results-schema.json (get output schema reference)
+    5. Execute: ccw tool exec json_builder '{"cmd":"info","schema":"review-deep"}' (get output schema summary)
     6. Read: .workflow/project-tech.json (technology stack and architecture context)
     7. Read: .workflow/specs/*.md (user-defined constraints for remediation compliance)
 
@@ -538,7 +538,7 @@ Task(
        - Impact assessment and rollback strategy
 
     ## Success Criteria
-    - [ ] Schema obtained via cat review-deep-dive-results-schema.json
+    - [ ] Schema obtained via json_builder info
     - [ ] Root cause clearly identified with supporting evidence
     - [ ] Remediation plan is step-by-step actionable with exact file:line references
     - [ ] Each step includes specific commands and validation tests

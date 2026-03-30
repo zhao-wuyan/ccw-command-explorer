@@ -84,8 +84,11 @@ TESTANA-001 (analyst): Defect pattern analysis, quality report
 
 ## InnerLoop Flag Rules
 
-- true: generator, executor roles (GC loop iterations)
-- false: strategist, analyst roles
+- **generator**: always true (GC loop iterations within a single layer)
+- **executor**: dynamic per pipeline mode:
+  - Targeted/Standard: `true` (serial layer chain, single executor handles GC loops)
+  - Comprehensive: `false` for parallel TESTRUN tasks (TESTRUN-001 and TESTRUN-002 have independent blockedBy, each gets own worker)
+- **strategist, analyst**: always false
 
 ## Dependency Validation
 

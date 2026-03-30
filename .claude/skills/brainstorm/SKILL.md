@@ -1,6 +1,6 @@
 ---
 name: brainstorm
-description: Unified brainstorming skill with dual-mode operation - auto pipeline and single role analysis. Triggers on "brainstorm", "头脑风暴".
+description: Unified brainstorming skill with dual-mode operation — auto mode (framework generation, parallel multi-role analysis, cross-role synthesis) and single role analysis. Triggers on "brainstorm", "头脑风暴".
 allowed-tools: Skill(*), Agent(conceptual-planning-agent, context-search-agent), AskUserQuestion(*), TodoWrite(*), Read(*), Write(*), Edit(*), Glob(*), Bash(*)
 ---
 

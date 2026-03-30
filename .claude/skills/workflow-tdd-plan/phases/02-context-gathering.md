@@ -99,7 +99,7 @@ Execute **${angle}** exploration for TDD task planning context. Analyze codebase
 ## MANDATORY FIRST STEPS (Execute by Agent)
 1. Run: ccw tool exec get_modules_by_depth '{}' (project structure)
 2. Run: rg -l "{keyword_from_task}" --type ts (locate relevant files)
-3. Execute: cat ~/.ccw/workflows/cli-templates/schemas/explore-json-schema.json (get output schema reference)
+3. Execute: ccw tool exec json_builder '{"cmd":"init","schema":"explore","output":"${sessionFolder}/exploration-${angle}.json"}' (init output + get schema info)
 
 ## Exploration Strategy (${angle} focus)
 
@@ -121,7 +121,7 @@ Execute **${angle}** exploration for TDD task planning context. Analyze codebase
 
 **File**: ${sessionFolder}/exploration-${angle}.json
 
-**Schema Reference**: Schema obtained in MANDATORY FIRST STEPS step 3, follow schema exactly
+**Schema Reference**: Skeleton initialized via json_builder in step 3. Use `set` to populate fields, `validate` before returning.
 
 **Required Fields** (all ${angle} focused):
 - project_structure: Modules/architecture relevant to ${angle}
@@ -141,7 +141,7 @@ Execute **${angle}** exploration for TDD task planning context. Analyze codebase
 - _metadata.exploration_angle: "${angle}"
 
 ## Success Criteria
-- [ ] Schema obtained via cat explore-json-schema.json
+- [ ] Schema initialized via json_builder init
 - [ ] get_modules_by_depth.sh executed
 - [ ] At least 3 relevant files identified with ${angle} rationale
 - [ ] Patterns are actionable (code examples, not generic advice)

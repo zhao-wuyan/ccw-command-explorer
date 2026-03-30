@@ -11,6 +11,7 @@ Template used by coordinator to generate lightweight worker role-spec files at r
 role: <role_name>
 prefix: <PREFIX>
 inner_loop: <true|false>
+output_tag: "[<role_name>]"
 CLI tools: [<CLI tool-names>]
 message_types:
   success: <prefix>_complete

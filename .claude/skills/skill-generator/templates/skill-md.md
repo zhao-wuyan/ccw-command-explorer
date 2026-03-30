@@ -80,6 +80,10 @@ Bash(\`mkdir -p "\${workDir}"\`);
 {{output_structure}}
 \`\`\`
 
+## Completion Protocol
+
+Follow [Completion Status Protocol](./../_shared/SKILL-DESIGN-SPEC.md#13) and [Escalation Protocol](./../_shared/SKILL-DESIGN-SPEC.md#14).
+
 ## Reference Documents by Phase
 
 > **Important**: Reference documents should be organized by execution phase, clearly marking when and in what scenarios they are used. Avoid listing documents in a flat manner.

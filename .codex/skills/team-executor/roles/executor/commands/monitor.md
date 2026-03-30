@@ -167,22 +167,30 @@ After spawning all ready tasks:
 const agentIds = Object.values(state.active_agents)
   .filter(a => !a.resident)
   .map(a => a.agentId)
-wait_agent({ ids: agentIds, timeout_ms: 900000 })
-
-// Collect results from discoveries/{task_id}.json
-for (const [taskId, agent] of Object.entries(state.active_agents)) {
-  if (agent.resident) continue
-  try {
-    const disc = JSON.parse(Read(`${sessionFolder}/discoveries/${taskId}.json`))
-    state.tasks[taskId].status = disc.status || 'completed'
-    state.tasks[taskId].findings = disc.findings || ''
-    state.tasks[taskId].error = disc.error || null
-  } catch {
-    state.tasks[taskId].status = 'failed'
-    state.tasks[taskId].error = 'No discovery file produced'
+const waitResult = wait_agent({ targets: agentIds, timeout_ms: 900000 })
+if (waitResult.timed_out) {
+  for (const [taskId, agent] of Object.entries(state.active_agents)) {
+    if (agent.resident) continue
+    state.tasks[taskId].status = 'timed_out'
+    close_agent({ target: agent.agentId })
+    delete state.active_agents[taskId]
   }
-  close_agent({ id: agent.agentId })
-  delete state.active_agents[taskId]
+} else {
+  // Collect results from discoveries/{task_id}.json
+  for (const [taskId, agent] of Object.entries(state.active_agents)) {
+    if (agent.resident) continue
+    try {
+      const disc = JSON.parse(Read(`${sessionFolder}/discoveries/${taskId}.json`))
+      state.tasks[taskId].status = disc.status || 'completed'
+      state.tasks[taskId].findings = disc.findings || ''
+      state.tasks[taskId].error = disc.error || null
+    } catch {
+      state.tasks[taskId].status = 'failed'
+      state.tasks[taskId].error = 'No discovery file produced'
+    }
+    close_agent({ target: agent.agentId })
+    delete state.active_agents[taskId]
+  }
 }
 ```
 

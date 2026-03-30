@@ -36,8 +36,28 @@ Worker completed. Process and advance.
    - CHECKPOINT-* with verdict "warn" -> log risks to wisdom, proceed normally
    - CHECKPOINT-* with verdict "pass" -> proceed normally
    - QUALITY-001 -> display quality gate, pause for user commands
-   - PLAN-001 -> read plan.json complexity, create dynamic IMPL tasks per specs/pipelines.md routing
+   - PLAN-001 -> dynamicImplDispatch (see below)
 6. -> handleSpawnNext
+
+### dynamicImplDispatch (PLAN-001 callback)
+
+When PLAN-001 completes, coordinator creates IMPL tasks based on complexity:
+
+1. Read `<session>/plan/plan.json` → extract `complexity`, `tasks[]`
+2. Route by complexity (per specs/pipelines.md §6):
+
+| Complexity | Action |
+|------------|--------|
+| Low (1-2 modules) | Create single IMPL-001, blockedBy: [PLAN-001], InnerLoop: true |
+| Medium (3-4 modules) | Create IMPL-{1..N}, each blockedBy: [PLAN-001] only, InnerLoop: false |
+| High (5+ modules) | Create IMPL-{1..N} with DAG deps from plan.json, InnerLoop per dispatch rules |
+
+3. For each IMPL task: TaskCreate with structured description (dispatch.md template)
+4. Set blockedBy:
+   - **Parallel tasks**: blockedBy: [PLAN-001] (or [CHECKPOINT-003] if supervision enabled)
+   - **Serial chain within DAG**: blockedBy includes upstream IMPL task IDs
+5. Update team-session.json: `pipeline.tasks_total`, `pipeline.impl_topology: "single"|"parallel"|"dag"`
+6. Log via team_msg: `{ type: "state_update", data: { impl_count: N, topology: "..." } }`
 
 ## handleCheck
 
@@ -71,7 +91,9 @@ Find ready tasks, spawn workers, STOP.
 2. No ready + work in progress -> report waiting, STOP
 3. No ready + nothing in progress -> handleComplete
 4. Has ready -> for each:
-   a. Check if inner loop role with active worker -> skip (worker picks up)
+   a. Check inner_loop: parse task description `InnerLoop:` field (NOT role.md default)
+      - InnerLoop: true AND same-role worker already active -> skip (worker picks up next task)
+      - InnerLoop: false OR no active same-role worker -> spawn new worker
    b. **CHECKPOINT-* task** -> wake resident supervisor (see below)
    c. Other tasks -> standard spawn:
       - TaskUpdate -> in_progress

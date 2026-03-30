@@ -105,6 +105,22 @@ ACE search_context (semantic) → smart_search (structured) → read_file (batch
 
 **NEVER** use shell commands (`cat`, `find`, `grep`) when MCP tools are available.
 
+## Workflow Session Awareness
+
+| Workflow | Directory | Summary File |
+|----------|-----------|-------------|
+| `workflow-plan` | `.workflow/active/WFS-*/` | `workflow-session.json` |
+| `workflow-lite-plan` | `.workflow/.lite-plan/{slug}-{date}/` | `plan.json` |
+| `analyze-with-file` | `.workflow/.analysis/ANL-*/` | `conclusions.json` |
+| `multi-cli-plan` | `.workflow/.multi-cli-plan/*/` | `session-state.json` |
+| `lite-fix` | `.workflow/.lite-fix/*/` | `fix-plan.json` |
+| Other | `.workflow/.debug/`, `.workflow/.scratchpad/`, `.workflow/archives/` | — |
+
+Before starting work, scan recent sessions (7 days) to avoid conflicts and reuse prior work:
+- Overlapping file scope → warn, suggest referencing prior session
+- Complementary findings → feed into current task context
+
+
 ## Execution Checklist
 
 **Before**:

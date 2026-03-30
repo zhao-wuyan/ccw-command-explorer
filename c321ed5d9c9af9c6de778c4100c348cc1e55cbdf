@@ -1,0 +1,33 @@
+src/data/deprecated.ts
+  05439537e7c00b8a 103-113
+src/data/timeline.ts
+  05439537e7c00b8a 194,208-212,234-243
+.workflow/.scratchpad/wiki-sync-2026-03-30/validation-report.json
+  05439537e7c00b8a 1-49
+.workflow/.scratchpad/wiki-sync-2026-03-30/command-changes.json
+  05439537e7c00b8a 1-31
+src/data/commands.ts
+  05439537e7c00b8a 512-541,548,554
+.workflow/.scratchpad/wiki-sync-2026-03-30/version-diff.json
+  05439537e7c00b8a 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "c321ed5d9c9af9c6de778c4100c348cc1e55cbdf",
+  "prompts": {
+    "05439537e7c00b8a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "75fa3f8d-3574-4616-891e-f832f20bbdf7",
+        "model": "glm-5.1"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 2045,
+      "total_deletions": 1978,
+      "accepted_lines": 2027,
+      "overriden_lines": 0
+    }
+  }
+}

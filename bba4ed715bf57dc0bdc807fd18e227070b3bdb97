@@ -1,0 +1,40 @@
+.claude/skills/ccw-wiki-sync/SKILL.md
+  4ae180856fd93caa 26-28,77,274
+.claude/skills/ccw-wiki-sync/phases/02-command-diff.md
+  4ae180856fd93caa 74-75,77,87,92-93,102-105,107-120,124,128-135,140,144-145,147-148,150-155,157-223
+.claude/skills/ccw-wiki-sync/phases/03-command-update.md
+  4ae180856fd93caa 357-361,366-369,382,388-417
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "bba4ed715bf57dc0bdc807fd18e227070b3bdb97",
+  "prompts": {
+    "240ed663deb7c053": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2c9d3b8b-5dba-449c-a27f-863e2335e0d8",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 358,
+      "total_deletions": 0,
+      "accepted_lines": 358,
+      "overriden_lines": 0
+    },
+    "4ae180856fd93caa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dce6158e-277e-421c-96b8-f23880516492",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 1650,
+      "total_deletions": 1365,
+      "accepted_lines": 1207,
+      "overriden_lines": 12
+    }
+  }
+}

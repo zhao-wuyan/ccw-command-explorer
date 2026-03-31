@@ -1062,8 +1062,9 @@ const DeprecatedCommands = ({ searchQuery }: { searchQuery: string }) => {
   const COLORS = useColors();
   // 过滤废弃命令
   const filteredDeprecated = useMemo(() => {
-    if (!searchQuery) return DEPRECATED_COMMANDS;
-    const query = searchQuery.toLowerCase();
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) return DEPRECATED_COMMANDS;
+    const query = trimmedQuery.toLowerCase();
     return DEPRECATED_COMMANDS.filter(item =>
       item.old.toLowerCase().includes(query) ||
       (item.newCmd && item.newCmd.toLowerCase().includes(query)) ||
@@ -3425,10 +3426,11 @@ function App() {
 
   // 过滤命令
   const filteredCommands = useMemo(() => {
+    const trimmedQuery = searchQuery.trim();
     return COMMANDS.filter(cmd => {
-      const matchesSearch = searchQuery === '' ||
-        cmd.cmd.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cmd.desc.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = trimmedQuery === '' ||
+        cmd.cmd.toLowerCase().includes(trimmedQuery.toLowerCase()) ||
+        cmd.desc.toLowerCase().includes(trimmedQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || cmd.category === selectedCategory;
       const matchesLevel = selectedLevel === 'all' || cmd.level === selectedLevel;
       const matchesCLI = selectedCLI === 'all' || cmd.cli.includes(selectedCLI as CLIType);

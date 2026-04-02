@@ -3132,21 +3132,30 @@ const CasesSection = ({
 }) => {
   const COLORS = useColors();
   const { currentCLI } = useCLI();
-  const baseCases = selectedLevel === 'all'
-    ? ALL_CASES
-    : CASES_BY_LEVEL[selectedLevel] || [];
 
-  // 根据 cli 字段过滤案例
-  // - cli 指定: 只在指定的 CLI 中显示
-  // - cli 未指定但有 codex: 两端都显示（向后兼容）
-  // - cli 未指定且无 codex: 仅 Claude 显示
-  const filteredCases = baseCases.filter(c => {
+  // CLI 过滤函数
+  const filterByCLI = (cases: Case[]) => cases.filter(c => {
     if (c.cli) {
       return c.cli.includes(currentCLI);
     }
     // 向后兼容：有 codex 字段则在两端都显示
     return currentCLI === 'claude' || c.codex !== undefined;
   });
+
+  const baseCases = selectedLevel === 'all'
+    ? ALL_CASES
+    : CASES_BY_LEVEL[selectedLevel] || [];
+
+  const filteredCases = filterByCLI(baseCases);
+
+  // 预计算各分组的过滤后数量
+  const filteredCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: filterByCLI(ALL_CASES).length };
+    Object.keys(CASES_BY_LEVEL).forEach(key => {
+      counts[key] = filterByCLI(CASES_BY_LEVEL[key] || []).length;
+    });
+    return counts;
+  }, [currentCLI]);
 
   return (
     <div style={{ marginBottom: 40 }}>
@@ -3177,10 +3186,10 @@ const CasesSection = ({
             gap: 6,
           }}
         >
-          全部 ({ALL_CASES.length})
+          全部 ({filteredCounts.all})
         </motion.button>
         {Object.entries(LEVEL_CONFIG).map(([key, config]) => {
-          const count = CASES_BY_LEVEL[key]?.length || 0;
+          const count = filteredCounts[key] || 0;
           return (
             <motion.button
               key={key}

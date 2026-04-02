@@ -1,0 +1,44 @@
+src/data/cases.ts
+  cbfd126d6726a778 23-29,32,34-38,43-44,85-104,132-149,186-202,245-267,296-315,349-365,391-407
+src/App.tsx
+  cbfd126d6726a778 22,24,1502-1518,1559,1606-1622,1717,1760,1774,1815,1933,1940,1954,3498
+src/main.tsx
+  cbfd126d6726a778 7,13-15
+src/components/CLISwitcher.tsx
+  cbfd126d6726a778 1-50
+src/contexts/CLIContext.tsx
+  cbfd126d6726a778 1-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "f3ac5d49a4a614b284fd700d132057d0c698de01",
+  "prompts": {
+    "4c8397e917c61197": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f26a96c9-51ca-4f05-97aa-b6c6a91ea245",
+        "model": "<synthetic>"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 185,
+      "total_deletions": 0,
+      "accepted_lines": 185,
+      "overriden_lines": 0
+    },
+    "cbfd126d6726a778": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eae20487-7925-46c1-ade1-7d8a05a0fcb2",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 4476,
+      "total_deletions": 4206,
+      "accepted_lines": 4377,
+      "overriden_lines": 0
+    }
+  }
+}

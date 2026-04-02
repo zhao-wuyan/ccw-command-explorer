@@ -19,7 +19,9 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { ALL_CASES, CASES_BY_LEVEL, LEVEL_CONFIG } from './data/cases';
 import type { Case, CaseStep } from './data/cases';
 import { ThemeToggle } from './components/ThemeToggle';
+import { CLISwitcher } from './components/CLISwitcher';
 import { useColors } from './contexts/ColorsContext';
+import { useCLI } from './contexts/CLIContext';
 import './App.css';
 
 // 辅助函数：根据 cmd 和 cli 查找命令
@@ -1497,6 +1499,23 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
   const levelConfig = LEVEL_CONFIG[String(caseItem.level)] || LEVEL_CONFIG['2'];
   const [isHovered, setIsHovered] = useState(false);
   const isLight = COLORS.bg === '#ffffff';
+  const { currentCLI } = useCLI();
+
+  // 根据 CLI 类型获取显示数据
+  const displayData = useMemo(() => {
+    if (currentCLI === 'codex' && caseItem.codex) {
+      return {
+        commands: caseItem.codex.commands || caseItem.commands,
+        steps: caseItem.codex.steps || caseItem.steps,
+        tips: caseItem.codex.tips || caseItem.tips,
+      };
+    }
+    return {
+      commands: caseItem.commands,
+      steps: caseItem.steps,
+      tips: caseItem.tips,
+    };
+  }, [caseItem, currentCLI]);
 
   return (
     <motion.div
@@ -1537,7 +1556,7 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
       <p style={{ fontSize: 14, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{caseItem.scenario}</p>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {caseItem.commands.map((cmd) => {
+        {displayData.commands.map((cmd) => {
           const cmdInfo = findCommand(cmd.cmd, cmd.cli);
           return (
             <code
@@ -1584,6 +1603,23 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
   const isLight = COLORS.bg === '#ffffff';
   const caseLevelColor = useCaseLevelColor(String(caseItem.level));
   const levelConfig = LEVEL_CONFIG[String(caseItem.level)] || LEVEL_CONFIG['2'];
+  const { currentCLI } = useCLI();
+
+  // 根据 CLI 类型获取显示数据
+  const displayData = useMemo(() => {
+    if (currentCLI === 'codex' && caseItem.codex) {
+      return {
+        commands: caseItem.codex.commands || caseItem.commands,
+        steps: caseItem.codex.steps || caseItem.steps,
+        tips: caseItem.codex.tips || caseItem.tips,
+      };
+    }
+    return {
+      commands: caseItem.commands,
+      steps: caseItem.steps,
+      tips: caseItem.tips,
+    };
+  }, [caseItem, currentCLI]);
 
   return (
     <motion.div
@@ -1678,7 +1714,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
         >
           <h4 style={{ color: COLORS.text, marginBottom: 12, fontSize: 14 }}>🔧 涉及命令 <span style={{ color: COLORS.textDim, fontWeight: 'normal' }}>(点击查看详情)</span></h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {caseItem.commands.map((cmd) => {
+            {displayData.commands.map((cmd) => {
               const cmdInfo = findCommand(cmd.cmd, cmd.cli);
               return (
                 <div key={getCommandKey(cmd.cmd, cmd.cli)} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1721,7 +1757,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
         </div>
 
         {/* 命令链可视化 */}
-        {caseItem.commands.length > 1 && (
+        {displayData.commands.length > 1 && (
           <div
             style={{
               backgroundColor: COLORS.codeBg,
@@ -1735,7 +1771,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
               命令链流程
             </h4>
             <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-              {caseItem.commands.map((cmd, i) => (
+              {displayData.commands.map((cmd, i) => (
                 <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -1776,7 +1812,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
                     </span>
                     <code style={{ fontSize: 13, color: caseLevelColor }}>{cmd.cmd}</code>
                   </motion.div>
-                  {i < caseItem.commands.length - 1 && (
+                  {i < displayData.commands.length - 1 && (
                     <ChevronRight size={18} style={{ color: COLORS.textDim }} />
                   )}
                 </span>
@@ -1894,14 +1930,14 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
             交互过程 <span style={{ color: COLORS.textDim, fontWeight: 'normal' }}>(命令可点击)</span>
           </h4>
           <div>
-            {caseItem.steps.map((step, i) => (
+            {displayData.steps.map((step, i) => (
               <CaseStepItem key={i} step={step} index={i} onCommandClick={onCommandClick} />
             ))}
           </div>
         </div>
 
         {/* 提示 */}
-        {caseItem.tips && caseItem.tips.length > 0 && (
+        {displayData.tips && displayData.tips.length > 0 && (
           <div
             style={{
               backgroundColor: caseLevelColor + '10',
@@ -1915,7 +1951,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
               实用提示
             </h4>
             <ul style={{ margin: 0, paddingLeft: 20 }}>
-              {caseItem.tips.map((tip, i) => (
+              {displayData.tips.map((tip, i) => (
                 <li key={i} style={{ color: COLORS.textMuted, marginBottom: 6, fontSize: 14 }}>
                   {tip}
                 </li>
@@ -3459,6 +3495,7 @@ function App() {
       <header className="header">
         {/* 右上角按钮组 */}
         <div className="header-actions">
+          <CLISwitcher />
           <ThemeToggle />
           <a
             href="https://github.com/zhao-wuyan/ccw-command-explorer"

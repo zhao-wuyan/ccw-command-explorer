@@ -3213,7 +3213,7 @@ const ExperienceCard = ({
           {tip.commands.map((cmd, i) => (
             <div key={getCommandKey(cmd.cmd, cmd.cli)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <code
-                onClick={() => onCommandClick({ cmd: cmd.cmd, cli: cmd.cli })}
+                onClick={(e) => { e.stopPropagation(); onCommandClick({ cmd: cmd.cmd, cli: cmd.cli }); }}
                 style={{
                   fontSize: 12,
                   color: categoryColor,
@@ -3243,7 +3243,7 @@ const ExperienceCard = ({
           {tip.commands.map((cmd) => (
             <code
               key={getCommandKey(cmd.cmd, cmd.cli)}
-              onClick={() => onCommandClick({ cmd: cmd.cmd, cli: cmd.cli })}
+              onClick={(e) => { e.stopPropagation(); onCommandClick({ cmd: cmd.cmd, cli: cmd.cli }); }}
               style={{
                 fontSize: 12,
                 color: categoryColor,
@@ -3837,7 +3837,7 @@ function App() {
 
           {/* 智能推荐 Tab */}
           {activeTab === 'recommender' && (
-            <RecommenderSection onCommandClick={setSelectedCommand} />
+            <RecommenderSection onCommandClick={(cmd) => { setCommandZIndex(100); setSelectedCommand(cmd); }} />
           )}
 
           {/* 命令 Tab */}
@@ -3846,7 +3846,7 @@ function App() {
               filteredCommands={filteredCommands}
               groupedCommands={groupedCommands}
               searchQuery={searchQuery}
-              onCommandClick={setSelectedCommand}
+              onCommandClick={(cmd) => { setCommandZIndex(100); setSelectedCommand(cmd); }}
             />
           )}
 
@@ -3867,6 +3867,7 @@ function App() {
                 onCommandClick={(cmdRef) => {
                   const command = findCommand(cmdRef.cmd, cmdRef.cli?.[0]);
                   if (command) {
+                    setCommandZIndex(100);
                     setSelectedCommand(command);
                   }
                 }}
@@ -3887,6 +3888,7 @@ function App() {
                 onCommandClick={(cmdRef) => {
                   const command = findCommand(cmdRef.cmd, cmdRef.cli?.[0]);
                   if (command) {
+                    setCommandZIndex(100);
                     setSelectedCommand(command);
                   }
                 }}

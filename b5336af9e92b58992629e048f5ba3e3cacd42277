@@ -1,0 +1,23 @@
+src/data/cases.ts
+  29efc818070fb087 88-89,92,95,128,135,138,142,145-146,182,189,192,198,248-251,254,257,259-260,263-264,293,299-300,303,306,308,311-312,352,355,358,361,394,397,400,403
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "b5336af9e92b58992629e048f5ba3e3cacd42277",
+  "prompts": {
+    "29efc818070fb087": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6de1643a-dbb9-4e6f-962b-d0e6f51f1c8c",
+        "model": "glm-5.1"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 716,
+      "total_deletions": 716,
+      "accepted_lines": 672,
+      "overriden_lines": 0
+    }
+  }
+}

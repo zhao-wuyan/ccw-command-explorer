@@ -438,7 +438,7 @@ const ExperienceDetailModal = ({ item, onClose }: {
 };
 
 // 命令详情弹窗
-const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => void }) => {
+const CommandDetail = ({ command, onClose, onCommandClick, zIndex = 100 }: { command: Command; onClose: () => void; onCommandClick?: (cmd: Command) => void; zIndex?: number }) => {
   const COLORS = useColors();
   const isLight = COLORS.bg === '#ffffff';
   const categoryColor = useCategoryColor(command.category);
@@ -493,7 +493,7 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 100,
+        zIndex,
         padding: isMobile ? '12px 0 0 0' : 20,
         overflow: isMobile ? 'auto' : 'hidden',
       }}
@@ -803,7 +803,13 @@ const CommandDetail = ({ command, onClose }: { command: Command; onClose: () => 
     {/* 复用 CaseDetail（position: fixed，自然覆盖整个屏幕包括侧边面板） */}
     <AnimatePresence>
       {activeCase && (
-        <CaseDetail key={activeCase.id} caseItem={activeCase} onClose={() => setActiveCase(null)} />
+        <CaseDetail key={activeCase.id} caseItem={activeCase} onClose={() => setActiveCase(null)} zIndex={200} onCommandClick={(cmdRef) => {
+              const cmd = findCommand(cmdRef.cmd, cmdRef.cli?.[0]);
+              if (cmd && onCommandClick) {
+                onCommandClick(cmd);
+                setActiveCase(null); // 关闭案例弹窗
+              }
+            }} />
       )}
     </AnimatePresence>
     {/* 经验详情弹窗（position: fixed） */}
@@ -1597,7 +1603,7 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
 };
 
 // 案例详情弹窗
-const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onClose: () => void; onCommandClick?: (cmdRef: { cmd: string; cli?: CLIType[] }) => void }) => {
+const CaseDetail = ({ caseItem, onClose, onCommandClick, zIndex = 100 }: { caseItem: Case; onClose: () => void; onCommandClick?: (cmdRef: { cmd: string; cli?: CLIType[] }) => void; zIndex?: number }) => {
   const COLORS = useColors();
   const isLight = COLORS.bg === '#ffffff';
   const caseLevelColor = useCaseLevelColor(String(caseItem.level));
@@ -1636,7 +1642,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 100,
+        zIndex,
         padding: 20,
         overflow: 'auto',
       }}
@@ -3505,6 +3511,7 @@ function App() {
   const [selectedLevel, setSelectedLevel] = useState<number | 'all'>('all');
   const [selectedCLI, setSelectedCLI] = useState<CLIType | 'all'>('all');
   const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
+  const [commandZIndex, setCommandZIndex] = useState(100);
   const [selectedVersion, setSelectedVersion] = useState<TimelineItem | null>(null);
   const [selectedCaseLevel, setSelectedCaseLevel] = useState<string>('all');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
@@ -4178,7 +4185,12 @@ function App() {
         {selectedCommand && (
           <CommandDetail
             command={selectedCommand}
-            onClose={() => setSelectedCommand(null)}
+            onClose={() => {
+              setSelectedCommand(null);
+              setCommandZIndex(100);
+            }}
+            onCommandClick={setSelectedCommand}
+            zIndex={commandZIndex}
           />
         )}
       </AnimatePresence>
@@ -4201,6 +4213,13 @@ function App() {
           <CaseDetail
             caseItem={selectedCase}
             onClose={() => setSelectedCase(null)}
+            onCommandClick={(cmdRef) => {
+              const command = findCommand(cmdRef.cmd, cmdRef.cli?.[0]);
+              if (command) {
+                setCommandZIndex(200);
+                setSelectedCommand(command);
+              }
+            }}
           />
         )}
       </AnimatePresence>

@@ -1,0 +1,23 @@
+src/App.tsx
+  cbfd126d6726a778 1605-1609,1613,1625,1682-1740,3079,3500,3755-3805
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "316fe6786a066c7caefd3edab509f4cf9595e769",
+  "prompts": {
+    "cbfd126d6726a778": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eae20487-7925-46c1-ade1-7d8a05a0fcb2",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 4455,
+      "total_deletions": 4354,
+      "accepted_lines": 4222,
+      "overriden_lines": 0
+    }
+  }
+}

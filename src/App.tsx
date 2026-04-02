@@ -1653,10 +1653,6 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick, zIndex = 100 }: { caseI
     };
   }, [caseItem]);
 
-  const hasClaudeContent = caseItem.claude !== undefined;
-  const hasCodexContent = caseItem.codex !== undefined;
-  const isCodexShared = caseItem.codex?.shared === true;
-
   // 根据 CLI 类型获取显示数据
   const displayData = useMemo(() => {
     // Claude 模式：优先使用 claude 字段

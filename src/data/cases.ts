@@ -85,14 +85,14 @@ export const FEATURE_CASES: Case[] = [
     // Codex 专用内容
     codex: {
       commands: [
-        { cmd: '$analyze-with-file', desc: '深度分析需求' },
-        { cmd: '$csv-wave-pipeline', desc: 'CSV Wave 流水线执行' },
+        { cmd: '/analyze-with-file', desc: '深度分析需求' },
+        { cmd: '/csv-wave-pipeline', desc: 'CSV Wave 流水线执行' },
       ],
       steps: [
-        { role: 'user', content: '$analyze-with-file "给用户添加消息通知功能，支持站内信"', type: 'command' },
+        { role: 'user', content: '/analyze-with-file "给用户添加消息通知功能，支持站内信"', type: 'command' },
         { role: 'system', content: '┌─ Codex 分析模式 ────────────────────────────┐\n│ 📋 快速分析: 架构扫描 + 依赖检测             │\n│ 🎯 生成 CSV Wave 执行计划                    │\n└──────────────────────────────────────────────┘', type: 'response' },
         { role: 'system', content: '📊 分析结果:\n\n  模块: Notification\n  依赖: 无 (新模块)\n  文件预估: 8 个\n\n  📁 产出: .waves/wave-plan.csv', type: 'response' },
-        { role: 'user', content: '$csv-wave-pipeline', type: 'command' },
+        { role: 'user', content: '/csv-wave-pipeline', type: 'command' },
         { role: 'system', content: '🌊 CSV Wave Pipeline 执行中...\n\n  Wave 1: 基础设施\n    ☑️ 数据模型 + 迁移... ✓\n    ☑️ 核心服务... ✓\n\n  Wave 2: API 层\n    ☑️ REST 路由... ✓\n\n  Wave 3: 前端\n    ☑️ 通知组件... ✓\n\n  Wave 4: 测试\n    ☑️ 集成测试... ✓', type: 'response' },
         { role: 'system', content: '✅ 完成！\n\n  📁 新增文件: 8 个\n  📊 测试覆盖: 12 个场景\n\n💡 Codex: analyze → csv-wave-pipeline 一条命令搞定', type: 'result', highlight: true },
       ],
@@ -125,25 +125,25 @@ export const FEATURE_CASES: Case[] = [
     ],
     tips: [
       'Claude: /team-lifecycle-v4 "需求或bug"',
-      'Codex: $team-lifecycle-v4 "需求或bug"',
+      'Codex: /team-lifecycle-v4 "需求或bug"',
       '一条命令完成全流程，适合 0→1 或功能变更',
       'CCW team skill 是目前最稳定的工作流',
     ],
     // Codex 专用内容
     codex: {
       commands: [
-        { cmd: '$team-lifecycle-v4', desc: '团队全生命周期 - 分析→规划→执行→测试→审查' },
+        { cmd: '/team-lifecycle-v4', desc: '团队全生命周期 - 分析→规划→执行→测试→审查' },
       ],
       steps: [
-        { role: 'user', content: '$team-lifecycle-v4 "修改订单导出功能，支持 Excel 和 CSV 两种格式"', type: 'command' },
+        { role: 'user', content: '/team-lifecycle-v4 "修改订单导出功能，支持 Excel 和 CSV 两种格式"', type: 'command' },
         { role: 'system', content: '┌─ Codex 团队模式 ────────────────────────────┐\n│ 🤖 自动执行: 分析→规划→执行→测试→审查       │\n└──────────────────────────────────────────────┘', type: 'response' },
         { role: 'system', content: '📊 [分析师] 扫描代码库...\n\n  发现: src/services/export.service.ts\n  依赖: 无新增\n\n📋 [规划师] 任务拆解:\n\n  IMPL-001: exceljs 依赖\n  IMPL-002: ExcelExportService\n  IMPL-003: API 格式参数\n  IMPL-004: 前端选择器\n  IMPL-005: 测试补充', type: 'response' },
         { role: 'system', content: '💻 [执行者] 批量实现...\n🧪 [测试者] 测试验证...\n👀 [审查者] 代码审查...', type: 'note' },
-        { role: 'system', content: '✅ Codex team-lifecycle-v4 完成！\n\n  📊 统计: 5任务 | 18测试 | 92%覆盖\n  📁 文件: 6个\n\n💡 $team-lifecycle-v4 一条命令全流程', type: 'result', highlight: true },
+        { role: 'system', content: '✅ Codex team-lifecycle-v4 完成！\n\n  📊 统计: 5任务 | 18测试 | 92%覆盖\n  📁 文件: 6个\n\n💡 /team-lifecycle-v4 一条命令全流程', type: 'result', highlight: true },
       ],
       tips: [
-        'Codex: $team-lifecycle-v4 "需求"',
-        '流程与 Claude 相同，命令前缀为 $',
+        'Codex: /team-lifecycle-v4 "需求"',
+        '流程与 Claude 相同，命令前缀为 /',
         '全自动执行，减少交互',
       ],
     },
@@ -179,23 +179,23 @@ export const BUG_CASES: Case[] = [
     ],
     tips: [
       'Claude: /workflow:debug-with-file "问题描述"',
-      'Codex: $debug-with-file "问题描述"',
+      'Codex: /debug-with-file "问题描述"',
       '自动打日志分析，解决 bug 简单强力',
       '科学的假设-验证方法论，过程文档化',
     ],
     // Codex 专用内容
     codex: {
       commands: [
-        { cmd: '$debug-with-file', desc: '假设驱动调试 - 自动诊断修复 (Codex)' },
+        { cmd: '/debug-with-file', desc: '假设驱动调试 - 自动诊断修复 (Codex)' },
       ],
       steps: [
-        { role: 'user', content: '$debug-with-file "WebSocket 连接在生产环境随机断开"', type: 'command' },
+        { role: 'user', content: '/debug-with-file "WebSocket 连接在生产环境随机断开"', type: 'command' },
         { role: 'system', content: '┌─ Codex 调试模式 ────────────────────────────┐\n│ 🤖 自动诊断 + 快速修复                       │\n└──────────────────────────────────────────────┘', type: 'response' },
         { role: 'system', content: '📋 自动假设验证:\n\n  [1] 心跳超时 ✗\n  [2] Nginx 代理超时 ✓ 根因确认\n  [3] 内存泄露 ✗\n  [4] Session 未共享 ✗', type: 'response' },
         { role: 'system', content: '🔧 自动修复:\n\n  方案: 客户端 ping 保活\n  修改: src/websocket/client.ts\n\n  📁 调试报告: .workflow/.debug/DBG-WS/', type: 'result', highlight: true },
       ],
       tips: [
-        'Codex: $debug-with-file "问题"',
+        'Codex: /debug-with-file "问题"',
         '自动验证假设，减少手动选择',
         '快速定位 + 自动修复',
       ],
@@ -245,23 +245,23 @@ export const ZERO_TO_ONE_CASES: Case[] = [
     // Codex 专用内容
     codex: {
       commands: [
-        { cmd: '$brainstorm', desc: '头脑风暴 - 多角色发散分析' },
-        { cmd: '$spec-generator', desc: '规格文档生成' },
-        { cmd: '$workflow-plan', desc: '详细规划' },
-        { cmd: '$workflow-execute', desc: '按计划执行' },
+        { cmd: '/brainstorm', desc: '头脑风暴 - 多角色发散分析' },
+        { cmd: '/spec-generator', desc: '规格文档生成' },
+        { cmd: '/workflow-plan', desc: '详细规划' },
+        { cmd: '/workflow-execute', desc: '按计划执行' },
       ],
       steps: [
-        { role: 'user', content: '$brainstorm "做一个智能记账 App，自动识别消费类型"', type: 'command' },
+        { role: 'user', content: '/brainstorm "做一个智能记账 App，自动识别消费类型"', type: 'command' },
         { role: 'system', content: '┌─ Codex 头脑风暴 ─────────────────────────────┐\n│ 🤖 快速发散 + 自动收敛                       │\n└──────────────────────────────────────────────┘', type: 'response' },
         { role: 'system', content: '📐 架构: React Native + NestJS + OCR API\n💻 模块: OCR识别 | 分类ML | 记账CRUD | 报表\n🎨 MVP: 拍照识别 | 自动分类 | 月度报表\n\n📁 产出: .workflow/.brainstorm/BS-记账App/', type: 'response' },
-        { role: 'user', content: '$spec-generator "智能记账App" --from-brainstorm', type: 'command' },
+        { role: 'user', content: '/spec-generator "智能记账App" --from-brainstorm', type: 'command' },
         { role: 'system', content: '✅ 规格文档:\n  ✓ PRD.md\n  ✓ architecture.md\n  ✓ api-spec.md\n\n  📁 存储: specs/smart-billing/', type: 'response' },
-        { role: 'user', content: '$workflow-plan && $workflow-execute', type: 'command' },
-        { role: 'system', content: '✅ 全流程完成！\n\n  📁 文件: 32个\n  📊 测试: 78用例\n\n💡 $brainstorm → $spec → $plan → $execute', type: 'result', highlight: true },
+        { role: 'user', content: '/workflow-plan && /workflow-execute', type: 'command' },
+        { role: 'system', content: '✅ 全流程完成！\n\n  📁 文件: 32个\n  📊 测试: 78用例\n\n💡 /brainstorm → /spec-generator → /workflow-plan → /workflow-execute', type: 'result', highlight: true },
       ],
       tips: [
-        'Codex: $brainstorm → $spec-generator → $workflow-plan → $execute',
-        '可链式执行: $plan && $execute',
+        'Codex: /brainstorm → /spec-generator → /workflow-plan → /workflow-execute',
+        '可链式执行: /workflow-plan && /workflow-execute',
         '快速迭代，减少交互',
       ],
     },
@@ -290,26 +290,26 @@ export const ZERO_TO_ONE_CASES: Case[] = [
     ],
     tips: [
       '需求文档直接粘贴给 workflow-plan',
-      'Codex: 需求文档 → $workflow-plan → $workflow-execute',
+      'Codex: 需求文档 → /workflow-plan → /workflow-execute',
       '每个任务独立 commit，方便 review 和回滚',
     ],
     // Codex 专用内容
     codex: {
       commands: [
-        { cmd: '$workflow-plan', desc: '读取需求文档，制定实现计划' },
-        { cmd: '$workflow-execute', desc: '按计划逐步执行' },
+        { cmd: '/workflow-plan', desc: '读取需求文档，制定实现计划' },
+        { cmd: '/workflow-execute', desc: '按计划逐步执行' },
       ],
       steps: [
-        { role: 'user', content: '$workflow-plan\n\n需求: 实现用户积分系统\n- 用户行为获得积分 (登录、购买、分享)\n- 积分等级和权益\n- 积分商城兑换\n- 积分明细记录', type: 'command' },
+        { role: 'user', content: '/workflow-plan\n\n需求: 实现用户积分系统\n- 用户行为获得积分 (登录、购买、分享)\n- 积分等级和权益\n- 积分商城兑换\n- 积分明细记录', type: 'command' },
         { role: 'system', content: '┌─ Codex 规划模式 ─────────────────────────────┐\n│ 🤖 快速解析 + 自动拆解                       │\n└──────────────────────────────────────────────┘', type: 'response' },
         { role: 'system', content: '📋 计划 (WFS-积分系统):\n\n  Phase 1: 数据层\n    IMPL-001: Point 数据模型\n    IMPL-002: PointRule 规则引擎\n    IMPL-003: PointRecord 明细表\n\n  Phase 2: 业务层\n    IMPL-004: PointService 核心服务\n    IMPL-005: PointLevel 等级计算\n    IMPL-006: PointExchange 积分兑换\n\n  Phase 3: API 层\n    IMPL-007: REST API 设计\n    IMPL-008: 管理后台接口\n\n  Phase 4: 前端\n    IMPL-009: 积分中心页面\n    IMPL-010: 积分商城页面', type: 'response' },
-        { role: 'user', content: '$workflow-execute', type: 'command' },
+        { role: 'user', content: '/workflow-execute', type: 'command' },
         { role: 'system', content: '▶️ 执行中...\n\n  ☑️ [1/10] Point 数据模型... ✓\n  ☑️ [2/10] PointRule 规则引擎... ✓\n  ...\n  ☑️ [10/10] 积分商城页面... ✓', type: 'response' },
-        { role: 'system', content: '✅ 完成！\n\n  📁 文件: 18个\n  📊 测试: 45用例, 89%覆盖\n\n💡 $workflow-plan → $workflow-execute', type: 'result', highlight: true },
+        { role: 'system', content: '✅ 完成！\n\n  📁 文件: 18个\n  📊 测试: 45用例, 89%覆盖\n\n💡 /workflow-plan → /workflow-execute', type: 'result', highlight: true },
       ],
       tips: [
-        'Codex: $workflow-plan → $workflow-execute',
-        '可链式: $plan && $execute',
+        'Codex: /workflow-plan → /workflow-execute',
+        '可链式: /workflow-plan && /workflow-execute',
         '每个任务独立 commit',
       ],
     },
@@ -349,16 +349,16 @@ export const AUTO_CASES: Case[] = [
     // Codex 专用内容
     codex: {
       commands: [
-        { cmd: '$team-lifecycle-v4', desc: 'Codex 全流程 - 一条命令完成复杂需求' },
+        { cmd: '/team-lifecycle-v4', desc: 'Codex 全流程 - 一条命令完成复杂需求' },
       ],
       steps: [
-        { role: 'user', content: '$team-lifecycle-v4 "重构整个支付模块，支持多渠道、高并发、幂等防重"', type: 'command' },
+        { role: 'user', content: '/team-lifecycle-v4 "重构整个支付模块，支持多渠道、高并发、幂等防重"', type: 'command' },
         { role: 'system', content: '┌─ Codex 团队模式 ────────────────────────────┐\n│ 🤖 全自动: 分析→规划→执行→测试→审查           │\n└──────────────────────────────────────────────┘', type: 'response' },
         { role: 'system', content: '📊 [分析师] 支付模块扫描...\n\n  模块: 6个 | 耦合: 15处\n  渠道: 微信 | 支付宝 | 信用卡\n\n📋 [规划师] Wave 拆解:\n\n  Wave 1: 解耦核心模块\n  Wave 2: 渠道适配器\n  Wave 3: 并发优化\n  Wave 4: 幂等防重\n  Wave 5: 测试覆盖', type: 'response' },
-        { role: 'system', content: '✅ Codex 全流程完成！\n\n📊 重构统计:\n   - 模块解耦: 15 → 3\n   - 新增渠道: 微信/支付宝/信用卡\n   - 并发支持: 1000 QPS\n   - 幂等防重: 已实现\n\n💡 $team-lifecycle-v4 一条命令搞定复杂需求', type: 'result', highlight: true },
+        { role: 'system', content: '✅ Codex 全流程完成！\n\n📊 重构统计:\n   - 模块解耦: 15 → 3\n   - 新增渠道: 微信/支付宝/信用卡\n   - 并发支持: 1000 QPS\n   - 幂等防重: 已实现\n\n💡 /team-lifecycle-v4 一条命令搞定复杂需求', type: 'result', highlight: true },
       ],
       tips: [
-        'Codex: $team-lifecycle-v4 "复杂需求"',
+        'Codex: /team-lifecycle-v4 "复杂需求"',
         '全自动化执行，无需手动选择',
         '适合 0→1 大型需求',
       ],
@@ -391,16 +391,16 @@ export const AUTO_CASES: Case[] = [
     // Codex 专用内容
     codex: {
       commands: [
-        { cmd: '$team-lifecycle-v4', desc: 'Codex 全流程 - 一条命令完成所有' },
+        { cmd: '/team-lifecycle-v4', desc: 'Codex 全流程 - 一条命令完成所有' },
       ],
       steps: [
-        { role: 'user', content: '$team-lifecycle-v4 "给用户中心增加头像上传功能，支持裁剪和压缩"', type: 'command' },
+        { role: 'user', content: '/team-lifecycle-v4 "给用户中心增加头像上传功能，支持裁剪和压缩"', type: 'command' },
         { role: 'system', content: '┌─ Codex 自动模式 ──────────────────────────────┐\n│ 🤖 分析: 功能新增，中等复杂度                 │\n│ 🎯 路径: 分析→规划→执行→测试→审查             │\n└──────────────────────────────────────────────┘', type: 'response' },
         { role: 'system', content: '📋 任务分解:\n\n  IMPL-001: OSS 存储配置\n  IMPL-002: 图片上传 API\n  IMPL-003: 图片裁剪 (Sharp)\n  IMPL-004: 前端头像组件\n  IMPL-005: 测试用例\n\n⚡ 执行中...\n  ☑️ [1-5] 全部完成', type: 'response' },
-        { role: 'system', content: '✅ 完成！\n\n  📁 文件: 6个\n  🎯 功能可用\n\n💡 $team-lifecycle-v4 一条命令全流程', type: 'result', highlight: true },
+        { role: 'system', content: '✅ 完成！\n\n  📁 文件: 6个\n  🎯 功能可用\n\n💡 /team-lifecycle-v4 一条命令全流程', type: 'result', highlight: true },
       ],
       tips: [
-        'Codex: $team-lifecycle-v4 "需求"',
+        'Codex: /team-lifecycle-v4 "需求"',
         '自动判断复杂度，选择最优路径',
         '日常开发首选入口',
       ],

@@ -1508,6 +1508,17 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
 
   // 根据 CLI 类型获取显示数据
   const displayData = useMemo(() => {
+    // Claude 模式：优先使用 claude 字段
+    if (currentCLI === 'claude' && caseItem.claude) {
+      return {
+        title: caseItem.claude.title || caseItem.title,
+        scenario: caseItem.claude.scenario || caseItem.scenario,
+        commands: caseItem.claude.commands || caseItem.commands,
+        steps: caseItem.claude.steps || caseItem.steps,
+        tips: caseItem.claude.tips || caseItem.tips,
+      };
+    }
+    // Codex 模式：优先使用 codex 字段
     if (currentCLI === 'codex' && caseItem.codex) {
       if (caseItem.codex.shared) {
         return {
@@ -1526,6 +1537,7 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
         tips: caseItem.codex.tips || caseItem.tips,
       };
     }
+    // 默认：使用基础字段
     return {
       title: caseItem.title,
       scenario: caseItem.scenario,
@@ -1625,11 +1637,39 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick, zIndex = 100 }: { caseI
 
   // 本地临时 CLI 状态（用于在详情中临时切换）
   const [localCLI, setLocalCLI] = useState<CLIType>(globalCLI);
+
+  // 判断案例对各 CLI 的支持情况
+  const cliSupport = useMemo(() => {
+    if (caseItem.cli) {
+      return {
+        claude: caseItem.cli.includes('claude'),
+        codex: caseItem.cli.includes('codex'),
+      };
+    }
+    // 向后兼容：有 codex 字段则两端都支持
+    return {
+      claude: true,
+      codex: caseItem.codex !== undefined,
+    };
+  }, [caseItem]);
+
+  const hasClaudeContent = caseItem.claude !== undefined;
   const hasCodexContent = caseItem.codex !== undefined;
   const isCodexShared = caseItem.codex?.shared === true;
 
   // 根据 CLI 类型获取显示数据
   const displayData = useMemo(() => {
+    // Claude 模式：优先使用 claude 字段
+    if (localCLI === 'claude' && caseItem.claude) {
+      return {
+        title: caseItem.claude.title || caseItem.title,
+        scenario: caseItem.claude.scenario || caseItem.scenario,
+        commands: caseItem.claude.commands || caseItem.commands,
+        steps: caseItem.claude.steps || caseItem.steps,
+        tips: caseItem.claude.tips || caseItem.tips,
+      };
+    }
+    // Codex 模式：优先使用 codex 字段
     if (localCLI === 'codex' && caseItem.codex) {
       if (caseItem.codex.shared) {
         return {
@@ -1648,6 +1688,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick, zIndex = 100 }: { caseI
         tips: caseItem.codex.tips || caseItem.tips,
       };
     }
+    // 默认：使用基础字段
     return {
       title: caseItem.title,
       scenario: caseItem.scenario,
@@ -1713,8 +1754,8 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick, zIndex = 100 }: { caseI
             <h2 style={{ fontSize: 24, color: COLORS.text, margin: 0 }}>{displayData.title}</h2>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* 临时 CLI 极简切换 */}
-            {hasCodexContent && (
+            {/* 临时 CLI 极简切换 - 当两端都支持时显示切换器 */}
+            {cliSupport.claude && cliSupport.codex && (
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -3098,10 +3139,18 @@ const CasesSection = ({
   const baseCases = selectedLevel === 'all'
     ? ALL_CASES
     : CASES_BY_LEVEL[selectedLevel] || [];
-  // 切换到 Codex 时，过滤掉没有 codex 字段的案例
-  const filteredCases = currentCLI === 'codex'
-    ? baseCases.filter(c => c.codex !== undefined)
-    : baseCases;
+
+  // 根据 cli 字段过滤案例
+  // - cli 指定: 只在指定的 CLI 中显示
+  // - cli 未指定但有 codex: 两端都显示（向后兼容）
+  // - cli 未指定且无 codex: 仅 Claude 显示
+  const filteredCases = baseCases.filter(c => {
+    if (c.cli) {
+      return c.cli.includes(currentCLI);
+    }
+    // 向后兼容：有 codex 字段则在两端都显示
+    return currentCLI === 'claude' || c.codex !== undefined;
+  });
 
   return (
     <div style={{ marginBottom: 40 }}>

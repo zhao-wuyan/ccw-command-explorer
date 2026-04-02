@@ -20,34 +20,45 @@ export interface CaseCommand {
   desc: string;
 }
 
-// Codex 专用内容接口
-export interface CaseCodex {
-  shared?: boolean;       // true = 与 Claude 共用相同命令和步骤，切换 Codex 时显示默认内容
-  title?: string;         // 覆盖默认 title（当标题含 CLI 专有命令时需要）
-  scenario?: string;      // 覆盖默认 scenario（当场景含 CLI 专有命令时需要）
+// CLI 专用内容接口（Claude 和 Codex 对称）
+export interface CaseCLIContent {
+  title?: string;         // 覆盖默认 title
+  scenario?: string;      // 覆盖默认 scenario
   commands?: CaseCommand[];
   steps?: CaseStep[];
   tips?: string[];
 }
 
+// Codex 专用内容接口（向后兼容）
+export interface CaseCodex extends CaseCLIContent {
+  shared?: boolean;       // true = 与 Claude 共用相同命令和步骤，切换 Codex 时显示默认内容
+}
+
 export interface Case {
   id: string;
-  title: string;        // 共用，不区分 CLI
+  title: string;        // 默认标题（fallback）
   level: CaseLevel;
   category: string;     // 共用
-  scenario: string;     // 共用
-  commands: CaseCommand[];  // Claude 默认
-  steps: CaseStep[];        // Claude 默认
-  tips?: string[];          // Claude 默认
+  scenario: string;     // 默认场景（fallback）
+  commands: CaseCommand[];  // 默认命令（fallback）
+  steps: CaseStep[];        // 默认步骤（fallback）
+  tips?: string[];          // 默认提示（fallback）
   prerequisites?: string[];
   successCriteria?: string[];
   estimatedTime?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
-  // Codex 内容（可选）
-  // - 有 codex 字段: 切换到 Codex 时显示此案例
-  //   - shared: true → 显示 Claude 的默认内容（命令相同）
+  // CLI 可见性控制
+  // - 未指定: 根据 claude/codex 字段自动推断（有 codex 则两端都可见，否则仅 Claude）
+  // - ['claude', 'codex']: 两端都可见
+  // - ['claude']: 仅 Claude 可见
+  // - ['codex']: 仅 Codex 可见
+  cli?: CLIType[];
+  // Claude 专用内容（可选，当 cli 包含 'claude' 时使用）
+  claude?: CaseCLIContent;
+  // Codex 专用内容（可选，向后兼容）
+  // - 有 codex 字段且 cli 未指定: 自动添加 'codex' 到 cli
+  //   - shared: true → 显示默认内容
   //   - 有 commands/steps → 显示 Codex 专用内容
-  // - 无 codex 字段: 切换到 Codex 时隐藏此案例
   codex?: CaseCodex;
 }
   
@@ -382,7 +393,8 @@ export const AUTO_CASES: Case[] = [
       '日常开发首选入口',
     ],
     // Codex 没有中等规模的独立命令（帖子中 Codex 全自动交付只有 /team-lifecycle-v4）
-    // 不设置 codex 字段 → 切换到 Codex 时此案例被隐藏
+    // 使用新的 cli 字段明确指定：仅 Claude 可见
+    cli: ['claude'],
   },
 ];
   

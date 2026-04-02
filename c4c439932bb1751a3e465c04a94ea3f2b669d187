@@ -1,0 +1,77 @@
+src/data/cases.ts
+  81b3afca8b8e790b 23-24,32-34,39,42-45,50-60,396-397
+src/App.tsx
+  81b3afca8b8e790b 1511-1521,1540,1640-1656,1662-1672,1691,1757-1758,3142-3153
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "c4c439932bb1751a3e465c04a94ea3f2b669d187",
+  "prompts": {
+    "29efc818070fb087": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6de1643a-dbb9-4e6f-962b-d0e6f51f1c8c",
+        "model": "glm-5.1"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 4250,
+      "total_deletions": 4231,
+      "accepted_lines": 31,
+      "overriden_lines": 0
+    },
+    "7ab4014b124b3b3f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5587d77-14ce-445e-9ad6-1845856415bb",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 506,
+      "total_deletions": 373,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "81b3afca8b8e790b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f1eaa3c7-c479-402b-8df6-ff27830a9241",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 8698,
+      "total_deletions": 8616,
+      "accepted_lines": 4343,
+      "overriden_lines": 0
+    },
+    "9684591a14c4061b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a0b018f1-fd39-457c-9c29-db7784c330e4",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 4296,
+      "total_deletions": 4258,
+      "accepted_lines": 7,
+      "overriden_lines": 0
+    },
+    "cbfd126d6726a778": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eae20487-7925-46c1-ade1-7d8a05a0fcb2",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 4455,
+      "total_deletions": 4354,
+      "accepted_lines": 75,
+      "overriden_lines": 0
+    }
+  }
+}

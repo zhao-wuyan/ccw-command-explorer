@@ -22,6 +22,9 @@ export interface CaseCommand {
 
 // Codex 专用内容接口
 export interface CaseCodex {
+  shared?: boolean;       // true = 与 Claude 共用相同命令和步骤，切换 Codex 时显示默认内容
+  title?: string;         // 覆盖默认 title（当标题含 CLI 专有命令时需要）
+  scenario?: string;      // 覆盖默认 scenario（当场景含 CLI 专有命令时需要）
   commands?: CaseCommand[];
   steps?: CaseStep[];
   tips?: string[];
@@ -40,7 +43,11 @@ export interface Case {
   successCriteria?: string[];
   estimatedTime?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
-  // Codex 专用内容（可选）
+  // Codex 内容（可选）
+  // - 有 codex 字段: 切换到 Codex 时显示此案例
+  //   - shared: true → 显示 Claude 的默认内容（命令相同）
+  //   - 有 commands/steps → 显示 Codex 专用内容
+  // - 无 codex 字段: 切换到 Codex 时隐藏此案例
   codex?: CaseCodex;
 }
   
@@ -129,24 +136,8 @@ export const FEATURE_CASES: Case[] = [
       '一条命令完成全流程，适合 0→1 或功能变更',
       'CCW team skill 是目前最稳定的工作流',
     ],
-    // Codex 专用内容
-    codex: {
-      commands: [
-        { cmd: '/team-lifecycle-v4', desc: '团队全生命周期 - 分析→规划→执行→测试→审查' },
-      ],
-      steps: [
-        { role: 'user', content: '/team-lifecycle-v4 "修改订单导出功能，支持 Excel 和 CSV 两种格式"', type: 'command' },
-        { role: 'system', content: '┌─ Codex 团队模式 ────────────────────────────┐\n│ 🤖 自动执行: 分析→规划→执行→测试→审查       │\n└──────────────────────────────────────────────┘', type: 'response' },
-        { role: 'system', content: '📊 [分析师] 扫描代码库...\n\n  发现: src/services/export.service.ts\n  依赖: 无新增\n\n📋 [规划师] 任务拆解:\n\n  IMPL-001: exceljs 依赖\n  IMPL-002: ExcelExportService\n  IMPL-003: API 格式参数\n  IMPL-004: 前端选择器\n  IMPL-005: 测试补充', type: 'response' },
-        { role: 'system', content: '💻 [执行者] 批量实现...\n🧪 [测试者] 测试验证...\n👀 [审查者] 代码审查...', type: 'note' },
-        { role: 'system', content: '✅ Codex team-lifecycle-v4 完成！\n\n  📊 统计: 5任务 | 18测试 | 92%覆盖\n  📁 文件: 6个\n\n💡 /team-lifecycle-v4 一条命令全流程', type: 'result', highlight: true },
-      ],
-      tips: [
-        'Codex: /team-lifecycle-v4 "需求"',
-        '流程与 Claude 相同，命令前缀为 /',
-        '全自动执行，减少交互',
-      ],
-    },
+    // Claude 和 Codex 使用相同命令，标记 shared 让 Codex 也显示
+    codex: { shared: true },
   },
 ];
   
@@ -346,8 +337,10 @@ export const AUTO_CASES: Case[] = [
       '/ccw "中等规模需求" — 功能新增或变更',
       '自动分析意图，推荐最佳命令链',
     ],
-    // Codex 专用内容
+    // Codex 专用内容 - 只有 /team-lifecycle-v4
     codex: {
+      title: '全自动：复杂需求用 team-lifecycle-v4',
+      scenario: '复杂想法或需求，用 team-lifecycle-v4 团队全流程自动分析、规划、执行、测试、审查',
       commands: [
         { cmd: '/team-lifecycle-v4', desc: 'Codex 全流程 - 一条命令完成复杂需求' },
       ],
@@ -388,23 +381,8 @@ export const AUTO_CASES: Case[] = [
       '自动判断简单/中等/复杂，选择对应流程',
       '日常开发首选入口',
     ],
-    // Codex 专用内容
-    codex: {
-      commands: [
-        { cmd: '/team-lifecycle-v4', desc: 'Codex 全流程 - 一条命令完成所有' },
-      ],
-      steps: [
-        { role: 'user', content: '/team-lifecycle-v4 "给用户中心增加头像上传功能，支持裁剪和压缩"', type: 'command' },
-        { role: 'system', content: '┌─ Codex 自动模式 ──────────────────────────────┐\n│ 🤖 分析: 功能新增，中等复杂度                 │\n│ 🎯 路径: 分析→规划→执行→测试→审查             │\n└──────────────────────────────────────────────┘', type: 'response' },
-        { role: 'system', content: '📋 任务分解:\n\n  IMPL-001: OSS 存储配置\n  IMPL-002: 图片上传 API\n  IMPL-003: 图片裁剪 (Sharp)\n  IMPL-004: 前端头像组件\n  IMPL-005: 测试用例\n\n⚡ 执行中...\n  ☑️ [1-5] 全部完成', type: 'response' },
-        { role: 'system', content: '✅ 完成！\n\n  📁 文件: 6个\n  🎯 功能可用\n\n💡 /team-lifecycle-v4 一条命令全流程', type: 'result', highlight: true },
-      ],
-      tips: [
-        'Codex: /team-lifecycle-v4 "需求"',
-        '自动判断复杂度，选择最优路径',
-        '日常开发首选入口',
-      ],
-    },
+    // Codex 没有中等规模的独立命令（帖子中 Codex 全自动交付只有 /team-lifecycle-v4）
+    // 不设置 codex 字段 → 切换到 Codex 时此案例被隐藏
   },
 ];
   
@@ -462,6 +440,7 @@ export const TEAM_COORD_CASES: Case[] = [
       '根据需求查找最相近的 team skill',
       '角色规格可跨项目复用',
     ],
+    codex: { shared: true },
   },
 ];
   

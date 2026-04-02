@@ -1509,13 +1509,26 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
   // 根据 CLI 类型获取显示数据
   const displayData = useMemo(() => {
     if (currentCLI === 'codex' && caseItem.codex) {
+      if (caseItem.codex.shared) {
+        return {
+          title: caseItem.title,
+          scenario: caseItem.scenario,
+          commands: caseItem.commands,
+          steps: caseItem.steps,
+          tips: caseItem.tips,
+        };
+      }
       return {
+        title: caseItem.codex.title || caseItem.title,
+        scenario: caseItem.codex.scenario || caseItem.scenario,
         commands: caseItem.codex.commands || caseItem.commands,
         steps: caseItem.codex.steps || caseItem.steps,
         tips: caseItem.codex.tips || caseItem.tips,
       };
     }
     return {
+      title: caseItem.title,
+      scenario: caseItem.scenario,
       commands: caseItem.commands,
       steps: caseItem.steps,
       tips: caseItem.tips,
@@ -1557,8 +1570,8 @@ const CaseCard = ({ caseItem, onClick, onCommandClick }: { caseItem: Case; onCli
         <span style={{ fontSize: 12, color: COLORS.textDim }}>{caseItem.category}</span>
       </div>
 
-      <h3 style={{ fontSize: 18, color: COLORS.text, margin: '0 0 8px 0' }}>{caseItem.title}</h3>
-      <p style={{ fontSize: 14, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{caseItem.scenario}</p>
+      <h3 style={{ fontSize: 18, color: COLORS.text, margin: '0 0 8px 0' }}>{displayData.title}</h3>
+      <p style={{ fontSize: 14, color: COLORS.textMuted, margin: '0 0 12px 0' }}>{displayData.scenario}</p>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {displayData.commands.map((cmd) => {
@@ -1613,17 +1626,31 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick, zIndex = 100 }: { caseI
   // 本地临时 CLI 状态（用于在详情中临时切换）
   const [localCLI, setLocalCLI] = useState<CLIType>(globalCLI);
   const hasCodexContent = caseItem.codex !== undefined;
+  const isCodexShared = caseItem.codex?.shared === true;
 
   // 根据 CLI 类型获取显示数据
   const displayData = useMemo(() => {
     if (localCLI === 'codex' && caseItem.codex) {
+      if (caseItem.codex.shared) {
+        return {
+          title: caseItem.title,
+          scenario: caseItem.scenario,
+          commands: caseItem.commands,
+          steps: caseItem.steps,
+          tips: caseItem.tips,
+        };
+      }
       return {
+        title: caseItem.codex.title || caseItem.title,
+        scenario: caseItem.codex.scenario || caseItem.scenario,
         commands: caseItem.codex.commands || caseItem.commands,
         steps: caseItem.codex.steps || caseItem.steps,
         tips: caseItem.codex.tips || caseItem.tips,
       };
     }
     return {
+      title: caseItem.title,
+      scenario: caseItem.scenario,
       commands: caseItem.commands,
       steps: caseItem.steps,
       tips: caseItem.tips,
@@ -1683,7 +1710,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick, zIndex = 100 }: { caseI
               </span>
               <span style={{ fontSize: 14, color: COLORS.textDim }}>{caseItem.category}</span>
             </div>
-            <h2 style={{ fontSize: 24, color: COLORS.text, margin: 0 }}>{caseItem.title}</h2>
+            <h2 style={{ fontSize: 24, color: COLORS.text, margin: 0 }}>{displayData.title}</h2>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {/* 临时 CLI 极简切换 */}
@@ -1756,7 +1783,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick, zIndex = 100 }: { caseI
           }}
         >
           <h4 style={{ color: COLORS.text, marginBottom: 8, fontSize: 14 }}>📋 场景</h4>
-          <p style={{ color: COLORS.textMuted, fontSize: 15, margin: 0 }}>{caseItem.scenario}</p>
+          <p style={{ color: COLORS.textMuted, fontSize: 15, margin: 0 }}>{displayData.scenario}</p>
         </div>
 
         {/* 涉及命令 */}
@@ -3067,9 +3094,14 @@ const CasesSection = ({
   onCommandClick?: (cmdRef: { cmd: string; cli?: CLIType[] }) => void;
 }) => {
   const COLORS = useColors();
-  const filteredCases = selectedLevel === 'all'
+  const { currentCLI } = useCLI();
+  const baseCases = selectedLevel === 'all'
     ? ALL_CASES
     : CASES_BY_LEVEL[selectedLevel] || [];
+  // 切换到 Codex 时，过滤掉没有 codex 字段的案例
+  const filteredCases = currentCLI === 'codex'
+    ? baseCases.filter(c => c.codex !== undefined)
+    : baseCases;
 
   return (
     <div style={{ marginBottom: 40 }}>

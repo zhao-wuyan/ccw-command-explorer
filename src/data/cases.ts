@@ -58,7 +58,7 @@ export const FEATURE_CASES: Case[] = [
       { cmd: '/workflow:analyze-with-file', desc: '深度分析需求，探索代码库' },
       { cmd: '/workflow-lite-plan', desc: '轻量规划，生成任务列表' },
       { cmd: '/workflow-lite-execute', desc: '批量执行任务' },
-      { cmd: '/workflow-lite-test-fix', desc: '测试修复循环' },
+      { cmd: '/workflow-lite-test-review', desc: '测试修复循环' },
     ],
     prerequisites: ['已安装 Claude Code Workflow', '需求描述清晰'],
     successCriteria: ['功能实现完整', '测试通过'],

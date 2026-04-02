@@ -19,7 +19,6 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { ALL_CASES, CASES_BY_LEVEL, LEVEL_CONFIG } from './data/cases';
 import type { Case, CaseStep } from './data/cases';
 import { ThemeToggle } from './components/ThemeToggle';
-import { CLISwitcher } from './components/CLISwitcher';
 import { useColors } from './contexts/ColorsContext';
 import { useCLI } from './contexts/CLIContext';
 import './App.css';
@@ -1603,11 +1602,15 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
   const isLight = COLORS.bg === '#ffffff';
   const caseLevelColor = useCaseLevelColor(String(caseItem.level));
   const levelConfig = LEVEL_CONFIG[String(caseItem.level)] || LEVEL_CONFIG['2'];
-  const { currentCLI } = useCLI();
+  const { currentCLI: globalCLI } = useCLI();
+
+  // 本地临时 CLI 状态（用于在详情中临时切换）
+  const [localCLI, setLocalCLI] = useState<CLIType>(globalCLI);
+  const hasCodexContent = caseItem.codex !== undefined;
 
   // 根据 CLI 类型获取显示数据
   const displayData = useMemo(() => {
-    if (currentCLI === 'codex' && caseItem.codex) {
+    if (localCLI === 'codex' && caseItem.codex) {
       return {
         commands: caseItem.codex.commands || caseItem.commands,
         steps: caseItem.codex.steps || caseItem.steps,
@@ -1619,7 +1622,7 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
       steps: caseItem.steps,
       tips: caseItem.tips,
     };
-  }, [caseItem, currentCLI]);
+  }, [caseItem, localCLI]);
 
   return (
     <motion.div
@@ -1676,18 +1679,65 @@ const CaseDetail = ({ caseItem, onClose, onCommandClick }: { caseItem: Case; onC
             </div>
             <h2 style={{ fontSize: 24, color: COLORS.text, margin: 0 }}>{caseItem.title}</h2>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: COLORS.textMuted,
-              cursor: 'pointer',
-              padding: 5,
-            }}
-          >
-            <X size={24} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* 临时 CLI 极简切换 */}
+            {hasCodexContent && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0,
+                borderRadius: 20,
+                backgroundColor: COLORS.cardBg,
+                border: `1px solid ${COLORS.cardBorder}`,
+                overflow: 'hidden',
+              }}>
+                <button
+                  onClick={() => setLocalCLI('claude')}
+                  style={{
+                    padding: '4px 14px',
+                    border: 'none',
+                    borderRadius: 20,
+                    background: localCLI === 'claude'
+                      ? 'linear-gradient(135deg, #d97706, #ea580c)'
+                      : 'transparent',
+                    color: localCLI === 'claude' ? '#fff' : COLORS.textMuted,
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    transition: 'all 0.2s',
+                  }}
+                >CC</button>
+                <button
+                  onClick={() => setLocalCLI('codex')}
+                  style={{
+                    padding: '4px 14px',
+                    border: 'none',
+                    borderRadius: 20,
+                    background: localCLI === 'codex'
+                      ? 'linear-gradient(135deg, #10b981, #059669)'
+                      : 'transparent',
+                    color: localCLI === 'codex' ? '#fff' : COLORS.textMuted,
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    transition: 'all 0.2s',
+                  }}
+                >CX</button>
+              </div>
+            )}
+            <button
+              onClick={onClose}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: COLORS.textMuted,
+                cursor: 'pointer',
+                padding: 5,
+              }}
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
         {/* 场景描述 */}
@@ -3026,7 +3076,7 @@ const CasesSection = ({
       </h2>
 
       {/* 等级筛选 */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -3447,6 +3497,7 @@ const TABS: { key: TabType; label: string; icon: React.ReactNode; desc: string }
 function App() {
   // 获取主题感知的颜色
   const COLORS = useColors();
+  const { currentCLI, setCurrentCLI } = useCLI();
 
   const [activeTab, setActiveTab] = useState<TabType>('commands'); // 默认显示命令
   const [searchQuery, setSearchQuery] = useState('');
@@ -3495,7 +3546,6 @@ function App() {
       <header className="header">
         {/* 右上角按钮组 */}
         <div className="header-actions">
-          <CLISwitcher />
           <ThemeToggle />
           <a
             href="https://github.com/zhao-wuyan/ccw-command-explorer"
@@ -3699,6 +3749,57 @@ function App() {
                   <option value="codex">Codex</option>
                 </select>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* CLI 类型切换 - 只在案例 Tab 显示 */}
+        {activeTab === 'cases' && (
+          <div className="search-filter-row-card">
+            <div className="filter-group" style={{ gap: 4, padding: '6px 8px' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginRight: 4 }}>CLI 类型</span>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setCurrentCLI('claude')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 16px',
+                  border: 'none',
+                  borderRadius: currentCLI === 'claude' ? 10 : 10,
+                  background: currentCLI === 'claude'
+                    ? 'linear-gradient(135deg, rgba(217,119,6,0.2), rgba(234,88,12,0.15))'
+                    : 'transparent',
+                  color: currentCLI === 'claude' ? '#d97706' : COLORS.textMuted,
+                  fontWeight: currentCLI === 'claude' ? 600 : 400,
+                  fontSize: 13, cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: currentCLI === 'claude' ? '0 2px 8px rgba(217,119,6,0.2)' : 'none',
+                }}
+              >
+                <span>🟠</span> Claude Code
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setCurrentCLI('codex')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 16px',
+                  border: 'none',
+                  borderRadius: 10,
+                  background: currentCLI === 'codex'
+                    ? 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.15))'
+                    : 'transparent',
+                  color: currentCLI === 'codex' ? '#10b981' : COLORS.textMuted,
+                  fontWeight: currentCLI === 'codex' ? 600 : 400,
+                  fontSize: 13, cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: currentCLI === 'codex' ? '0 2px 8px rgba(16,185,129,0.2)' : 'none',
+                }}
+              >
+                <span>🟢</span> Codex
+              </motion.button>
             </div>
           </div>
         )}

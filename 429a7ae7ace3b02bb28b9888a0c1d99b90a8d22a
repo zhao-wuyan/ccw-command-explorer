@@ -1,0 +1,25 @@
+src/App.tsx
+  9684591a14c4061b 1512-1520,1522-1523,1530-1531,1573-1574,1629,1634-1642,1644-1645,1652-1653,1713,1786,3097-3098,3101-3104
+src/data/cases.ts
+  9684591a14c4061b 25-27,46-50,139-140,342-343,384-385,443
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "429a7ae7ace3b02bb28b9888a0c1d99b90a8d22a",
+  "prompts": {
+    "9684591a14c4061b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a0b018f1-fd39-457c-9c29-db7784c330e4",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 4296,
+      "total_deletions": 4258,
+      "accepted_lines": 4290,
+      "overriden_lines": 0
+    }
+  }
+}

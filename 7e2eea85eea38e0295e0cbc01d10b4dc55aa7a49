@@ -1,0 +1,23 @@
+src/App.tsx
+  29efc818070fb087 441,496,806-812,1606,1645,3514,4188-4193,4216-4222
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "7e2eea85eea38e0295e0cbc01d10b4dc55aa7a49",
+  "prompts": {
+    "29efc818070fb087": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6de1643a-dbb9-4e6f-962b-d0e6f51f1c8c",
+        "model": "glm-5.1"
+      },
+      "human_author": "zhao-wuyan <zhao-wuyan@exampl.com>",
+      "messages": [],
+      "total_additions": 4250,
+      "total_deletions": 4231,
+      "accepted_lines": 4241,
+      "overriden_lines": 0
+    }
+  }
+}

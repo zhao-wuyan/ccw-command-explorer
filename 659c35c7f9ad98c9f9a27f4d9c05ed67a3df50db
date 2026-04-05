@@ -1,0 +1,23 @@
+src/data/experience.ts
+  d158067e811b3ad3 428,438-441,445
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "659c35c7f9ad98c9f9a27f4d9c05ed67a3df50db",
+  "prompts": {
+    "d158067e811b3ad3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "84930f6e-0f1d-4325-863b-91a1a9ae5616",
+        "model": "glm-5.1"
+      },
+      "human_author": "zhao-wuyan",
+      "messages": [],
+      "total_additions": 450,
+      "total_deletions": 450,
+      "accepted_lines": 448,
+      "overriden_lines": 0
+    }
+  }
+}

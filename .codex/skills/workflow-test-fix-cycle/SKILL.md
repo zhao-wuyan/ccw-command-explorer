@@ -217,7 +217,7 @@ Phase 2: Test-Cycle Execution (phases/02-test-cycle-execute.md)
 
 ## Core Rules
 
-1. **Start Immediately**: First action is progress tracking initialization
+1. **Start Immediately**: First action is `functions.update_plan` initialization
 2. **No Preliminary Analysis**: Do not read files before Phase 1
 3. **Parse Every Output**: Extract data from each phase/sub-phase for the next
 4. **Within-Phase Auto-Continue**: Sub-phases within a phase run automatically; Phase 2 iterations run automatically once started
@@ -288,39 +288,40 @@ Phase 2: Test-Cycle Execution (phases/02-test-cycle-execute.md)
 └── .summaries/iteration-summaries/
 ```
 
-## Progress Tracking Pattern
+## Progress Tracking
 
-**Phase 1** (Generation):
+### Initialization (MANDATORY)
+
 ```javascript
-[
-  { content: "Phase 1: Test-Fix Generation", status: "in_progress" },
-  { content: "  1.1 Create Test Session", status: "completed" },
-  { content: "  1.2 Gather Test Context", status: "in_progress" },
-  { content: "  1.3 Test Generation Analysis", status: "pending" },
-  { content: "  1.4 Generate Test Tasks", status: "pending" },
-  { content: "  1.5 Phase Summary", status: "pending" },
-  { content: "Phase 2: Test-Cycle Execution", status: "pending" }
-]
+// Initialize progress tracking after input parsing
+functions.update_plan([
+  { id: "phase-1", title: "Phase 1: Test-Fix Generation", status: "in_progress" },
+  { id: "phase-2", title: "Phase 2: Test-Cycle Execution", status: "pending" }
+])
 ```
 
-**Phase 2** (Execution):
+### Phase Transitions
+
 ```javascript
-[
-  { content: "Phase 1: Test-Fix Generation", status: "completed" },
-  { content: "Phase 2: Test-Cycle Execution", status: "in_progress" },
-  { content: "  Execute IMPL-001: Generate tests [code-developer]", status: "completed" },
-  { content: "  Execute IMPL-002: Test & Fix Cycle [ITERATION]", status: "in_progress" },
-  { content: "    → Iteration 1: Initial test (pass: 70%, conservative)", status: "completed" },
-  { content: "    → Iteration 2: Fix validation (pass: 82%, conservative)", status: "completed" },
-  { content: "    → Iteration 3: Batch fix auth (pass: 89%, aggressive)", status: "in_progress" }
-]
+// After Phase 1 completes (before mandatory confirmation gate)
+functions.update_plan([
+  { id: "phase-1", status: "completed" },
+  { id: "phase-2", status: "in_progress" }
+])
+
+// After Phase 2 completes (pass rate >= 95% or max iterations)
+functions.update_plan([{ id: "phase-2", status: "completed" }])
 ```
 
-**Update Rules**:
-- Phase 1: Attach/collapse sub-phase tasks within Phase 1
-- Phase 2: Add iteration items with strategy and pass rate
-- Mark completed after each phase/iteration
-- Update parent task when all complete
+### Resume Mode
+
+```javascript
+// When --resume-session skips Phase 1
+functions.update_plan([
+  { id: "phase-1", title: "Phase 1: Test-Fix Generation", status: "completed" },
+  { id: "phase-2", title: "Phase 2: Test-Cycle Execution", status: "in_progress" }
+])
+```
 
 ## Error Handling
 
@@ -356,7 +357,7 @@ try {
 
 **Phase 1 (Generation)**:
 - Detect input type (session ID / description / file path / resume)
-- Initialize progress tracking with 2 top-level phases
+- Initialize `functions.update_plan` with 2 top-level phases
 - Read `phases/01-test-fix-gen.md` for detailed sub-phase execution
 - Execute 5 sub-phases with spawn_agent → wait_agent → close_agent lifecycle
 - Verify all Phase 1 outputs (4+ task JSONs, IMPL_PLAN.md, TODO_LIST.md)
@@ -372,7 +373,7 @@ try {
 - Read `phases/02-test-cycle-execute.md` for detailed execution logic
 - Load session state and task queue
 - Execute iterative test-fix cycles with spawn_agent → wait_agent → close_agent
-- Track iterations in progress tracking
+- Track iterations via `functions.update_plan`
 - Auto-complete session on success (pass rate >= 95%)
 - **Ensure all agents are closed** after each iteration
 

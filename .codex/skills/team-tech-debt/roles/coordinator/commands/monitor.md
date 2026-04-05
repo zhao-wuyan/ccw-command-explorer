@@ -148,7 +148,7 @@ After task completion, check for checkpoints:
 
 - **TDPLAN-001 completes** -> Plan Approval Gate:
   ```javascript
-  request_user_input({
+  functions.request_user_input({
     questions: [{
       question: "Remediation plan generated. Review and decide:",
       header: "Plan Review",

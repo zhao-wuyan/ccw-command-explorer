@@ -196,7 +196,7 @@ if (useInteractiveWizard) {
     if (AUTO_YES) {
       dimension = 'specs'  // Default to project specs in auto mode
     } else {
-      const dimensionAnswer = request_user_input({
+      const dimensionAnswer = functions.request_user_input({
         questions: [{
           header: "Dimension",
           id: "dimension",
@@ -216,7 +216,7 @@ if (useInteractiveWizard) {
     if (AUTO_YES) {
       scope = 'project'  // Default to project scope in auto mode
     } else {
-      const scopeAnswer = request_user_input({
+      const scopeAnswer = functions.request_user_input({
         questions: [{
           header: "Scope",
           id: "scope",
@@ -236,7 +236,7 @@ if (useInteractiveWizard) {
     if (AUTO_YES) {
       category = 'general'  // Default to general in auto mode
     } else {
-      const categoryAnswer = request_user_input({
+      const categoryAnswer = functions.request_user_input({
         questions: [{
           header: "Category",
           id: "category",
@@ -261,7 +261,7 @@ if (useInteractiveWizard) {
     if (AUTO_YES) {
       type = 'convention'  // Default to convention in auto mode
     } else {
-      const typeAnswer = request_user_input({
+      const typeAnswer = functions.request_user_input({
         questions: [{
           header: "Rule Type",
           id: "rule_type",
@@ -286,7 +286,7 @@ if (useInteractiveWizard) {
       console.log("Error: Rule text is required in auto mode. Provide rule text as argument.")
       return
     }
-    const contentAnswer = request_user_input({
+    const contentAnswer = functions.request_user_input({
       questions: [{
         header: "Content",
         id: "content",

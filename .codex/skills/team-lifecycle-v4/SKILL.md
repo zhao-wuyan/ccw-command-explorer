@@ -257,7 +257,7 @@ Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
 When pipeline completes, coordinator presents:
 
 ```
-request_user_input({
+functions.request_user_input({
   questions: [{
     question: "Pipeline complete. What would you like to do?",
     header: "Completion",

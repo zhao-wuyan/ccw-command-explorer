@@ -90,7 +90,7 @@ TEXT-LEVEL ONLY. No source code reading.
 
 3. Ask for missing parameters if scope unclear:
    ```
-   request_user_input({
+   functions.request_user_input({
      questions: [
        { question: "What should I polish?", header: "Target", options: [
          { label: "URL", description: "Live page URL for Chrome DevTools analysis" },
@@ -181,7 +181,7 @@ Delegate to `@commands/monitor.md#handleSpawnNext`:
 4. Output pipeline summary with [coordinator] prefix
 5. Execute completion action:
    ```
-   request_user_input({
+   functions.request_user_input({
      questions: [{ question: "Pipeline complete. What next?", header: "Completion", options: [
        { label: "Archive & Clean", description: "Archive session and clean up resources" },
        { label: "Keep Active", description: "Keep session for follow-up work" },

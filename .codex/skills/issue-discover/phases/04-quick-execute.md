@@ -157,7 +157,7 @@ Quick Execute Summary:
 request_user_input:
 
 ```javascript
-request_user_input({
+functions.request_user_input({
   questions: [{
     header: "Confirm",
     id: "confirm_execute",
@@ -212,7 +212,7 @@ for each task in sortedTasks:
 // 计算未执行 findings
 const remainingFindings = allFindings.filter(f => !executedFindingIds.has(f.id))
 
-request_user_input({
+functions.request_user_input({
   questions: [{
     header: "Post Execute",
     id: "post_quick_execute",

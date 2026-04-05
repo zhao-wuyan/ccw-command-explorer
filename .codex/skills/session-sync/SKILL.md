@@ -136,7 +136,7 @@ Target files:
 `)
 
 if (!AUTO_YES) {
-  const answer = request_user_input({
+  const answer = functions.request_user_input({
     questions: [{
       header: "确认同步",
       id: "confirm_sync",

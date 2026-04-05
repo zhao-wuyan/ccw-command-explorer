@@ -187,7 +187,7 @@ export const TIMELINE: TimelineItem[] = [
     date: '2026-03',
     version: 'v7.2',
     title: '架构优化与文档驱动',
-    desc: '当前最新版本',
+    desc: '',
     color: COLORS.primary,
     commands: 126,
     detail: {
@@ -242,6 +242,29 @@ export const TIMELINE: TimelineItem[] = [
         '/team-visual-a11y'
       ],
       usage: 'v7.2.28 新增系统化调试、安全审计、发布流水线技能，以及4个专业团队技能(交互组件、动效设计、UI精修、视觉无障碍)。移除了 DDD/IDAW 系列和 prep 预检清单等过时命令。'
+    }
+  },
+  {
+    date: '2026-04',
+    version: 'v7.3',
+    title: 'Chain 链式工作流',
+    desc: '当前最新版本',
+    color: COLORS.primary,
+    commands: 114,
+    detail: {
+      version: 'v7.3.0',
+      highlights: [
+        '新 Skill: ccw-chain 链式工作流编排引擎',
+        '新 Skill: chain-loader 链式技能生成器',
+        '新命令: workflow-skill 技能快速启动器',
+        '移除: flow-create、cli:cli-init、cli:codex-review',
+      ],
+      newCommands: [
+        '/ccw-chain',
+        '/chain-loader',
+        '/workflow-skill',
+      ],
+      usage: 'v7.3 引入 Chain 链式工作流架构，支持渐进式步骤加载和 LLM 决策路由。新增技能快速启动器，移除过时的 CLI 工具命令和流程模板命令。'
     }
   },
 ];

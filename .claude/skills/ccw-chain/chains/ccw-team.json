@@ -1,0 +1,15 @@
+{
+  "chain_id": "ccw-team",
+  "name": "CCW Team Workflows",
+  "description": "Team workflow: team-planex planner + executor wave pipeline",
+  "version": "2.1",
+  "entry": "S1",
+  "triggers": {
+    "task_types": ["team-planex"],
+    "keywords": ["team.*plan.*exec|team.*planex|wave.*pipeline"],
+    "scope": "Team: planner + executor wave pipeline"
+  },
+  "nodes": {
+    "S1": { "type": "step", "name": "Team: team-planex", "content_ref": "@skills/team-planex/SKILL.md", "next": null }
+  }
+}

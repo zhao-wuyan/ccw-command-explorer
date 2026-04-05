@@ -207,7 +207,7 @@ Each phase builds on previous phase results. Coordinator accumulates context acr
 When the pipeline completes:
 
 ```
-request_user_input({
+functions.request_user_input({
   questions: [{
     question: "Roadmap Dev pipeline complete. What would you like to do?",
     header: "Completion",

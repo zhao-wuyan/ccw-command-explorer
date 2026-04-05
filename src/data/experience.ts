@@ -267,12 +267,11 @@ export const EXPERIENCE_GUIDE: ExperienceCategory[] = [
         title: '审查范围选择哪个？',
         scenario: '代码写完了需要审查',
         recommendation: '根据改动范围选择一个',
-        commands: [cmd('/review-cycle'), cmd('/cli:codex-review'), cmd('/review-code')],
+        commands: [cmd('/review-cycle'), cmd('/review-code')],
         commandType: 'select',
         reason: '不同范围和工具偏好需要不同方式',
         tips: [
           '/review-cycle - 统一审查：支持会话/模块/修复模式，一个命令覆盖所有场景',
-          '/cli:codex-review - Codex 代码审查：基于 Git diff 的结构化审查',
           '/review-code - 通用代码审查：7维度审查，生成详细报告',
         ],
       },

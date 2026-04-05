@@ -102,6 +102,25 @@ Determine mode from user request before spawning any agent.
 
 ## Phase Execution
 
+### Progress Tracking Initialization
+
+Before spawning any agent, initialize progress tracking. For comprehensive mode, all 4 phases; for quick-scan, Phase 1 only:
+
+```
+// Comprehensive mode
+functions.update_plan([
+  { id: "phase-1", title: "Phase 1: Supply Chain Scan", status: "in_progress" },
+  { id: "phase-2", title: "Phase 2: OWASP Review", status: "pending" },
+  { id: "phase-3", title: "Phase 3: Threat Modeling (STRIDE)", status: "pending" },
+  { id: "phase-4", title: "Phase 4: Report & Tracking", status: "pending" }
+])
+
+// Quick-scan mode
+functions.update_plan([
+  { id: "phase-1", title: "Phase 1: Supply Chain Scan", status: "in_progress" }
+])
+```
+
 ### Phase 1: Supply Chain Scan
 
 **Objective**: Detect low-hanging security risks in dependencies, secrets, CI/CD pipelines, and LLM integrations.
@@ -153,6 +172,10 @@ const phase1Result = wait_agent({ targets: ["security-auditor"], timeout_ms: 120
 | Artifact | Description |
 |----------|-------------|
 | `.workflow/.security/supply-chain-report.json` | Dependency, secrets, CI/CD, and LLM findings |
+
+**Progress (comprehensive)**: `functions.update_plan([{id: "phase-1", status: "completed"}, {id: "phase-2", status: "in_progress"}])`
+
+**Progress (quick-scan)**: `functions.update_plan([{id: "phase-1", status: "completed"}])`
 
 ---
 
@@ -210,6 +233,8 @@ const phase2Result = wait_agent({ targets: ["security-auditor"], timeout_ms: 360
 |----------|-------------|
 | `.workflow/.security/owasp-findings.json` | OWASP findings with owasp_id, severity, file:line, evidence, remediation |
 
+**Progress**: `functions.update_plan([{id: "phase-2", status: "completed"}, {id: "phase-3", status: "in_progress"}])`
+
 ---
 
 ### Phase 3: Threat Modeling (comprehensive mode only)
@@ -249,6 +274,8 @@ const phase3Result = wait_agent({ targets: ["security-auditor"], timeout_ms: 360
 | Artifact | Description |
 |----------|-------------|
 | `.workflow/.security/threat-model.json` | STRIDE threat model with components, trust boundaries, attack surface |
+
+**Progress**: `functions.update_plan([{id: "phase-3", status: "completed"}, {id: "phase-4", status: "in_progress"}])`
 
 ---
 
@@ -296,6 +323,8 @@ const phase4Result = wait_agent({ targets: ["security-auditor"], timeout_ms: 300
 | Artifact | Description |
 |----------|-------------|
 | `.workflow/.security/audit-report-<date>.json` | Full scored report with trend, top risks, remediation priority |
+
+**Progress**: `functions.update_plan([{id: "phase-4", status: "completed"}])`
 
 ---
 

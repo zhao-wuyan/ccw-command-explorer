@@ -152,7 +152,7 @@ CONSTRAINTS: Be genuinely critical, not just validating. Focus on actionable imp
 if (!autoMode) {
   // Present ADRs with review feedback to user
   // For each ADR where review raised concerns:
-  request_user_input({
+  functions.request_user_input({
     questions: [
       {
         header: "ADR Review",

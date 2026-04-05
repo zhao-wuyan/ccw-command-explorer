@@ -83,6 +83,20 @@ Utility subagents callable by ship-operator (not separate pipeline stages):
 
 ## Phase Execution
 
+### Progress Tracking Initialization
+
+Before spawning any agent, initialize progress tracking for all phases:
+
+```
+functions.update_plan([
+  { id: "phase-1", title: "Phase 1: Pre-Flight Checks", status: "in_progress" },
+  { id: "phase-2", title: "Phase 2: Code Review", status: "pending" },
+  { id: "phase-3", title: "Phase 3: Version Bump", status: "pending" },
+  { id: "phase-4", title: "Phase 4: Changelog & Commit", status: "pending" },
+  { id: "phase-5", title: "Phase 5: PR Creation", status: "pending" }
+])
+```
+
 ### Phase 1: Pre-Flight Checks
 
 **Objective**: Validate that the repository is in a shippable state — confirm clean working tree, appropriate branch, passing tests, and successful build.
@@ -134,6 +148,8 @@ const phase1Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000
 |----------|-------------|
 | preflight-report JSON | Pass/fail per check, blockers list |
 | Gate status | pass / fail / blocked |
+
+**Progress**: `functions.update_plan([{id: "phase-1", status: "completed"}, {id: "phase-2", status: "in_progress"}])`
 
 ---
 
@@ -187,6 +203,8 @@ const phase2Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 600000
 | Review summary JSON | Risk level, risk factors, AI review recommendation, issues |
 | Gate status | pass / fail / warn / blocked |
 
+**Progress**: `functions.update_plan([{id: "phase-2", status: "completed"}, {id: "phase-3", status: "in_progress"}])`
+
 ---
 
 ### Phase 3: Version Bump
@@ -238,6 +256,8 @@ const phase3Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000
 |----------|-------------|
 | Version change record JSON | version_file, previous_version, new_version, bump_type, bump_source |
 | Gate status | pass / fail / needs_context / blocked |
+
+**Progress**: `functions.update_plan([{id: "phase-3", status: "completed"}, {id: "phase-4", status: "in_progress"}])`
 
 ---
 
@@ -293,6 +313,8 @@ const phase4Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000
 |----------|-------------|
 | Commit record JSON | changelog_entry, commit_sha, commit_message, pushed_to |
 | Gate status | pass / fail / blocked |
+
+**Progress**: `functions.update_plan([{id: "phase-4", status: "completed"}, {id: "phase-5", status: "in_progress"}])`
 
 ---
 
@@ -352,6 +374,8 @@ const phase5Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000
 |----------|-------------|
 | PR record JSON | pr_url, pr_title, target_branch, source_branch, linked_issues |
 | Final completion status | DONE / DONE_WITH_CONCERNS / BLOCKED |
+
+**Progress**: `functions.update_plan([{id: "phase-5", status: "completed"}])`
 
 ---
 

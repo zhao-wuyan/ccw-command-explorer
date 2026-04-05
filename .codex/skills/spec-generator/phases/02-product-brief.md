@@ -175,7 +175,7 @@ if (!autoMode) {
   // - Confirm vision statement
   // - Resolve any conflicts between perspectives
   // - Adjust scope if needed
-  request_user_input({
+  functions.request_user_input({
     questions: [
       {
         header: "Review",

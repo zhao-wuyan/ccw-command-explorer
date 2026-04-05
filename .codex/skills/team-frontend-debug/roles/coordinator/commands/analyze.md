@@ -16,7 +16,7 @@ else
 ```
 
 ```
-request_user_input({
+functions.request_user_input({
   questions: [{
     question: "请确认调试模式",
     header: "Mode",
@@ -53,7 +53,7 @@ Parse features into structured format:
 
 If base_url missing:
 ```
-request_user_input({
+functions.request_user_input({
   questions: [{
     question: "请提供应用的访问地址",
     header: "Base URL",

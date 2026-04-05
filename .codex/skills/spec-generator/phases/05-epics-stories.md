@@ -131,7 +131,7 @@ CONSTRAINTS: Focus on issues that would block execution planning. Be specific ab
 ```javascript
 if (!autoMode) {
   // Present Epic overview table and dependency diagram
-  request_user_input({
+  functions.request_user_input({
     questions: [
       {
         header: "Epics",

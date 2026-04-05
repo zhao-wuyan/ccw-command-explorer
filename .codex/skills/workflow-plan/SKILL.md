@@ -209,7 +209,7 @@ if (existingSessionId) {
       sessionFolder = sessions[0]
       sessionId = sessions[0].split('/').pop()
     } else {
-      const answer = request_user_input({
+      const answer = functions.request_user_input({
         questions: [{
           question: "Multiple sessions found. Select one:",
           header: "Session",
@@ -328,7 +328,7 @@ TASK DESCRIPTION: ${taskDescription}" --tool gemini --mode analysis --rule analy
       console.log(`   Strategy: ${c.strategy} | Impact: ${c.impact}`)
     })
 
-    const answer = request_user_input({
+    const answer = functions.request_user_input({
       questions: [{
         question: "Accept conflict resolution strategies?",
         header: "Conflicts",
@@ -481,7 +481,7 @@ Integrate ${uniqueModules.length} module plans into unified IMPL_PLAN.md.
      console.log(`  [--yes] Auto-verifying plan...`)
      // → Fall through to Phase 5
    } else {
-     const nextStep = request_user_input({
+     const nextStep = functions.request_user_input({
        questions: [{
          question: "Plan generated. What's next?",
          header: "Next Step",

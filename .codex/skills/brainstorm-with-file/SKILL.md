@@ -8,15 +8,18 @@ argument-hint: "TOPIC=\"<idea or topic>\" [--perspectives=creative,pragmatic,sys
 
 ## Overview
 
-Interactive brainstorming workflow with **documented thought evolution**. Expands initial ideas through questioning, inline multi-perspective analysis, and iterative refinement.
+Interactive brainstorming workflow with **documented thought evolution**. Expands initial ideas through questioning, inline multi-perspective analysis, external research, and iterative refinement.
 
-**Core workflow**: Seed Idea → Expand → Multi-Perspective Explore → Synthesize → Refine → Crystallize
+**Core workflow**: Seed Idea → Expand → Multi-Perspective Explore → Research → Refine → Crystallize → Next Step
 
 **Key features**:
 - **brainstorm.md**: Complete thought evolution timeline
 - **Multi-perspective analysis**: Creative + Pragmatic + Systematic (serial, inline)
+- **External research**: Web search for inspiration, patterns, and best practices via `web.run`
 - **Idea expansion**: Progressive questioning and exploration
 - **Diverge-Converge cycles**: Generate options then focus on best paths
+- **Progress tracking**: `functions.update_plan` for real-time phase progress visibility
+- **Structured handoff**: Terminal gate with execution planning, issue creation, or completion
 
 ## Auto Mode
 
@@ -62,12 +65,13 @@ When `--yes` or `-y`: Auto-confirm exploration decisions, use recommended perspe
 Step 0: Session Setup
    ├─ Parse topic, flags (--perspectives, --continue, -y)
    ├─ Generate session ID: BS-{slug}-{date}
-   └─ Create session folder (or detect existing → continue mode)
+   ├─ Create session folder (or detect existing → continue mode)
+   └─ functions.update_plan (5 phases: Seed → Explore → Refine → Converge → GATE)
 
 Step 1: Seed Understanding
    ├─ Parse topic, identify brainstorm dimensions
    ├─ Role/perspective selection with user (or auto)
-   ├─ Initial scoping (mode, focus areas, constraints)
+   ├─ Initial scoping via functions.request_user_input (mode, focus, constraints)
    ├─ Expand seed into exploration vectors
    └─ Initialize brainstorm.md
 
@@ -79,18 +83,21 @@ Step 2: Divergent Exploration (Inline, No Agents)
    │   ├─ Creative perspective: innovation, cross-domain, challenge assumptions
    │   ├─ Pragmatic perspective: feasibility, effort, blockers
    │   └─ Systematic perspective: decomposition, patterns, scalability
-   ├─ Aggregate findings → perspectives.json
+   ├─ External research via web.run (optional — patterns, best practices, inspiration)
+   ├─ Aggregate findings → perspectives.json + research.json
    ├─ Update brainstorm.md with Round 1
    └─ Initial Idea Coverage Check
 
 Step 3: Interactive Refinement (Multi-Round, max 6)
-   ├─ Present current ideas and perspectives
-   ├─ Gather user feedback
+   ├─ Present current ideas and perspectives (Cumulative Context)
+   ├─ Record findings to brainstorm.md BEFORE updating Current Ideas
+   ├─ Gather user feedback via functions.request_user_input
    ├─ Process response:
    │   ├─ Deep Dive → deeper inline analysis on selected ideas
    │   ├─ Diverge → new inline analysis with different angles
    │   ├─ Challenge → devil's advocate inline analysis
    │   ├─ Merge → synthesize complementary ideas inline
+   │   ├─ 外部研究 → web.run for external inspiration/validation
    │   └─ Converge → exit loop for synthesis
    ├─ Update brainstorm.md with round details
    └─ Repeat until user selects converge or max rounds
@@ -98,8 +105,11 @@ Step 3: Interactive Refinement (Multi-Round, max 6)
 Step 4: Convergence & Crystallization
    ├─ Consolidate all insights → synthesis.json
    ├─ Update brainstorm.md with final synthesis
-   ├─ Interactive Top-Idea Review (per-idea confirm/modify/reject)
-   └─ Offer options: show next-step commands / export / done
+   ├─ Batch top-idea review via functions.request_user_input
+   └─ MANDATORY Terminal Gate: 执行任务 / 产出Issue / 完成
+       ├─ Execute Task → handoff-spec.json with implementation scope
+       ├─ Create Issue → display issue creation command
+       └─ Done → end workflow
 ```
 
 ## Output Artifacts
@@ -193,7 +203,7 @@ const selectedPerspectiveNames = perspectivesMatch
 const topic = $ARGUMENTS.replace(/--yes|-y|--continue|--perspectives[=\s][\w,]+|--max-ideas[=\s]\d+|TOPIC=/g, '').replace(/^["']|["']$/g, '').trim()
 
 // Determine project root
-const projectRoot = Bash('git rev-parse --show-toplevel 2>/dev/null || pwd').trim()
+const projectRoot = functions.exec_command('git rev-parse --show-toplevel 2>/dev/null || pwd').trim()
 
 const slug = topic.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').substring(0, 40)
 const dateStr = getUtc8ISOString().substring(0, 10)
@@ -202,7 +212,16 @@ const sessionFolder = `${projectRoot}/.workflow/.brainstorm/${sessionId}`
 
 // Auto-detect continue: session folder + brainstorm.md exists → continue mode
 // If continue → load brainstorm.md + perspectives, resume from last round
-Bash(`mkdir -p ${sessionFolder}`)
+functions.exec_command(`mkdir -p ${sessionFolder}`)
+
+// Initialize progress tracking (MANDATORY)
+functions.update_plan([
+  { id: "phase-1", title: "Phase 1: Seed Understanding", status: "in_progress" },
+  { id: "phase-2", title: "Phase 2: Divergent Exploration", status: "pending" },
+  { id: "phase-3", title: "Phase 3: Interactive Refinement", status: "pending" },
+  { id: "phase-4", title: "Phase 4: Convergence & Crystallization", status: "pending" },
+  { id: "next-step", title: "GATE: Post-Completion Next Step", status: "pending" }
+])
 ```
 
 ### Phase 1: Seed Understanding
@@ -255,43 +274,37 @@ For new brainstorm sessions, gather user preferences before exploration (skipped
 
 ```javascript
 if (!autoYes && !continueMode) {
-  // 1. Brainstorm Mode (single-select)
-  const mode = request_user_input({
-    questions: [{
-      header: "Brainstorm Mode",
-      id: "mode",
-      question: "Select brainstorming intensity:",
-      options: [
-        { label: "Creative Mode", description: "Fast, high novelty, 1 perspective" },
-        { label: "Balanced Mode(Recommended)", description: "Moderate, 3 perspectives" },
-        { label: "Deep Mode", description: "Comprehensive, 3 perspectives + deep refinement" }
-      ]
-    }]
-  })
-
-  // 2. Focus Areas (multi-select)
-  const focusAreas = request_user_input({
-    questions: [{
-      header: "Focus Areas",
-      id: "focus",
-      question: "Select brainstorming focus:",
-      options: generateFocusOptions(dimensions) // Dynamic based on dimensions
-    }]
-  })
-
-  // 3. Constraints (multi-select)
-  const constraints = request_user_input({
-    questions: [{
-      header: "Constraints",
-      id: "constraints",
-      question: "Any constraints to consider?",
-      options: [
-        { label: "Existing Architecture", description: "Must fit current system" },
-        { label: "Time Constraints", description: "Short implementation timeline" },
-        { label: "Resource Constraints", description: "Limited team/budget" },
-        { label: "No Constraints", description: "Blue-sky thinking" }
-      ]
-    }]
+  // Single batch: Mode + Focus + Constraints (max 4 questions per call)
+  const scoping = functions.request_user_input({
+    questions: [
+      {
+        header: "Mode",       // max 12 chars
+        question: "Select brainstorming intensity:",
+        multiSelect: false,
+        options: [
+          { label: "Balanced (Recommended)", description: "Moderate, 3 perspectives" },
+          { label: "Creative", description: "Fast, high novelty, 1 perspective" },
+          { label: "Deep", description: "Comprehensive, 3 perspectives + deep refinement" }
+        ]
+      },
+      {
+        header: "Focus",
+        question: "Select brainstorming focus areas:",
+        multiSelect: true,
+        options: generateFocusOptions(dimensions) // Dynamic based on dimensions
+      },
+      {
+        header: "Constraints",
+        question: "Any constraints to consider?",
+        multiSelect: true,
+        options: [
+          { label: "Existing Arch", description: "Must fit current system" },
+          { label: "Time Limited", description: "Short implementation timeline" },
+          { label: "Resource Limited", description: "Limited team/budget" },
+          { label: "No Constraints", description: "Blue-sky thinking" }
+        ]
+      }
+    ]
   })
 }
 ```
@@ -374,7 +387,7 @@ Write(`${sessionFolder}/brainstorm.md`, brainstormMd)
 ##### Step 2.1: Detect Codebase & Explore
 
 ```javascript
-const hasCodebase = Bash(`
+const hasCodebase = functions.exec_command(`
   test -f package.json && echo "nodejs" ||
   test -f go.mod && echo "golang" ||
   test -f Cargo.toml && echo "rust" ||
@@ -443,6 +456,9 @@ perspectives.forEach(perspective => {
 ##### Step 2.3: Aggregate Multi-Perspective Findings
 
 ```javascript
+// Update progress
+functions.update_plan([{ id: "phase-2", title: "Phase 2: Divergent Exploration", status: "in_progress" }])
+
 const synthesis = {
   session_id: sessionId,
   timestamp: getUtc8ISOString(),
@@ -465,6 +481,32 @@ const synthesis = {
   key_findings: [...]       // Main insights across all perspectives
 }
 Write(`${sessionFolder}/perspectives.json`, JSON.stringify(synthesis, null, 2))
+```
+
+##### Step 2.3b: External Research (Optional)
+
+Search for external inspiration, industry best practices, and prior art to enrich brainstorming context.
+
+```javascript
+// Triggered when: topic involves established patterns, industry trends, or competitive landscape
+const researchQueries = generateResearchQueries(topic, dimensions)
+
+researchQueries.forEach(query => {
+  const results = web.run({ search_query: query })
+  // Extract: patterns, inspiration, best practices, case studies
+})
+
+// Write research findings
+Write(`${sessionFolder}/research.json`, JSON.stringify({
+  queries: researchQueries,
+  findings: [...],   // [{source, insight, relevance_to_topic}]
+  inspiration: [...], // Cross-domain ideas from external sources
+  best_practices: [...],
+  _metadata: { timestamp: getUtc8ISOString() }
+}, null, 2))
+
+// Merge research findings into perspectives.json synthesis
+// Update convergent_themes and unique_contributions with external evidence
 ```
 
 ##### Step 2.4: Update brainstorm.md
@@ -509,6 +551,14 @@ ${explorationVectors.map((vector, i) => {
 - Creative mode: Run 1 auto-round (1× Diverge), then auto-converge
 - Skip user direction prompts; auto-select based on idea scores
 
+**Cumulative Context Rule**: Each round's analysis MUST include ALL prior findings as context. Never analyze in isolation — always build on:
+- Previous rounds' ideas and ratings
+- User feedback from all prior rounds
+- Research findings (if any)
+- Challenged assumptions and their outcomes
+
+**Record-Before-Continue Rule**: MUST write round findings to brainstorm.md BEFORE updating Current Ideas or presenting next interaction.
+
 ##### Step 3.1: Present Findings & Gather User Direction
 
 **Current Understanding Summary** (Round >= 2, BEFORE presenting new findings):
@@ -516,19 +566,32 @@ ${explorationVectors.map((vector, i) => {
 - Example: "Top ideas so far: [idea1], [idea2]. Last round [deepened/challenged/merged]. Here are the latest findings:"
 
 ```javascript
+// Update progress
+functions.update_plan([{ id: "phase-3", title: "Phase 3: Interactive Refinement", status: "in_progress" }])
+
 if (!autoYes) {
-  const feedback = request_user_input({
+  // Dynamic options based on round context
+  const baseOptions = [
+    { label: "Deep Dive", description: "Explore selected ideas in detail" },
+    { label: "Diverge More", description: "Generate more ideas from different angles" },
+    { label: "Challenge", description: "Devil's advocate — test ideas critically" },
+    { label: "Merge Ideas", description: "Combine complementary ideas" }
+  ]
+
+  // Add research option if not yet done or if new angles emerged
+  if (!researchDone || newAnglesEmerged) {
+    baseOptions.push({ label: "外部研究", description: "Search for external inspiration and best practices" })
+  }
+
+  // Always include converge as final option
+  baseOptions.push({ label: "Ready to Converge", description: "Sufficient ideas, proceed to synthesis" })
+
+  const feedback = functions.request_user_input({
     questions: [{
-      header: "Brainstorm Direction",
-      id: "direction",
+      header: "Direction",   // max 12 chars
       question: `Brainstorm round ${round}: What would you like to do next?`,
-      options: [
-        { label: "Deep Dive", description: "Explore selected ideas in detail" },
-        { label: "Diverge More", description: "Generate more ideas from different angles" },
-        { label: "Challenge", description: "Devil's advocate — test ideas critically" },
-        { label: "Merge Ideas", description: "Combine complementary ideas" },
-        { label: "Ready to Converge", description: "Sufficient ideas, proceed to synthesis" }
-      ]
+      multiSelect: false,
+      options: baseOptions.slice(0, 4) // max 4 options per schema
     }]
   })
 }
@@ -547,6 +610,7 @@ if (!autoYes) {
 | **Diverge More** | Inline analysis with different angles: alternative framings, cross-domain inspiration, what-if scenarios, constraint relaxation. Generate new ideas. |
 | **Challenge** | Inline devil's advocate analysis: 3 strongest objections per idea, challenge assumptions, failure scenarios, competitive alternatives, survivability rating (1-5). |
 | **Merge Ideas** | Ask which ideas to merge. Inline synthesis: identify complementary elements, resolve contradictions, create unified concept, preserve strengths. Write to `ideas/merged-idea-{n}.md`. |
+| **外部研究** | Execute `web.run` with topic-specific queries. Search for: industry patterns, competitive solutions, best practices, academic research. Merge findings into current round. Update `research.json`. |
 | **Ready to Converge** | Record why concluding. Exit loop → Phase 4. |
 
 ##### Step 3.3: Deep Dive on Selected Ideas
@@ -698,25 +762,34 @@ Write(`${sessionFolder}/synthesis.json`, JSON.stringify(synthesis, null, 2))
 
 ##### Step 4.3: Interactive Top-Idea Review (skip in auto mode)
 
-Walk through top ideas one-by-one (ordered by score):
+Batch review of top ideas (max 4 questions per call, so group top ideas accordingly):
 
 ```javascript
-for (const [index, idea] of rankedIdeas.entries()) {
-  const review = request_user_input({
-    questions: [{
-      header: `Idea #${index + 1}`,
-      id: `idea_${index + 1}`,
-      question: `Idea #${index + 1}: "${idea.title}" (score: ${idea.score}, novelty: ${idea.novelty}, feasibility: ${idea.feasibility}). Your decision:`,
-      options: [
-        { label: "Accept(Recommended)", description: "Keep this idea in final recommendations" },
-        { label: "Modify", description: "Adjust scope, description, or priority" },
-        { label: "Reject", description: "Remove from final recommendations" }
-      ]
-    }]
-  })
-  // Accept → "accepted" | Modify → gather text → "modified" | Reject → gather reason → "rejected"
-  // Accept All Remaining → mark all remaining as "accepted", break loop
-  // Record review decision to brainstorm.md Decision Log + update synthesis.json
+// Update progress
+functions.update_plan([{ id: "phase-4", title: "Phase 4: Convergence & Crystallization", status: "in_progress" }])
+
+if (!autoYes) {
+  // Batch review: up to 4 ideas per functions.request_user_input call
+  const batchSize = 4
+  for (let batch = 0; batch < rankedIdeas.length; batch += batchSize) {
+    const batchIdeas = rankedIdeas.slice(batch, batch + batchSize)
+    const review = functions.request_user_input({
+      questions: batchIdeas.map((idea, i) => ({
+        header: `Idea #${batch + i + 1}`,   // max 12 chars
+        question: `"${idea.title}" (score: ${idea.score}). Your decision:`,
+        multiSelect: false,
+        options: [
+          { label: "Accept", description: "Keep in final recommendations" },
+          { label: "Modify", description: "Adjust scope or priority" },
+          { label: "Reject", description: "Remove from recommendations" },
+          { label: "Accept Rest", description: "Accept all remaining ideas" }
+        ]
+      }))
+    })
+    // Process: Accept → "accepted" | Modify → gather text → "modified" | Reject → "rejected"
+    // Accept Rest → mark all remaining as "accepted", break outer loop
+    // Record review decisions to brainstorm.md Decision Log + update synthesis.json
+  }
 }
 ```
 
@@ -730,25 +803,66 @@ for (const [index, idea] of rankedIdeas.entries()) {
 | 3 | [title] | 6 | 3 | 4 | Rejected | [reason] |
 ```
 
-##### Step 4.4: Post-Completion Options
+##### Step 4.4: MANDATORY Terminal Gate (Post-Completion Next Step)
 
-**Available Options** (this skill is brainstorming-only — NEVER auto-launch other skills):
+**CRITICAL**: This gate MUST execute. The workflow MUST NOT end without this `functions.request_user_input` call.
 
-| Option | Purpose | Action |
-|--------|---------|--------|
-| **Show Next-Step Commands** | Show available commands | Display command list for user to manually run |
-| **Export Report** | Generate shareable report | Create formatted report document |
-| **Done** | No further action | End workflow |
+```javascript
+// Update progress — mark phase 4 complete, activate terminal gate
+functions.update_plan([
+  { id: "phase-4", title: "Phase 4: Convergence & Crystallization", status: "completed" },
+  { id: "next-step", title: "GATE: Post-Completion Next Step", status: "in_progress" }
+])
 
-**Next-step commands to display** (user runs manually, NOT auto-launched):
-- `/workflow-lite-plan "..."` → Generate implementation plan
-- `/issue:new "..."` → Track top ideas as issues
-- `/workflow:analyze-with-file "..."` → Analyze top idea in detail
+const nextStep = functions.request_user_input({
+  questions: [{
+    header: "Next Step",    // max 12 chars
+    question: "Brainstorming complete. What would you like to do next?",
+    multiSelect: false,
+    options: [
+      { label: "Execute Task", description: "Build implementation scope and handoff spec from top ideas" },
+      { label: "Create Issue", description: "Convert top ideas into trackable issues" },
+      { label: "Done", description: "End workflow, all artifacts saved" }
+    ]
+  }]
+})
+
+// Handle next step
+if (nextStep === "Execute Task") {
+  // Build implementation scope from accepted ideas
+  // Step A: Identify scope items from top ideas
+  // Step B: Generate handoff-spec.json with implementation details
+  // Step C: Write handoff-spec.json to session folder
+  Write(`${sessionFolder}/handoff-spec.json`, JSON.stringify({
+    session_id: sessionId,
+    topic,
+    scope_items: acceptedIdeas.map(idea => ({
+      title: idea.title,
+      description: idea.description,
+      implementation_approach: idea.next_steps,
+      priority: idea.score >= 8 ? 'high' : idea.score >= 5 ? 'medium' : 'low',
+      estimated_complexity: idea.feasibility <= 2 ? 'high' : idea.feasibility <= 4 ? 'medium' : 'low'
+    })),
+    recommended_workflow: 'workflow-lite-plan or workflow-plan',
+    _metadata: { generated: getUtc8ISOString(), source_session: sessionId }
+  }, null, 2))
+  // Display: "Handoff spec created. Run /workflow-lite-plan to execute."
+} else if (nextStep === "Create Issue") {
+  // Display command for user to run manually
+  // "/issue:from-brainstorm ${sessionFolder}" or "/issue:new ..."
+}
+
+// Mark terminal gate complete
+functions.update_plan([
+  { id: "next-step", title: "GATE: Post-Completion Next Step", status: "completed" }
+])
+```
 
 **Success Criteria**:
 - synthesis.json created with complete synthesis
 - brainstorm.md finalized with all conclusions
-- User offered meaningful next step options
+- Terminal gate executed with user's next-step choice
+- If "Execute Task": handoff-spec.json created with implementation scope
 - Session complete and all artifacts available
 
 ## Templates
@@ -812,7 +926,9 @@ Remaining questions or exploration directions
 │   ├── pragmatic.json
 │   └── systematic.json
 ├── perspectives.json              # Phase 2: Aggregated findings with synthesis
+├── research.json                  # Phase 2/3: External research findings (if web.run used)
 ├── synthesis.json                 # Phase 4: Final synthesis
+├── handoff-spec.json              # Phase 4: Implementation scope (if "Execute Task" selected)
 └── ideas/                         # Phase 3: Individual idea deep-dives
     ├── idea-1.md
     ├── idea-2.md
@@ -825,8 +941,10 @@ Remaining questions or exploration directions
 | `exploration-codebase.json` | 2 | Codebase context: relevant files, patterns, constraints |
 | `perspectives/*.json` | 2 | Per-perspective idea generation results |
 | `perspectives.json` | 2 | Aggregated findings with cross-perspective synthesis |
+| `research.json` | 2-3 | External research: patterns, best practices, inspiration |
 | `ideas/*.md` | 3 | Individual idea deep-dives and merged ideas |
 | `synthesis.json` | 4 | Final synthesis: top ideas, recommendations, insights |
+| `handoff-spec.json` | 4 | Implementation scope and handoff (if Execute Task selected) |
 
 ### Brainstorm Dimensions
 
@@ -888,6 +1006,8 @@ Remaining questions or exploration directions
 |-----------|--------|----------|
 | No codebase detected | Normal flow, pure topic brainstorming | Proceed without exploration-codebase.json |
 | Codebase search fails | Continue with available context | Note limitation in brainstorm.md |
+| Web research fails | Continue without external findings | Note in brainstorm.md, rely on inline analysis |
+| Research conflicts with ideas | Present as competing evidence | Let user decide which direction to pursue |
 | No good ideas | Reframe problem or adjust constraints | Try new exploration angles |
 | Perspectives conflict | Present as tradeoff options | Let user select preferred direction |
 | Max rounds reached (6) | Force synthesis phase | Highlight unresolved questions |

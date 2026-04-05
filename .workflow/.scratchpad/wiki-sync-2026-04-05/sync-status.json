@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-04-05",
+  "localVersion": "v7.3.0",
+  "pageVersion": "v7.2.29",
+  "synced": true,
+  "changes": {
+    "added": ["/ccw-chain", "/chain-loader", "/workflow-skill"],
+    "removed": ["/flow-create", "/cli:cli-init", "/cli:codex-review"],
+    "modified": []
+  },
+  "files": {
+    "commands.ts": "updated - removed 3, added 3, updated STATS",
+    "deprecated.ts": "updated - added 3 entries for v7.3",
+    "timeline.ts": "updated - added v7.3 entry, v7.2 marked historical",
+    "experience.ts": "updated - removed /cli:codex-review reference"
+  }
+}

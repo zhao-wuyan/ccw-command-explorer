@@ -377,6 +377,7 @@ See phase files for detailed update code.
 - Initialize TodoWrite before any command (Phase 3 added dynamically after Phase 2)
 - Execute Phase 1 immediately with structured description
 - Parse session ID from Phase 1 output, store in memory
+- **Session Integrity**: If reusing existing session, verify `sessionIntegrity` from Step 1.2.5; log warnings for incomplete brainstorm artifacts
 - Pass session ID and structured description to Phase 2 command
 - Parse context path from Phase 2 output, store in memory
 - **Extract conflictRisk from context-package.json**: Determine Phase 3 execution

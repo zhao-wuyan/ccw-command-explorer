@@ -246,8 +246,8 @@ Agent({
   description: "Generate implementation plan",
   prompt: `
 ## Schema Reference
-Execute: ccw tool exec json_builder '{"cmd":"info","schema":"plan"}'
-Execute: ccw tool exec json_builder '{"cmd":"info","schema":"task"}'
+Execute: cat ~/.ccw/workflows/cli-templates/schemas/plan-overview-base-schema.json
+Execute: cat ~/.ccw/workflows/cli-templates/schemas/task-schema.json
 
 ## Output Format: Two-Layer Structure
 - plan.json: Overview with task_ids[] referencing .task/ files (NO tasks[] array)

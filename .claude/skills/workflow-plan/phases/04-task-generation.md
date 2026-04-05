@@ -212,7 +212,15 @@ If prioritized_context is incomplete, fall back to exploration_results:
 - Reference aggregated_insights.all_patterns for implementation approach
 - Use aggregated_insights.all_integration_points for precise modification locations
 
-## FEATURE SPECIFICATIONS (conditional)
+## BRAINSTORM ARTIFACT VALIDATION (before feature spec loading)
+If .brainstorming/ directory exists in session, verify completeness:
+- guidance-specification.md missing → WARN: brainstorm Phase 2 incomplete, planning proceeds without framework
+- */analysis.md count = 0 → WARN: brainstorm Phase 3 incomplete, no role analyses available
+- feature-specs/ AND feature-index.json both missing → WARN: brainstorm Phase 4 incomplete, skip feature specs
+
+Log warnings to console. Populate agent prompt FEATURE SPECIFICATIONS section only when artifacts actually exist.
+
+## FEATURE SPECIFICATIONS (conditional — only when validated above)
 If context-package has brainstorm_artifacts.feature_index_path:
   Feature Index: [from context-package]
   Feature Spec Dir: [from context-package]

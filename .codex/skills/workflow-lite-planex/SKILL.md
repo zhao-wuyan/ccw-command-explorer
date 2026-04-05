@@ -292,7 +292,7 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
      console.log(`\n## Exploration Plan (${angles.length} angles)\n`)
      angles.forEach(a => console.log(`  - [${a.id}] ${a.angle}: ${a.focus}`))
 
-     const answer = request_user_input({
+     const answer = functions.request_user_input({
        questions: [{
          question: "Approve exploration angles?",
          header: "Validation",
@@ -588,7 +588,7 @@ ${wt.map(t => `  - [${t.id}] ${t.title} (scope: ${t.scope}, from: ${t.context_fr
 }).join('\n')}
      `)
 
-     const answer = request_user_input({
+     const answer = functions.request_user_input({
        questions: [{
          question: `Proceed with ${decomposedTasks.length} tasks across ${maxWave} waves?`,
          header: "Confirm",
@@ -989,7 +989,7 @@ ${[...new Set(finalTasks.flatMap(t => (t.files_modified || '').split(';')).filte
 
    ```javascript
    if (!AUTO_YES && failed.length > 0) {
-     const answer = request_user_input({
+     const answer = functions.request_user_input({
        questions: [{
          question: `${failed.length} tasks failed. Next action?`,
          header: "Next Step",

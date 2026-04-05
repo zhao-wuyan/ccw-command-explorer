@@ -139,7 +139,7 @@ while (!userSatisfied && requirementState.discussion_rounds < 5) {
     // Format questions and suggestions from gapAnalysis for display
     // Present as a structured summary to the user
 
-    request_user_input({
+    functions.request_user_input({
       questions: [
         {
           header: "Req Expand",
@@ -192,7 +192,7 @@ CONSTRAINTS: 避免重复已回答的问题，聚焦未覆盖的领域
     // If status === "ready_for_confirmation", break to confirmation step
     // If status === "need_more_discussion", present follow-up questions
 
-    request_user_input({
+    functions.request_user_input({
       questions: [
         {
           header: "Follow-up",
@@ -297,7 +297,7 @@ if (!autoMode) {
   // Build confirmation summary from requirementState
   const summary = buildConfirmationSummary(requirementState);
 
-  request_user_input({
+  functions.request_user_input({
     questions: [
       {
         header: "Confirm",

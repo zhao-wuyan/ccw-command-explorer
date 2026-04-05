@@ -216,7 +216,7 @@ All subsequent coordination is handled by `commands/monitor.md` handlers trigger
 5. **Completion Action** (interactive):
 
 ```
-request_user_input({
+functions.request_user_input({
   questions: [{
     question: "Ultra-Analyze pipeline complete. What would you like to do?",
     header: "Completion",

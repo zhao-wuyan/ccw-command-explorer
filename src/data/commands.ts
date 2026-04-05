@@ -18,19 +18,19 @@ export const COMMANDS: Command[] = [
     detail: '复杂需求分解器：分析你的需求，推荐需要执行的命令序列，你可以调整后再执行',
     usage: '一个任务需要多个命令配合完成，不知道怎么组合'
   },
-  { cmd: '/flow-create', desc: '创建工作流模板', status: 'stable', category: 'main', cli: ['claude'], addedInVersion: 'v6.0',
-    detail: '创建可重复使用的模板：把常用的命令组合存成模板，下次一键执行。比如"发布流程"模板',
-    usage: '有固定的工作流程想反复使用'
+  { cmd: '/workflow-skill', desc: '直接启动任意工作流技能，按名称调用', status: 'new', category: 'main', cli: ['claude'], addedInVersion: 'v7.3',
+    detail: '技能快速启动器：直接指定技能名称和参数即可调用，无需经过意图分析。不传参数则显示技能目录供选择',
+    usage: '知道要用的技能名称，想快速调用'
   },
 
-  // ==================== CLI 工具 ====================
-  { cmd: '/cli:cli-init', desc: '初始化 CLI 工具配置 (Gemini/Qwen)', status: 'stable', category: 'main', cli: ['claude'], addedInVersion: 'v6.2',
-    detail: '首次配置：为Gemini和Qwen创建配置文件(.gemini/、.qwen/)，设置API密钥、模型选择等',
-    usage: '想用Gemini或Qwen等外部AI工具，第一次需要先配置'
+  // ==================== Chain 工作流 ====================
+  { cmd: '/ccw-chain', desc: 'Chain 链式工作流编排，意图分析+自动路由', status: 'new', category: 'workflow', cli: ['claude'], addedInVersion: 'v7.3',
+    detail: '链式工作流引擎：通过 chain_loader 实现渐进式步骤加载和 LLM 决策路由。支持意图分析→工作流匹配→技能流水线执行，支持自动模式(-y)跳过确认',
+    usage: '复杂任务需要多步骤编排、自动选择工作流链'
   },
-  { cmd: '/cli:codex-review', desc: 'Codex 代码审查', status: 'stable', category: 'review', cli: ['claude'], addedInVersion: 'v6.2',
-    detail: '专业代码审查：可审查未提交的改动、对比两个分支、或审查特定提交。比普通审查更专业',
-    usage: '想用OpenAI Codex进行专业代码审查'
+  { cmd: '/chain-loader', desc: 'Chain 技能生成器，将线性技能转为链图结构', status: 'new', category: 'workflow', cli: ['claude'], addedInVersion: 'v7.3',
+    detail: '链式技能元工具：分析现有技能→设计节点图（步骤/决策/委托节点）→生成 chain JSON 并验证图连通性。支持 12 节点上限，超限自动拆分为主链+子链',
+    usage: '想把现有技能改造为链式结构、创建新的链式技能'
   },
 
   // ==================== 工作流核心 ====================
@@ -538,5 +538,5 @@ export const STATS = {
   codexCommands: COMMANDS.filter(c => c.cli.includes('codex')).length,
   newCommands: COMMANDS.filter(c => c.status === 'new').length,
   recommendedCommands: COMMANDS.filter(c => c.status === 'recommended').length,
-  latestVersion: 'v7.2.29',  // 当前最新版本
+  latestVersion: 'v7.3',  // 当前最新版本
 };

@@ -213,7 +213,7 @@ if (isResumeMode) {
         return { id, path: s, progress: `${done}/${total} tasks` }
       })
 
-      const answer = request_user_input({
+      const answer = functions.request_user_input({
         questions: [{
           header: "Session",
           id: "session",
@@ -546,7 +546,7 @@ if (!AUTO_YES) {
     console.log(`  Wave ${w}: ${waveTasks.map(t => `${t.id}(${t.agent})`).join(', ')}`)
   }
 
-  const answer = request_user_input({
+  const answer = functions.request_user_input({
     questions: [{
       header: "Confirm",
       id: "confirm_execute",
@@ -891,7 +891,7 @@ Bash(`cd "${sessionFolder}" && jq '.status = "${sessionStatus}" | .completed_at 
 if (AUTO_YES) {
   console.log(`  [--yes] Session ${sessionId} ${sessionStatus}.`)
 } else {
-  const nextStep = request_user_input({
+  const nextStep = functions.request_user_input({
     questions: [{
       header: "Next Step",
       id: "next_step",
@@ -922,7 +922,7 @@ if (AUTO_YES) {
 console.log(`\n## Phase 6: Post-Implementation Review\n`)
 
 const reviewType = AUTO_YES ? 'quality' : (() => {
-  const answer = request_user_input({
+  const answer = functions.request_user_input({
     questions: [{
       header: "Review Type",
       id: "review_type",
@@ -966,7 +966,7 @@ console.log(`  Review complete: ${sessionFolder}/REVIEW-${reviewType}.md`)
 
 // Post-review options
 if (!AUTO_YES) {
-  const postReview = request_user_input({
+  const postReview = functions.request_user_input({
     questions: [{
       header: "Post Review",
       id: "post_review",

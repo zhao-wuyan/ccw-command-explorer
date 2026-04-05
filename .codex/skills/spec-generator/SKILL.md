@@ -117,6 +117,8 @@ Input Parsing:
    |- If continue: read spec-config.json, resume from first incomplete phase
    |- If new: proceed to Phase 1
 
+Phase 0 → 1: functions.update_plan([{id:"phase-0",status:"completed"},{id:"phase-1",status:"in_progress"}])
+
 Phase 1: Discovery & Seed Analysis
    |- Ref: phases/01-discovery.md
    |- Generate session ID: SPEC-{slug}-{YYYY-MM-DD}
@@ -130,6 +132,8 @@ Phase 1: Discovery & Seed Analysis
    |- User confirmation (interactive, -y skips)
    |- Output: spec-config.json, discovery-context.json (optional)
 
+Phase 1 → 1.5: functions.update_plan([{id:"phase-1",status:"completed"},{id:"phase-1.5",status:"in_progress"}])
+
 Phase 1.5: Requirement Expansion & Clarification
    |- Ref: phases/01-5-requirement-clarification.md
    |- CLI gap analysis: completeness scoring, missing dimensions detection
@@ -140,6 +144,8 @@ Phase 1.5: Requirement Expansion & Clarification
    |- Auto mode (-y): CLI auto-expansion without interaction
    |- Output: refined-requirements.json
 
+Phase 1.5 → 2: functions.update_plan([{id:"phase-1.5",status:"completed"},{id:"phase-2",status:"in_progress"}])
+
 Phase 2: Product Brief  [AGENT: doc-generator]
    |- spawn_agent({ task_name: "doc-gen-p2", fork_context: false, message: <context envelope> })
    |- Agent reads: phases/02-product-brief.md
@@ -148,6 +154,8 @@ Phase 2: Product Brief  [AGENT: doc-generator]
    |- wait_agent({ targets: ["doc-gen-p2"], timeout_ms: 600000 })
    |- close_agent({ target: "doc-gen-p2" })
    |- Orchestrator validates: files exist, spec-config.json updated
+
+Phase 2 → 3: functions.update_plan([{id:"phase-2",status:"completed"},{id:"phase-3",status:"in_progress"}])
 
 Phase 3: Requirements / PRD  [AGENT: doc-generator]
    |- spawn_agent({ task_name: "doc-gen-p3", fork_context: false, message: <context envelope> })
@@ -158,6 +166,8 @@ Phase 3: Requirements / PRD  [AGENT: doc-generator]
    |- close_agent({ target: "doc-gen-p3" })
    |- Orchestrator validates: directory exists, file count matches
 
+Phase 3 → 4: functions.update_plan([{id:"phase-3",status:"completed"},{id:"phase-4",status:"in_progress"}])
+
 Phase 4: Architecture  [AGENT: doc-generator]
    |- spawn_agent({ task_name: "doc-gen-p4", fork_context: false, message: <context envelope> })
    |- Agent reads: phases/04-architecture.md
@@ -167,6 +177,8 @@ Phase 4: Architecture  [AGENT: doc-generator]
    |- close_agent({ target: "doc-gen-p4" })
    |- Orchestrator validates: directory exists, ADR files present
 
+Phase 4 → 5: functions.update_plan([{id:"phase-4",status:"completed"},{id:"phase-5",status:"in_progress"}])
+
 Phase 5: Epics & Stories  [AGENT: doc-generator]
    |- spawn_agent({ task_name: "doc-gen-p5", fork_context: false, message: <context envelope> })
    |- Agent reads: phases/05-epics-stories.md
@@ -175,6 +187,8 @@ Phase 5: Epics & Stories  [AGENT: doc-generator]
    |- wait_agent({ targets: ["doc-gen-p5"], timeout_ms: 600000 })
    |- close_agent({ target: "doc-gen-p5" })
    |- Orchestrator validates: directory exists, MVP epics present
+
+Phase 5 → 6: functions.update_plan([{id:"phase-5",status:"completed"},{id:"phase-6",status:"in_progress"}])
 
 Phase 6: Readiness Check  [INLINE + ENHANCED]
    |- Ref: phases/06-readiness-check.md
@@ -196,6 +210,8 @@ Phase 6.5: Auto-Fix (conditional)  [AGENT: doc-generator]
    |- Re-run Phase 6 validation
    |- Max 2 iterations, then force handoff
 
+Phase 6 → 7: functions.update_plan([{id:"phase-6",status:"completed"},{id:"phase-7",status:"in_progress"}])
+
 Phase 7: Issue Export  [INLINE]
    |- Ref: phases/07-issue-export.md
    |- Read EPIC-*.md files, assign waves (MVP->wave-1, others->wave-2)
@@ -204,6 +220,8 @@ Phase 7: Issue Export  [INLINE]
    |- Generate issue-export-report.md
    |- Update spec-config.json with issue_ids
    |- Handoff: team-planex, wave-1 only, view issues, done
+
+Phase 7 complete: functions.update_plan([{id:"phase-7",status:"completed"}])
 
 Complete: Full specification package with issues ready for execution
 
@@ -221,7 +239,7 @@ Phase 6/7 -> Handoff Bridge (conditional, based on user selection):
 
 ## Directory Setup
 
-```
+```javascript
 // Session ID generation
 const slug = topic.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').slice(0, 40);
 const date = new Date().toISOString().slice(0, 10);
@@ -229,6 +247,19 @@ const sessionId = `SPEC-${slug}-${date}`;
 const workDir = `.workflow/.spec/${sessionId}`;
 
 Bash(`mkdir -p "${workDir}"`);
+
+// Initialize progress tracking (MANDATORY)
+functions.update_plan([
+  { id: "phase-0", title: "Phase 0: Specification Study", status: "in_progress" },
+  { id: "phase-1", title: "Phase 1: Discovery", status: "pending" },
+  { id: "phase-1.5", title: "Phase 1.5: Req Expansion", status: "pending" },
+  { id: "phase-2", title: "Phase 2: Product Brief", status: "pending" },
+  { id: "phase-3", title: "Phase 3: Requirements (PRD)", status: "pending" },
+  { id: "phase-4", title: "Phase 4: Architecture", status: "pending" },
+  { id: "phase-5", title: "Phase 5: Epics & Stories", status: "pending" },
+  { id: "phase-6", title: "Phase 6: Readiness Check", status: "pending" },
+  { id: "phase-7", title: "Phase 7: Issue Export", status: "pending" }
+])
 ```
 
 ## Output Structure
@@ -294,7 +325,7 @@ Bash(`mkdir -p "${workDir}"`);
 
 ## Core Rules
 
-1. **Start Immediately**: First action is Phase 0 (spec study), then Phase 1
+1. **Start Immediately**: First action is `functions.update_plan` initialization, then Phase 0 (spec study), then Phase 1
 2. **Progressive Phase Loading**: Read phase docs ONLY when that phase is about to execute
 3. **Auto-Continue**: All phases run autonomously; proceed to next phase after current completes
 4. **Parse Every Output**: Extract required data from each phase for next phase context

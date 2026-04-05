@@ -56,7 +56,7 @@ ${projectGuidelines ? `- Guidelines: ${projectGuidelines.conventions?.length || 
 ```javascript
 // Skip if taskDescription is already detailed enough, or autoYes
 if (!autoYes && !taskDescription) {
-  request_user_input({
+  functions.request_user_input({
     prompt: "What is the project goal and scope for this session?"
   })
 }
@@ -68,7 +68,7 @@ const projectGoal = taskDescription || userResponse
 
 ```javascript
 if (!autoYes) {
-  request_user_input({
+  functions.request_user_input({
     prompt: "How should phase transitions be handled?\n\nOptions:\n1. interactive - Ask for confirmation at each phase transition\n2. yolo - Auto-execute all phases without stopping\n3. custom - Choose which gates require confirmation"
   })
 } else {
@@ -77,7 +77,7 @@ if (!autoYes) {
 
 // If "custom" selected, follow up with gate selection:
 if (mode === "custom") {
-  request_user_input({
+  functions.request_user_input({
     prompt: "Which gates should require confirmation? (select multiple)\n\n1. plan_check - Review plan before execution\n2. verifier - Review verification results before next phase\n3. gap_closure - Confirm gap closure before re-execution"
   })
 }
@@ -87,7 +87,7 @@ if (mode === "custom") {
 
 ```javascript
 if (!autoYes) {
-  request_user_input({
+  functions.request_user_input({
     prompt: "How thorough should the analysis be?\n\nOptions:\n1. quick - Fast scan, minimal context gathering (small tasks)\n2. standard - Balanced analysis with key context (default)\n3. comprehensive - Deep analysis, full codebase exploration (large refactors)"
   })
 } else {
@@ -124,7 +124,7 @@ CONSTRAINTS: Max 5 phases | Each phase independently verifiable | No implementat
 // Display the generated roadmap to user
 // Output the roadmap content directly, then ask for adjustments
 
-request_user_input({
+functions.request_user_input({
   prompt: "Review the roadmap above. Any adjustments needed?\n\nOptions:\n1. Looks good, proceed - Accept roadmap as-is\n2. Adjust phases - I want to modify the phase breakdown\n3. Add requirements - I want to add missing requirements\n4. Change scope - Narrow or expand the scope"
 })
 

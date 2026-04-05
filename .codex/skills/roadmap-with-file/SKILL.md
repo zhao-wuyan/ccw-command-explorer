@@ -119,34 +119,54 @@ Strategic requirement roadmap with **iterative decomposition**. Creates a single
 
 **Core workflow**: Understand → Decompose → Iterate → Validate → Handoff
 
+**Key features**:
+- **roadmap.md**: Single source of truth — strategy, roadmap, convergence, iteration history
+- **Dual decomposition**: Progressive (MVP→Optimized) or Direct (topological tasks)
+- **External research**: Web search for architecture patterns and best practices via `web.run`
+- **Issue creation**: Issues persisted to global `issues.jsonl` for execution pipeline
+- **Progress tracking**: `functions.update_plan` for real-time phase progress visibility
+- **Decision recording**: Structured decision trail with context and rationale
+- **Structured handoff**: Terminal gate with execution planning, issue viewing, or completion
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                    ROADMAP ITERATIVE WORKFLOW                            │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
+│  Session Init                                                            │
+│     ├─ Parse flags, generate session ID                                  │
+│     ├─ functions.exec_command (mkdir session folder)                      │
+│     └─ functions.update_plan (5 phases: Understand → Decompose →         │
+│        Refine → Handoff → GATE)                                          │
+│                                                                          │
 │  Phase 1: Requirement Understanding & Strategy                           │
 │     ├─ Parse requirement: goal / constraints / stakeholders              │
 │     ├─ Assess uncertainty level → recommend mode                         │
-│     ├─ User confirms strategy (-m skips, -y auto-selects)                │
+│     ├─ User confirms strategy via functions.request_user_input           │
 │     └─ Initialize roadmap.md with Strategy Assessment                    │
 │                                                                          │
 │  Phase 2: Decomposition & Issue Creation                                 │
+│     ├─ Optional codebase exploration (functions.exec_command detection)   │
 │     ├─ cli-roadmap-plan-agent executes decomposition                     │
 │     ├─ Progressive: 2-4 layers (MVP→Optimized) with convergence          │
 │     ├─ Direct: Topological task sequence with convergence                │
 │     ├─ Create issues via ccw issue create → issues.jsonl                 │
 │     └─ Update roadmap.md with Roadmap table + Issue references           │
 │                                                                          │
-│  Phase 3: Iterative Refinement (Multi-Round)                             │
-│     ├─ Present roadmap to user                                           │
-│     ├─ Feedback: Approve | Adjust Scope | Modify Convergence | Replan    │
-│     ├─ Update roadmap.md with each round                                 │
+│  Phase 3: Iterative Refinement (Multi-Round, Decision Recording)         │
+│     ├─ Present roadmap to user (Cumulative Context)                      │
+│     ├─ Feedback via functions.request_user_input:                        │
+│     │   Approve | Adjust Scope | Refine Criteria | Research/Re-decompose │
+│     ├─ External research via web.run (optional — patterns, practices)    │
+│     ├─ Record decisions in Iteration History (Record-Before-Continue)     │
 │     └─ Repeat until approved (max 5 rounds)                              │
 │                                                                          │
 │  Phase 4: Handoff (PLANNING ENDS HERE)                                   │
 │     ├─ Final roadmap.md with Issue ID references                         │
-│     ├─ Options: view issues | done (show next-step commands)             │
-│     └─ Issues ready in .workflow/issues/issues.jsonl                     │
+│     └─ MANDATORY Terminal Gate: 执行计划 / 查看Issue / 完成              │
+│         ├─ Execute Plan → display csv-wave-pipeline command               │
+│         ├─ View Issues → ccw issue list                                  │
+│         └─ Done → end workflow                                           │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -360,7 +380,16 @@ if (continueMode || file_exists(`${sessionFolder}/roadmap.md`)) {
   // Extract current phase and continue from there
 }
 
-Bash(`mkdir -p ${sessionFolder}`)
+functions.exec_command(`mkdir -p ${sessionFolder}`)
+
+// Initialize progress tracking (MANDATORY)
+functions.update_plan([
+  { id: "phase-1", title: "Phase 1: Requirement Understanding & Strategy", status: "in_progress" },
+  { id: "phase-2", title: "Phase 2: Decomposition & Issue Creation", status: "pending" },
+  { id: "phase-3", title: "Phase 3: Iterative Refinement", status: "pending" },
+  { id: "phase-4", title: "Phase 4: Handoff", status: "pending" },
+  { id: "next-step", title: "GATE: Post-Completion Next Step", status: "pending" }
+])
 ```
 
 ---
@@ -403,19 +432,19 @@ Bash(`mkdir -p ${sessionFolder}`)
    } else if (AUTO_YES) {
      selectedMode = recommendedMode
    } else {
-     const answer = request_user_input({
+     const answer = functions.request_user_input({
        questions: [{
-         header: "Strategy",
-         id: "strategy",
-         question: `Decomposition strategy:\nUncertainty: ${uncertaintyLevel}\nRecommended: ${recommendedMode}`,
+         header: "Strategy",   // max 12 chars
+         question: `Decomposition strategy: Uncertainty=${uncertaintyLevel}, Recommended=${recommendedMode}`,
+         multiSelect: false,
          options: [
-           { label: recommendedMode === 'progressive' ? "Progressive (Recommended)" : "Progressive" },
-           { label: recommendedMode === 'direct' ? "Direct (Recommended)" : "Direct" }
+           { label: recommendedMode === 'progressive' ? "Progressive (Recommended)" : "Progressive", description: "MVP → Usable → Refined → Optimized layers" },
+           { label: recommendedMode === 'direct' ? "Direct (Recommended)" : "Direct", description: "Topological task sequence" }
          ]
        }]
-     })  // BLOCKS (wait for user response)
+     })
 
-     selectedMode = answer.answers.strategy.answers[0]
+     selectedMode = answer // parsed from user selection
    }
    ```
 
@@ -489,7 +518,10 @@ Bash(`mkdir -p ${sessionFolder}`)
 
 1. **Optional Codebase Exploration** (if codebase detected)
    ```javascript
-   const hasCodebase = Bash(`
+   // Update progress
+   functions.update_plan([{ id: "phase-2", title: "Phase 2: Decomposition & Issue Creation", status: "in_progress" }])
+
+   const hasCodebase = functions.exec_command(`
      test -f package.json && echo "nodejs" ||
      test -f go.mod && echo "golang" ||
      test -f Cargo.toml && echo "rust" ||
@@ -655,6 +687,17 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 
 **Objective**: Multi-round user feedback to refine roadmap.
 
+**Cumulative Context Rule**: Each round's presentation MUST include ALL prior feedback and changes. Never present in isolation — always show cumulative state.
+
+**Decision Recording**: Every user feedback choice and resulting change MUST be recorded in Iteration History with Decision Record format:
+```markdown
+> **Decision**: [Description]
+> - **Context**: [What triggered this]
+> - **Options**: [What was considered]
+> - **Chosen**: [Selected] — **Reason**: [Why]
+> - **Impact**: [What changed in roadmap]
+```
+
 **Steps**:
 
 1. **Display Current Roadmap**
@@ -663,96 +706,67 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 
 2. **Feedback Loop** (skip if AUTO_YES)
    ```javascript
+   // Update progress
+   functions.update_plan([{ id: "phase-3", title: "Phase 3: Iterative Refinement", status: "in_progress" }])
+
    let round = 0
    let approved = false
 
    while (!approved && round < 5) {
      round++
 
-     const feedback = request_user_input({
-       questions: [{
-         header: "Validate",
-         id: "feedback",
-         question: `Roadmap validation (round ${round}):\n${issueIds.length} issues across ${waveCount} waves. Feedback?`,
-         options: [
-           { label: "Approve", description: "Proceed to handoff" },
-           { label: "Adjust Scope", description: "Modify issue scopes" },
-           { label: "Modify Convergence", description: "Refine criteria/verification" },
-           { label: "Re-decompose", description: "Change strategy/layering" }
-         ]
-       }]
-     })  // BLOCKS (wait for user response)
+     // Dynamic options — include research if not yet done
+     const baseOptions = [
+       { label: "Approve", description: "Proceed to handoff" },
+       { label: "Adjust Scope", description: "Modify issue scopes" },
+       { label: "Refine Criteria", description: "Improve convergence criteria/verification" }
+     ]
 
-     const feedbackChoice = feedback.answers.feedback.answers[0]
-     if (feedbackChoice === 'Approve') {
-       approved = true
+     // Add research option if architecture decisions need external validation
+     if (!researchDone) {
+       baseOptions.push({ label: "Research", description: "Search for architecture patterns and best practices" })
      } else {
-       // CONSTRAINT: All modifications below ONLY touch roadmap.md and issues.jsonl
-       // NEVER modify source code or project files during interactive rounds
-       switch (feedbackChoice) {
-         case 'Adjust Scope':
-           // Collect scope adjustments
-           const scopeAdjustments = request_user_input({
-             questions: [{
-               header: "Scope",
-               id: "adjustments",
-               question: "Describe scope adjustments needed:"
-             }]
-           })  // BLOCKS
-
-           // Update ONLY roadmap.md Roadmap table + Convergence sections
-           Edit({ path: `${sessionFolder}/roadmap.md`, /* scope changes */ })
-           // Update ONLY issues.jsonl entries (scope/context fields)
-
-           break
-
-         case 'Modify Convergence':
-           // Collect convergence refinements
-           const convergenceRefinements = request_user_input({
-             questions: [{
-               header: "Convergence",
-               id: "refinements",
-               question: "Describe convergence refinements needed:"
-             }]
-           })  // BLOCKS
-
-           // Update ONLY roadmap.md Convergence Criteria section
-           Edit({ path: `${sessionFolder}/roadmap.md`, /* convergence changes */ })
-
-           break
-
-         case 'Re-decompose':
-           // Return to Phase 2 with new strategy
-           const newStrategy = request_user_input({
-             questions: [{
-               header: "Strategy",
-               id: "strategy",
-               question: "Select new decomposition strategy:",
-               options: [
-                 { label: "Progressive" },
-                 { label: "Direct" }
-               ]
-             }]
-           })  // BLOCKS
-
-           selectedMode = newStrategy.answers.strategy.answers[0]
-           // Re-execute Phase 2 (updates roadmap.md + issues.jsonl only)
-           break
-       }
-
-       // Update Iteration History in roadmap.md
-       const iterationEntry = `
-### Round ${round} - ${getUtc8ISOString()}
-**User Feedback**: ${feedback.feedback}
-**Changes Made**: ${changesMade}
-**Status**: continue iteration
-`
-       Edit({
-         path: `${sessionFolder}/roadmap.md`,
-         old_string: "## Iteration History\n\n> To be populated during Phase 3 refinement",
-         new_string: `## Iteration History\n${iterationEntry}`
-       })
+       baseOptions.push({ label: "Re-decompose", description: "Change strategy/layering" })
      }
+
+     const feedback = functions.request_user_input({
+       questions: [{
+         header: "Validate",    // max 12 chars
+         question: `Roadmap round ${round}: ${issueIds.length} issues across ${waveCount} waves. Your decision:`,
+         multiSelect: false,
+         options: baseOptions
+       }]
+     })
+
+     if (feedback === 'Approve') {
+       approved = true
+     } else if (feedback === 'Research') {
+       // Execute web.run for architecture patterns and best practices
+       const researchQueries = generateResearchQueries(requirement, selectedMode)
+       researchQueries.forEach(query => {
+         const results = web.run({ search_query: query })
+         // Extract: architecture patterns, best practices, risk mitigations
+       })
+       researchDone = true
+       // Record research findings in roadmap.md Iteration History
+     } else {
+       // For Adjust Scope, Refine Criteria, Re-decompose:
+       // Collect details via functions.request_user_input or free text
+       // CONSTRAINT: All modifications ONLY touch roadmap.md and issues.jsonl
+       // NEVER modify source code or project files during interactive rounds
+
+       // Record decision in Iteration History using Decision Record format
+     }
+
+     // Update Iteration History in roadmap.md (Record-Before-Continue)
+     const iterationEntry = `
+### Round ${round} - ${getUtc8ISOString()}
+**User Feedback**: ${feedback}
+**Changes Made**: ${changesMade}
+**Decision**: ${decisionRecord}
+**Status**: ${approved ? 'approved' : 'continue iteration'}
+`
+     // Append to Iteration History section in roadmap.md
    }
    ```
 
@@ -775,7 +789,7 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 
 ### Phase 4: Handoff
 
-**Objective**: Present final roadmap, offer execution options.
+**Objective**: Present final roadmap, execute MANDATORY terminal gate for next step selection.
 
 **Steps**:
 
@@ -794,50 +808,42 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
    | 2 | 3 | Usable / feature |
    ```
 
-2. **Offer Options** (skip if AUTO_YES)
+2. **MANDATORY Terminal Gate** (CRITICAL — MUST execute, workflow MUST NOT end without this)
    ```javascript
-   let nextStep
+   // Update progress
+   functions.update_plan([
+     { id: "phase-4", title: "Phase 4: Handoff", status: "completed" },
+     { id: "next-step", title: "GATE: Post-Completion Next Step", status: "in_progress" }
+   ])
 
-   if (AUTO_YES) {
-     nextStep = "done"  // Default to done in auto mode
-   } else {
-     const answer = request_user_input({
-       questions: [{
-         header: "Next Step",
-         id: "next_step",
-         question: `${issueIds.length} issues ready. Next step:`,
-         options: [
-           { label: "View issues", description: "Display issue details" },
-           { label: "Done", description: "Planning complete — show next-step commands" }
-         ]
-       }]
-     })  // BLOCKS (wait for user response)
+   const nextStep = functions.request_user_input({
+     questions: [{
+       header: "Next Step",    // max 12 chars
+       question: `${issueIds.length} issues ready in roadmap. What would you like to do next?`,
+       multiSelect: false,
+       options: [
+         { label: "Execute Plan", description: "Hand off to execution pipeline (csv-wave-pipeline)" },
+         { label: "View Issues", description: "Display issue details before deciding" },
+         { label: "Done", description: "Planning complete, all artifacts saved" }
+       ]
+     }]
+   })
 
-     nextStep = answer.answers.next_step.answers[0]
+   // Handle next step
+   if (nextStep === "Execute Plan") {
+     // Display execution command for user to run manually
+     // "Run: $csv-wave-pipeline '${requirement}'" or "/issue:execute"
+     // This skill is planning-only — NEVER auto-launch execution
+   } else if (nextStep === "View Issues") {
+     functions.exec_command(`ccw issue list --session ${sessionId}`)
+     // After viewing, show execution commands
    }
-   ```
+   // "Done" → end workflow
 
-3. **Execute Selection**
-   ```javascript
-   switch (nextStep) {
-     case 'view':
-       // Display issues from issues.jsonl
-       Bash(`ccw issue list --session ${sessionId}`)
-       // Fall through to show next-step commands
-       // STOP — do not execute anything
-
-     case 'done':
-       // Output paths and end — this skill is planning-only
-       console.log([
-         `Roadmap saved: ${sessionFolder}/roadmap.md`,
-         `Issues created: ${issueIds.length}`,
-         '',
-         'Planning complete. To execute, run:',
-         `  $csv-wave-pipeline "${requirement}"`,
-         `  ccw issue list --session ${sessionId}`
-       ].join('\n'))
-       return  // STOP — this skill is planning-only, NEVER proceed to execution
-   }
+   // Mark terminal gate complete
+   functions.update_plan([
+     { id: "next-step", title: "GATE: Post-Completion Next Step", status: "completed" }
+   ])
    ```
 
 **Success Criteria**:
@@ -854,6 +860,8 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 | cli-explore-agent fails | Skip code exploration, proceed with pure requirement decomposition |
 | cli-roadmap-plan-agent fails | Retry once, fallback to manual decomposition prompt |
 | No codebase | Normal flow, skip exploration step |
+| Web research fails | Continue without external findings, rely on inline analysis |
+| Research conflicts with plan | Present as competing evidence, let user decide direction |
 | Circular dependency detected | Prompt user, re-decompose |
 | User timeout in feedback loop | Save roadmap.md, show `--continue` command |
 | Max rounds reached | Force proceed with current roadmap |

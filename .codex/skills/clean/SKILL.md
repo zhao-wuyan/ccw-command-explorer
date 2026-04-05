@@ -252,7 +252,7 @@ Manifest: ${sessionFolder}/cleanup-manifest.json
 }
 
 // User confirmation
-const selection = request_user_input({
+const selection = functions.request_user_input({
   questions: [
     {
       header: "清理类别",

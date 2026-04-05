@@ -158,7 +158,7 @@ Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 
 When pipeline completes, coordinator presents:
 
 \```
-request_user_input({
+functions.request_user_input({
   prompt: "Pipeline complete. What would you like to do?\n\nOptions:\n1. Archive & Clean (Recommended) - Archive session, clean up team\n2. Keep Active - Keep session for follow-up work\n3. Export Results - Export deliverables to target directory"
 })
 \```

@@ -310,7 +310,7 @@ Write(`${workDir}/spec-config.json`, JSON.stringify(specConfig, null, 2));
 ### Step 6: Handoff Options
 
 ```javascript
-request_user_input({
+functions.request_user_input({
   questions: [
     {
       header: "Next Step",

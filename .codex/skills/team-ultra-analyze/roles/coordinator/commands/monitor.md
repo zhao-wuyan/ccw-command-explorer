@@ -91,7 +91,7 @@ ELSE IF discussion_round >= MAX_ROUNDS:
 
 ELSE:
     // Collect user feedback
-    request_user_input({
+    functions.request_user_input({
       questions: [{
         question: "Discussion round <N> complete. What next?",
         header: "Discussion Feedback",

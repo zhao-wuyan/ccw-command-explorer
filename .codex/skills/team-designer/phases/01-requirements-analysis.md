@@ -34,11 +34,11 @@ function detectInputSource(userInput) {
 ## Step 1.2: Gather Core Identity
 
 ```javascript
-const skillNameResponse = request_user_input({
+const skillNameResponse = functions.request_user_input({
   prompt: `团队技能名称？(kebab-case, e.g., team-code-review)\n\nSuggested: ${suggestedName}\nOr enter a custom name.`
 });
 
-const prefixResponse = request_user_input({
+const prefixResponse = functions.request_user_input({
   prompt: `会话前缀？(3-4字符用于任务ID, e.g., TCR)\n\nSuggested: ${suggestedPrefix}\nOr enter a custom prefix.`
 });
 ```

@@ -234,7 +234,7 @@ This pattern enables iterative debug rounds: FIX -> VERIFY -> re-FIX -> re-VERIF
 When pipeline completes, coordinator presents:
 
 ```
-request_user_input({
+functions.request_user_input({
   questions: [{
     question: "Pipeline complete. What would you like to do?",
     header: "Completion",

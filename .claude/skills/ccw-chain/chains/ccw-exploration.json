@@ -1,0 +1,58 @@
+{
+  "chain_id": "ccw-exploration",
+  "name": "CCW Exploration Workflows (Level 4)",
+  "description": "Level 4 workflow routing: brainstorm, spec-driven, full exploration, greenfield",
+  "version": "2.1",
+  "entry": "D1",
+  "entries": [
+    { "name": "default", "node": "D1", "description": "Select flow via decision node" },
+    { "name": "brainstorm", "node": "S_BP1", "description": "Direct: Brainstorm → Plan flow" },
+    { "name": "spec-driven", "node": "S_SD1", "description": "Direct: Spec-Driven flow" },
+    { "name": "full", "node": "S_FE1", "description": "Direct: Full Exploration flow" }
+  ],
+  "triggers": {
+    "task_types": ["brainstorm", "spec-driven", "greenfield", "exploration"],
+    "keywords": ["brainstorm|ideation|creative thinking", "spec.*gen|specification|PRD", "from scratch|greenfield|new project", "uncertain|explore|research|what if"],
+    "scope": "Level 4: brainstorm, spec-driven, greenfield, full exploration"
+  },
+  "nodes": {
+    "D1": {
+      "type": "decision",
+      "name": "Select Exploration Flow",
+      "prompt": "Based on the detected task_type and complexity, select the specific exploration workflow:\n1. Brainstorm → Plan → Execute — multi-perspective ideation followed by formal planning\n2. Spec-Driven — specification/PRD generation followed by plan and execute\n3. Full Exploration — uncertain tasks: brainstorm → formal plan → execute → test\n4. Greenfield (medium) — 0→1 development: brainstorm → plan → execute → test\n5. Greenfield (large/phased) — 0→1 large scale: brainstorm → plan → execute → review → test",
+      "choices": [
+        { "label": "Brainstorm → Plan", "description": "brainstorm-with-file → plan → execute → test-fix", "next": "S_BP1" },
+        { "label": "Spec-Driven", "description": "spec-generator → plan → execute → test-fix", "next": "S_SD1" },
+        { "label": "Full Exploration", "description": "brainstorm → plan → execute → test-fix", "next": "S_FE1" },
+        { "label": "Greenfield (medium)", "description": "brainstorm-with-file → plan → execute → test-fix", "next": "S_GM1" },
+        { "label": "Greenfield (large)", "description": "brainstorm-with-file → plan → execute → review → test-fix", "next": "S_GL1" }
+      ],
+      "default": "S_BP1"
+    },
+    "S_BP1": { "type": "step", "name": "Brainstorm: brainstorm-with-file", "content_ref": "@commands/workflow/brainstorm-with-file.md", "next": "S_BP2" },
+    "S_BP2": { "type": "delegate", "name": "Brainstorm: workflow-plan", "chain": "workflow-plan", "pass_variables": ["auto_yes", "goal"], "next": "S_BP3" },
+    "S_BP3": { "type": "step", "name": "Brainstorm: workflow-execute", "content_ref": "@skills/workflow-execute/SKILL.md", "next": "S_BP4" },
+    "S_BP4": { "type": "delegate", "name": "Brainstorm: workflow-test-fix", "chain": "workflow-test-fix", "pass_variables": ["auto_yes", "goal"], "next": null },
+
+    "S_SD1": { "type": "delegate", "name": "Spec: spec-generator", "chain": "spec-generator", "pass_variables": ["auto_yes", "goal"], "next": "S_SD2" },
+    "S_SD2": { "type": "delegate", "name": "Spec: workflow-plan", "chain": "workflow-plan", "pass_variables": ["auto_yes", "goal"], "next": "S_SD3" },
+    "S_SD3": { "type": "step", "name": "Spec: workflow-execute", "content_ref": "@skills/workflow-execute/SKILL.md", "next": "S_SD4" },
+    "S_SD4": { "type": "delegate", "name": "Spec: workflow-test-fix", "chain": "workflow-test-fix", "pass_variables": ["auto_yes", "goal"], "next": null },
+
+    "S_FE1": { "type": "delegate", "name": "Full: brainstorm", "chain": "brainstorm", "pass_variables": ["auto_yes", "goal"], "next": "S_FE2" },
+    "S_FE2": { "type": "delegate", "name": "Full: workflow-plan", "chain": "workflow-plan", "pass_variables": ["auto_yes", "goal"], "next": "S_FE3" },
+    "S_FE3": { "type": "step", "name": "Full: workflow-execute", "content_ref": "@skills/workflow-execute/SKILL.md", "next": "S_FE4" },
+    "S_FE4": { "type": "delegate", "name": "Full: workflow-test-fix", "chain": "workflow-test-fix", "pass_variables": ["auto_yes", "goal"], "next": null },
+
+    "S_GM1": { "type": "step", "name": "Greenfield-M: brainstorm-with-file", "content_ref": "@commands/workflow/brainstorm-with-file.md", "next": "S_GM2" },
+    "S_GM2": { "type": "delegate", "name": "Greenfield-M: workflow-plan", "chain": "workflow-plan", "pass_variables": ["auto_yes", "goal"], "next": "S_GM3" },
+    "S_GM3": { "type": "step", "name": "Greenfield-M: workflow-execute", "content_ref": "@skills/workflow-execute/SKILL.md", "next": "S_GM4" },
+    "S_GM4": { "type": "delegate", "name": "Greenfield-M: workflow-test-fix", "chain": "workflow-test-fix", "pass_variables": ["auto_yes", "goal"], "next": null },
+
+    "S_GL1": { "type": "step", "name": "Greenfield-L: brainstorm-with-file", "content_ref": "@commands/workflow/brainstorm-with-file.md", "next": "S_GL2" },
+    "S_GL2": { "type": "delegate", "name": "Greenfield-L: workflow-plan", "chain": "workflow-plan", "pass_variables": ["auto_yes", "goal"], "next": "S_GL3" },
+    "S_GL3": { "type": "step", "name": "Greenfield-L: workflow-execute", "content_ref": "@skills/workflow-execute/SKILL.md", "next": "S_GL4" },
+    "S_GL4": { "type": "delegate", "name": "Greenfield-L: review-cycle", "chain": "ccw-review-cycle", "pass_variables": ["auto_yes", "goal"], "next": "S_GL5" },
+    "S_GL5": { "type": "delegate", "name": "Greenfield-L: workflow-test-fix", "chain": "workflow-test-fix", "pass_variables": ["auto_yes", "goal"], "next": null }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "chain_id": "ccw-main",
+  "name": "CCW Main Orchestrator",
+  "description": "Main workflow orchestrator: intent analysis → clarity check → workflow category routing",
+  "version": "2.2",
+  "preload": [
+    { "key": "memory", "source": "memory:MEMORY.md", "required": false },
+    { "key": "chain-list", "source": "@chains/_index.md", "required": false }
+  ],
+  "variables": {
+    "task_type": { "type": "string", "description": "Detected task type" },
+    "goal": { "type": "string", "description": "User's goal" },
+    "auto_yes": { "type": "boolean", "default": false, "description": "Auto-confirm mode" }
+  },
+  "entry": "S1",
+  "entries": [
+    { "name": "default", "node": "S1", "description": "Full flow: intent analysis → clarity check → routing" },
+    { "name": "skip-analysis", "node": "D2", "description": "Skip analysis, directly select workflow category" }
+  ],
+  "nodes": {
+    "S1": {
+      "type": "step",
+      "name": "Analyze Intent",
+      "content_inline": "## Phase 1: Analyze Intent\n\nAnalyze the user's input ($ARGUMENTS) to determine:\n\n```javascript\nconst analysis = {\n  goal: extractGoal(input),\n  scope: extractScope(input),\n  constraints: extractConstraints(input),\n  task_type: detectTaskType(input),\n  complexity: assessComplexity(input),  // low|medium|high\n  clarity_score: calculateClarity(input) // 0-3 (>=2 = clear)\n};\n\nconst autoYes = /\\b(-y|--yes)\\b/.test($ARGUMENTS);\n```\n\nDetect task_type by priority (use `chain_loader list` to see each chain's triggers):\n- bugfix-hotfix, greenfield, brainstorm, brainstorm-to-issue, debug-file, analyze-file\n- collaborative-plan, roadmap, spec-driven, integration-test, refactor, team-planex\n- multi-cli, bugfix, issue-batch, issue-transition, exploration, quick-task\n- ui-design, tdd, test-fix, test-gen, review, documentation, feature (default)\n\nOutput: `Type: [task_type] | Goal: [goal] | Complexity: [complexity] | Clarity: [clarity_score]/3`",
+      "next": "D1"
+    },
+    "D1": {
+      "type": "decision",
+      "name": "Clarity Check",
+      "prompt": "Based on the intent analysis results, assess the clarity score:\n1. Clear (clarity_score >= 2) — goal, scope, and constraints are sufficiently defined\n2. Unclear (clarity_score < 2) — need more information from user\n\nIf auto mode (-y) is active, always choose 1 (Clear) regardless of score.",
+      "choices": [
+        { "label": "Clear", "description": "Clarity score >= 2, proceed to workflow selection", "next": "S3" },
+        { "label": "Unclear", "description": "Clarity score < 2, need requirement clarification", "next": "S2" }
+      ],
+      "default": "S2"
+    },
+    "S2": {
+      "type": "step",
+      "name": "Clarify Requirements",
+      "content_inline": "## Phase 1.5: Requirement Clarification\n\nUse AskUserQuestion to clarify missing info:\n\n```javascript\nconst questions = [\n  { question: 'What is the primary goal?', header: 'Goal', options: [\n    { label: 'Create', description: 'New feature' },\n    { label: 'Fix', description: 'Bug fix' },\n    { label: 'Optimize', description: 'Performance/refactor' },\n    { label: 'Analyze', description: 'Research/explore' }\n  ]},\n  { question: 'What is the scope?', header: 'Scope', options: [\n    { label: 'Single file', description: '1 file change' },\n    { label: 'Module', description: 'One module' },\n    { label: 'Cross-module', description: 'Multiple modules' },\n    { label: 'System', description: 'System-wide' }\n  ]},\n  { question: 'Any constraints?', header: 'Constraints', options: [\n    { label: 'Backward compat', description: 'Must not break existing' },\n    { label: 'Skip tests', description: 'No test generation' },\n    { label: 'Urgent hotfix', description: 'Fast track' }\n  ]}\n];\n```\n\nUpdate analysis with answers, then proceed to workflow selection.",
+      "next": "S3"
+    },
+    "S3": {
+      "type": "step",
+      "name": "Select Workflow & Build Chain",
+      "content_inline": "## Phase 2: Select Workflow & Build Command Chain\n\nMap task_type to workflow flow:\n\n| task_type | level | flow | category chain |\n|-----------|-------|------|----------------|\n| bugfix-hotfix | 2 | bugfix.hotfix | lightweight |\n| greenfield | 3-4 | greenfield-plan/phased | exploration |\n| brainstorm | 4 | brainstorm-to-plan | exploration |\n| brainstorm-to-issue | 4 | brainstorm-to-issue | issue |\n| debug-file | 3 | debug-with-file | with-file |\n| analyze-file | 3 | analyze-to-plan | with-file |\n| collaborative-plan | 3 | collaborative-plan | with-file |\n| roadmap | 4 | roadmap | with-file |\n| spec-driven | 4 | spec-driven | exploration |\n| integration-test | 3 | integration-test-cycle | cycle |\n| refactor | 3 | refactor-cycle | cycle |\n| team-planex | Team | team-planex | team |\n| multi-cli | 3 | multi-cli-plan | standard |\n| bugfix | 2 | bugfix.standard | lightweight |\n| issue-batch | Issue | issue | issue |\n| issue-transition | 2.5 | rapid-to-issue | issue |\n| quick-task | 2 | rapid | lightweight |\n| ui-design | 3-4 | ui | standard |\n| tdd | 3 | tdd | standard |\n| test-gen/test-fix | 3 | test-gen/test-fix-gen | standard |\n| review | 3 | review-cycle-fix | standard |\n| documentation | 2 | docs | lightweight |\n| feature | 2-3 | rapid/coupled | lightweight/standard |\n| exploration | 4 | full | exploration |\n\nRoute to the appropriate category chain via D2.",
+      "next": "D2"
+    },
+    "D2": {
+      "type": "decision",
+      "name": "Route by Workflow Category",
+      "prompt": "Based on the task_type detected in Phase 1, route to the appropriate workflow category:\n1. Lightweight (Level 2) — rapid, bugfix, hotfix, docs\n2. Standard (Level 3) — coupled feature, tdd, test-fix, review, multi-cli, ui\n3. Exploration (Level 4) — brainstorm-to-plan, spec-driven, full exploration, greenfield\n4. With-File — analyze-to-plan, debug-with-file, collaborative-plan, roadmap\n5. Cycle — integration-test-cycle, refactor-cycle\n6. Issue — issue batch, rapid-to-issue, brainstorm-to-issue\n7. Team — team-planex\n\nMatch the task_type from intent analysis to the correct category.",
+      "choices": [
+        { "label": "Lightweight (Level 2)", "description": "rapid, bugfix, hotfix, docs", "next": "\u2192ccw-lightweight" },
+        { "label": "Standard (Level 3)", "description": "coupled, tdd, test-fix, review, multi-cli, ui", "next": "\u2192ccw-standard" },
+        { "label": "Exploration (Level 4)", "description": "brainstorm, spec-driven, full, greenfield", "next": "\u2192ccw-exploration" },
+        { "label": "With-File", "description": "analyze, debug, collab-plan, roadmap", "next": "\u2192ccw-with-file" },
+        { "label": "Cycle", "description": "integration-test, refactor", "next": "\u2192ccw-cycle" },
+        { "label": "Issue", "description": "issue batch, rapid-to-issue, brainstorm-to-issue", "next": "\u2192ccw-issue" },
+        { "label": "Team", "description": "team-planex", "next": "\u2192ccw-team" }
+      ],
+      "default": "\u2192ccw-lightweight"
+    }
+  }
+}

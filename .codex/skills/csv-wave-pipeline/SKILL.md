@@ -437,7 +437,7 @@ REQUIREMENT: ${requirement}" --tool gemini --mode analysis --rule planning-break
        waveTasks.forEach(t => console.log(`  - [${t.id}] ${t.title}`))
      }
 
-     const answer = request_user_input({
+     const answer = functions.request_user_input({
        questions: [{
          header: "验证",
          id: "validation",
@@ -820,7 +820,7 @@ ${[...new Set(tasks.flatMap(t => (t.files_modified || '').split(';')).filter(Boo
 
    ```javascript
    if (!AUTO_YES && failed.length > 0) {
-     const answer = request_user_input({
+     const answer = functions.request_user_input({
        questions: [{
          header: "下一步",
          id: "next_step",

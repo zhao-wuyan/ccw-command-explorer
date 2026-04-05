@@ -233,7 +233,7 @@ All tasks completed (no pending, no in_progress)
   +- Read session.completion_action:
       |
       +- "interactive":
-      |   request_user_input({
+      |   functions.request_user_input({
       |     questions: [{
       |       question: "Team pipeline complete. What would you like to do?",
       |       header: "Completion",

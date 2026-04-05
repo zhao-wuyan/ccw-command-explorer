@@ -121,7 +121,7 @@ CONSTRAINTS: Be genuinely critical. Focus on requirements that would block imple
 if (!autoMode) {
   // Present requirements grouped by initial priority
   // Allow user to adjust MoSCoW labels
-  request_user_input({
+  functions.request_user_input({
     questions: [
       {
         header: "Must-Have",

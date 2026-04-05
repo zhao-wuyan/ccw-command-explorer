@@ -168,7 +168,7 @@ const running = list_agents({})
 When pipeline completes (all tasks done), executor presents an interactive choice:
 
 ```
-request_user_input({
+functions.request_user_input({
   questions: [{
     question: "Team pipeline complete. What would you like to do?",
     header: "Completion",
@@ -188,7 +188,7 @@ request_user_input({
 |--------|-------|
 | Archive & Clean | Update session status="completed" -> output final summary with artifact paths |
 | Keep Active | Update session status="paused" -> output: "Resume with: Skill(skill='team-executor', args='--session=<path>')" |
-| Export Results | request_user_input(target path) -> copy artifacts to target -> Archive & Clean |
+| Export Results | functions.request_user_input(target path) -> copy artifacts to target -> Archive & Clean |
 
 ---
 

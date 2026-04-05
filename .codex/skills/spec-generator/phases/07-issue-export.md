@@ -253,7 +253,7 @@ Write(`${workDir}/spec-config.json`, JSON.stringify(specConfig, null, 2));
 ### Step 7: Handoff Options
 
 ```javascript
-const answer = request_user_input({
+const answer = functions.request_user_input({
   questions: [
     {
       header: "Next Step",

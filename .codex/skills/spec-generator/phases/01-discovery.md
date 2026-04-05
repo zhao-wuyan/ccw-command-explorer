@@ -178,7 +178,7 @@ Schema:
 ```javascript
 if (!autoMode) {
   // Confirm problem statement and select depth
-  request_user_input({
+  functions.request_user_input({
     questions: [
       {
         header: "Problem",

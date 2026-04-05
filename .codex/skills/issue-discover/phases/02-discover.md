@@ -87,7 +87,7 @@ if (args.perspectives) {
   selectedPerspectives = args.perspectives.split(',').map(p => p.trim());
 } else {
   // Interactive selection via request_user_input
-  const response = request_user_input({
+  const response = functions.request_user_input({
     questions: [{
       header: "Focus",
       id: "focus",
@@ -273,7 +273,7 @@ await updateDiscoveryState(outputDir, {
 ```javascript
 const hasHighPriority = issues.some(i => i.priority === 'critical' || i.priority === 'high');
 
-await request_user_input({
+await functions.request_user_input({
   questions: [{
     header: "Next Step",
     id: "next_step",

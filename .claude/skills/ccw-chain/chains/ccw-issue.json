@@ -1,0 +1,44 @@
+{
+  "chain_id": "ccw-issue",
+  "name": "CCW Issue Workflows",
+  "description": "Issue management workflows: batch processing, rapid-to-issue bridge, brainstorm-to-issue conversion",
+  "version": "2.1",
+  "entry": "D1",
+  "entries": [
+    { "name": "default", "node": "D1", "description": "Select flow via decision node" },
+    { "name": "batch", "node": "S_IB1", "description": "Direct: Issue Batch (discover → plan → queue → execute)" },
+    { "name": "rapid-to-issue", "node": "S_RI1", "description": "Direct: Rapid-to-Issue bridge" },
+    { "name": "brainstorm-to-issue", "node": "S_BI1", "description": "Direct: Brainstorm-to-Issue" }
+  ],
+  "triggers": {
+    "task_types": ["issue-batch", "issue-transition", "brainstorm-to-issue"],
+    "keywords": ["issues?.*batch|batch.*fix|batch.*resolve", "issue workflow|structured workflow|queue", "brainstorm.*issue|idea.*issue"],
+    "scope": "Issue: batch processing, rapid-to-issue, brainstorm-to-issue conversion"
+  },
+  "nodes": {
+    "D1": {
+      "type": "decision",
+      "name": "Select Issue Flow",
+      "prompt": "Based on the detected task_type, select the specific issue workflow:\n1. Issue Batch — full issue lifecycle: discover → plan → queue → execute\n2. Rapid-to-Issue — lightweight plan converted to structured issue execution\n3. Brainstorm-to-Issue — convert brainstorm session ideas into issues and execute",
+      "choices": [
+        { "label": "Issue Batch", "description": "discover → plan → queue → execute", "next": "S_IB1" },
+        { "label": "Rapid-to-Issue", "description": "lite-plan(plan-only) → convert → queue → execute", "next": "S_RI1" },
+        { "label": "Brainstorm-to-Issue", "description": "from-brainstorm → queue → execute", "next": "S_BI1" }
+      ],
+      "default": "S_IB1"
+    },
+    "S_IB1": { "type": "step", "name": "Issue Batch: issue-discover", "content_ref": "@commands/issue/discover.md", "next": "S_IB2" },
+    "S_IB2": { "type": "step", "name": "Issue Batch: issue-plan", "content_ref": "@commands/issue/plan.md", "next": "S_IB3" },
+    "S_IB3": { "type": "step", "name": "Issue Batch: issue-queue", "content_ref": "@commands/issue/queue.md", "next": "S_IB4" },
+    "S_IB4": { "type": "step", "name": "Issue Batch: issue-execute", "content_ref": "@commands/issue/execute.md", "next": null },
+
+    "S_RI1": { "type": "step", "name": "Rapid-to-Issue: workflow-lite-plan", "content_ref": "@skills/workflow-lite-plan/SKILL.md", "next": "S_RI2" },
+    "S_RI2": { "type": "step", "name": "Rapid-to-Issue: issue-convert-to-plan", "content_ref": "@commands/issue/convert-to-plan.md", "next": "S_RI3" },
+    "S_RI3": { "type": "step", "name": "Rapid-to-Issue: issue-queue", "content_ref": "@commands/issue/queue.md", "next": "S_RI4" },
+    "S_RI4": { "type": "step", "name": "Rapid-to-Issue: issue-execute", "content_ref": "@commands/issue/execute.md", "next": null },
+
+    "S_BI1": { "type": "step", "name": "Brainstorm-to-Issue: from-brainstorm", "content_ref": "@commands/issue/from-brainstorm.md", "next": "S_BI2" },
+    "S_BI2": { "type": "step", "name": "Brainstorm-to-Issue: issue-queue", "content_ref": "@commands/issue/queue.md", "next": "S_BI3" },
+    "S_BI3": { "type": "step", "name": "Brainstorm-to-Issue: issue-execute", "content_ref": "@commands/issue/execute.md", "next": null }
+  }
+}

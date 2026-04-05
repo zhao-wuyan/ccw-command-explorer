@@ -363,14 +363,24 @@ close_agent({ id: agentId })
 
 ## Progress Tracking Pattern
 
-**Review Pipeline Initialization**:
+**Review Pipeline Initialization** (before Phase 1):
 ```
-Phase 1: Discovery & Initialization     → pending
-Phase 2: Parallel Reviews (7 dimensions) → pending
-Phase 3: Aggregation                     → pending
-Phase 4: Deep-dive (conditional)         → pending
-Phase 5: Review Completion               → pending
+functions.update_plan([
+  { id: "phase-1", title: "Phase 1: Discovery & Initialization", status: "in_progress" },
+  { id: "phase-2", title: "Phase 2: Parallel Reviews (7 dimensions)", status: "pending" },
+  { id: "phase-3", title: "Phase 3: Aggregation", status: "pending" },
+  { id: "phase-4", title: "Phase 4: Deep-dive (conditional)", status: "pending" },
+  { id: "phase-5", title: "Phase 5: Review Completion", status: "pending" }
+])
 ```
+
+**Phase Transitions**:
+- **Phase 1 complete**: `functions.update_plan([{id: "phase-1", status: "completed"}, {id: "phase-2", status: "in_progress"}])`
+- **Phase 2 complete**: `functions.update_plan([{id: "phase-2", status: "completed"}, {id: "phase-3", status: "in_progress"}])`
+- **Phase 3 → Phase 4 (iteration needed)**: `functions.update_plan([{id: "phase-3", status: "completed"}, {id: "phase-4", status: "in_progress"}])`
+- **Phase 3 → Phase 5 (no iteration)**: `functions.update_plan([{id: "phase-3", status: "completed"}, {id: "phase-4", status: "completed"}, {id: "phase-5", status: "in_progress"}])`
+- **Phase 4 complete**: `functions.update_plan([{id: "phase-4", status: "completed"}, {id: "phase-5", status: "in_progress"}])`
+- **Phase 5 complete**: `functions.update_plan([{id: "phase-5", status: "completed"}])`
 
 **During Phase 2 (sub-tasks for each dimension)**:
 ```
@@ -380,14 +390,23 @@ Phase 5: Review Completion               → pending
   ... other dimensions
 ```
 
-**Fix Pipeline (added after Phase 5 if triggered)**:
+**Fix Pipeline (added after Phase 5 if --fix triggered)**:
 ```
-Phase 6: Fix Discovery & Batching   → pending
-Phase 7: Parallel Planning          → pending
-Phase 7.5: Export to Task JSON      → pending
-Phase 8: Execution                  → pending
-Phase 9: Fix Completion             → pending
+functions.update_plan([
+  { id: "phase-6", title: "Phase 6: Fix Discovery & Batching", status: "in_progress" },
+  { id: "phase-7", title: "Phase 7: Parallel Planning", status: "pending" },
+  { id: "phase-7.5", title: "Phase 7.5: Export to Task JSON", status: "pending" },
+  { id: "phase-8", title: "Phase 8: Execution", status: "pending" },
+  { id: "phase-9", title: "Phase 9: Fix Completion", status: "pending" }
+])
 ```
+
+**Fix Pipeline Transitions**:
+- **Phase 6 complete**: `functions.update_plan([{id: "phase-6", status: "completed"}, {id: "phase-7", status: "in_progress"}])`
+- **Phase 7 complete**: `functions.update_plan([{id: "phase-7", status: "completed"}, {id: "phase-7.5", status: "in_progress"}])`
+- **Phase 7.5 complete**: `functions.update_plan([{id: "phase-7.5", status: "completed"}, {id: "phase-8", status: "in_progress"}])`
+- **Phase 8 complete**: `functions.update_plan([{id: "phase-8", status: "completed"}, {id: "phase-9", status: "in_progress"}])`
+- **Phase 9 complete**: `functions.update_plan([{id: "phase-9", status: "completed"}])`
 
 ## Error Handling
 

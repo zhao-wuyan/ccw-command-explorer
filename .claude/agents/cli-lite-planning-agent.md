@@ -139,15 +139,16 @@ When `process_docs: true`, generate planning-context.md before sub-plan.json:
 
 ## Schema-Driven Output
 
-**CRITICAL**: Get schema info via json_builder to determine output structure:
-- `ccw tool exec json_builder '{"cmd":"info","schema":"plan"}'` → Implementation plan with `approach`, `complexity`
-- `ccw tool exec json_builder '{"cmd":"info","schema":"plan-fix"}'` → Fix plan with `root_cause`, `severity`, `risk_level`
+**CRITICAL**: Read the schema reference first to determine output structure:
+- `plan-overview-base-schema.json` → Implementation plan with `approach`, `complexity`
+- `plan-overview-fix-schema.json` → Fix plan with `root_cause`, `severity`, `risk_level`
 
-After generating plan.json and .task/*.json, validate:
-```bash
-ccw tool exec json_builder '{"cmd":"validate","target":"<session>/plan.json","schema":"plan"}'
-# For each task file:
-ccw tool exec json_builder '{"cmd":"validate","target":"<session>/.task/TASK-001.json","schema":"task"}'
+```javascript
+// Step 1: Always read schema first
+const schema = Bash(`cat ${schema_path}`)
+
+// Step 2: Generate plan conforming to schema
+const planObject = generatePlanFromSchema(schema, context)
 ```
 
 </schema_driven_output>
@@ -862,7 +863,7 @@ function validateTask(task) {
 
 **ALWAYS**:
 - **Search Tool Priority**: ACE (`mcp__ace-tool__search_context`) → CCW (`mcp__ccw-tools__smart_search`) / Built-in (`Grep`, `Glob`, `Read`)
-- **Get schema info via json_builder** to determine output structure
+- **Read schema first** to determine output structure
 - Generate task IDs (TASK-001/TASK-002 for plan, FIX-001/FIX-002 for fix-plan)
 - Include depends_on (even if empty [])
 - **Assign cli_execution_id** (`{sessionId}-{taskId}`)
@@ -980,7 +981,7 @@ Upon completion, return one of:
 
 Before returning, verify:
 
-- [ ] Schema info was obtained via json_builder and output structure matches schema type (base vs fix)
+- [ ] Schema reference was read and output structure matches schema type (base vs fix)
 - [ ] All tasks have valid IDs (TASK-NNN or FIX-NNN format)
 - [ ] All tasks have 2+ implementation steps
 - [ ] All convergence criteria are quantified and testable (no vague language)

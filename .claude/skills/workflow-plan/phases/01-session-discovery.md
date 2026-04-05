@@ -40,11 +40,28 @@ CONTEXT: Existing user database schema, REST API endpoints
 
 **Note**: Session directory contains `workflow-session.json` (metadata). Do NOT look for `manifest.json` here - it only exists in `.workflow/archives/` for archived sessions.
 
+### Step 1.2.5: Session Integrity Check
+
+For reused sessions (not newly created), validate key artifact completeness:
+
+1. **Baseline**: `workflow-session.json` exists and is valid JSON; `.process/` and `.task/` directories exist (create if missing)
+2. **Brainstorm inheritance**: If `.brainstorming/` directory exists, check:
+   - `guidance-specification.md` exists → missing = WARN brainstorm Phase 2 incomplete
+   - `*/analysis.md` count → 0 = WARN brainstorm Phase 3 incomplete
+   - `feature-specs/` or `feature-index.json` → missing = WARN brainstorm Phase 4 (synthesis) incomplete
+3. **Existing notes detection**: Store `existingNotes = file_exists(planning-notes.md)`
+
+Store results in `sessionIntegrity` variable for downstream phases. Warnings are logged but **do not block** execution.
+
 **TodoWrite**: Mark phase 1 completed, phase 2 in_progress
 
-### Step 1.3: Initialize Planning Notes
+### Step 1.3: Initialize Planning Notes (Conditional)
 
-After Phase 1, initialize planning-notes.md with user intent:
+After Phase 1, initialize planning-notes.md with user intent.
+
+**Conditional logic**:
+- If `existingNotes = true`: Only append `## User Intent (Phase 1)` section when missing from the file; do NOT overwrite existing content
+- If `existingNotes = false`: Create new file using template below
 
 ```javascript
 // Create planning notes document with N+1 context support

@@ -225,7 +225,7 @@ Profiler baseline metrics flow through the pipeline and must reach benchmarker f
 When the pipeline completes:
 
 ```
-request_user_input({
+functions.request_user_input({
   questions: [{
     question: "Team pipeline complete. What would you like to do?",
     header: "Completion",

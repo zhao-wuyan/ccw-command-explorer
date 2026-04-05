@@ -1,0 +1,71 @@
+{
+  "chain_id": "ccw-lightweight",
+  "name": "CCW Lightweight Workflows (Level 2)",
+  "description": "Level 2 workflow routing: rapid, bugfix, hotfix, docs — simple single/dual-skill pipelines",
+  "version": "2.1",
+  "entry": "D1",
+  "entries": [
+    { "name": "default", "node": "D1", "description": "Select flow via decision node" },
+    { "name": "rapid", "node": "S_R1", "description": "Direct: Rapid flow (lite-plan → test-fix)" },
+    { "name": "bugfix", "node": "S_B1", "description": "Direct: Bugfix flow (lite-plan --bugfix → test-fix)" },
+    { "name": "hotfix", "node": "S_H1", "description": "Direct: Hotfix flow (lite-plan --hotfix)" },
+    { "name": "docs", "node": "S_D1", "description": "Direct: Docs flow (lite-plan)" }
+  ],
+  "triggers": {
+    "task_types": ["bugfix", "bugfix-hotfix", "quick-task", "documentation", "feature"],
+    "keywords": ["fix|bug|error|crash|fail", "quick|simple|small", "docs|documentation|readme", "urgent|production|critical"],
+    "scope": "Level 2: rapid, bugfix, hotfix, docs — simple single/dual-skill pipelines"
+  },
+  "nodes": {
+    "D1": {
+      "type": "decision",
+      "name": "Select Lightweight Flow",
+      "prompt": "Based on the detected task_type, select the specific lightweight workflow:\n1. Rapid — feature (low complexity), quick-task\n2. Bugfix (standard) — fix, bug, error, crash, fail, debug\n3. Hotfix (urgent) — urgent/production/critical + fix/bug\n4. Docs — documentation, readme\n\nChoose the flow that best matches the intent analysis.",
+      "choices": [
+        { "label": "Rapid", "description": "workflow-lite-plan → workflow-test-fix", "next": "S_R1" },
+        { "label": "Bugfix", "description": "workflow-lite-plan(--bugfix) → workflow-test-fix", "next": "S_B1" },
+        { "label": "Hotfix", "description": "workflow-lite-plan(--hotfix) only", "next": "S_H1" },
+        { "label": "Docs", "description": "workflow-lite-plan only", "next": "S_D1" }
+      ],
+      "default": "S_R1"
+    },
+    "S_R1": {
+      "type": "step",
+      "name": "Rapid: workflow-lite-plan",
+      "content_ref": "@skills/workflow-lite-plan/SKILL.md",
+      "next": "S_R2"
+    },
+    "S_R2": {
+      "type": "delegate",
+      "name": "Rapid: workflow-test-fix",
+      "chain": "workflow-test-fix",
+      "pass_variables": ["auto_yes", "goal"],
+      "next": null
+    },
+    "S_B1": {
+      "type": "step",
+      "name": "Bugfix: workflow-lite-plan --bugfix",
+      "content_ref": "@skills/workflow-lite-plan/SKILL.md",
+      "next": "S_B2"
+    },
+    "S_B2": {
+      "type": "delegate",
+      "name": "Bugfix: workflow-test-fix",
+      "chain": "workflow-test-fix",
+      "pass_variables": ["auto_yes", "goal"],
+      "next": null
+    },
+    "S_H1": {
+      "type": "step",
+      "name": "Hotfix: workflow-lite-plan --hotfix",
+      "content_ref": "@skills/workflow-lite-plan/SKILL.md",
+      "next": null
+    },
+    "S_D1": {
+      "type": "step",
+      "name": "Docs: workflow-lite-plan",
+      "content_ref": "@skills/workflow-lite-plan/SKILL.md",
+      "next": null
+    }
+  }
+}

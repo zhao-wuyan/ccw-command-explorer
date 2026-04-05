@@ -296,7 +296,7 @@ Usage:
 
 ```javascript
 if (report.gate === 'FAIL') {
-  const recovery = request_user_input({
+  const recovery = functions.request_user_input({
     prompt: `Validation found ${report.errors.length} errors. How to proceed?\n\nOptions:\n1. Auto-fix - Attempt automatic fixes (missing files, frontmatter)\n2. Regenerate - Re-run Phase 3 with fixes\n3. Accept as-is - Manual fix later`
   });
 }

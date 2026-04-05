@@ -829,11 +829,14 @@ Generate at `.workflow/active/{session_id}/plan.json` following `plan-overview-b
 
 **Generation Timing**: After all `.task/IMPL-*.json` files are generated, aggregate into plan.json.
 
-**Validation**: After writing plan.json and task files, validate with json_builder:
-```bash
-ccw tool exec json_builder '{"cmd":"validate","target":"<session>/plan.json","schema":"plan"}'
-ccw tool exec json_builder '{"cmd":"validate","target":"<session>/.task/IMPL-001.json","schema":"task"}'
+**Schema Reference Fallback** (resolve enum/field conflicts):
+
+If unsure about field enums or structure, read authoritative schema files before generating:
 ```
+Read(~/.ccw/workflows/cli-templates/schemas/task-schema.json)
+Read(~/.ccw/workflows/cli-templates/schemas/plan-overview-base-schema.json)
+```
+Rule: If this agent doc's inline examples conflict with schema file → **schema file wins**.
 
 ### 2.3 IMPL_PLAN.md Structure
 

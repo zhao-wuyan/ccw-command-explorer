@@ -228,7 +228,7 @@ const topic = isRole
 
    ```javascript
    if (executionMode === null) {
-     const modeAnswer = request_user_input({
+     const modeAnswer = functions.request_user_input({
        questions: [{
          question: "Choose brainstorming mode:",
          header: "Mode",
@@ -324,7 +324,7 @@ TOPIC: ${topic}" --tool gemini --mode analysis --rule planning-breakdown-task-st
        features.forEach(f => console.log(`  - [${f.id}] ${f.title}`))
      }
 
-     const answer = request_user_input({
+     const answer = functions.request_user_input({
        questions: [{
          question: "Approve brainstorm framework?",
          header: "Validate",
@@ -339,7 +339,7 @@ TOPIC: ${topic}" --tool gemini --mode analysis --rule planning-breakdown-task-st
      if (answer.Validate === "Cancel") return
      if (answer.Validate === "Modify Roles") {
        // Allow user to adjust via request_user_input
-       const roleAnswer = request_user_input({
+       const roleAnswer = functions.request_user_input({
          questions: [{
            question: "Select roles for analysis:",
            header: "Roles",

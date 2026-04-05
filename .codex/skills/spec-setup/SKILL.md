@@ -229,7 +229,7 @@ const specsData = JSON.parse(specsList)
 const isPopulated = (specsData.total || 0) > 5  // More than seed docs
 
 if (isPopulated && !reset) {
-  const mode = request_user_input({
+  const mode = functions.request_user_input({
     questions: [{
       header: "Guidelines",
       id: "mode",
@@ -312,7 +312,7 @@ codingStyleOptions.push(
 )
 
 // Round 1: Coding Conventions
-const round1 = request_user_input({
+const round1 = functions.request_user_input({
   questions: [
     {
       header: "Code Style",
@@ -342,7 +342,7 @@ const round1 = request_user_input({
 
 ```javascript
 // Round 2: File Structure & Documentation
-const round2 = request_user_input({
+const round2 = functions.request_user_input({
   questions: [
     {
       header: "File Org",
@@ -395,7 +395,7 @@ archOptions.push(
 )
 
 // Round 3: Architecture & Tech Stack Constraints
-const round3 = request_user_input({
+const round3 = functions.request_user_input({
   questions: [
     {
       header: "Architecture",
@@ -425,7 +425,7 @@ const round3 = request_user_input({
 
 ```javascript
 // Round 4: Performance & Security Constraints
-const round4 = request_user_input({
+const round4 = functions.request_user_input({
   questions: [
     {
       header: "Performance",
@@ -459,7 +459,7 @@ const round4 = request_user_input({
 
 ```javascript
 // Round 5: Quality Rules
-const round5 = request_user_input({
+const round5 = functions.request_user_input({
   questions: [
     {
       header: "Quality",

@@ -33,10 +33,10 @@ if (file_exists(contextPackagePath)) {
     console.log("Valid context-package found for session:", sessionId);
     console.log("Stats:", existing.statistics);
     console.log("Conflict Risk:", existing.conflict_detection.risk_level);
-    // Skip execution, store variables and proceed to Step 2.5
+    // Skip Steps 2.2-2.4, but STILL execute Step 2.5 (planning-notes update)
     contextPath = contextPackagePath;
     conflictRisk = existing.conflict_detection.risk_level;
-    return; // Early exit - skip Steps 2.2-2.4
+    // → Jump to Step 2.5 (do NOT return before updating planning-notes)
   }
 }
 ```

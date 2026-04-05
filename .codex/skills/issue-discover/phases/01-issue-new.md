@@ -145,7 +145,7 @@ if (clarityScore >= 1 && clarityScore <= 2 && !issueData.affected_components?.le
 ```javascript
 // ONLY ask questions if clarity is low
 if (clarityScore < 2 && (!issueData.context || issueData.context.length < 20)) {
-  const answer = request_user_input({
+  const answer = functions.request_user_input({
     questions: [{
       header: "Clarify",
       id: "clarify",

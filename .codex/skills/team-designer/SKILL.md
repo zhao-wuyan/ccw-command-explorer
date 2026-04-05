@@ -39,6 +39,9 @@ Generate complete team skills following the team-lifecycle-v4 architecture: SKIL
 ## Execution Flow
 
 ```
+Progress Tracking Initialization:
+   └─ functions.update_plan([all 4 phases, Phase 1 as in_progress])
+
 Input Parsing:
    └─ Parse user requirements (skill name, roles, pipelines, domain)
 
@@ -46,20 +49,24 @@ Phase 1: Requirements Analysis
    └─ Ref: phases/01-requirements-analysis.md
       ├─ Tasks: Detect input → Gather roles → Define pipelines → Build teamConfig
       └─ Output: teamConfig
+      └─ Progress: mark phase-1 completed, phase-2 in_progress
 
 Phase 2: Scaffold Generation
    └─ Ref: phases/02-scaffold-generation.md
       ├─ Tasks: Create dirs → Generate SKILL.md router → Verify
       └─ Output: SKILL.md + directory structure
+      └─ Progress: mark phase-2 completed, phase-3 in_progress
 
 Phase 3: Content Generation
    └─ Ref: phases/03-content-generation.md
       ├─ Tasks: Coordinator → Workers → Specs → Templates
       └─ Output: roles/**/*.md, specs/*.md, templates/*.md
+      └─ Progress: mark phase-3 completed, phase-4 in_progress
 
 Phase 4: Validation
    └─ Ref: phases/04-validation.md
       └─ Output: Validation report (PASS/REVIEW/FAIL)
+      └─ Progress: mark phase-4 completed
 
 Return:
    └─ Summary with skill location and usage instructions
@@ -101,6 +108,25 @@ Generated skills follow the architecture of `~  or <project>/.claude/skills/team
 └── templates/                            # Optional document templates
 ```
 
+## Progress Tracking
+
+Initialize progress tracking before Phase 1 execution:
+
+```
+functions.update_plan([
+  { id: "phase-1", title: "Phase 1: Requirements Analysis", status: "in_progress" },
+  { id: "phase-2", title: "Phase 2: Scaffold Generation", status: "pending" },
+  { id: "phase-3", title: "Phase 3: Content Generation", status: "pending" },
+  { id: "phase-4", title: "Phase 4: Validation", status: "pending" }
+])
+```
+
+At each phase transition:
+- **Phase 1 complete**: `functions.update_plan([{id: "phase-1", status: "completed"}, {id: "phase-2", status: "in_progress"}])`
+- **Phase 2 complete**: `functions.update_plan([{id: "phase-2", status: "completed"}, {id: "phase-3", status: "in_progress"}])`
+- **Phase 3 complete**: `functions.update_plan([{id: "phase-3", status: "completed"}, {id: "phase-4", status: "in_progress"}])`
+- **Phase 4 complete**: `functions.update_plan([{id: "phase-4", status: "completed"}])`
+
 ## Data Flow
 
 ```
@@ -126,7 +152,7 @@ Return summary to user
 
 ## Core Rules
 
-1. **Start Immediately**: First action is Phase 1 execution
+1. **Start Immediately**: First action is progress tracking initialization, second action is Phase 1 execution
 2. **Parse Every Output**: Extract teamConfig from Phase 1 for subsequent phases
 3. **Auto-Continue**: After each phase, automatically execute next phase
 4. **Progressive Phase Loading**: Read phase docs ONLY when that phase is about to execute

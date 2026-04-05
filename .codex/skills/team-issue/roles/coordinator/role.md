@@ -168,7 +168,7 @@ Delegate to @commands/monitor.md#handleSpawnNext:
 
 4. Execute completion action (interactive):
    ```
-   request_user_input({
+   functions.request_user_input({
      questions: [{ question: "Issue pipeline complete. What would you like to do?",
        options: [
          { label: "Archive & Clean (Recommended)", description: "Archive session, clean up tasks and team" },

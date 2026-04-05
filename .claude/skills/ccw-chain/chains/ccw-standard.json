@@ -1,0 +1,51 @@
+{
+  "chain_id": "ccw-standard",
+  "name": "CCW Standard Workflows (Level 3)",
+  "description": "Level 3 workflow routing: coupled, tdd, test-fix, review, multi-cli, ui",
+  "version": "2.2",
+  "entry": "D1",
+  "entries": [
+    { "name": "default", "node": "D1", "description": "Select flow via decision node" },
+    { "name": "coupled", "node": "S_C1", "description": "Direct: Coupled feature (plan → execute → review → test-fix)" },
+    { "name": "tdd", "node": "S_T1", "description": "Direct: TDD (tdd-plan → execute)" },
+    { "name": "test-gen", "node": "S_TG1", "description": "Direct: Test generation" },
+    { "name": "review", "node": "S_RV1", "description": "Direct: Review cycle + fix" }
+  ],
+  "triggers": {
+    "task_types": ["tdd", "test-fix", "test-gen", "review", "multi-cli", "ui-design"],
+    "keywords": ["tdd|test-driven|test first", "test fail|fix test|failing test", "generate test|add test", "review|code review", "multi.*cli|multi.*model", "ui|design|component|style"],
+    "scope": "Level 3: coupled feature, TDD, test-fix, review, multi-cli, UI design"
+  },
+  "nodes": {
+    "D1": {
+      "type": "decision",
+      "name": "Select Standard Flow",
+      "prompt": "Based on the detected task_type, select the specific standard workflow:\n1. Coupled Feature — feature (high complexity)\n2. TDD — test-driven development\n3. Test Generation — generate tests for existing code\n4. Test Fix — fix failing tests\n5. Review Cycle + Fix — code review then test-fix\n6. Multi-CLI Plan — multi-model collaborative planning\n7. UI Design — UI component development\n\nChoose the flow that best matches the intent analysis.",
+      "choices": [
+        { "label": "Coupled Feature", "description": "plan → execute → review → test-fix", "next": "S_C1" },
+        { "label": "TDD", "description": "tdd-plan → execute", "next": "S_T1" },
+        { "label": "Test Generation", "description": "test-fix only", "next": "S_TG1" },
+        { "label": "Test Fix", "description": "test-fix only", "next": "S_TF1" },
+        { "label": "Review + Fix", "description": "review-cycle → test-fix", "next": "S_RF1" },
+        { "label": "Multi-CLI Plan", "description": "multi-cli-plan → test-fix", "next": "S_MC1" },
+        { "label": "UI Design", "description": "ui-explore → plan → execute", "next": "S_UI1" }
+      ],
+      "default": "S_C1"
+    },
+    "S_C1": { "type": "delegate", "name": "Coupled: workflow-plan", "chain": "workflow-plan", "pass_variables": ["auto_yes", "goal"], "receive_variables": ["session_id"], "next": "S_C2" },
+    "S_C2": { "type": "step", "name": "Coupled: workflow-execute", "content_ref": "@skills/workflow-execute/SKILL.md", "next": "S_C3" },
+    "S_C3": { "type": "delegate", "name": "Coupled: review-cycle", "chain": "ccw-review-cycle", "pass_variables": ["auto_yes", "goal"], "receive_variables": ["review_status", "fix_count"], "next": "S_C4" },
+    "S_C4": { "type": "delegate", "name": "Coupled: workflow-test-fix", "chain": "workflow-test-fix", "pass_variables": ["auto_yes", "goal", "session_id"], "next": null },
+    "S_T1": { "type": "delegate", "name": "TDD: workflow-tdd-plan", "chain": "workflow-tdd-plan", "pass_variables": ["auto_yes", "goal"], "next": "S_T2" },
+    "S_T2": { "type": "step", "name": "TDD: workflow-execute", "content_ref": "@skills/workflow-execute/SKILL.md", "next": null },
+    "S_TG1": { "type": "delegate", "name": "Test Gen: workflow-test-fix", "chain": "workflow-test-fix", "pass_variables": ["auto_yes", "goal"], "next": null },
+    "S_TF1": { "type": "delegate", "name": "Test Fix: workflow-test-fix", "chain": "workflow-test-fix", "pass_variables": ["auto_yes", "goal"], "next": null },
+    "S_RF1": { "type": "delegate", "name": "Review: review-cycle", "chain": "ccw-review-cycle", "pass_variables": ["auto_yes", "goal"], "next": "S_RF2" },
+    "S_RF2": { "type": "delegate", "name": "Review: workflow-test-fix", "chain": "workflow-test-fix", "pass_variables": ["auto_yes", "goal"], "next": null },
+    "S_MC1": { "type": "step", "name": "Multi-CLI: workflow-multi-cli-plan", "content_ref": "@skills/workflow-multi-cli-plan/SKILL.md", "next": "S_MC2" },
+    "S_MC2": { "type": "delegate", "name": "Multi-CLI: workflow-test-fix", "chain": "workflow-test-fix", "pass_variables": ["auto_yes", "goal"], "next": null },
+    "S_UI1": { "type": "step", "name": "UI: ui-design-explore-auto", "content_ref": "@commands/workflow/ui-design/explore-auto.md", "next": "S_UI2" },
+    "S_UI2": { "type": "delegate", "name": "UI: workflow-plan", "chain": "workflow-plan", "pass_variables": ["auto_yes", "goal"], "next": "S_UI3" },
+    "S_UI3": { "type": "step", "name": "UI: workflow-execute", "content_ref": "@skills/workflow-execute/SKILL.md", "next": null }
+  }
+}

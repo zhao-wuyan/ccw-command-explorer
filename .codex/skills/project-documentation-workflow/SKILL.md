@@ -295,7 +295,7 @@ ${waveDistribution.map(w => `║   Wave ${w.wave}: ${w.tasks} tasks${' '.repeat(
     }
   }
   
-  const answer = request_user_input({
+  const answer = functions.request_user_input({
     questions: [{
       header: "确认任务",
       id: "confirm_tasks",

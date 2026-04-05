@@ -390,7 +390,7 @@ await updateDiscoveryState(outputDir, {
 });
 
 // Prompt user for next action
-await request_user_input({
+await functions.request_user_input({
   questions: [{
     header: "Next Step",
     id: "next_step",

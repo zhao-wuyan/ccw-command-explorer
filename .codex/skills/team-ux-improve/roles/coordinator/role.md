@@ -141,7 +141,7 @@ Delegate to `@commands/monitor.md#handleSpawnNext`:
 5. Output pipeline summary with [coordinator] prefix
 6. Execute completion action:
    ```
-   request_user_input({
+   functions.request_user_input({
      prompt: "Pipeline complete. What next?\n\nOptions:\n1. Archive & Clean - Archive session and clean up team resources\n2. Keep Active - Keep session for follow-up work\n3. Export Results - Export deliverables to specified location"
    })
    ```

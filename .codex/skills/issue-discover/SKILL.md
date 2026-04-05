@@ -102,6 +102,7 @@ Action Selection:
    │   ├─ Short text (< 80 chars) → Create New (Phase 1)
    │   └─ Long descriptive text (≥ 80 chars) → Discover by Prompt (Phase 3)
    └─ Otherwise → request_user_input to select action
+   └─ Initialize progress tracking: functions.update_plan([...phases])
 
 Phase Execution (load one phase):
    ├─ Phase 1: Create New          → phases/01-issue-new.md
@@ -172,7 +173,7 @@ function detectAction(input, flags) {
 
 ```javascript
 // When action cannot be auto-detected
-const answer = request_user_input({
+const answer = functions.request_user_input({
   questions: [{
     header: "Action",
     id: "action",
@@ -201,6 +202,13 @@ const actionMap = {
   "Discover Issues": "discover",
   "Discover by Prompt": "discover-by-prompt"
 };
+
+// Initialize progress tracking (MANDATORY)
+functions.update_plan([
+  { id: "action-select", title: "Action Selection", status: "completed" },
+  { id: "phase-exec", title: `Phase: ${selectedAction}`, status: "in_progress" },
+  { id: "post-phase", title: "Post-Phase: Next Steps", status: "pending" }
+])
 ```
 
 ## Data Flow
@@ -317,11 +325,13 @@ close_agent({ id: agentId })
 
 ## Post-Phase Next Steps
 
+**Progress**: `functions.update_plan([{id: "phase-exec", status: "completed"}, {id: "post-phase", status: "in_progress"}])`
+
 After successful phase execution, recommend next action:
 
 ```javascript
 // After Create New (issue created)
-request_user_input({
+functions.request_user_input({
   questions: [{
     header: "Next Step",
     id: "next_after_create",
@@ -336,7 +346,7 @@ request_user_input({
 // answer.answers.next_after_create.answers[0] → selected label
 
 // After Discover / Discover by Prompt (discoveries generated)
-request_user_input({
+functions.request_user_input({
   questions: [{
     header: "Next Step",
     id: "next_after_discover",
@@ -350,6 +360,9 @@ request_user_input({
 });  // BLOCKS (wait for user response)
 // answer.answers.next_after_discover.answers[0] → selected label
 // If "Quick Plan & Execute (Recommended)" → Read phases/04-quick-execute.md, execute
+
+// Mark workflow complete
+functions.update_plan([{ id: "post-phase", status: "completed" }])
 ```
 
 ## Related Skills & Commands

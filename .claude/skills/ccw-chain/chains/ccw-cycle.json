@@ -1,0 +1,31 @@
+{
+  "chain_id": "ccw-cycle",
+  "name": "CCW Cycle Workflows",
+  "description": "Self-iterating cycle workflows: integration-test-cycle, refactor-cycle",
+  "version": "2.1",
+  "entry": "D1",
+  "entries": [
+    { "name": "default", "node": "D1", "description": "Select flow via decision node" },
+    { "name": "integration-test", "node": "S_IT1", "description": "Direct: Integration Test Cycle" },
+    { "name": "refactor", "node": "S_RC1", "description": "Direct: Refactor Cycle" }
+  ],
+  "triggers": {
+    "task_types": ["integration-test", "refactor"],
+    "keywords": ["integration.*test|e2e.*test", "refactor|tech.*debt"],
+    "scope": "Cycle: self-iterating integration-test and refactor workflows"
+  },
+  "nodes": {
+    "D1": {
+      "type": "decision",
+      "name": "Select Cycle Flow",
+      "prompt": "Based on the detected task_type, select the specific cycle workflow:\n1. Integration Test Cycle — explore → test dev → test-fix → reflection (self-iterating)\n2. Refactor Cycle — discover tech debt → prioritize → execute → validate",
+      "choices": [
+        { "label": "Integration Test Cycle", "description": "Self-iterating with max-iterations and reflection", "next": "S_IT1" },
+        { "label": "Refactor Cycle", "description": "Multi-dimensional analysis + regression validation", "next": "S_RC1" }
+      ],
+      "default": "S_IT1"
+    },
+    "S_IT1": { "type": "step", "name": "Integration Test: integration-test-cycle", "content_ref": "@commands/workflow/integration-test-cycle.md", "next": null },
+    "S_RC1": { "type": "step", "name": "Refactor: refactor-cycle", "content_ref": "@commands/workflow/refactor-cycle.md", "next": null }
+  }
+}

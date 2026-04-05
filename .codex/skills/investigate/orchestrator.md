@@ -81,6 +81,20 @@ Utility subagents callable by the investigator agent during analysis phases:
 
 ## Phase Execution
 
+### Progress Tracking Initialization
+
+Before spawning any agent, initialize progress tracking for all phases:
+
+```
+functions.update_plan([
+  { id: "phase-1", title: "Phase 1: Root Cause Investigation", status: "in_progress" },
+  { id: "phase-2", title: "Phase 2: Pattern Analysis", status: "pending" },
+  { id: "phase-3", title: "Phase 3: Hypothesis Testing", status: "pending" },
+  { id: "phase-4", title: "Phase 4: Implementation", status: "pending" },
+  { id: "phase-5", title: "Phase 5: Verification & Report", status: "pending" }
+])
+```
+
 ### Phase 1: Root Cause Investigation
 
 **Objective**: Spawn the investigator agent and assign the Phase 1 investigation task. Agent reproduces the bug, collects evidence, and runs initial diagnosis.
@@ -127,6 +141,8 @@ const p1Result = wait_agent({ targets: ["investigator"], timeout_ms: 300000 })
 |----------|-------------|
 | p1Result | Phase 1 completion summary with evidence, reproduction, initial diagnosis |
 
+**Progress**: `functions.update_plan([{id: "phase-1", status: "completed"}, {id: "phase-2", status: "in_progress"}])`
+
 ---
 
 ### Phase 2: Pattern Analysis
@@ -168,6 +184,8 @@ const p2Result = wait_agent({ targets: ["investigator"], timeout_ms: 300000 })
 | Artifact | Description |
 |----------|-------------|
 | p2Result | Pattern analysis section: scope classification, similar occurrences, scope justification |
+
+**Progress**: `functions.update_plan([{id: "phase-2", status: "completed"}, {id: "phase-3", status: "in_progress"}])`
 
 ---
 
@@ -218,6 +236,8 @@ const p3Result = wait_agent({ targets: ["investigator"], timeout_ms: 480000 })
 
 If BLOCKED: close investigator and surface the diagnostic dump to the user. Do not proceed to Phase 4.
 
+**Progress (on success)**: `functions.update_plan([{id: "phase-3", status: "completed"}, {id: "phase-4", status: "in_progress"}])`
+
 ---
 
 ### Phase 4: Implementation
@@ -261,6 +281,8 @@ const p4Result = wait_agent({ targets: ["investigator"], timeout_ms: 480000 })
 |----------|-------------|
 | p4Result | fix_applied section: files changed, regression test details, reproduction verified |
 
+**Progress**: `functions.update_plan([{id: "phase-4", status: "completed"}, {id: "phase-5", status: "in_progress"}])`
+
 ---
 
 ### Phase 5: Verification & Report
@@ -302,6 +324,8 @@ const p5Result = wait_agent({ targets: ["investigator"], timeout_ms: 300000 })
 | Artifact | Description |
 |----------|-------------|
 | p5Result | Completion status, test suite results, path to debug report file |
+
+**Progress**: `functions.update_plan([{id: "phase-5", status: "completed"}])`
 
 ---
 

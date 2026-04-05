@@ -111,4 +111,9 @@ export const DEPRECATED_COMMANDS: DeprecatedCommand[] = [
   // v7.2.28 废弃 - Codex 技能清理
   { old: '/unified-execute-with-file', newCmd: null, reason: '统一执行引擎已移除', deprecatedInVersion: 'v7.2.28' },
   { old: '/collaborative-plan-with-file', newCmd: null, reason: '协作规划功能已移除', deprecatedInVersion: 'v7.2.28' },
+
+  // v7.3 废弃 - 命令清理
+  { old: '/flow-create', newCmd: null, reason: '工作流模板创建功能已移除', deprecatedInVersion: 'v7.3' },
+  { old: '/cli:cli-init', newCmd: null, reason: 'CLI 初始化功能已移除', deprecatedInVersion: 'v7.3' },
+  { old: '/cli:codex-review', newCmd: '/review-cycle', reason: 'Codex 代码审查整合到统一审查流程', deprecatedInVersion: 'v7.3' },
 ];

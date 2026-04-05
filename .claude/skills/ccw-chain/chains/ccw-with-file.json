@@ -1,0 +1,47 @@
+{
+  "chain_id": "ccw-with-file",
+  "name": "CCW With-File Workflows",
+  "description": "With-File workflow routing: documented exploration with auto-chain to downstream skills",
+  "version": "2.2",
+  "entry": "D1",
+  "entries": [
+    { "name": "default", "node": "D1", "description": "Select flow via decision node" },
+    { "name": "analyze", "node": "S_AP1", "description": "Direct: Analyze → Plan flow" },
+    { "name": "debug", "node": "S_DB1", "description": "Direct: Debug flow (standalone)" },
+    { "name": "collab-plan", "node": "S_CP1", "description": "Direct: Collaborative Plan → Execute" },
+    { "name": "roadmap", "node": "S_RM1", "description": "Direct: Roadmap → Team flow" },
+    { "name": "investigate", "node": "S_INV1", "description": "Direct: Systematic investigation with Iron Law gate" }
+  ],
+  "triggers": {
+    "task_types": ["analyze-file", "debug-file", "collaborative-plan", "roadmap"],
+    "keywords": ["analyze.*document|collaborative analysis", "hypothesis.*debug|systematic debug|investigate", "collaborative.*plan|multi.*agent.*plan", "roadmap"],
+    "scope": "With-File: documented exploration with auto-chain to downstream skills"
+  },
+  "nodes": {
+    "D1": {
+      "type": "decision",
+      "name": "Select With-File Flow",
+      "prompt": "Based on the detected task_type, select the specific With-File workflow:\n1. Analyze → Plan — collaborative analysis auto-chaining to lite-plan\n2. Debug (standalone) — hypothesis-driven debugging, self-contained\n3. Collaborative Plan → Execute — multi-agent planning with unified execution\n4. Roadmap → Team — strategic requirement roadmap with team-planex execution\n\nDetection keywords:\n- analyze-file: collaborative analysis, explore concept\n- debug-file: hypothesis debug, systematic debug\n- collaborative-plan: multi-agent plan, Plan Note\n- roadmap: roadmap (explicit only)",
+      "choices": [
+        { "label": "Analyze → Plan", "description": "analyze-with-file → lite-plan", "next": "S_AP1" },
+        { "label": "Debug", "description": "debug-with-file (standalone)", "next": "S_DB1" },
+        { "label": "Collaborative Plan", "description": "collaborative-plan → unified-execute", "next": "S_CP1" },
+        { "label": "Roadmap → Team", "description": "roadmap-with-file → team-planex", "next": "S_RM1" },
+        { "label": "Investigate", "description": "Systematic investigation with Iron Law gate", "next": "S_INV1" }
+      ],
+      "default": "S_AP1"
+    },
+    "S_AP1": { "type": "step", "name": "Analyze: analyze-with-file", "content_ref": "@commands/workflow/analyze-with-file.md", "next": "S_AP2" },
+    "S_AP2": { "type": "step", "name": "Analyze: workflow-lite-plan", "content_ref": "@skills/workflow-lite-plan/SKILL.md", "next": null },
+
+    "S_DB1": { "type": "step", "name": "Debug: debug-with-file", "content_ref": "@commands/workflow/debug-with-file.md", "next": null },
+
+    "S_CP1": { "type": "step", "name": "Collab: collaborative-plan-with-file", "content_ref": "@commands/workflow/collaborative-plan-with-file.md", "next": "S_CP2" },
+    "S_CP2": { "type": "step", "name": "Collab: unified-execute-with-file", "content_ref": "@commands/workflow/unified-execute-with-file.md", "next": null },
+
+    "S_RM1": { "type": "step", "name": "Roadmap: roadmap-with-file", "content_ref": "@commands/workflow/roadmap-with-file.md", "next": "S_RM2" },
+    "S_RM2": { "type": "step", "name": "Roadmap: team-planex", "content_ref": "@skills/team-planex/SKILL.md", "next": null },
+
+    "S_INV1": { "type": "delegate", "name": "Investigate: ccw-investigate", "chain": "ccw-investigate", "pass_variables": ["goal", "auto_yes"], "receive_variables": ["root_cause", "confidence"], "next": null }
+  }
+}

@@ -1,0 +1,25 @@
+src/data/experience.ts
+  d158067e811b3ad3 351-449
+src/data/commands.ts
+  d158067e811b3ad3 278-280,330-332,342-344,346-348,512-514,516-518,520-522,524-526
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "5e052b4e979fcd3a2435aaef23ae9ba953170f2f",
+  "prompts": {
+    "d158067e811b3ad3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "84930f6e-0f1d-4325-863b-91a1a9ae5616",
+        "model": "glm-5.1"
+      },
+      "human_author": "zhao-wuyan",
+      "messages": [],
+      "total_additions": 1013,
+      "total_deletions": 914,
+      "accepted_lines": 603,
+      "overriden_lines": 37
+    }
+  }
+}

@@ -275,9 +275,9 @@ export const COMMANDS: Command[] = [
   },
 
   // 团队协作
-  { cmd: '/team-frontend', desc: '团队前端开发 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
-    detail: '4个角色分工协作：分析师(需求+设计智能)→架构师(设计令牌)→开发者(写代码)→QA(审查)。内置ui-ux-pro-max设计知识库，基于team-worker架构',
-    usage: '开发前端页面或组件，需要从需求到上线全流程时'
+  { cmd: '/team-frontend', desc: '团队前端开发 - 端到端功能开发(含设计智能)', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
+    detail: '端到端前端功能开发流水线：分析师(analyst)需求分析+设计智能→架构师(architect)生成设计令牌+组件规范+项目结构→开发者(developer)迭代开发(inner loop)→QA审查。唯一内置ui-ux-pro-max设计知识库的skill，从需求分析到代码实现+质量审查全覆盖',
+    usage: '做一个 XX 功能的前端 / 从头开发一个页面或功能模块 / 需要从需求→设计→开发→QA全流程的前端开发'
   },
   { cmd: '/team-lifecycle', desc: '团队全生命周期 - spec/impl/test', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: '完整生命周期：需求分析→架构设计→开发→测试→审查。包含多个模板文件(产品简介、PRD、架构文档、Epic模板)。自动使用最新的 team-lifecycle 版本',
@@ -327,9 +327,9 @@ export const COMMANDS: Command[] = [
     detail: '4角色流水线：策略师(strategist)规划测试→生成器(generator)写测试→执行器(executor)跑测试→分析师(analyst)出报告。基于team-worker架构',
     usage: '需要团队协作测试时'
   },
-  { cmd: '/team-uidesign', desc: '团队 UI 设计 - 设计系统协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
-    detail: '4角色流水线：研究员(researcher)分析设计需求→设计师(designer)创建设计→审查者(reviewer)检查质量→实现者(implementer)构建组件。基于team-worker架构',
-    usage: '需要团队协作 UI 设计时'
+  { cmd: '/team-uidesign', desc: '团队 UI 设计 - 设计系统构建与组件规范', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
+    detail: '设计系统构建专用流水线：研究员(researcher)分析现有设计系统→设计师(designer)创建 design tokens + 组件/布局规范→审查者(reviewer)做8维度质量评分(OKLCH色彩/排版/间距/动效/交互/UX文案/anti-patterns)→实现者(implementer)构建组件文件。产出：design-tokens.json、component-specs/、layout-specs/',
+    usage: '给项目建一套设计系统 / 生成 design tokens 和组件规范 / 从零构建设计规范体系'
   },
   { cmd: '/team-ultra-analyze', desc: '团队超深度分析 - 多角色协作', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: '4角色流水线：探索者(explorer)发现代码→分析师(analyst)深度分析→讨论者(discussant)交叉验证→综合者(synthesizer)提炼结论。基于team-worker架构',
@@ -339,13 +339,13 @@ export const COMMANDS: Command[] = [
     detail: '生成团队技能包：收集需求 → 生成脚手架（SKILL.md、roles/、specs/、templates/）→ 验证。输出完整可用的团队技能',
     usage: '需要创建新的团队协作技能'
   },
-  { cmd: '/team-frontend-debug', desc: '前端调试团队 - Chrome DevTools MCP', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.2',
-    detail: '双模式前端调试：①功能清单测试模式（TEST→ANALYZE→FIX→VERIFY）；②Bug报告调试模式（REPRODUCE→ANALYZE→FIX→VERIFY）。使用 Chrome DevTools MCP',
-    usage: '需要调试前端交互问题、无响应按钮、状态刷新问题'
+  { cmd: '/team-frontend-debug', desc: '前端调试团队 - Chrome DevTools实时交互调试', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.2',
+    detail: '唯一双模式skill：①功能清单测试模式(TEST→ANALYZE→FIX→VERIFY，用浏览器实际操作逐项验证功能)；②Bug报告调试模式(REPRODUCE→ANALYZE→FIX→VERIFY，用Chrome DevTools截图+DOM快照+console日志+network请求复现问题)。角色：tester/reproducer用DevTools实时操作浏览器→analyzer做RCA根因分析→fixer迭代修复→verifier验证。支持revise/feedback/retry交互命令',
+    usage: '这个页面功能有问题帮我排查 / 按功能清单测试页面 / 复现并修复前端bug / 浏览器中调试交互异常'
   },
-  { cmd: '/team-ux-improve', desc: 'UX 改进团队 - 系统化发现和修复交互问题', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.2',
-    detail: 'UX 改进流水线：扫描器（发现UI/UX问题）→ 诊断师（分析根因）→ 设计师（设计方案）→ 实现者（修复）→ 测试员（验证）',
-    usage: '需要系统化发现和修复 UI/UX 交互问题'
+  { cmd: '/team-ux-improve', desc: 'UX改进团队 - 交互体验问题发现与修复', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.2',
+    detail: 'UX交互问题修复流水线：扫描器(scanner)基于Nielsen 10项可用性启发式评估发现UI/UX问题→诊断师(diagnoser)分析根因(无响应按钮/缺少反馈/状态刷新问题/表单体验)→设计师(designer)出修复方案→实现者(implementer)迭代修复(内置inner loop)→测试员(tester)验证(最多5轮)。特色：框架感知(--framework react|vue)，有utility explorer做代码探索',
+    usage: '按钮点了没反应 / 表单交互体验差 / 状态管理有UX问题 / 系统化发现并修复交互体验缺陷'
   },
 
   // 新增技能工具
@@ -509,21 +509,21 @@ export const COMMANDS: Command[] = [
     detail: '5阶段门控流水线：预检检查(git/分支/测试/构建)→AI代码审查→版本号更新→更新日志生成→PR创建。每个阶段必须通过才能进入下一阶段',
     usage: '代码开发完成，准备发布上线'
   },
-  { cmd: '/team-interactive-craft', desc: '交互组件团队 - 零依赖交互组件研发', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
-    detail: '4角色流水线：研究员→交互设计师→构建者→无障碍测试。Vanilla JS + CSS，零依赖。team-worker agent架构',
-    usage: '需要构建纯原生交互组件，不依赖框架'
+  { cmd: '/team-interactive-craft', desc: '交互组件团队 - 零依赖交互组件研发(Vanilla JS)', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
+    detail: '零依赖交互组件专用流水线：研究员(researcher)调研交互模式+浏览器API→交互设计师(interaction-designer)设计交互蓝图(状态机/手势/反馈)→构建者(builder)用Vanilla JS+CSS实现(零框架依赖，受vanilla-constraints约束)→无障碍测试员(a11y-tester)审计键盘/屏幕阅读器支持。产出：{name}.js + {name}.css',
+    usage: '做一个拖拽排序组件 / 做一个自定义下拉选择器 / 制作纯JS交互组件，不依赖任何框架'
   },
-  { cmd: '/team-motion-design', desc: '动效设计团队 - 动画token系统与GPU加速', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
-    detail: '4角色流水线：动效研究员→编舞师→动画师→性能测试。动画token系统、滚动编排、GPU加速、降级回退',
-    usage: '需要设计系统化的动画和交互效果'
+  { cmd: '/team-motion-design', desc: '动效设计团队 - 动画token系统+GPU加速+性能验证', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
+    detail: '动画系统构建流水线：动效研究员(motion-researcher)采集性能基线+动画素材库+缓动曲线目录→编舞师(choreographer)设计动画token系统+滚动编排序列→动画师(animator)实现CSS @keyframes + JS编排器(GPU compositor-only约束，仅transform/opacity)→性能测试员(motion-tester)Chrome DevTools Performance Trace验证+reduced-motion无障碍回退',
+    usage: '加页面过渡动画 / 做滚动触发效果 / 优化动画性能 / 构建系统化动效体系'
   },
-  { cmd: '/team-ui-polish', desc: 'UI精修团队 - 自动发现并修复UI设计问题', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
-    detail: '4角色流水线：扫描器→诊断师→优化器→验证器。反AI痕迹检测、色彩/排版/间距质量、交互状态、视觉层次',
-    usage: 'UI需要精修打磨，提升设计品质'
+  { cmd: '/team-ui-polish', desc: 'UI精修团队 - 视觉质量扫描+Anti-AI-Slop修复', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
+    detail: '视觉质量打磨流水线：扫描器(scanner)发现设计问题(Impeccable标准，覆盖色彩/排版/间距/动效/交互状态/视觉层次)→诊断师(diagnostician)分类严重度→优化器(optimizer)逐项修复(内置inner loop迭代)→验证器(verifier)before/after截图对比。特色：Anti-AI-Slop检测(20项AI痕迹目录)，使用Chrome DevTools截图做视觉证据',
+    usage: '页面看起来不太对，帮我润色 / 消除AI生成的UI痕迹 / 提升视觉质量到专业水准'
   },
-  { cmd: '/team-visual-a11y', desc: '视觉无障碍团队 - OKLCH色彩+WCAG审计+修复', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
-    detail: '6角色流水线：色彩审计(color-auditor, OKLCH感知对比)→排版审计(typo-auditor)→焦点审计(focus-auditor)→修复规划师(remediation-planner)→修复实施者(fix-implementer)。WCAG AA/AAA合规',
-    usage: '需要对视觉无障碍进行专业审计'
+  { cmd: '/team-visual-a11y', desc: '视觉无障碍团队 - OKLCH色彩对比+WCAG AA/AAA审计', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
+    detail: '深度无障碍审计+修复流水线：3个审计员并行启动——色彩审计(color-auditor)OKLCH感知色彩空间对比度分析→排版审计(typo-auditor)全视口字体可读性→焦点审计(focus-auditor)focus-visible完整性+键盘导航→修复规划师(remediation-planner)综合生成修复计划→修复实施者(fix-implementer)执行修复(内置inner loop)→自动re-audit验证。使用Chrome DevTools+Lighthouse，WCAG 2.1 AA/AAA标准',
+    usage: '做无障碍审计 / 检查色彩对比度是否合规 / 确保键盘可访问性 / 产品需要通过WCAG认证'
   },
 
 ];

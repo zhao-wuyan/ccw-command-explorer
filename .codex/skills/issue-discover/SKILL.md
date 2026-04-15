@@ -1,7 +1,7 @@
 ---
 name: issue-discover
 description: "Unified issue discovery and creation. Create issues from GitHub/text, discover issues via multi-perspective analysis, or prompt-driven iterative exploration. Triggers on \"issue:new\", \"issue:discover\", \"issue:discover-by-prompt\", \"create issue\", \"discover issues\", \"find issues\"."
-allowed-tools: spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__exa__search
+allowed-tools: spawn_agent, wait_agent, send_message, followup_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__exa__search
 ---
 
 # Issue Discover
@@ -260,12 +260,11 @@ Get results from subagent (only way to retrieve results).
 
 ```javascript
 const result = wait_agent({
-  targets: [agentId],
   timeout_ms: 600000  // 10 minutes
 })
 
 if (result.timed_out) {
-  // Handle timeout - can use assign_task to prompt completion
+  // Handle timeout - can use followup_task to prompt completion
 }
 
 // Check completion status
@@ -274,20 +273,20 @@ if (result.status[agentId].completed) {
 }
 ```
 
-### assign_task
+### followup_task
 
 Assign new work to active subagent (for clarification or follow-up).
 
 ```javascript
-assign_task({
+followup_task({
   target: agentId,
-  items: [{ type: "text", text: `
+  message: `
 ## CLARIFICATION ANSWERS
 ${answers}
 
 ## NEXT STEP
 Continue with plan generation.
-` }]
+`
 })
 ```
 
@@ -296,7 +295,7 @@ Continue with plan generation.
 Clean up subagent resources (irreversible).
 
 ```javascript
-close_agent({ id: agentId })
+close_agent({ target: agentId })
 ```
 
 ## Core Guidelines

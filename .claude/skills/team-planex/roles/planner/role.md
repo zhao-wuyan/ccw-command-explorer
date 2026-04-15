@@ -94,6 +94,14 @@ Send message via team_msg + SendMessage to coordinator:
 
 Process next issue. Do NOT wait for executor.
 
+### Tech Profile Scan
+
+After issue processing, emit context-aware trigger signals (based on detected codebase characteristics):
+
+1. Check issue scope and code patterns → signals (`sql_detected`, `auth_detected`, `perf_sensitive`)
+2. Check plan complexity → signals (`breaking_change`, `scaling_concern`, `data_migration`)
+3. Include `tech_profile` in Phase 5 state_update data
+
 ## Phase 4: Completion Signal
 
 After all issues processed:

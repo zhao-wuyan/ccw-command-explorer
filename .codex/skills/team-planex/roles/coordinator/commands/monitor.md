@@ -131,7 +131,7 @@ Collect task states from tasks.json
          const agentId = spawn_agent({
            agent_type: "team_worker",
            task_name: taskId,  // e.g., "PLAN-001" — enables named targeting
-           items: [{ type: "text", text: `## Role Assignment
+           message: `## Role Assignment
 role: <role>
 role_spec: ~  or <project>/.codex/skills/team-planex/roles/<role>/role.md
 session: <session-folder>
@@ -139,10 +139,10 @@ session_id: <session-id>
 team_name: <team-name>
 requirement: <task-description>
 inner_loop: true
-execution_method: <method>` }]
+execution_method: <method>`
          })
          // Collect results — use task_name for stable targeting (v4):
-         const result = wait_agent({ targets: [taskId], timeout_ms: 900000 })
+         const result = wait_agent({ timeout_ms: 900000 })
          if (result.timed_out) {
            state.tasks[taskId].status = 'timed_out'
            close_agent({ target: taskId })
@@ -163,12 +163,12 @@ When spawning workers in a later pipeline phase, send upstream results as supple
 // Example: Send planning results to running executors
 send_message({
   target: "<running-agent-task-name>",
-  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+  message: `## Supplementary Context\n${upstreamFindings}`
 })
 // Note: send_message queues info without interrupting the agent's current work
 ```
 
-Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
+Use `send_message` (not `followup_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
 
 ---
 

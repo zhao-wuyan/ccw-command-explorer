@@ -68,6 +68,14 @@ CONSTRAINTS: Focus on <perspective> perspective | <dimensions>
 
 Execute: `ccw cli -p "<prompt>" --tool <cli-tool> --mode analysis --rule <rule>`
 
+### Tech Profile Scan
+
+After analysis, emit context-aware trigger signals (based on detected codebase characteristics):
+
+1. Check analysis findings → signals (`sql_detected`, `auth_detected`, `ml_detected`, `api_surface`)
+2. Check risk areas → signals (`perf_sensitive`, `injection_risk`, `legacy_patterns`)
+3. Include `tech_profile` in Phase 5 state_update data
+
 ## Phase 4: Result Aggregation
 
 Write analysis output to `<session>/analyses/analysis-<num>.json`:

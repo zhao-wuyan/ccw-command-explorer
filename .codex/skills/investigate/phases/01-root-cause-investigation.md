@@ -15,7 +15,7 @@ Reproduce the bug and collect all available evidence before forming any theories
 
 | Source | Required | Description |
 |--------|----------|-------------|
-| assign_task message | Yes | Bug description, symptom, expected behavior, context, user-provided errors |
+| followup_task message | Yes | Bug description, symptom, expected behavior, context, user-provided errors |
 | User-provided files | Optional | Any files or paths the user mentioned as relevant |
 
 ## Execution Steps
@@ -110,7 +110,7 @@ Spawn inline-cli-analysis subagent for broader diagnostic perspective:
 ```
 spawn_agent({
   task_name: "inline-cli-analysis",
-  fork_context: false,
+  fork_turns: "none",
   model: "haiku",
   reasoning_effort: "medium",
   message: `### MANDATORY FIRST STEPS
@@ -123,7 +123,7 @@ CONTEXT: @<affected_files_from_step3> | Evidence: <error_messages_and_traces>
 EXPECTED: Top 3 likely root causes ranked by evidence strength, each with file:line reference
 CONSTRAINTS: Read-only analysis | Focus on <affected_module>`
 })
-const diagResult = wait_agent({ targets: ["inline-cli-analysis"], timeout_ms: 180000 })
+const diagResult = wait_agent({ timeout_ms: 600000 })
 close_agent({ target: "inline-cli-analysis" })
 ```
 
@@ -176,7 +176,7 @@ investigation_report = {
 }
 ```
 
-Output Phase 1 summary and await assign_task for Phase 2.
+Output Phase 1 summary and await followup_task for Phase 2.
 
 ---
 

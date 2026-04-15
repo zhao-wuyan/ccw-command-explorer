@@ -118,7 +118,7 @@ const hasCodebase = Glob('**/*.{ts,js,py,java,go,rs}').length > 0
 if (hasCodebase) {
   spawn_agent({
     task_name: "spec-explorer",
-    fork_context: false,
+    fork_turns: "none",
     message: `
 ## TASK ASSIGNMENT
 
@@ -161,13 +161,13 @@ Schema:
 `
   });
 
-  const exploreResult = wait_agent({ targets: ["spec-explorer"], timeout_ms: 300000 });
+  const exploreResult = wait_agent({ timeout_ms: 600000 });
   if (exploreResult.timed_out) {
-    assign_task({
+    followup_task({
       target: "spec-explorer",
-      items: [{ type: "text", text: "Finalize current findings and write discovery-context.json immediately." }]
+      message: "Finalize current findings and write discovery-context.json immediately."
     });
-    wait_agent({ targets: ["spec-explorer"], timeout_ms: 120000 });
+    wait_agent({ timeout_ms: 300000 });
   }
   close_agent({ target: "spec-explorer" });
 }

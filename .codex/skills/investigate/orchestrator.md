@@ -26,7 +26,7 @@ Systematic debugging skill that enforces the Iron Law: never fix without a confi
                     |   5-phase loop)  |
                     +------------------+
                         |   ^   |
-          assign_task   |   |   |  assign_task
+          followup_task   |   |   |  followup_task
           (Phase 2-5)   v   |   v  (Phase 3 gate check)
                     +------------------+
                     | Phase 1: Root    |
@@ -44,9 +44,9 @@ Systematic debugging skill that enforces the Iron Law: never fix without a confi
 
 ## Agent Registry
 
-| Agent | task_name | Role File | Responsibility | Pattern | fork_context |
+| Agent | task_name | Role File | Responsibility | Pattern | fork_turns |
 |-------|-----------|-----------|----------------|---------|-------------|
-| investigator | `investigator` | `~/.codex/skills/investigate/agents/investigator.md` | Full 5-phase investigation execution | Deep Interaction (2.3) | false |
+| investigator | `investigator` | `~/.codex/skills/investigate/agents/investigator.md` | Full 5-phase investigation execution | Deep Interaction (2.3) | "none" |
 
 > **COMPACT PROTECTION**: Agent files are execution documents. When context compression occurs and agent instructions are reduced to summaries, **you MUST immediately `Read` the corresponding agent.md to reload before continuing execution**.
 
@@ -54,16 +54,16 @@ Systematic debugging skill that enforces the Iron Law: never fix without a confi
 
 ## Fork Context Strategy
 
-| Agent | task_name | fork_context | fork_from | Rationale |
+| Agent | task_name | fork_turns | fork_from | Rationale |
 |-------|-----------|-------------|-----------|-----------|
-| investigator | `investigator` | false | — | Starts fresh; receives all phase context via assign_task messages. No prior conversation history needed. |
+| investigator | `investigator` | "none" | — | Starts fresh; receives all phase context via followup_task messages. No prior conversation history needed. |
 
 **Fork Decision Rules**:
 
-| Condition | fork_context | Reason |
+| Condition | fork_turns | Reason |
 |-----------|-------------|--------|
-| investigator spawned (Phase 1) | false | Clean context; full task description in message |
-| Phase 2-5 transitions | N/A | assign_task used, agent already running |
+| investigator spawned (Phase 1) | "none" | Clean context; full task description in message |
+| Phase 2-5 transitions | N/A | followup_task used, agent already running |
 
 ---
 
@@ -112,7 +112,7 @@ Build the initial spawn message embedding the bug report and Phase 1 instruction
 ```
 spawn_agent({
   task_name: "investigator",
-  fork_context: false,
+  fork_turns: "none",
   message: `## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS (Agent Execute)
@@ -132,7 +132,7 @@ Execute Phase 1 per the phase file. Produce investigation-report (in-memory) and
 - Await next phase assignment.`
 })
 
-const p1Result = wait_agent({ targets: ["investigator"], timeout_ms: 300000 })
+const p1Result = wait_agent({ timeout_ms: 600000 })
 ```
 
 **Output**:
@@ -158,11 +158,9 @@ const p1Result = wait_agent({ targets: ["investigator"], timeout_ms: 300000 })
 **Execution**:
 
 ```
-assign_task({
+followup_task({
   target: "investigator",
-  items: [{
-    type: "text",
-    text: `## Phase 2: Pattern Analysis
+  message: `## Phase 2: Pattern Analysis
 
 Read: ~/.codex/skills/investigate/phases/02-pattern-analysis.md
 
@@ -173,10 +171,9 @@ Using your Phase 1 findings, execute Phase 2:
 - Document all occurrences with file:line references
 
 Report back with pattern_analysis section and scope classification. Await next phase assignment.`
-  }]
 })
 
-const p2Result = wait_agent({ targets: ["investigator"], timeout_ms: 300000 })
+const p2Result = wait_agent({ timeout_ms: 600000 })
 ```
 
 **Output**:
@@ -202,11 +199,9 @@ const p2Result = wait_agent({ targets: ["investigator"], timeout_ms: 300000 })
 **Execution**:
 
 ```
-assign_task({
+followup_task({
   target: "investigator",
-  items: [{
-    type: "text",
-    text: `## Phase 3: Hypothesis Testing
+  message: `## Phase 3: Hypothesis Testing
 
 Read: ~/.codex/skills/investigate/phases/03-hypothesis-testing.md
 
@@ -219,10 +214,9 @@ Using Phase 1-2 evidence, execute Phase 3:
 Report back with hypothesis test results and either:
   confirmed_root_cause (proceed to Phase 4)
   OR  BLOCKED: <escalation dump> (halt)`
-  }]
 })
 
-const p3Result = wait_agent({ targets: ["investigator"], timeout_ms: 480000 })
+const p3Result = wait_agent({ timeout_ms: 600000 })
 ```
 
 **Phase 3 Gate Decision**:
@@ -232,7 +226,7 @@ const p3Result = wait_agent({ targets: ["investigator"], timeout_ms: 480000 })
 | p3Result contains `confirmed_root_cause` | Proceed to Phase 4 |
 | p3Result contains `BLOCKED` | Halt workflow, output escalation dump to user, close investigator |
 | p3Result contains `ESCALATION: 3-Strike Limit Reached` | Halt workflow, output diagnostic dump, close investigator |
-| Timeout | assign_task "Finalize Phase 3 results now", re-wait 120s; if still timeout → halt |
+| Timeout | followup_task "Finalize Phase 3 results now", re-wait 120s; if still timeout → halt |
 
 If BLOCKED: close investigator and surface the diagnostic dump to the user. Do not proceed to Phase 4.
 
@@ -253,11 +247,9 @@ If BLOCKED: close investigator and surface the diagnostic dump to the user. Do n
 **Execution**:
 
 ```
-assign_task({
+followup_task({
   target: "investigator",
-  items: [{
-    type: "text",
-    text: `## Phase 4: Implementation
+  message: `## Phase 4: Implementation
 
 Read: ~/.codex/skills/investigate/phases/04-implementation.md
 
@@ -269,10 +261,9 @@ Iron Law gate confirmed — proceed with implementation:
 - Verify fix against original reproduction case from Phase 1
 
 Report back with fix_applied section. Await Phase 5 assignment.`
-  }]
 })
 
-const p4Result = wait_agent({ targets: ["investigator"], timeout_ms: 480000 })
+const p4Result = wait_agent({ timeout_ms: 600000 })
 ```
 
 **Output**:
@@ -298,11 +289,9 @@ const p4Result = wait_agent({ targets: ["investigator"], timeout_ms: 480000 })
 **Execution**:
 
 ```
-assign_task({
+followup_task({
   target: "investigator",
-  items: [{
-    type: "text",
-    text: `## Phase 5: Verification & Report
+  message: `## Phase 5: Verification & Report
 
 Read: ~/.codex/skills/investigate/phases/05-verification-report.md
 
@@ -313,10 +302,9 @@ Final phase:
 - Generate structured debug report per specs/debug-report-format.md
 - Write report to .workflow/.debug/debug-report-<YYYY-MM-DD>-<slug>.json
 - Output completion status: DONE | DONE_WITH_CONCERNS | BLOCKED`
-  }]
 })
 
-const p5Result = wait_agent({ targets: ["investigator"], timeout_ms: 300000 })
+const p5Result = wait_agent({ timeout_ms: 600000 })
 ```
 
 **Output**:
@@ -335,11 +323,11 @@ const p5Result = wait_agent({ targets: ["investigator"], timeout_ms: 300000 })
 
 | Phase | Default Timeout | On Timeout |
 |-------|-----------------|------------|
-| Phase 1 (spawn + wait) | 300000 ms | assign_task "Finalize Phase 1 now" + wait 120s; if still timeout → halt |
-| Phase 2 (assign + wait) | 300000 ms | assign_task "Finalize Phase 2 now" + wait 120s; if still timeout → halt |
-| Phase 3 (assign + wait) | 480000 ms | assign_task "Finalize Phase 3 now" + wait 120s; if still timeout → halt BLOCKED |
-| Phase 4 (assign + wait) | 480000 ms | assign_task "Finalize Phase 4 now" + wait 120s; if still timeout → halt |
-| Phase 5 (assign + wait) | 300000 ms | assign_task "Finalize Phase 5 now" + wait 120s; if still timeout → partial report |
+| Phase 1 (spawn + wait) | 600000 ms | followup_task "Finalize Phase 1 now" + wait 300s; if still timeout → halt |
+| Phase 2 (assign + wait) | 600000 ms | followup_task "Finalize Phase 2 now" + wait 300s; if still timeout → halt |
+| Phase 3 (assign + wait) | 600000 ms | followup_task "Finalize Phase 3 now" + wait 300s; if still timeout → halt BLOCKED |
+| Phase 4 (assign + wait) | 600000 ms | followup_task "Finalize Phase 4 now" + wait 300s; if still timeout → halt |
+| Phase 5 (assign + wait) | 600000 ms | followup_task "Finalize Phase 5 now" + wait 300s; if still timeout → partial report |
 
 ### Cleanup Protocol
 
@@ -355,13 +343,13 @@ close_agent({ target: "investigator" })
 
 | Scenario | Resolution |
 |----------|------------|
-| Agent timeout (first) | assign_task "Finalize current work and output results" + re-wait 120000 ms |
+| Agent timeout (first) | followup_task "Finalize current work and output results" + re-wait 300000 ms |
 | Agent timeout (second) | close_agent, report partial results to user |
 | Phase 3 BLOCKED | close_agent, surface full escalation dump to user, halt |
 | Phase 4 Iron Law violation | close_agent, report "Cannot proceed: no confirmed root cause" |
 | Phase 4 introduces regression | Investigator returns to fix adjustment; orchestrator re-waits same phase |
 | User cancellation | close_agent({ target: "investigator" }), report current state |
-| send_message ignored | Escalate to assign_task |
+| send_message ignored | Escalate to followup_task |
 
 ---
 

@@ -61,6 +61,14 @@ Quantitative evaluator for tech debt items. Score each debt item on business imp
 
 For CLI mode, prompt gemini with full debt summary requesting JSON array of `{id, impact_score, cost_score, risk_if_unfixed, priority_quadrant}`. Unevaluated items fall back to heuristic scoring.
 
+### Tech Profile Scan
+
+After assessment, emit context-aware trigger signals (based on detected codebase characteristics):
+
+1. Check debt items → signals (`legacy_patterns`, `perf_sensitive`, `test_gap`)
+2. Check code patterns → risk signals (`sql_detected`, `auth_detected`, `scaling_concern`)
+3. Include `tech_profile` in Phase 5 state_update data
+
 ## Phase 4: Generate Priority Matrix
 
 1. Build matrix structure: evaluation_date, total_items, by_quadrant (grouped), summary (counts per quadrant)

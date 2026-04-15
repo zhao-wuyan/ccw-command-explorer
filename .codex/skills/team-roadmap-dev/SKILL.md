@@ -1,7 +1,7 @@
 ---
 name: team-roadmap-dev
 description: Unified team skill for roadmap-driven development workflow. Coordinator discusses roadmap with user, then dispatches phased execution pipeline (plan -> execute -> verify). All roles invoke this skill with --role arg. Triggers on "team roadmap-dev".
-allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)
 ---
 
 # Team Roadmap Dev
@@ -59,7 +59,7 @@ Before calling ANY tool, apply this check:
 
 | Tool Call | Verdict | Reason |
 |-----------|---------|--------|
-| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `followup_task` | ALLOWED | Orchestration |
 | `list_agents` | ALLOWED | Agent health check |
 | `request_user_input` | ALLOWED | User interaction |
 | `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
@@ -92,9 +92,8 @@ Coordinator spawns workers using this template:
 spawn_agent({
   agent_type: "team_worker",
   task_name: "<task-id>",
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: <role>
 role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
@@ -102,21 +101,20 @@ session_id: <session-id>
 requirement: <task-description>
 inner_loop: true
 
-Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.` },
+Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.
 
-    { type: "text", text: `## Task Context
+## Task Context
 task_id: <task-id>
 title: <task-title>
 description: <task-description>
-pipeline_phase: <pipeline-phase>` },
+pipeline_phase: <pipeline-phase>
 
-    { type: "text", text: `## Upstream Context
-<prev_context>` }
-  ]
+## Upstream Context
+<prev_context>`
 })
 ```
 
-After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
 
 **All worker roles** (planner, executor, verifier): Set `inner_loop: true`.
 
@@ -131,7 +129,7 @@ Roadmap development is context-heavy with multi-phase execution. All roles use i
 | executor | high | Implementation must align with phase plan precisely |
 | verifier | high | Gap detection requires thorough verification against plan |
 
-All roles are inner_loop=true, enabling coordinator to send additional context via `assign_task` as phases progress.
+All roles are inner_loop=true, enabling coordinator to send additional context via `followup_task` as phases progress.
 
 ## User Commands
 
@@ -173,7 +171,7 @@ All roles are inner_loop=true, enabling coordinator to send additional context v
 | Intent | API | Example |
 |--------|-----|---------|
 | Queue supplementary info (don't interrupt) | `send_message` | Send phase context to running executor |
-| Assign phase work / gap closure | `assign_task` | Assign gap closure iteration to executor after verify |
+| Assign phase work / gap closure | `followup_task` | Assign gap closure iteration to executor after verify |
 | Check running agents | `list_agents` | Verify agent health during resume |
 
 ### Agent Health Check
@@ -190,8 +188,8 @@ const running = list_agents({})
 ### Named Agent Targeting
 
 Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
-- `send_message({ target: "EXEC-N01", items: [...] })` -- send supplementary context to executor
-- `assign_task({ target: "PLAN-N01", items: [...] })` -- assign next phase planning
+- `send_message({ target: "EXEC-N01", message: "..." })` -- send supplementary context to executor
+- `followup_task({ target: "PLAN-N01", message: "..." })` -- assign next phase planning
 - `close_agent({ target: "VERIFY-N01" })` -- cleanup after verification
 
 ### Multi-Phase Context Accumulation
@@ -200,7 +198,7 @@ Each phase builds on previous phase results. Coordinator accumulates context acr
 - Phase N planner receives: roadmap.md + state.md + all previous phase summaries
 - Phase N executor receives: phase plan + previous phase implementation context
 - Phase N verifier receives: phase plan + executor results + success criteria from roadmap
-- On gap closure: verifier findings are sent back to executor via `assign_task` (max 3 iterations)
+- On gap closure: verifier findings are sent back to executor via `followup_task` (max 3 iterations)
 
 ## Completion Action
 

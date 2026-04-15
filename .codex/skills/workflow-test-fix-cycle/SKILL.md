@@ -1,7 +1,7 @@
 ---
 name: workflow-test-fix-cycle
 description: "End-to-end test-fix workflow generate test sessions with progressive layers (L0-L3), then execute iterative fix cycles until pass rate >= 95%. Combines test-fix-gen and test-cycle-execute into a unified pipeline. Triggers on \"workflow:test-fix-cycle\"."
-allowed-tools: spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: spawn_agent, wait_agent, send_message, followup_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Workflow Test-Fix Cycle
@@ -104,28 +104,27 @@ Get results from subagent (only way to retrieve results).
 
 ```javascript
 const result = wait_agent({
-  targets: [agentId],
   timeout_ms: 600000  // 10 minutes
 })
 
 if (result.timed_out) {
-  // Handle timeout - can use assign_task to prompt completion
+  // Handle timeout - can use followup_task to prompt completion
 }
 ```
 
-### assign_task
+### followup_task
 Assign new work to active subagent (for clarification or follow-up).
 
 ```javascript
-assign_task({
+followup_task({
   target: agentId,
-  items: [{ type: "text", text: `
+  message: `
 ## CLARIFICATION ANSWERS
 ${answers}
 
 ## NEXT STEP
 Continue with plan generation.
-` }]
+`
 })
 ```
 
@@ -133,7 +132,7 @@ Continue with plan generation.
 Clean up subagent resources (irreversible).
 
 ```javascript
-close_agent({ id: agentId })
+close_agent({ target: agentId })
 ```
 
 ## Usage
@@ -344,11 +343,11 @@ functions.update_plan([
 ```javascript
 try {
   const agentId = spawn_agent({ message: "..." });
-  const result = wait_agent({ targets: [agentId], timeout_ms: 600000 });
+  const result = wait_agent({ timeout_ms: 600000 });
   // ... process result ...
-  close_agent({ id: agentId });
+  close_agent({ target: agentId });
 } catch (error) {
-  if (agentId) close_agent({ id: agentId });
+  if (agentId) close_agent({ target: agentId });
   throw error;
 }
 ```

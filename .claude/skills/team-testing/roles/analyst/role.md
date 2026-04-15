@@ -79,6 +79,14 @@ Glob("<session>/tests/**/*")
 
 Write report to `<session>/analysis/quality-report.md`
 
+### Tech Profile Scan
+
+After test analysis, emit context-aware trigger signals (based on detected codebase characteristics):
+
+1. Check test findings → signals (`test_gap`, `perf_sensitive`)
+2. Check tested code → risk signals (`sql_detected`, `auth_detected`, `injection_risk`)
+3. Include `tech_profile` in Phase 5 state_update data
+
 ## Phase 4: Trend Analysis & State Update
 
 **Historical comparison** (if multiple sessions exist):

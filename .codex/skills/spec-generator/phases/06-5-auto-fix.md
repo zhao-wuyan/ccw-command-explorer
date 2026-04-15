@@ -1,7 +1,7 @@
 # Phase 6.5: Auto-Fix
 
 > **Execution Mode: Agent Delegated (Codex v4)**
-> This phase is executed by a `doc-generator` agent when triggered by the orchestrator after Phase 6 identifies issues. The orchestrator spawns via `spawn_agent({ task_name: "doc-gen-fix", fork_context: false })` and retrieves results via `wait_agent`. The agent reads this file as part of its MANDATORY FIRST STEPS, applies fixes to affected documents, and returns a JSON summary.
+> This phase is executed by a `doc-generator` agent when triggered by the orchestrator after Phase 6 identifies issues. The orchestrator spawns via `spawn_agent({ task_name: "doc-gen-fix", fork_turns: "none" })` and retrieves results via `wait_agent`. The agent reads this file as part of its MANDATORY FIRST STEPS, applies fixes to affected documents, and returns a JSON summary.
 
 Automatically repair specification issues identified in Phase 6 Readiness Check.
 

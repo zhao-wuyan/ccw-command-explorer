@@ -66,11 +66,7 @@ Find and spawn the next ready tasks.
 spawn_agent({
   agent_type: "team_worker",
   task_name: taskId,  // e.g., "IMPL-001" — enables named targeting
-  items: [{
-    description: "Spawn <role> worker for <task-id>",
-    team_name: "perf-opt",
-    name: "<role>",
-    prompt: `## Role Assignment
+  message: `## Role Assignment
 role: <role>
 role_spec: ~  or <project>/.codex/skills/team-perf-opt/roles/<role>/role.md
 session: <session-folder>
@@ -81,7 +77,6 @@ inner_loop: <true|false>
 
 Read role_spec file to load Phase 2-4 domain instructions.
 Execute built-in Phase 1 -> role-spec Phase 2-4 -> built-in Phase 5.`
-  }]
 })
 ```
 
@@ -94,7 +89,7 @@ Execute built-in Phase 1 -> role-spec Phase 2-4 -> built-in Phase 5.`
 | Fan-out (IMPL-B{NN} done) | BENCH-B{NN} + REVIEW-B{NN} ready | Spawn both for that branch in parallel |
 | Independent | Any unblocked task | Spawn all ready tasks across all pipelines in parallel |
 
-4. STOP after spawning -- use `wait_agent({ targets: [<spawned-task-names>], timeout_ms: 900000 })` to wait for next callback. If `result.timed_out`, mark tasks as `timed_out` and close agents. Use `close_agent({ target: taskId })` with task_name for cleanup.
+4. STOP after spawning -- use `wait_agent({ timeout_ms: 900000 })` to wait for next callback. If `result.timed_out`, mark tasks as `timed_out` and close agents. Use `close_agent({ target: taskId })` with task_name for cleanup.
 
 **Cross-Agent Supplementary Context** (v4):
 
@@ -104,12 +99,12 @@ When spawning workers in a later pipeline phase, send upstream results as supple
 // Example: Send profiling results to running optimizers
 send_message({
   target: "<running-agent-task-name>",
-  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+  message: `## Supplementary Context\n${upstreamFindings}`
 })
 // Note: send_message queues info without interrupting the agent's current work
 ```
 
-Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
+Use `send_message` (not `followup_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
 
 ### Review-Fix Cycle (CP-3)
 

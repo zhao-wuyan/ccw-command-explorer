@@ -150,17 +150,6 @@ export const COMMAND_CHAINS: Record<string, CommandChain> = {
     tips: ['0→1全流程', '包含审查', '质量保障'],
   },
 
-  'collaborative-plan': {
-    flow: 'collaborative-plan',
-    level: 3,
-    pipeline: ['workflow:collaborative-plan-with-file', 'workflow:unified-execute-with-file'],
-    commands: [
-      { cmd: '/workflow:collaborative-plan-with-file', desc: '多Agent协作规划' },
-      { cmd: '/workflow:unified-execute-with-file', desc: '统一执行' },
-    ],
-    tips: ['多角色协作', '自动分工'],
-  },
-
   'roadmap': {
     flow: 'roadmap',
     level: 4,

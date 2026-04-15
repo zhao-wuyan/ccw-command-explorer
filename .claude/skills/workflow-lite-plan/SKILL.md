@@ -13,7 +13,7 @@ Produces exploration results, a structured plan (plan.json), independent task fi
 
 ## 1. Context Isolation
 
-> **CRITICAL**: If invoked from analyze-with-file (via "执行任务"), the analyze-with-file session is **COMPLETE** and all its phase instructions are FINISHED and MUST NOT be referenced. Only follow LP-Phase 1-5 defined in THIS document. Phase numbers are INDEPENDENT of any prior workflow.
+> **CRITICAL**: If invoked from analyze-with-file or brainstorm-with-file, the prior session is **COMPLETE** and all its phase instructions are FINISHED and MUST NOT be referenced. Only follow LP-Phase 1-5 defined in THIS document. Phase numbers are INDEPENDENT of any prior workflow.
 
 ## 2. Input
 
@@ -96,7 +96,7 @@ TodoWrite({ todos: [
 const hasPriorAnalysis = /##\s*Prior Analysis/i.test(task_description)
 const hasHandoffSpec = /```json:handoff-spec/i.test(task_description)
 
-// Parse structured handoff from analyze-with-file (if present)
+// Parse structured handoff from analyze-with-file or brainstorm-with-file (if present)
 let handoffSpec = null
 if (hasHandoffSpec) {
   const specMatch = task_description.match(/```json:handoff-spec\s*\n([\s\S]*?)\n```/)
@@ -110,8 +110,13 @@ if (hasHandoffSpec) {
   }
 }
 
+// Brainstorm handoff has no code_anchors/key_files — needs exploration for implementation context
+const isBrainstormSource = handoffSpec?.source === 'brainstorm-with-file'
+const isAnalysisSource = handoffSpec?.source === 'analyze-with-file'
+
 needsExploration = workflowPreferences.forceExplore ? true
-  : (hasPriorAnalysis || hasHandoffSpec) ? false
+  : isBrainstormSource ? true  // brainstorm explore is lightweight, lite-plan needs deeper exploration
+  : (hasPriorAnalysis || isAnalysisSource) ? false
   : (task.mentions_specific_files ||
      task.requires_codebase_context ||
      task.needs_architecture_understanding ||
@@ -358,10 +363,11 @@ Total: ${manifest.exploration_count} | Angles: ${manifest.explorations.map(e => 
 Manifest: ${sessionFolder}/explorations-manifest.json`
   : `No exploration files. Task Description contains "## Prior Analysis" — use as primary planning context.`}
 
-## Structured Handoff Spec (from analyze-with-file)
+## Structured Handoff Spec (from ${handoffSpec?.source || 'upstream workflow'})
 ${handoffSpec ? `
 **Source**: ${handoffSpec.source} session ${handoffSpec.session_id}
 **CRITICAL**: Use implementation_scope as PRIMARY input for task generation.
+${isBrainstormSource ? '**NOTE**: Brainstorm source — code_anchors/key_files are empty. Use exploration results as primary file context.' : ''}
 Each scope item maps to one or more tasks. Acceptance criteria become convergence.criteria.
 
 ${JSON.stringify(handoffSpec.implementation_scope, null, 2)}

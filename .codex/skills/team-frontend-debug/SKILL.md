@@ -1,7 +1,7 @@
 ---
 name: team-frontend-debug
 description: Frontend debugging team using Chrome DevTools MCP. Dual-mode — feature-list testing or bug-report debugging. Triggers on "team-frontend-debug", "frontend debug".
-allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__chrome-devtools__*(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__chrome-devtools__*(*), mcp__ccw-tools__team_msg(*)
 ---
 
 # Frontend Debug Team
@@ -64,7 +64,7 @@ Before calling ANY tool, apply this check:
 
 | Tool Call | Verdict | Reason |
 |-----------|---------|--------|
-| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `followup_task` | ALLOWED | Orchestration |
 | `list_agents` | ALLOWED | Agent health check |
 | `request_user_input` | ALLOWED | User interaction |
 | `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
@@ -133,9 +133,8 @@ Coordinator spawns workers using this template:
 spawn_agent({
   agent_type: "team_worker",
   task_name: "<task-id>",
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: <role>
 role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
@@ -143,21 +142,20 @@ session_id: <session-id>
 requirement: <task-description>
 inner_loop: <true|false>
 
-Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.` },
+Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.
 
-    { type: "text", text: `## Task Context
+## Task Context
 task_id: <task-id>
 title: <task-title>
 description: <task-description>
-pipeline_phase: <pipeline-phase>` },
+pipeline_phase: <pipeline-phase>
 
-    { type: "text", text: `## Upstream Context
-<prev_context>` }
-  ]
+## Upstream Context
+<prev_context>`
 })
 ```
 
-After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
 
 
 ### Model Selection Guide
@@ -189,7 +187,7 @@ Debug workflows require tool-heavy interaction (Chrome DevTools MCP). Reasoning 
 | Intent | API | Example |
 |--------|-----|---------|
 | Queue supplementary info (don't interrupt) | `send_message` | Send DevTools evidence to running analyzer |
-| Assign new work / trigger debug round | `assign_task` | Assign re-fix after verification failure |
+| Assign new work / trigger debug round | `followup_task` | Assign re-fix after verification failure |
 | Check running agents | `list_agents` | Verify agent health during resume |
 
 ### Agent Health Check
@@ -206,24 +204,22 @@ const running = list_agents({})
 ### Named Agent Targeting
 
 Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
-- `send_message({ target: "ANALYZE-001", items: [...] })` -- send evidence from reproducer to analyzer
-- `assign_task({ target: "FIX-001", items: [...] })` -- assign fix based on analysis results
+- `send_message({ target: "ANALYZE-001", message: "..." })` -- send evidence from reproducer to analyzer
+- `followup_task({ target: "FIX-001", message: "..." })` -- assign fix based on analysis results
 - `close_agent({ target: "VERIFY-001" })` -- cleanup after verification
 
 ### Iterative Debug Loop Pattern
 
-When verifier reports a fix did not resolve the issue, coordinator uses `assign_task` to trigger re-analysis and re-fix:
+When verifier reports a fix did not resolve the issue, coordinator uses `followup_task` to trigger re-analysis and re-fix:
 ```
 // Verifier reports failure -> coordinator dispatches re-fix
-assign_task({
+followup_task({
   target: "FIX-001",   // reuse existing fixer if inner_loop, or spawn new
-  items: [
-    { type: "text", text: `## Re-fix Assignment
+  message: `## Re-fix Assignment
 verification_result: FAIL
 failure_evidence: <verifier's screenshot/console evidence>
 previous_fix_summary: <what was tried>
-instruction: Analyze verification failure and apply corrected fix.` }
-  ]
+instruction: Analyze verification failure and apply corrected fix.`
 })
 ```
 

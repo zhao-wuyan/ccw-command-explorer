@@ -1,7 +1,7 @@
 # Phase 2: Product Brief
 
 > **Execution Mode: Agent Delegated (Codex v4)**
-> This phase is executed by a `doc-generator` agent. The orchestrator spawns the agent via `spawn_agent({ task_name: "doc-gen-p2", fork_context: false })` and retrieves results via `wait_agent`. The agent reads this file as part of its MANDATORY FIRST STEPS, executes all steps, writes output files, and returns a JSON summary.
+> This phase is executed by a `doc-generator` agent. The orchestrator spawns the agent via `spawn_agent({ task_name: "doc-gen-p2", fork_turns: "none" })` and retrieves results via `wait_agent`. The agent reads this file as part of its MANDATORY FIRST STEPS, executes all steps, writes output files, and returns a JSON summary.
 
 Generate a product brief through multi-perspective CLI analysis, establishing "what" and "why".
 

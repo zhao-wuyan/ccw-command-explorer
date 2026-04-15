@@ -45,9 +45,9 @@ Structured release pipeline that guides code from working branch to pull request
 
 ## Agent Registry
 
-| Agent | task_name | Role File | Responsibility | Pattern | fork_context |
+| Agent | task_name | Role File | Responsibility | Pattern | fork_turns |
 |-------|-----------|-----------|----------------|---------|--------------|
-| ship-operator | ship-operator | ~/.codex/agents/ship-operator.md | Execute all 5 release phases sequentially, enforce gates | Deep Interaction (2.3) | false |
+| ship-operator | ship-operator | ~/.codex/agents/ship-operator.md | Execute all 5 release phases sequentially, enforce gates | Deep Interaction (2.3) | "none" |
 
 > **COMPACT PROTECTION**: Agent files are execution documents. When context compression occurs and agent instructions are reduced to summaries, **you MUST immediately `Read` the corresponding agent.md to reload before continuing execution**.
 
@@ -55,17 +55,17 @@ Structured release pipeline that guides code from working branch to pull request
 
 ## Fork Context Strategy
 
-| Agent | task_name | fork_context | fork_from | Rationale |
+| Agent | task_name | fork_turns | fork_from | Rationale |
 |-------|-----------|--------------|-----------|-----------|
-| ship-operator | ship-operator | false | — | Starts fresh; all context provided in initial task message |
+| ship-operator | ship-operator | "none" | — | Starts fresh; all context provided in initial task message |
 
 **Fork Decision Rules**:
 
-| Condition | fork_context | Reason |
+| Condition | fork_turns | Reason |
 |-----------|--------------|--------|
-| Pipeline stage with explicit input | false | Context in message, not history |
-| Agent is isolated utility | false | Clean context, focused task |
-| ship-operator | false | Self-contained release operator; no parent context needed |
+| Pipeline stage with explicit input | "none" | Context in message, not history |
+| Agent is isolated utility | "none" | Clean context, focused task |
+| ship-operator | "none" | Self-contained release operator; no parent context needed |
 
 ---
 
@@ -116,7 +116,7 @@ Spawn ship-operator with Phase 1 task. The operator reads the phase detail file 
 ```
 spawn_agent({
   task_name: "ship-operator",
-  fork_context: false,
+  fork_turns: "none",
   message: `## TASK ASSIGNMENT
 
 ### MANDATORY FIRST STEPS
@@ -130,7 +130,7 @@ Goal: Execute Phase 1 Pre-Flight Checks for the release pipeline.
 Execute all four checks (git clean, branch validation, test suite, build verification).
 Output structured preflight-report JSON plus gate status.`
 })
-const phase1Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000 })
+const phase1Result = wait_agent({ timeout_ms: 600000 })
 ```
 
 **Gate Decision**:
@@ -140,7 +140,7 @@ const phase1Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000
 | All four checks pass (overall: "pass") | Fast-advance: assign Phase 2 task to ship-operator |
 | Any check fails (overall: "fail") | BLOCKED — report failure details, halt pipeline |
 | Branch is main/master (warn) | Ask user to confirm direct-to-main release before proceeding |
-| Timeout | assign_task "Finalize current work and output results", re-wait 120s |
+| Timeout | followup_task "Finalize current work and output results", re-wait 120s |
 
 **Output**:
 
@@ -167,12 +167,12 @@ const phase1Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000
 
 **Execution**:
 
-Phase 2 is assigned to the already-running ship-operator via assign_task.
+Phase 2 is assigned to the already-running ship-operator via followup_task.
 
 ```
-assign_task({
+followup_task({
   target: "ship-operator",
-  items: [{ type: "text", text: `## PHASE 2 TASK
+  message: `## PHASE 2 TASK
 
 Read phase detail: ~/.codex/skills/ship/phases/02-code-review.md
 
@@ -181,9 +181,9 @@ Execute Phase 2 Code Review:
 2. Generate diff summary
 3. Perform risk assessment
 4. Spawn inline-code-review subagent for AI analysis
-5. Evaluate review results and report gate status` }]
+5. Evaluate review results and report gate status`
 })
-const phase2Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 600000 })
+const phase2Result = wait_agent({ timeout_ms: 600000 })
 ```
 
 **Gate Decision**:
@@ -194,7 +194,7 @@ const phase2Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 600000
 | Critical issues found (overall: "fail") | BLOCKED — report critical issues list, halt pipeline |
 | Warnings only (overall: "warn") | Fast-advance to Phase 3, flag DONE_WITH_CONCERNS |
 | Review subagent timeout/error | Ask user whether to proceed or retry; if proceed, flag warn |
-| Timeout on phase2Result | assign_task "Finalize current work", re-wait 120s |
+| Timeout on phase2Result | followup_task "Finalize current work", re-wait 120s |
 
 **Output**:
 
@@ -222,9 +222,9 @@ const phase2Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 600000
 **Execution**:
 
 ```
-assign_task({
+followup_task({
   target: "ship-operator",
-  items: [{ type: "text", text: `## PHASE 3 TASK
+  message: `## PHASE 3 TASK
 
 Read phase detail: ~/.codex/skills/ship/phases/03-version-bump.md
 
@@ -235,9 +235,9 @@ Execute Phase 3 Version Bump:
 4. Calculate new version
 5. Update version file
 6. Verify update
-Output version change record JSON plus gate status.` }]
+Output version change record JSON plus gate status.`
 })
-const phase3Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000 })
+const phase3Result = wait_agent({ timeout_ms: 600000 })
 ```
 
 **Gate Decision**:
@@ -248,7 +248,7 @@ const phase3Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000
 | Version file not found | NEEDS_CONTEXT — ask user which file to use; halt until answered |
 | Version mismatch after update (overall: "fail") | BLOCKED — report mismatch, halt pipeline |
 | User declines major bump | BLOCKED — halt, user must re-trigger with explicit bump type |
-| Timeout | assign_task "Finalize current work", re-wait 120s |
+| Timeout | followup_task "Finalize current work", re-wait 120s |
 
 **Output**:
 
@@ -276,9 +276,9 @@ const phase3Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000
 **Execution**:
 
 ```
-assign_task({
+followup_task({
   target: "ship-operator",
-  items: [{ type: "text", text: `## PHASE 4 TASK
+  message: `## PHASE 4 TASK
 
 Read phase detail: ~/.codex/skills/ship/phases/04-changelog-commit.md
 
@@ -292,9 +292,9 @@ Execute Phase 4 Changelog & Commit:
 4. Update or create CHANGELOG.md
 5. Create release commit (chore: bump version to <new_version>)
 6. Push branch to remote
-Output commit record JSON plus gate status.` }]
+Output commit record JSON plus gate status.`
 })
-const phase4Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000 })
+const phase4Result = wait_agent({ timeout_ms: 600000 })
 ```
 
 **Gate Decision**:
@@ -305,7 +305,7 @@ const phase4Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000
 | Push rejected (non-fast-forward) | BLOCKED — report error, suggest `git pull --rebase` |
 | Permission denied | BLOCKED — report error, advise check remote access |
 | No remote configured | BLOCKED — report error, suggest `git remote add` |
-| Timeout | assign_task "Finalize current work", re-wait 120s |
+| Timeout | followup_task "Finalize current work", re-wait 120s |
 
 **Output**:
 
@@ -334,9 +334,9 @@ const phase4Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000
 **Execution**:
 
 ```
-assign_task({
+followup_task({
   target: "ship-operator",
-  items: [{ type: "text", text: `## PHASE 5 TASK
+  message: `## PHASE 5 TASK
 
 Read phase detail: ~/.codex/skills/ship/phases/05-pr-creation.md
 
@@ -353,9 +353,9 @@ Execute Phase 5 PR Creation:
 4. Build PR body with all sections
 5. Create PR via gh pr create
 6. Capture and report PR URL
-Output PR creation record JSON plus final completion status.` }]
+Output PR creation record JSON plus final completion status.`
 })
-const phase5Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000 })
+const phase5Result = wait_agent({ timeout_ms: 600000 })
 ```
 
 **Gate Decision**:
@@ -366,7 +366,7 @@ const phase5Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000
 | PR created with review warnings | Pipeline complete — output DONE_WITH_CONCERNS |
 | gh CLI not available | BLOCKED — report error, advise `gh auth login` |
 | PR creation fails | BLOCKED — report error details, halt |
-| Timeout | assign_task "Finalize current work", re-wait 120s |
+| Timeout | followup_task "Finalize current work", re-wait 120s |
 
 **Output**:
 
@@ -385,11 +385,11 @@ const phase5Result = wait_agent({ targets: ["ship-operator"], timeout_ms: 300000
 
 | Phase | Default Timeout | On Timeout |
 |-------|-----------------|------------|
-| Phase 1: Pre-Flight | 300000 ms (5 min) | assign_task "Finalize current work", re-wait 120s |
-| Phase 2: Code Review | 600000 ms (10 min) | assign_task "Finalize current work", re-wait 120s |
-| Phase 3: Version Bump | 300000 ms (5 min) | assign_task "Finalize current work", re-wait 120s |
-| Phase 4: Changelog & Commit | 300000 ms (5 min) | assign_task "Finalize current work", re-wait 120s |
-| Phase 5: PR Creation | 300000 ms (5 min) | assign_task "Finalize current work", re-wait 120s |
+| Phase 1: Pre-Flight | 600000 ms (10 min) | followup_task "Finalize current work", re-wait 300s |
+| Phase 2: Code Review | 600000 ms (10 min) | followup_task "Finalize current work", re-wait 300s |
+| Phase 3: Version Bump | 600000 ms (10 min) | followup_task "Finalize current work", re-wait 300s |
+| Phase 4: Changelog & Commit | 600000 ms (10 min) | followup_task "Finalize current work", re-wait 300s |
+| Phase 5: PR Creation | 600000 ms (10 min) | followup_task "Finalize current work", re-wait 300s |
 
 ### Cleanup Protocol
 
@@ -414,11 +414,11 @@ if (remaining.length > 0) {
 
 | Scenario | Resolution |
 |----------|------------|
-| Agent timeout (first) | assign_task with "Finalize current work and output results" + re-wait 120s |
+| Agent timeout (first) | followup_task with "Finalize current work and output results" + re-wait 300s |
 | Agent timeout (second) | Log error, close_agent({ target: "ship-operator" }), report partial results |
 | Gate fail — any phase | Log BLOCKED status with phase name and failure detail, close_agent, halt |
-| NEEDS_CONTEXT | Pause pipeline, surface question to user, resume with assign_task on answer |
-| send_message ignored | Escalate to assign_task |
+| NEEDS_CONTEXT | Pause pipeline, surface question to user, resume with followup_task on answer |
+| send_message ignored | Escalate to followup_task |
 | Inline subagent timeout | ship-operator handles internally; continue with warn if review failed |
 | User cancellation | close_agent({ target: "ship-operator" }), report current pipeline state |
 | Fork from closed agent | Not applicable (single agent, no forking) |

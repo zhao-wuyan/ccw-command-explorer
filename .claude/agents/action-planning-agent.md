@@ -267,6 +267,10 @@ if (contextPackage.brainstorm_artifacts?.feature_index?.exists) {
 3. Generate plan.json (plan-overview-base-schema)
    - Machine-readable plan overview with task_ids[], shared_context, _metadata
    - Extract shared_context from context package (tech_stack, conventions)
+   - **Incremental update**: Use `ccw tool exec json_builder set` when updating plan.json fields (e.g., appending task_ids):
+     ```
+     ccw tool exec json_builder '{"cmd":"set","target":"plan.json","ops":[{"path":"task_ids[+]","value":"IMPL-003"}]}'
+     ```
 
 4. Create IMPL_PLAN.md
    - Load template: Read(~/.ccw/workflows/cli-templates/prompts/workflow/impl-plan-template.txt)
@@ -829,14 +833,14 @@ Generate at `.workflow/active/{session_id}/plan.json` following `plan-overview-b
 
 **Generation Timing**: After all `.task/IMPL-*.json` files are generated, aggregate into plan.json.
 
-**Schema Reference Fallback** (resolve enum/field conflicts):
+**Template Reference** (resolve enum/field conflicts):
 
-If unsure about field enums or structure, read authoritative schema files before generating:
+If unsure about field enums or structure, read template JSON files before generating:
 ```
 Read(~/.ccw/workflows/cli-templates/schemas/task-schema.json)
 Read(~/.ccw/workflows/cli-templates/schemas/plan-overview-base-schema.json)
 ```
-Rule: If this agent doc's inline examples conflict with schema file → **schema file wins**.
+Use template files as structure reference. LLM organizes content based on template field names and enum values.
 
 ### 2.3 IMPL_PLAN.md Structure
 

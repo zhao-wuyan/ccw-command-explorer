@@ -15,7 +15,7 @@ Run full test suite, check for regressions, and generate the structured debug re
 | Source | Required | Description |
 |--------|----------|-------------|
 | investigation-report (phases 1-4) | Yes | All phases populated: evidence, root cause, fix_applied |
-| assign_task message | Yes | Phase 5 instruction |
+| followup_task message | Yes | Phase 5 instruction |
 
 ## Execution Steps
 

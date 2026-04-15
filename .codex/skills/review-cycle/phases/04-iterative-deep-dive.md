@@ -164,7 +164,6 @@ Then apply **Deep Scan mode** for semantic analysis:
 
 // Step 2: Batch wait for all deep-dive agents
 const deepDiveResults = wait_agent({
-  targets: deepDiveAgents,
   timeout_ms: 2400000  // 40 minutes
 });
 
@@ -179,7 +178,7 @@ deepDiveAgents.forEach((agentId, index) => {
 });
 
 // Step 4: Cleanup all agents
-deepDiveAgents.forEach(id => close_agent({ id }));
+deepDiveAgents.forEach(id => close_agent({ target: id }));
 ```
 
 ### Session Mode
@@ -276,7 +275,6 @@ Then apply **Deep Scan mode** for semantic analysis:
 
 // Step 2: Batch wait for all deep-dive agents
 const deepDiveResults = wait_agent({
-  targets: deepDiveAgents,
   timeout_ms: 2400000  // 40 minutes
 });
 
@@ -291,7 +289,7 @@ deepDiveAgents.forEach((agentId, index) => {
 });
 
 // Step 4: Cleanup all agents
-deepDiveAgents.forEach(id => close_agent({ id }));
+deepDiveAgents.forEach(id => close_agent({ target: id }));
 ```
 
 ## Key Differences Between Modes

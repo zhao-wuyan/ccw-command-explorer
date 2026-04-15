@@ -1,6 +1,6 @@
 # Investigator Agent
 
-Executes all 5 phases of the systematic debugging investigation under the Iron Law methodology. Single long-running agent driven through phases by orchestrator assign_task calls.
+Executes all 5 phases of the systematic debugging investigation under the Iron Law methodology. Single long-running agent driven through phases by orchestrator followup_task calls.
 
 ## Identity
 
@@ -8,7 +8,7 @@ Executes all 5 phases of the systematic debugging investigation under the Iron L
 - **Role File**: `~/.codex/skills/investigate/agents/investigator.md`
 - **task_name**: `investigator`
 - **Responsibility**: Full 5-phase investigation execution — evidence collection, pattern search, hypothesis testing, minimal fix, verification
-- **fork_context**: false
+- **fork_turns**: "none"
 - **Reasoning Effort**: high
 
 ## Boundaries
@@ -23,7 +23,7 @@ Executes all 5 phases of the systematic debugging investigation under the Iron L
 - Implement only minimal fix — change only what addresses the confirmed root cause
 - Add a regression test that fails without the fix and passes with it
 - Write the final debug report to `.workflow/.debug/` using the schema in `~/.codex/skills/investigate/specs/debug-report-format.md`
-- Produce structured output after each phase, then await next assign_task
+- Produce structured output after each phase, then await next followup_task
 
 ### MUST NOT
 
@@ -75,7 +75,7 @@ Executes all 5 phases of the systematic debugging investigation under the Iron L
 
 | Source | Required | Description |
 |--------|----------|-------------|
-| assign_task message | Yes | Bug description, symptoms, error messages, context |
+| followup_task message | Yes | Bug description, symptoms, error messages, context |
 | Phase file | Yes | `~/.codex/skills/investigate/phases/01-root-cause-investigation.md` |
 
 **Steps**:
@@ -89,7 +89,7 @@ Executes all 5 phases of the systematic debugging investigation under the Iron L
 4. Collect evidence — search for error messages in source, find related log output, identify affected files and modules.
 5. Run inline-cli-analysis subagent for initial diagnostic perspective (see Inline Subagent Calls).
 6. Assemble `investigation-report` in memory: bug_description, reproduction result, evidence, initial_diagnosis.
-7. Output Phase 1 summary and await assign_task for Phase 2.
+7. Output Phase 1 summary and await followup_task for Phase 2.
 
 **Output**: In-memory investigation-report (phase 1 fields populated)
 
@@ -103,7 +103,7 @@ Executes all 5 phases of the systematic debugging investigation under the Iron L
 
 | Source | Required | Description |
 |--------|----------|-------------|
-| assign_task message | Yes | Phase 2 instruction |
+| followup_task message | Yes | Phase 2 instruction |
 | Phase file | Yes | `~/.codex/skills/investigate/phases/02-pattern-analysis.md` |
 | investigation-report | Yes | Phase 1 output in context |
 
@@ -118,7 +118,7 @@ Executes all 5 phases of the systematic debugging investigation under the Iron L
 7. Classify scope: `isolated` | `module-wide` | `systemic` with justification.
 8. Document all similar occurrences with file:line references and risk classification (`same_bug` | `potential_bug` | `safe`).
 9. Add `pattern_analysis` section to investigation-report in memory.
-10. Output Phase 2 summary and await assign_task for Phase 3.
+10. Output Phase 2 summary and await followup_task for Phase 3.
 
 **Output**: investigation-report with pattern_analysis section added
 
@@ -132,7 +132,7 @@ Executes all 5 phases of the systematic debugging investigation under the Iron L
 
 | Source | Required | Description |
 |--------|----------|-------------|
-| assign_task message | Yes | Phase 3 instruction |
+| followup_task message | Yes | Phase 3 instruction |
 | Phase file | Yes | `~/.codex/skills/investigate/phases/03-hypothesis-testing.md` |
 | investigation-report | Yes | Phase 1-2 output in context |
 
@@ -154,7 +154,7 @@ Executes all 5 phases of the systematic debugging investigation under the Iron L
 
 6. If strike counter reaches 3 — STOP immediately. Output escalation block (see 3-Strike Escalation Output below). Set status BLOCKED.
 7. If a hypothesis is confirmed — document `confirmed_root_cause` with full evidence chain.
-8. Output Phase 3 results and await assign_task for Phase 4 (or halt on BLOCKED).
+8. Output Phase 3 results and await followup_task for Phase 4 (or halt on BLOCKED).
 
 **3-Strike Escalation Output**:
 
@@ -203,7 +203,7 @@ STATUS: BLOCKED
 
 | Source | Required | Description |
 |--------|----------|-------------|
-| assign_task message | Yes | Phase 4 instruction |
+| followup_task message | Yes | Phase 4 instruction |
 | Phase file | Yes | `~/.codex/skills/investigate/phases/04-implementation.md` |
 | investigation-report | Yes | Must contain confirmed_root_cause |
 
@@ -233,7 +233,7 @@ STATUS: BLOCKED
    - Test must be deterministic
 6. Re-run the original reproduction case from Phase 1. Verify it now passes.
 7. Add `fix_applied` section to investigation-report in memory.
-8. Output Phase 4 summary and await assign_task for Phase 5.
+8. Output Phase 4 summary and await followup_task for Phase 5.
 
 **Output**: Modified source files, regression test file; investigation-report with fix_applied section
 
@@ -247,7 +247,7 @@ STATUS: BLOCKED
 
 | Source | Required | Description |
 |--------|----------|-------------|
-| assign_task message | Yes | Phase 5 instruction |
+| followup_task message | Yes | Phase 5 instruction |
 | Phase file | Yes | `~/.codex/skills/investigate/phases/05-verification-report.md` |
 | investigation-report | Yes | All phases populated |
 
@@ -301,7 +301,7 @@ This agent spawns a utility subagent for cross-file diagnostic analysis during P
 ```
 spawn_agent({
   task_name: "inline-cli-analysis",
-  fork_context: false,
+  fork_turns: "none",
   model: "haiku",
   reasoning_effort: "medium",
   message: `### MANDATORY FIRST STEPS
@@ -317,7 +317,7 @@ CONSTRAINTS: Read-only analysis | Focus on <affected_module>>
 
 Expected: Structured findings with file:line references`
 })
-const result = wait_agent({ targets: ["inline-cli-analysis"], timeout_ms: 180000 })
+const result = wait_agent({ timeout_ms: 600000 })
 close_agent({ target: "inline-cli-analysis" })
 ```
 
@@ -337,7 +337,7 @@ Substitute the analysis task description with phase-appropriate content:
 
 ## Structured Output Template
 
-After each phase, output the following structure before awaiting the next assign_task:
+After each phase, output the following structure before awaiting the next followup_task:
 
 ```
 ## Phase <N> Complete

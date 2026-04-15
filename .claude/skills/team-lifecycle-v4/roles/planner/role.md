@@ -41,6 +41,15 @@ Codebase-informed implementation planning with complexity assessment.
    ```
 4. Store results in <session>/explorations/
 
+### Secondary Signal Scan
+
+After exploration, supplement upstream tech_profile with planning-phase signals (based on detected codebase characteristics):
+
+1. Check plan complexity → `scaling_concern` if O(n^2)+ patterns found
+2. Check scope → `breaking_change` if public API modifications planned
+3. Check data → `data_migration` if schema changes identified
+4. Include `tech_profile` in Phase 5 state_update (merge with any upstream signals)
+
 ## Phase 3: Plan Generation
 
 Generate plan.json + .task/TASK-*.json:

@@ -23,7 +23,7 @@ When `--yes` or `-y`: Auto-confirm decisions, use recommended roles, balanced ex
 /workflow:brainstorm-with-file -m structured "优化缓存策略"       # Goal-oriented mode
 ```
 
-**Context Source**: cli-explore-agent + Multi-CLI perspectives (Gemini/Codex/Claude or Professional Roles)
+**Context Source**: cli-explore-agent + Multi-CLI perspectives (Gemini/Claude or Professional Roles)
 **Output Directory**: `.workflow/.brainstorm/{session-id}/`
 **Core Innovation**: Diverge-Converge cycles with documented thought evolution
 
@@ -72,8 +72,8 @@ When `--yes` or `-y`: Auto-confirm decisions, use recommended roles, balanced ex
 │     ├─ cli-explore-agent: Codebase context (FIRST)                       │
 │     ├─ Multi-CLI Perspectives (AFTER exploration)                        │
 │     │   ├─ Creative (Gemini): Innovation, cross-domain                   │
-│     │   ├─ Pragmatic (Codex): Implementation, feasibility                │
-│     │   └─ Systematic (Claude): Architecture, structure                  │
+│     │   ├─ Pragmatic (Claude): Implementation, feasibility               │
+│     │   └─ Systematic (Agent): Architecture, structure                   │
 │     └─ Aggregate diverse viewpoints                                      │
 │                                                                          │
 │  Phase 3: Interactive Refinement (Multi-Round)                           │
@@ -164,7 +164,7 @@ Output as structured exploration vectors for multi-perspective analysis.
 })
 ```
 
-5. **Initialize brainstorm.md** with session metadata, initial context (user focus, depth, constraints), seed expansion (original idea + exploration vectors), empty thought evolution timeline sections
+5. **Initialize brainstorm.md** with session metadata, initial context (user focus, depth, constraints), seed expansion (original idea + exploration vectors), empty thought evolution timeline sections, and a trailing `## Artifact Index` section with relative links (`[name](./file)`) to all planned artifacts (exploration-codebase.json, perspectives.json, synthesis.json, ideas/). Update this section as each artifact is created.
 
 **TodoWrite**: Update `phase-1` → `"completed"`, `phase-2` → `"in_progress"`
 
@@ -228,31 +228,81 @@ Launch 3 parallel CLI calls (`run_in_background: true` each), one per perspectiv
 
 | Perspective | Tool | PURPOSE | Key TASK bullets | EXPECTED | CONSTRAINTS |
 |-------------|------|---------|-----------------|----------|-------------|
-| Creative | gemini | Generate innovative ideas | Challenge assumptions, cross-domain inspiration, moonshot + practical ideas | 5+ creative ideas with novelty/impact ratings | structured mode: keep feasible |
-| Pragmatic | codex | Implementation reality | Evaluate feasibility, estimate complexity, identify blockers, incremental approach | 3-5 practical approaches with effort/risk ratings | Current tech stack |
-| Systematic | claude | Architectural thinking | Decompose problems, identify patterns, map dependencies, scalability | Problem decomposition, 2-3 approaches with tradeoffs | Existing architecture |
+| Creative | Gemini CLI | Generate innovative ideas | Challenge assumptions, cross-domain inspiration, moonshot + practical ideas | 5+ creative ideas with novelty/impact ratings | structured mode: keep feasible |
+| Pragmatic | Claude CLI | Implementation reality | Evaluate feasibility, estimate complexity, identify blockers, incremental approach | 3-5 practical approaches with effort/risk ratings | Current tech stack |
+| Systematic | cli-explore-agent | Architectural thinking | Decompose problems, identify patterns, map dependencies, scalability | Problem decomposition, 2-3 approaches with tradeoffs | Existing architecture |
+
+Launch Creative + Pragmatic as parallel CLI calls, Systematic as Agent:
 
 ```javascript
-// Each perspective uses this prompt structure (launch all 3 in parallel):
+// Creative perspective (Gemini CLI, run_in_background: true)
 Bash({
   command: `ccw cli -p "
-PURPOSE: ${perspective} brainstorming for '${idea_or_topic}' - ${purposeFocus}
-Success: ${expected}
+PURPOSE: Creative brainstorming for '${idea_or_topic}' - Generate innovative ideas
+Success: 5+ creative ideas with novelty/impact ratings
 
 ${explorationContext}
 
 TASK:
-• Build on explored ${contextType} - how to ${actionVerb}?
-${perspectiveSpecificBullets}
+• Challenge assumptions and find cross-domain inspiration
+• Generate moonshot + practical ideas
+• Rate each idea on novelty and impact
 
 MODE: analysis
 CONTEXT: @**/* | Topic: ${idea_or_topic}
-EXPECTED: ${expected}
-CONSTRAINTS: ${constraints}
-" --tool ${tool} --mode analysis`,
+EXPECTED: 5+ creative ideas with novelty/impact ratings
+CONSTRAINTS: ${brainstormMode === 'structured' ? 'Keep feasible' : 'Think big'}
+" --tool gemini --mode analysis`,
   run_in_background: true
 })
-// ⚠️ STOP POINT: Wait for hook callback to receive all results before continuing
+
+// Pragmatic perspective (Claude CLI, run_in_background: true)
+Bash({
+  command: `ccw cli -p "
+PURPOSE: Pragmatic brainstorming for '${idea_or_topic}' - Implementation reality check
+Success: 3-5 practical approaches with effort/risk ratings
+
+${explorationContext}
+
+TASK:
+• Evaluate feasibility of explored concepts
+• Estimate complexity and identify blockers
+• Suggest incremental approach
+
+MODE: analysis
+CONTEXT: @**/* | Topic: ${idea_or_topic}
+EXPECTED: 3-5 practical approaches with effort/risk ratings
+CONSTRAINTS: Current tech stack
+" --tool claude --mode analysis`,
+  run_in_background: true
+})
+
+// Systematic perspective (cli-explore-agent, run_in_background: false)
+Agent({
+  subagent_type: "cli-explore-agent",
+  run_in_background: false,
+  description: `Systematic brainstorm: ${topicSlug}`,
+  prompt: `
+## Brainstorm Context
+Topic: ${idea_or_topic}
+Dimensions: ${dimensions.join(', ')}
+Session: ${sessionFolder}
+
+## Prior Exploration Context
+${explorationContext}
+
+## Systematic Analysis Focus
+- Decompose the problem into architectural components
+- Identify patterns and anti-patterns in existing code
+- Map dependencies and integration points
+- Evaluate scalability of proposed approaches
+- Generate 2-3 architectural approaches with tradeoffs
+
+## Output
+Return structured analysis with: problem_decomposition, approaches[] (each with description, pros, cons, complexity), dependency_map, scalability_assessment
+`
+})
+// ⚠️ STOP POINT: Wait for all CLI hook callbacks + agent result before continuing
 ```
 
 3. **Aggregate Multi-Perspective Findings**
@@ -282,7 +332,7 @@ CONSTRAINTS: ${constraints}
 |--------|------|--------|-----------|
 | Deep Dive | Gemini CLI | ideas/{slug}.md | Elaborate concept, requirements, challenges, POC approach, metrics, dependencies |
 | Generate More | Selected CLI | Updated perspectives.json | New angles from unexplored vectors |
-| Challenge | Codex CLI | Challenge results | 3 objections per idea, challenge assumptions, failure scenarios, survivability (1-5) |
+| Challenge | Claude CLI | Challenge results | 3 objections per idea, challenge assumptions, failure scenarios, survivability (1-5) |
 | Merge | Gemini CLI | ideas/merged-{slug}.md | Complementary elements, resolve contradictions, unified concept |
 
 **Deep Dive CLI Call**:
@@ -332,7 +382,7 @@ TASK:
 MODE: analysis
 EXPECTED: Per-idea challenge report, critical weaknesses, survivability ratings, modified/strengthened versions
 CONSTRAINTS: Be genuinely critical, not just contrarian
-" --tool codex --mode analysis`,
+" --tool claude --mode analysis`,
   run_in_background: false
 })
 ```
@@ -382,7 +432,7 @@ CONSTRAINTS: Don't force incompatible ideas together
 
 **synthesis.json Schema**: `session_id`, `topic`, `completed` (timestamp), `total_rounds`, `top_ideas[]`, `parked_ideas[]`, `key_insights[]`, `recommendations` (primary/alternatives/not_recommended), `follow_up[]`
 
-2. **Final brainstorm.md Update**: Executive summary, top ideas ranked, primary recommendation with rationale, alternative approaches, parked ideas, key insights, session statistics (rounds, ideas generated/survived, duration)
+2. **Final brainstorm.md Update**: Executive summary, top ideas ranked, primary recommendation with rationale, alternative approaches, parked ideas, key insights, session statistics (rounds, ideas generated/survived, duration), and finalize the `## Artifact Index` with relative links to all produced files (exploration-codebase.json, perspectives.json, synthesis.json, each ideas/*.md)
 
 3. **MANDATORY GATE: Next Step Selection** — workflow MUST NOT end without executing this step.
 
@@ -391,24 +441,64 @@ CONSTRAINTS: Don't force incompatible ideas together
    > **CRITICAL**: This AskUserQuestion is a **terminal gate**. The workflow is INCOMPLETE if this question is not asked. After displaying synthesis (step 2), you MUST immediately proceed here.
 
    Call AskUserQuestion (single-select, header: "Next Step"):
-   - **创建实施计划** (Recommended if top idea has high feasibility): "基于最佳创意启动 workflow-plan 制定实施计划"
-   - **创建Issue**: "将 Top 3 创意转化为 issue 进行跟踪管理"
+   - **创建实施计划** (Recommended if top idea has high feasibility): "基于最佳创意启动 workflow-lite-plan 制定实施计划"
+   - **产出Issue**: "将 Top 3 创意转化为 issue 进行跟踪管理"
    - **深入分析**: "对最佳创意启动 analyze-with-file 深入技术分析"
    - **完成**: "头脑风暴已足够，无需进一步操作"
 
    **Handle user selection**:
 
-   **"创建实施计划"** → MUST invoke Skill tool:
-   1. Build `taskDescription` from top idea in synthesis.json (title + description + next_steps)
-   2. Assemble context: `## Prior Brainstorm ({sessionId})` + summary + top idea details + key insights (up to 5)
-   3. **Invoke Skill tool immediately**:
-      ```javascript
-      Skill({ skill: "workflow-plan", args: `${taskDescription}\n\n${contextLines}` })
-      ```
-      If Skill invocation is omitted, the workflow is BROKEN.
+   **"创建实施计划"** → Build structured handoff & invoke lite-plan:
+
+   **Step A: Build Implementation Scope** from synthesis.json top ideas:
+   ```javascript
+   const synthesis = JSON.parse(Read(`${sessionFolder}/synthesis.json`))
+   const topIdeas = synthesis.top_ideas.filter(i => i.score >= 6).slice(0, 5)
+
+   const implScope = topIdeas.map(idea => ({
+     objective: idea.title,
+     rationale: idea.description,
+     priority: idea.score >= 8 ? 'high' : 'medium',
+     target_files: [],  // brainstorm has no specific file targets — lite-plan will explore
+     acceptance_criteria: idea.next_steps || [],
+     change_summary: idea.strengths?.join('; ') || idea.description
+   }))
+   ```
+
+   **Step B: Build Structured Handoff & Invoke Skill**:
+   ```javascript
+   const handoff = {
+     source: 'brainstorm-with-file',
+     session_id: sessionId,
+     session_folder: sessionFolder,
+     summary: synthesis.recommendations?.primary || synthesis.topic,
+     implementation_scope: implScope,
+     code_anchors: [],  // brainstorm has no code anchors — lite-plan will explore
+     key_files: [],
+     key_findings: synthesis.key_insights?.slice(0, 5) || [],
+     decision_context: []
+   }
+
+   const handoffBlock = `## Prior Brainstorm (${sessionId})
+
+\`\`\`json:handoff-spec
+${JSON.stringify(handoff, null, 2)}
+\`\`\`
+
+### Summary
+${synthesis.recommendations?.primary || synthesis.topic}
+
+### Implementation Scope
+${implScope.map((item, i) => `${i+1}. **${item.objective}** [${item.priority}]
+   - Done when: ${item.acceptance_criteria.join('; ')}
+   - Context: ${item.change_summary}`).join('\n')}`
+
+   Skill({ skill: "workflow-lite-plan", args: handoffBlock })
+   ```
+   If Skill invocation is omitted, the workflow is BROKEN.
    4. After Skill invocation, brainstorm-with-file is complete
 
-   **"创建Issue"** → Convert top ideas to issues:
+   **"产出Issue"** → Convert top ideas to issues:
    1. For each idea in synthesis.top_ideas (top 3):
       - Build issue JSON: `{title: idea.title, context: idea.description + '\n' + idea.next_steps.join('\n'), priority: idea.score >= 8 ? 2 : 3, source: 'brainstorm', labels: dimensions}`
       - Create via: `Skill({ skill: "issue:from-brainstorm", args: "${sessionFolder}/synthesis.json" })`
@@ -448,11 +538,11 @@ CONSTRAINTS: Don't force incompatible ideas together
 | system-architect | Claude | Architecture, patterns | 架构, architecture, system, 系统, design pattern |
 | product-manager | Gemini | Business value, roadmap | 产品, product, feature, 功能, roadmap |
 | ui-designer | Gemini | Visual design, interaction | UI, 界面, interface, visual, 视觉 |
-| ux-expert | Codex | User research, usability | UX, 体验, experience, user, 用户 |
+| ux-expert | Claude | User research, usability | UX, 体验, experience, user, 用户 |
 | data-architect | Claude | Data modeling, storage | 数据, data, database, 存储, storage |
-| test-strategist | Codex | Quality, testing | 测试, test, quality, 质量, QA |
+| test-strategist | Gemini | Quality, testing | 测试, test, quality, 质量, QA |
 | subject-matter-expert | Gemini | Domain knowledge | 领域, domain, industry, 行业, expert |
-| product-owner | Codex | Priority, scope | 优先, priority, scope, 范围, backlog |
+| product-owner | Claude | Priority, scope | 优先, priority, scope, 范围, backlog |
 | scrum-master | Gemini | Process, collaboration | 敏捷, agile, scrum, sprint, 迭代 |
 
 **Simple Perspectives** (fallback):
@@ -460,8 +550,8 @@ CONSTRAINTS: Don't force incompatible ideas together
 | Perspective | CLI Tool | Focus |
 |-------------|----------|-------|
 | creative | Gemini | Innovation, cross-domain |
-| pragmatic | Codex | Implementation, feasibility |
-| systematic | Claude | Architecture, structure |
+| pragmatic | Claude | Implementation, feasibility |
+| systematic | cli-explore-agent | Architecture, structure |
 
 **Selection Strategy**: Auto mode → top 3 professional roles | Manual mode → recommended roles + "Use simple perspectives" option | Continue mode → roles from previous session
 

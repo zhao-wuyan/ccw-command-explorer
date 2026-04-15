@@ -61,28 +61,27 @@ Get results from subagent (only way to retrieve results).
 
 ```javascript
 const result = wait_agent({
-  targets: [agentId],
   timeout_ms: 600000  // 10 minutes
 })
 
 if (result.timed_out) {
-  // Handle timeout - can use assign_task to prompt completion
+  // Handle timeout - can use followup_task to prompt completion
 }
 ```
 
-### assign_task
+### followup_task
 Assign new work to active subagent (for clarification or follow-up).
 
 ```javascript
-assign_task({
+followup_task({
   target: agentId,
-  items: [{ type: "text", text: `
+  message: `
 ## CLARIFICATION ANSWERS
 ${answers}
 
 ## NEXT STEP
 Continue with plan generation.
-` }]
+`
 })
 ```
 
@@ -90,7 +89,7 @@ Continue with plan generation.
 Clean up subagent resources (irreversible).
 
 ```javascript
-close_agent({ id: agentId })
+close_agent({ target: agentId })
 ```
 
 ---
@@ -570,11 +569,10 @@ Return findings as JSON with schema:
      })
 
      const exploreResult = wait_agent({
-       targets: [exploreAgentId],
-       timeout_ms: 120000
+       timeout_ms: 600000
      })
 
-     close_agent({ id: exploreAgentId })
+     close_agent({ target: exploreAgentId })
 
      if (exploreResult.status[exploreAgentId].completed) {
        codebaseContext = exploreResult.status[exploreAgentId].completed
@@ -662,11 +660,10 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
    })
 
    const decompositionResult = wait_agent({
-     targets: [decompositionAgentId],
-     timeout_ms: 300000  // 5 minutes for complex decomposition
+     timeout_ms: 600000  // 10 minutes for complex decomposition
    })
 
-   close_agent({ id: decompositionAgentId })
+   close_agent({ target: decompositionAgentId })
 
    if (!decompositionResult.status[decompositionAgentId].completed) {
      throw new Error('Decomposition agent failed to complete')

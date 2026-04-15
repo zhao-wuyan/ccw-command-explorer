@@ -101,11 +101,7 @@ Find ready tasks, spawn workers, STOP.
         spawn_agent({
           agent_type: "team_worker",
           task_name: taskId,  // e.g., "TEST-001" — enables named targeting
-          items: [{
-            description: "Spawn <role> worker for <task-id>",
-            team_name: "frontend-debug",
-            name: "<role>",
-            prompt: `## Role Assignment
+          message: `## Role Assignment
         role: <role>
         role_spec: ~  or <project>/.codex/skills/team-frontend-debug/roles/<role>/role.md
         session: <session-folder>
@@ -116,12 +112,11 @@ Find ready tasks, spawn workers, STOP.
 
         Read role_spec file to load Phase 2-4 domain instructions.
         Execute built-in Phase 1 -> role-spec Phase 2-4 -> built-in Phase 5.`
-          }]
         })
         ```
       - Add to active_workers
 5. Update session, output summary, STOP
-6. Use `wait_agent({ targets: [<spawned-task-names>], timeout_ms: 900000 })` to wait for callbacks. If `result.timed_out`, mark tasks as `timed_out` and close agents. Use `close_agent({ target: taskId })` with task_name for cleanup. Workers use `report_agent_job_result()` to send results back.
+6. Use `wait_agent({ timeout_ms: 900000 })` to wait for callbacks. If `result.timed_out`, mark tasks as `timed_out` and close agents. Use `close_agent({ target: taskId })` with task_name for cleanup. Workers use `report_agent_job_result()` to send results back.
 
 **Cross-Agent Supplementary Context** (v4):
 
@@ -131,12 +126,12 @@ When spawning workers in a later pipeline phase, send upstream results as supple
 // Example: Send analysis results to running fixer
 send_message({
   target: "<running-agent-task-name>",
-  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+  message: `## Supplementary Context\n${upstreamFindings}`
 })
 // Note: send_message queues info without interrupting the agent's current work
 ```
 
-Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
+Use `send_message` (not `followup_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
 
 ## handleComplete
 

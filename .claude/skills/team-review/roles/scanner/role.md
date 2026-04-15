@@ -61,6 +61,17 @@ Build prompt with target file patterns, toolchain dedup summary, and per-dimensi
 
 Execute via `ccw cli --tool gemini --mode analysis --rule analysis-review-code-quality` (fallback: qwen -> codex). Parse JSON array response, validate required fields (dimension, title, location.file), enforce per-dimension limit (max 5 each), filter minimum severity (medium+). Write `<session>/scan/semantic-findings.json`.
 
+### Tech Profile Scan
+
+After scanning, note any codebase characteristics relevant to review focus:
+
+1. Check scan findings → signals (`injection_risk`, `eval_usage`, `sql_detected`, `auth_detected`)
+2. Check code quality patterns → signals (`legacy_patterns`, `test_gap`, `perf_sensitive`)
+3. Include `tech_profile` in Phase 5 state_update data:
+   ```json
+   "tech_profile": { "signals": ["<detected>"], "evidence": { "<signal>": ["<files>"] } }
+   ```
+
 ## Phase 4: Aggregate & Output
 
 1. Merge toolchain + semantic findings, deduplicate (same file + line + dimension = duplicate)

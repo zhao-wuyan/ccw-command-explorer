@@ -116,4 +116,10 @@ export const DEPRECATED_COMMANDS: DeprecatedCommand[] = [
   { old: '/flow-create', newCmd: null, reason: '工作流模板创建功能已移除', deprecatedInVersion: 'v7.3' },
   { old: '/cli:cli-init', newCmd: null, reason: 'CLI 初始化功能已移除', deprecatedInVersion: 'v7.3' },
   { old: '/cli:codex-review', newCmd: '/review-cycle', reason: 'Codex 代码审查整合到统一审查流程', deprecatedInVersion: 'v7.3' },
+
+  // v7.3.6 废弃 - 命令清理
+  { old: '/workflow-skill', newCmd: '/ccw', reason: '技能快速启动功能整合到主入口 /ccw', deprecatedInVersion: 'v7.3.6' },
+  { old: '/chain-loader', newCmd: null, reason: 'Chain 技能生成器已移除', deprecatedInVersion: 'v7.3.6' },
+  { old: '/workflow:collaborative-plan-with-file', newCmd: null, reason: '协作式规划命令已移除', deprecatedInVersion: 'v7.3.6' },
+  { old: '/workflow:unified-execute-with-file', newCmd: null, reason: '通用执行引擎命令已移除', deprecatedInVersion: 'v7.3.6' },
 ];

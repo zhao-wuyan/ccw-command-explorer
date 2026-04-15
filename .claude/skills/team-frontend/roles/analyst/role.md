@@ -80,6 +80,14 @@ Retrieve design intelligence via ui-ux-pro-max skill integration.
 - `<session>/analysis/design-intelligence.json`
 - `<session>/analysis/requirements.md`
 
+### Tech Profile Scan
+
+After analysis, scan findings for context-aware trigger signals (based on detected codebase characteristics):
+
+1. Check detected_stack and dependencies → framework signals (`frontend_framework`, `api_surface`)
+2. Check codebase patterns → risk signals (`perf_sensitive`, `test_gap`, `legacy_patterns`)
+3. Include `tech_profile` in Phase 5 state_update data
+
 ## Phase 4: Self-Review
 
 | Check | Method | Pass Criteria |

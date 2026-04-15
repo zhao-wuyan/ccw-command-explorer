@@ -58,6 +58,14 @@ Execute profiling based on detected project type:
 - Rank top 3-5 bottlenecks by severity (Critical / High / Medium)
 - Record evidence: file paths, line numbers, measured values
 
+### Tech Profile Scan
+
+After profiling, scan findings for context-aware trigger signals (based on detected codebase characteristics):
+
+1. Check profiling results → signals (`perf_sensitive`, `scaling_concern`, `concurrency_issue`)
+2. Check code patterns found → risk signals (`sql_detected`, `realtime_detected`)
+3. Include `tech_profile` in Phase 5 state_update data
+
 ## Phase 4: Report Generation
 
 1. Write baseline metrics to `<session>/artifacts/baseline-metrics.json`:

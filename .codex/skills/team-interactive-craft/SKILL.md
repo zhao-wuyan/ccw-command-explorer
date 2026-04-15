@@ -1,7 +1,7 @@
 ---
 name: team-interactive-craft
 description: Unified team skill for interactive component crafting. Vanilla JS + CSS interactive components with zero dependencies. Research -> interaction design -> build -> a11y test. Uses team-worker agent architecture with roles/ for domain logic. Coordinator orchestrates pipeline with GC loops and sync points. Triggers on "team interactive craft", "interactive component".
-allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)
 ---
 
 # Team Interactive Craft
@@ -54,7 +54,7 @@ Before calling ANY tool, apply this check:
 
 | Tool Call | Verdict | Reason |
 |-----------|---------|--------|
-| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `followup_task` | ALLOWED | Orchestration |
 | `list_agents` | ALLOWED | Agent health check |
 | `request_user_input` | ALLOWED | User interaction |
 | `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
@@ -87,9 +87,8 @@ Coordinator spawns workers using this template:
 spawn_agent({
   agent_type: "team_worker",
   task_name: "<task-id>",
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: <role>
 role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
@@ -97,21 +96,20 @@ session_id: <session-id>
 requirement: <task-description>
 inner_loop: <true|false>
 
-Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.` },
+Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.
 
-    { type: "text", text: `## Task Context
+## Task Context
 task_id: <task-id>
 title: <task-title>
 description: <task-description>
-pipeline_phase: <pipeline-phase>` },
+pipeline_phase: <pipeline-phase>
 
-    { type: "text", text: `## Upstream Context
-<prev_context>` }
-  ]
+## Upstream Context
+<prev_context>`
 })
 ```
 
-After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
 
 
 ### Model Selection Guide
@@ -133,14 +131,11 @@ Researcher findings must reach interaction-designer via coordinator's upstream c
 spawn_agent({
   agent_type: "team_worker",
   task_name: "INTERACT-001",
-  fork_context: false,
-  items: [
-    ...,
-    { type: "text", text: `## Upstream Context
+  fork_turns: "none",
+  message: `## Upstream Context
 Research findings: <session>/research/interaction-inventory.json
 Browser API audit: <session>/research/browser-api-audit.json
-Pattern reference: <session>/research/pattern-reference.json` }
-  ]
+Pattern reference: <session>/research/pattern-reference.json`
 })
 ```
 
@@ -187,7 +182,7 @@ Pattern reference: <session>/research/pattern-reference.json` }
 | Intent | API | Example |
 |--------|-----|---------|
 | Queue supplementary info (don't interrupt) | `send_message` | Send research findings to running interaction-designer |
-| Assign build from reviewed blueprints | `assign_task` | Assign BUILD task after blueprint review |
+| Assign build from reviewed blueprints | `followup_task` | Assign BUILD task after blueprint review |
 | Check running agents | `list_agents` | Verify agent health during resume |
 
 ### Agent Health Check
@@ -204,8 +199,8 @@ const running = list_agents({})
 ### Named Agent Targeting
 
 Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
-- `send_message({ target: "INTERACT-001", items: [...] })` -- send research findings to interaction-designer
-- `assign_task({ target: "BUILD-001", items: [...] })` -- assign implementation from interaction blueprint
+- `send_message({ target: "INTERACT-001", message: "..." })` -- send research findings to interaction-designer
+- `followup_task({ target: "BUILD-001", message: "..." })` -- assign implementation from interaction blueprint
 - `close_agent({ target: "A11Y-001" })` -- cleanup after a11y audit
 
 ## Error Handling

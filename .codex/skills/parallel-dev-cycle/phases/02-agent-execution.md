@@ -409,7 +409,6 @@ const agents = {
 // Wait for all agents to complete
 console.log('Waiting for all agents...')
 const results = wait_agent({
-  targets: [agents.ra, agents.ep, agents.cd, agents.vas],
   timeout_ms: 1800000  // 30 minutes
 })
 ```
@@ -421,16 +420,16 @@ if (results.timed_out) {
   console.log('Some agents timed out, sending convergence request...')
   Object.entries(agents).forEach(([name, id]) => {
     if (!results.status[id].completed) {
-      assign_task({
+      followup_task({
         target: id,
-        items: [{ type: "text", text: `
+        message: `
 ## TIMEOUT NOTIFICATION
 
 Execution timeout reached. Please:
 1. Output current progress to markdown file
 2. Save all state updates
 3. Return completion status
-` }]
+`
       })
     }
   })

@@ -16,7 +16,7 @@ Search for similar patterns in the codebase to determine if the bug is isolated 
 | Source | Required | Description |
 |--------|----------|-------------|
 | investigation-report (phase 1) | Yes | Evidence, affected files, affected modules, initial diagnosis suspects |
-| assign_task message | Yes | Phase 2 instruction |
+| followup_task message | Yes | Phase 2 instruction |
 
 ## Execution Steps
 
@@ -80,7 +80,7 @@ For complex patterns that span many files, use inline-cli-analysis subagent:
 ```
 spawn_agent({
   task_name: "inline-cli-analysis",
-  fork_context: false,
+  fork_turns: "none",
   model: "haiku",
   reasoning_effort: "medium",
   message: `### MANDATORY FIRST STEPS
@@ -93,7 +93,7 @@ CONTEXT: @src/**/*.<ext> | Bug in <module>, pattern: <pattern_description>
 EXPECTED: List of all files with same pattern, risk assessment per occurrence (same_bug|potential_bug|safe)
 CONSTRAINTS: Focus on <antipattern> pattern only | Ignore test files for scope`
 })
-const patternResult = wait_agent({ targets: ["inline-cli-analysis"], timeout_ms: 180000 })
+const patternResult = wait_agent({ timeout_ms: 600000 })
 close_agent({ target: "inline-cli-analysis" })
 ```
 
@@ -147,7 +147,7 @@ pattern_analysis = {
 | module-wide | Note all occurrences for Phase 4 fix planning |
 | systemic | Note for potential multi-location fix; flag for separate tracking |
 
-Output Phase 2 summary and await assign_task for Phase 3.
+Output Phase 2 summary and await followup_task for Phase 3.
 
 ---
 

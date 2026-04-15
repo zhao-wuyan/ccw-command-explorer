@@ -115,11 +115,7 @@ Coordinator spawns workers using this template:
 \```
 spawn_agent({
   agent_type: "team_worker",
-  items: [{
-    description: "Spawn <role> worker",
-    team_name: <team-name>,
-    name: "<role>",
-    prompt: `## Role Assignment
+  message: `## Role Assignment
 role: <role>
 role_spec: .codex/skills/${teamConfig.skillName}/roles/<role>/role.md
 session: <session-folder>
@@ -130,7 +126,6 @@ inner_loop: <true|false>
 
 Read role_spec file to load Phase 2-4 domain instructions.
 Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).`
-  }]
 })
 \```
 ```

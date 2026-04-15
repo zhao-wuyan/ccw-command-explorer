@@ -1,7 +1,7 @@
 ---
 name: team-ux-improve
 description: Unified team skill for UX improvement. Systematically discovers and fixes UI/UX interaction issues including unresponsive buttons, missing feedback, and state refresh problems. Uses team-worker agent architecture with roles/ for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on "team ux improve".
-allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)
 ---
 
 # Team UX Improve
@@ -63,7 +63,7 @@ Before calling ANY tool, apply this check:
 
 | Tool Call | Verdict | Reason |
 |-----------|---------|--------|
-| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `followup_task` | ALLOWED | Orchestration |
 | `list_agents` | ALLOWED | Agent health check |
 | `request_user_input` | ALLOWED | User interaction |
 | `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
@@ -96,9 +96,8 @@ Coordinator spawns workers using this template:
 spawn_agent({
   agent_type: "team_worker",
   task_name: "<task-id>",
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: <role>
 role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
@@ -106,21 +105,20 @@ session_id: <session-id>
 requirement: <task-description>
 inner_loop: <true|false>
 
-Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.` },
+Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.
 
-    { type: "text", text: `## Task Context
+## Task Context
 task_id: <task-id>
 title: <task-title>
 description: <task-description>
-pipeline_phase: <pipeline-phase>` },
+pipeline_phase: <pipeline-phase>
 
-    { type: "text", text: `## Upstream Context
-<prev_context>` }
-  ]
+## Upstream Context
+<prev_context>`
 })
 ```
 
-After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
 
 
 ### Model Selection Guide
@@ -176,7 +174,7 @@ UX improvement has an explorer utility member and a scan-diagnose-design-impleme
 | Intent | API | Example |
 |--------|-----|---------|
 | Queue supplementary info (don't interrupt) | `send_message` | Send explorer findings to running scanner |
-| Assign implementation from design | `assign_task` | Assign IMPL task from designer output |
+| Assign implementation from design | `followup_task` | Assign IMPL task from designer output |
 | Check running agents | `list_agents` | Verify agent health during resume |
 
 ### Agent Health Check
@@ -193,8 +191,8 @@ const running = list_agents({})
 ### Named Agent Targeting
 
 Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
-- `send_message({ target: "SCAN-001", items: [...] })` -- send explorer findings to scanner
-- `assign_task({ target: "IMPL-001", items: [...] })` -- assign UX fix from designer output
+- `send_message({ target: "SCAN-001", message: "..." })` -- send explorer findings to scanner
+- `followup_task({ target: "IMPL-001", message: "..." })` -- assign UX fix from designer output
 - `close_agent({ target: "TEST-001" })` -- cleanup after UX testing
 
 ### Explorer-Assisted Scanning
@@ -204,12 +202,10 @@ Coordinator spawns explorer (utility member) early to gather codebase context, t
 // Explorer results inform scanner's scope
 send_message({
   target: "SCAN-001",
-  items: [
-    { type: "text", text: `## Explorer Findings
+  message: `## Explorer Findings
 component_patterns: <explorer's component inventory>
 framework: <detected framework>
-ui_library: <detected UI library>` }
-  ]
+ui_library: <detected UI library>`
 })
 ```
 

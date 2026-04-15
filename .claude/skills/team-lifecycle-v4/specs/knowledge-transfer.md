@@ -53,7 +53,12 @@ Sent via `team_msg(type="state_update")` on task completion.
   "files_modified": [
     "path/to/file.ts"
   ],
-  "verification": "self-validated | peer-reviewed | tested"
+  "verification": "self-validated | peer-reviewed | tested",
+  "tech_profile": {
+    "signals": [],
+    "evidence": {},
+    "confidence": "medium"
+  }
 }
 ```
 
@@ -63,6 +68,7 @@ Sent via `team_msg(type="state_update")` on task completion.
 - `decisions`: Include rationale, not just the choice
 - `files_modified`: Only for implementation tasks
 - `verification`: One of `self-validated`, `peer-reviewed`, `tested`
+- `tech_profile`: Optional. Codebase signals for context-aware specialist injection. See `skills_lib/specs/detected codebase signals`
 
 **Supervisor-specific extensions** (CHECKPOINT tasks only):
 

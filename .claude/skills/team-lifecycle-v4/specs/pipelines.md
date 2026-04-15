@@ -107,19 +107,34 @@ PLAN-001 outputs a complexity assessment that determines the impl topology.
 | TEST-001 | tester | validation | IMPL-* | - | P0 |
 | REVIEW-001 | reviewer | review | IMPL-* | - | P0 |
 
-## 8. Dynamic Specialist Injection
+## 8. Context-Aware Specialist Injection
 
-When task content or user request matches trigger keywords, inject a specialist task.
+Specialists are injected based on **codebase signals** detected by explorer/analyst/planner workers, not keyword matching. The coordinator evaluates signals emitted in worker state updates against a trigger matrix to determine when specialist roles are needed.
 
-| Trigger Keywords | Specialist Role | Task Prefix | Priority | Insert After |
-|------------------|----------------|-------------|----------|--------------|
-| security, vulnerability, OWASP | security-expert | SECURITY-* | P0 | PLAN |
-| performance, optimization, latency | performance-optimizer | PERF-* | P1 | IMPL |
-| data, pipeline, ETL, migration | data-engineer | DATA-* | P0 | parallel with IMPL |
-| devops, CI/CD, deployment, infra | devops-engineer | DEVOPS-* | P1 | IMPL |
-| ML, model, training, inference | ml-engineer | ML-* | P0 | parallel with IMPL |
+### Signal Flow
 
-**Injection rules**:
-- Specialist tasks inherit the session context and wisdom
+```
+analyst (RESEARCH-001) emits tech_profile in state_update
+  → coordinator evaluateSpecialistInjection (in handleCallback)
+  → signal combination matches trigger matrix
+  → P0: TaskCreate blocking downstream | P1: TaskCreate parallel with REVIEW/TEST
+```
+
+### Common Trigger Examples
+
+| Signal Combination | Specialist | Priority |
+|-------------------|-----------|----------|
+| `sql_detected` + `auth_detected` | security-expert (SECURITY-*) | P0 |
+| `perf_sensitive` + `scaling_concern` | performance-optimizer (PERF-*) | P0 |
+| `ml_detected` | ml-engineer (ML-*) | P0 |
+| `data_migration` | data-engineer (DATA-*) | P0 |
+| `devops_detected` + CI config changes | devops-engineer (DEVOPS-*) | P1 |
+
+
+
+### Injection Rules
+
+- Specialist tasks inherit session context and wisdom
 - They publish state_update on completion like any other task
 - P0 specialists block downstream tasks; P1 run in parallel
+- Same specialist is only injected once per session (dedup)

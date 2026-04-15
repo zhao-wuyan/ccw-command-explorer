@@ -85,6 +85,14 @@ CONSTRAINTS: Focus on issue context | Write output to <session>/explorations/con
 }
 ```
 
+### Tech Profile Scan
+
+After exploration, scan findings for context-aware trigger signals (based on detected codebase characteristics):
+
+1. Check relevant_files and dependencies → signals (`sql_detected`, `auth_detected`, `api_surface`)
+2. Check code patterns in explored files → risk signals (`injection_risk`, `eval_usage`, `perf_sensitive`)
+3. Include `tech_profile` in Phase 5 state_update data
+
 ## Phase 4: Context Report & Wisdom Contribution
 
 1. Write context report to `<session>/explorations/context-<issueId>.json`

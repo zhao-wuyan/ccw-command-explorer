@@ -120,6 +120,14 @@ Write `<session>/evidence/evidence-summary.json`:
 }
 ```
 
+### Tech Profile Scan
+
+After reproduction, note any frontend-specific codebase characteristics:
+
+1. Check reproduction findings → signals (`frontend_framework`, `perf_sensitive`, `realtime_detected`)
+2. Check code patterns → signals (`legacy_patterns`, `test_gap`)
+3. Include `tech_profile` in Phase 5 state_update data
+
 ## Phase 4: Report
 
 1. Write evidence summary to session evidence/

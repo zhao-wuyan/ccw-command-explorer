@@ -28,6 +28,26 @@
             "command": "ccw memory consolidate --threshold 50"
           }
         ]
+      },
+      {
+        "_templateId": "ccw-coordinator-tracker",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ccw hook template exec ccw-coordinator-tracker --stdin"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "_templateId": "ccw-coordinator-skill-context",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ccw hook template exec ccw-coordinator-skill-context --stdin"
+          }
+        ]
       }
     ]
   }

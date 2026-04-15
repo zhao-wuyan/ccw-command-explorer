@@ -61,6 +61,32 @@ Receive callback from [<role>]
 
 Read-only status report. No advancement.
 
+**Worker Progress** (from message bus):
+
+Before generating status output, read worker milestones:
+
+```javascript
+const progressMsgs = mcp__ccw-tools__team_msg({
+  operation: "list", session_id: sessionId, type: "progress", last: 50
+})
+const blockerMsgs = mcp__ccw-tools__team_msg({
+  operation: "list", session_id: sessionId, type: "blocker", last: 10
+})
+
+// Aggregate latest milestone per task
+const taskProgress = {}
+for (const msg of (progressMsgs.result?.messages || [])) {
+  const tid = msg.data?.task_id
+  if (tid && (!taskProgress[tid] || msg.ts > taskProgress[tid].ts)) {
+    taskProgress[tid] = { phase: msg.data.phase, pct: msg.data.progress_pct, ts: msg.ts }
+  }
+}
+```
+
+Include in status output:
+- Per-worker latest milestone (phase + progress_pct) next to task status
+- Active blockers section (if any blockerMsgs found)
+
 ```
 [coordinator] PlanEx Pipeline Status
 [coordinator] Progress: <completed>/<total> (<percent>%)
@@ -131,7 +157,13 @@ session_id: <session-id>
 team_name: <team-name>
 requirement: <task-description>
 inner_loop: true
-execution_method: <method>`
+execution_method: <method>
+
+## Progress Milestones
+session_id: <session-id>
+Report progress via team_msg at natural phase boundaries (context loaded -> core work done -> verification).
+Report blockers immediately via team_msg type="blocker".
+Report completion via team_msg type="task_complete" after final SendMessage.`
          })
       +- Add to session.active_workers
       Update session -> output summary -> STOP

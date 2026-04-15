@@ -73,7 +73,7 @@ Write(`${projectRoot}/.workflow/.cycle/${cycleId}.json`, JSON.stringify(state, n
 ```javascript
 Object.values(agents).forEach(id => {
   try {
-    close_agent({ id })
+    close_agent({ target: id })
   } catch (e) {
     console.warn(`Failed to close agent ${id}`)
   }

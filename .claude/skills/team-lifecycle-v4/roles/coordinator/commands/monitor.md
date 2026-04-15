@@ -31,6 +31,15 @@ Worker completed. Process and advance.
 4. Completion -> mark task done
    - Resident agent (supervisor) -> keep in active_workers (stays alive for future checkpoints)
    - Standard worker -> remove from active_workers
+4.5. **evaluateSpecialistInjection** (based on detected codebase characteristics):
+   - If callback from analyst, planner, or executor role:
+     a. `get_state(role=<callback_role>)` → extract `tech_profile.signals`
+     b. Merge with previously collected signals from other roles
+     c. Evaluate against trigger matrix (§4)
+     d. P0 matches → TaskCreate with blockedBy on current stage, blocks downstream
+     e. P1 matches → TaskCreate parallel with REVIEW/TEST stage
+     f. Log: `team_msg(type="specialist_injection", data={ specialist, signals, priority, evidence })`
+     g. Dedup: skip if same specialist already injected this session
 5. Check for checkpoints:
    - CHECKPOINT-* with verdict "block" -> AskUserQuestion: Override / Revise upstream / Abort
    - CHECKPOINT-* with verdict "warn" -> log risks to wisdom, proceed normally
@@ -62,6 +71,32 @@ When PLAN-001 completes, coordinator creates IMPL tasks based on complexity:
 ## handleCheck
 
 Read-only status report, then STOP.
+
+**Worker Progress** (from message bus):
+
+Before generating status output, read worker milestones:
+
+```javascript
+const progressMsgs = mcp__ccw-tools__team_msg({
+  operation: "list", session_id: sessionId, type: "progress", last: 50
+})
+const blockerMsgs = mcp__ccw-tools__team_msg({
+  operation: "list", session_id: sessionId, type: "blocker", last: 10
+})
+
+// Aggregate latest milestone per task
+const taskProgress = {}
+for (const msg of (progressMsgs.result?.messages || [])) {
+  const tid = msg.data?.task_id
+  if (tid && (!taskProgress[tid] || msg.ts > taskProgress[tid].ts)) {
+    taskProgress[tid] = { phase: msg.data.phase, pct: msg.data.progress_pct, ts: msg.ts }
+  }
+}
+```
+
+Include in status output:
+- Per-worker latest milestone (phase + progress_pct) next to task status
+- Active blockers section (if any blockerMsgs found)
 
 Output:
 ```

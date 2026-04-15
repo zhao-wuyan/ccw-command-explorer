@@ -1,7 +1,7 @@
 ---
 name: team-perf-opt
 description: Unified team skill for performance optimization. Coordinator orchestrates pipeline, workers are team-worker agents. Supports single/fan-out/independent parallel modes. Triggers on "team perf-opt".
-allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__team_msg(*)
 ---
 
 # Team Performance Optimization
@@ -65,7 +65,7 @@ Before calling ANY tool, apply this check:
 
 | Tool Call | Verdict | Reason |
 |-----------|---------|--------|
-| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `followup_task` | ALLOWED | Orchestration |
 | `list_agents` | ALLOWED | Agent health check |
 | `request_user_input` | ALLOWED | User interaction |
 | `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
@@ -98,9 +98,8 @@ Coordinator spawns workers using this template:
 spawn_agent({
   agent_type: "team_worker",
   task_name: "<task-id>",
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: <role>
 role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
@@ -108,21 +107,20 @@ session_id: <session-id>
 requirement: <task-description>
 inner_loop: <true|false>
 
-Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.` },
+Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.
 
-    { type: "text", text: `## Task Context
+## Task Context
 task_id: <task-id>
 title: <task-title>
 description: <task-description>
-pipeline_phase: <pipeline-phase>` },
+pipeline_phase: <pipeline-phase>
 
-    { type: "text", text: `## Upstream Context
-<prev_context>` }
-  ]
+## Upstream Context
+<prev_context>`
 })
 ```
 
-After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
 
 **Inner Loop roles** (optimizer): Set `inner_loop: true`.
 **Single-task roles** (profiler, strategist, benchmarker, reviewer): Set `inner_loop: false`.
@@ -140,16 +138,16 @@ Performance optimization is measurement-driven. Profiler and benchmarker need co
 | benchmarker | medium | Benchmark execution follows defined measurement plan |
 | reviewer | high | Must verify optimizations don't introduce regressions |
 
-### Benchmark Context Sharing with fork_context
+### Benchmark Context Sharing with fork_turns
 
 For before/after comparison, benchmarker should share context with profiler's baseline:
 ```
 spawn_agent({
   agent_type: "team_worker",
   task_name: "BENCH-001",
-  fork_context: true,   // Share context so benchmarker sees profiler's baseline metrics
+  fork_turns: "all",   // Share context so benchmarker sees profiler's baseline metrics
   reasoning_effort: "medium",
-  items: [...]
+  message: "..."
 })
 ```
 
@@ -191,7 +189,7 @@ spawn_agent({
 | Intent | API | Example |
 |--------|-----|---------|
 | Queue supplementary info (don't interrupt) | `send_message` | Send baseline metrics to running optimizer |
-| Assign fix after benchmark regression | `assign_task` | Assign FIX task when benchmark shows regression |
+| Assign fix after benchmark regression | `followup_task` | Assign FIX task when benchmark shows regression |
 | Check running agents | `list_agents` | Verify agent health during resume |
 
 ### Agent Health Check
@@ -208,8 +206,8 @@ const running = list_agents({})
 ### Named Agent Targeting
 
 Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
-- `send_message({ target: "IMPL-001", items: [...] })` -- send strategy details to optimizer
-- `assign_task({ target: "IMPL-001", items: [...] })` -- assign fix after benchmark regression
+- `send_message({ target: "IMPL-001", message: "..." })` -- send strategy details to optimizer
+- `followup_task({ target: "IMPL-001", message: "..." })` -- assign fix after benchmark regression
 - `close_agent({ target: "BENCH-001" })` -- cleanup after benchmarking completes
 
 ### Baseline-to-Result Pipeline

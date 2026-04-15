@@ -2,7 +2,7 @@
 name: spec-setup
 description: Initialize project-level state and configure specs via interactive questionnaire.
 argument-hint: "[--regenerate] [--skip-specs] [--reset]"
-allowed-tools: spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: spawn_agent, wait_agent, send_message, followup_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Workflow Spec Setup Command
@@ -184,16 +184,16 @@ Project root: ${projectRoot}
   })
 
   // Wait for completion
-  const result = wait_agent({ targets: [exploreAgent], timeout_ms: 600000 })
+  const result = wait_agent({ timeout_ms: 600000 })
 
   if (result.timed_out) {
-    assign_task({ target: exploreAgent, items: [{ type: "text", text: "Complete analysis now and write project-tech.json." }] })
-    const retry = wait_agent({ targets: [exploreAgent], timeout_ms: 300000 })
+    followup_task({ target: exploreAgent, message: "Complete analysis now and write project-tech.json." })
+    const retry = wait_agent({ timeout_ms: 600000 })
     if (retry.timed_out) throw new Error('Agent timeout')
   }
 
 } finally {
-  if (exploreAgent) close_agent({ id: exploreAgent })
+  if (exploreAgent) close_agent({ target: exploreAgent })
 }
 ```
 

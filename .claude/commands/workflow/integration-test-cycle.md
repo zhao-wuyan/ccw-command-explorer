@@ -27,7 +27,7 @@ When `--yes` or `-y`: Auto-confirm exploration decisions, use recommended test s
 /workflow:integration-test-cycle --max-iterations=15 "API网关集成测试"
 ```
 
-**Context Source**: cli-explore-agent + Gemini/Codex analysis
+**Context Source**: cli-explore-agent + Gemini/Claude analysis
 **Output Directory**: `.workflow/.integration-test/{session-id}/`
 **Core Innovation**: Reflection-driven self-iterating test cycle with documented learning evolution
 
@@ -152,7 +152,13 @@ Unified integration test workflow: **Explore → Design → Develop → Test →
 - **Mode**: {new|continue}
 - **Max Iterations**: {maxIterations}
 
+## Original Test Intent
+- {parsed test goals from user input — e.g., "verify auth→payment integration", "cover error propagation"}
+
 ---
+
+## Current Understanding
+> To be populated after exploration. (Replaced each phase — NOT appended)
 
 ## Phase 2: Exploration
 > Pending...
@@ -169,8 +175,39 @@ Unified integration test workflow: **Explore → Design → Develop → Test →
 ## Cumulative Learnings
 > Updated after each iteration...
 
+## Intent Coverage
+> Tracks which original test intents are addressed. Updated after design + each iteration.
+
 ## Conclusions
 > Final synthesis after completion...
+```
+
+### Decision Recording Protocol
+
+**CRITICAL**: Record immediately when any of these occur:
+
+| Trigger | What to Record | Format |
+|---------|---------------|--------|
+| **Strategy selection** | Which strategy, why, alternatives considered | Decision Record |
+| **Test design choice** | Mocking approach, boundary selection, scenario priority | Decision Record |
+| **Strategy adjustment** | Old → new strategy, trigger (stuck tests, regression) | Decision Record |
+| **Assumption correction** | Old assumption → new understanding, evidence | Assumption Record |
+
+**Decision Record Format**:
+```markdown
+> **Decision**: [Description]
+> - **Context**: [Trigger]
+> - **Options considered**: [Alternatives]
+> - **Chosen**: [Approach] — **Reason**: [Rationale]
+> - **Impact**: [Effect on test strategy]
+```
+
+**Assumption Record Format**:
+```markdown
+> **Corrected Assumption**: ~~[old]~~ → [new]
+> - **Discovered**: Iteration {N}
+> - **Evidence**: [test failure, code reading]
+> - **Impact**: [what changed in strategy/tests]
 ```
 
 **Initialize state.json**:
@@ -373,8 +410,29 @@ Also set `state.json.phase` to `"designed"`.
 - **Mocking Approach**: {minimal|moderate|heavy}
 
 ### Design Decisions
-> **Decision**: {mocking strategy choice}
+
+> **Decision**: Mocking strategy — {minimal|moderate|heavy}
+> - **Context**: {N} integration points, {existing test patterns}
+> - **Options considered**: {minimal (real services) / moderate (mock external only) / heavy (mock all boundaries)}
 > - **Chosen**: {approach} — **Reason**: {rationale}
+> - **Impact**: {effect on test reliability vs speed}
+
+> **Decision**: Scenario prioritization
+> - **Context**: {N} scenarios identified, limited iteration budget
+> - **Options considered**: {risk-first / coverage-first / dependency-order}
+> - **Chosen**: {approach} — **Reason**: {rationale}
+> - **Impact**: {execution order, which boundaries tested first}
+
+### Initial Intent Coverage Check
+
+```markdown
+#### Intent Coverage Check (Post-Design)
+- ✅ {test intent 1}: Covered by scenarios IS-001, IS-002
+- 🔄 {test intent 2}: Partially covered, depends on execution
+- ❌ {test intent 3}: Not addressed by current design — may need additional scenarios
+```
+
+If ❌ items exist → surface to user before starting Phase 4.
 
 ### User Feedback
 - {user_adjustment_if_any}
@@ -534,6 +592,22 @@ Each iteration appends one section directly into reflection-log.md (no separate 
 **Assumed vs Reality**: {gap description}
 **Learned**: {key takeaway}
 **Next Action**: {strategy adjustment or specific fix plan}
+
+**Narrative Synthesis**:
+**起点**: 基于 {prior iteration outcome/baseline}，本轮从 {starting point} 切入。
+**关键进展**: {fix changes} {confirmed/refuted/modified} 了关于 {assumption} 的理解。
+**决策影响**: {strategy choice} 导致 pass rate {delta}，{impact on remaining failures}。
+**当前理解**: 经过本轮，测试健康度 {improved/unchanged/regressed}，核心认知更新为 {updated understanding}。
+```
+
+**Record Decision** (using Decision Recording Protocol):
+
+```markdown
+> **Decision**: Strategy {strategy} for iteration {N}
+> - **Context**: Pass rate {X}%, {N} failures, stuck tests: {list}
+> - **Options considered**: {conservative / aggressive / surgical / reflective}
+> - **Chosen**: {strategy} — **Reason**: {rationale}
+> - **Impact**: {effect on next iteration approach}
 ```
 
 #### state.json Iteration Update
@@ -600,6 +674,45 @@ After each iteration, update the `## Cumulative Learnings` section in reflection
 ### Recurring Patterns
 - {pattern}: root cause {cause}
 ```
+
+#### Current Understanding Update
+
+After each iteration, replace the `## Current Understanding` block in reflection-log.md:
+
+```markdown
+## Current Understanding (Updated: Iteration {N})
+
+### Test Health
+- **Pass Rate**: {X}% ({passed}/{total})
+- **Trend**: {improving/stagnant/regressing} over last {N} iterations
+- **Critical Failures**: {N} high-criticality tests still failing
+
+### Integration Landscape
+- **Verified Boundaries**: {boundaries confirmed working}
+- **Problematic Boundaries**: {boundaries with persistent failures}
+- **Mock Accuracy**: {where mocks diverge from reality}
+
+### Next Priority
+- **Focus**: {specific test/boundary to fix next}
+- **Strategy**: {selected strategy and rationale}
+```
+
+#### Intent Drift Check (Iteration ≥ 2)
+
+After updating Current Understanding, check original test intent:
+
+```markdown
+#### Intent Drift Check (Iteration {N})
+Compare current test focus vs Original Test Intent:
+- ✅ {intent 1}: Actively being tested (IS-001, IS-003)
+- 🔄 {intent 2}: Covered but tests still failing
+- ⚠️ {intent 3}: Drifted — fix cycle focused on {tangent}, original intent not progressing
+- ❌ {intent 4}: Not yet addressed by any test scenario
+```
+
+If ⚠️ or ❌ items exist:
+- Log as Assumption Record: "Test focus drifted from {original intent} toward {current focus}"
+- Adjust next iteration to re-prioritize uncovered intents
 
 #### Agent Invocations
 
@@ -776,16 +889,43 @@ Also set `state.json.phase` to `"completed"`.
 ### Key Insights
 - {insight with impact on future testing}
 
+### Intent Coverage Matrix
+| # | Original Test Intent | Status | Addressed By | Notes |
+|---|---------------------|--------|--------------|-------|
+| 1 | {intent} | ✅ Covered | IS-001, IS-003 | All tests passing |
+| 2 | {intent} | 🔀 Transformed | IS-002 | Original: X → Final: Y |
+| 3 | {intent} | ⚠️ Partial | IS-004 | Tests exist but still failing |
+| 4 | {intent} | ❌ Missed | — | Reason |
+
 ### Decision Trail
 | Phase/Iteration | Decision | Outcome |
 |-----------------|----------|---------|
 | Exploration | Focus on {boundaries} | Found {N} integration points |
+| Design | {mocking strategy} | {N} scenarios, {approach} |
 | Iteration 1 | Conservative single fix | Pass rate: {X}% |
+| Iteration N | {strategy chosen} | Pass rate: {X}% → {Y}% |
 | ... | ... | ... |
 
 ### Recommendations
 - {codebase improvement}
 - {test maintenance}
+```
+
+5. **Update Current Understanding (Final)** — replace `## Current Understanding` block:
+
+```markdown
+## Current Understanding (Final)
+
+### What We Verified
+- {confirmed integration behaviors and contracts}
+
+### What Was Corrected
+- ~~{old assumption}~~ → {corrected understanding} (Iteration {N})
+
+### Integration Health Assessment
+- **Boundaries Tested**: {N}/{total} integration points
+- **Pass Rate Journey**: {initial}% → {final}%
+- **Confidence**: {high/medium/low} — {rationale}
 ```
 
 3. **Post-Completion Options** (AskUserQuestion)
@@ -827,14 +967,14 @@ AskUserQuestion({
 | Scenario | Action |
 |----------|--------|
 | cli-explore-agent fails | Fallback to manual exploration via Grep/Glob |
-| CLI analysis timeout | Fallback: Gemini → Qwen → Codex → manual |
+| CLI analysis timeout | Fallback: Gemini → Claude → manual |
 | Test execution crash | Log error, retry with simplified test subset |
 | Max iterations reached | Generate failure report with full reflection history |
 | Regression detected | Rollback via git revert, switch to surgical strategy |
 | Stuck tests (3+ iterations) | Switch to reflective strategy, challenge assumptions |
 | All CLI tools fail | Pattern match from state.json.fix_history, notify user |
 
-**CLI Fallback Chain**: Gemini → Qwen → Codex
+**CLI Fallback Chain**: Gemini → Claude
 
 Triggers: Invalid JSON output, confidence < 0.4, HTTP 429/timeout, analysis < 100 words, same root cause 3+ times.
 

@@ -174,7 +174,6 @@ ${getDimensionGuidance(dimension)}
 
 // Step 2: Batch wait for all 7 agents
 const reviewResults = wait_agent({
-  targets: reviewAgents,
   timeout_ms: 3600000  // 60 minutes
 });
 
@@ -193,7 +192,7 @@ reviewAgents.forEach((agentId, index) => {
 });
 
 // Step 4: Cleanup all agents
-reviewAgents.forEach(id => close_agent({ id }));
+reviewAgents.forEach(id => close_agent({ target: id }));
 ```
 
 ### Session Mode
@@ -297,7 +296,6 @@ ${getDimensionGuidance(dimension)}
 
 // Step 2: Batch wait for all 7 agents
 const reviewResults = wait_agent({
-  targets: reviewAgents,
   timeout_ms: 3600000  // 60 minutes
 });
 
@@ -316,7 +314,7 @@ reviewAgents.forEach((agentId, index) => {
 });
 
 // Step 4: Cleanup all agents
-reviewAgents.forEach(id => close_agent({ id }));
+reviewAgents.forEach(id => close_agent({ target: id }));
 ```
 
 ## Deep-Dive Agent Invocation Template
@@ -408,12 +406,11 @@ Then apply **Deep Scan mode** for semantic analysis:
 
 // Wait for completion
 const deepDiveResult = wait_agent({
-  targets: [deepDiveAgentId],
   timeout_ms: 2400000  // 40 minutes
 });
 
 // Cleanup
-close_agent({ id: deepDiveAgentId });
+close_agent({ target: deepDiveAgentId });
 ```
 
 ## Dimension Guidance Reference

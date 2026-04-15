@@ -131,7 +131,27 @@ Extract `task_id` and `scope` from the message content.
 TaskUpdate({ taskId: "<task_id>", status: "in_progress" })
 ```
 
-### Step 3: Incremental Context Load
+### Step 3: Read Worker Progress (Optional)
+
+Optionally read worker progress milestones from team_msg for risk assessment:
+
+```javascript
+const progressMsgs = mcp__ccw-tools__team_msg({
+  operation: "list",
+  session_id: "<session_id>",
+  type: "progress",
+  last: 50
+})
+const blockerMsgs = mcp__ccw-tools__team_msg({
+  operation: "list",
+  session_id: "<session_id>",
+  type: "blocker",
+  last: 10
+})
+// Use progress data to assess worker health and identify stalled tasks
+```
+
+### Step 4: Incremental Context Load
 
 Only load data that's NEW since last wake (or since init if first wake):
 
@@ -144,20 +164,20 @@ Only load data that's NEW since last wake (or since init if first wake):
 
 **Efficiency rule**: Skip re-reading artifacts already in context_accumulator. Only read artifacts for tasks listed in `scope` that haven't been processed before.
 
-### Step 4: Execute Checks
+### Step 5: Execute Checks
 
 Follow the checkpoint-specific instructions in role_spec body (Phase 3 section). Each checkpoint type defines its own check matrix.
 
-### Step 5: Write Report
+### Step 6: Write Report
 
 Write to `<session>/artifacts/CHECKPOINT-NNN-report.md` (format defined in role_spec Phase 4).
 
-### Step 6: Complete Task
+### Step 7: Complete Task
 ```javascript
 TaskUpdate({ taskId: "<task_id>", status: "completed" })
 ```
 
-### Step 7: Publish State
+### Step 8: Publish State
 ```javascript
 mcp__ccw-tools__team_msg({
   operation: "log",
@@ -177,7 +197,7 @@ mcp__ccw-tools__team_msg({
 })
 ```
 
-### Step 8: Accumulate Context
+### Step 9: Accumulate Context
 ```
 context_accumulator.append({
   task: "<CHECKPOINT-NNN>",
@@ -190,7 +210,7 @@ context_accumulator.append({
 })
 ```
 
-### Step 9: Report to Coordinator
+### Step 10: Report to Coordinator
 ```javascript
 SendMessage({
   to: "coordinator",
@@ -199,7 +219,7 @@ SendMessage({
 })
 ```
 
-### Step 10: Go Idle
+### Step 11: Go Idle
 Turn ends. Wait for next checkpoint request or shutdown.
 
 ---

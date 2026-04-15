@@ -57,6 +57,7 @@ def get_claude_commands() -> Set[str]:
 # 排除列表：这些技能是同步工具本身，不应被检测
 EXCLUDED_SKILLS = {
     'ccw-wiki-sync',  # 百科同步技能，不应出现在百科数据中
+    'gitnexus', # 非百科命令
 }
 
 def get_claude_skills() -> Set[str]:

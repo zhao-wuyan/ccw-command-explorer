@@ -58,6 +58,14 @@ After all perspectives complete:
 - Compare against known defect patterns from .msg/meta.json
 - Rank by severity: critical > high > medium > low
 
+### Tech Profile Scan
+
+After scanning, emit context-aware trigger signals (based on detected codebase characteristics):
+
+1. Check scan findings → signals (`sql_detected`, `auth_detected`, `injection_risk`, `eval_usage`)
+2. Check quality issues → risk signals (`test_gap`, `legacy_patterns`, `perf_sensitive`)
+3. Include `tech_profile` in Phase 5 state_update data
+
 ## Phase 4: Result Aggregation
 
 1. Build `discoveredIssues` array from critical + high findings (with id, severity, perspective, file, line, description)

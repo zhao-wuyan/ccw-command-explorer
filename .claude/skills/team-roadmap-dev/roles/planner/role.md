@@ -62,6 +62,14 @@ Research and plan creation per roadmap phase. Gathers codebase context via CLI e
 4. CLI tool produces: `IMPL_PLAN.md`, `.task/IMPL-*.json`, `TODO_LIST.md`
 5. If gap closure: only create tasks for gaps, starting from next available ID
 
+### Tech Profile Scan
+
+After plan creation, emit context-aware trigger signals (based on detected codebase characteristics):
+
+1. Check plan scope → signals (`data_migration`, `breaking_change`, `scaling_concern`)
+2. Check tech stack from exploration → signals (`sql_detected`, `auth_detected`, `ml_detected`)
+3. Include `tech_profile` in Phase 5 state_update data
+
 ## Phase 4: Self-Validation
 
 | Check | Pass Criteria | Action on Failure |

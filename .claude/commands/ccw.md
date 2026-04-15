@@ -121,48 +121,187 @@ function analyzeIntent(input) {
     clarity_score: calculateClarity(input)  // 0-3 (>=2 = clear)
   };
 }
+```
 
-// Task type detection (priority order)
-function detectTaskType(text) {
-  const patterns = {
-    'bugfix-hotfix': /urgent|production|critical/ && /fix|bug/,
-    // With-File workflows (documented exploration → auto chain to lite-plan)
-    // 0→1 Greenfield detection (priority over brainstorm/roadmap)
-    'greenfield': /从零开始|from scratch|0.*to.*1|greenfield|全新.*开发|新项目|new project|build.*from.*ground/,
-    'brainstorm': /brainstorm|ideation|头脑风暴|创意|发散思维|creative thinking|multi-perspective.*think|compare perspectives|探索.*可能/,
-    'brainstorm-to-issue': /brainstorm.*issue|头脑风暴.*issue|idea.*issue|想法.*issue|从.*头脑风暴|convert.*brainstorm/,
-    'debug-file': /debug.*document|hypothesis.*debug|troubleshoot.*track|investigate.*log|调试.*记录|假设.*验证|systematic debug|深度调试/,
-    'analyze-file': /analyze.*document|explore.*concept|understand.*architecture|investigate.*discuss|collaborative analysis|分析.*讨论|深度.*理解|协作.*分析/,
-    'collaborative-plan': /collaborative.*plan|协作.*规划|多人.*规划|multi.*agent.*plan|Plan Note|分工.*规划/,
-    'roadmap': /roadmap|路线.*图/,  // Narrowed: only explicit roadmap keywords (需求规划/需求拆解 moved to greenfield routing)
-    'spec-driven': /spec.*gen|specification|PRD|产品需求|产品文档|产品规格/,
-    // Cycle workflows (self-iterating with reflection)
-    'integration-test': /integration.*test|集成测试|端到端.*测试|e2e.*test|integration.*cycle/,
-    'refactor': /refactor|重构|tech.*debt|技术债务/,
-    // Team workflows (kept: team-planex only)
-    'team-planex': /team.*plan.*exec|team.*planex|团队.*规划.*执行|并行.*规划.*执行|wave.*pipeline/,
-    // Standard workflows
-    'multi-cli': /multi.*cli|多.*CLI|多模型.*协作|multi.*model.*collab/,
-    'bugfix': /fix|bug|error|crash|fail|debug/,
-    'issue-batch': /issues?|batch/ && /fix|resolve/,
-    'issue-transition': /issue workflow|structured workflow|queue|multi-stage/,
-    'exploration': /uncertain|explore|research|what if/,
-    'quick-task': /quick|simple|small/ && /feature|function/,
-    'ui-design': /ui|design|component|style/,
-    'tdd': /tdd|test-driven|test first/,
-    'test-fix': /test fail|fix test|failing test/,
-    'test-gen': /generate test|写测试|add test|补充测试/,
-    'review': /review|code review/,
-    'documentation': /docs|documentation|readme/
+#### Task Type Detection: Structured Intent Extraction
+
+Instead of regex pattern matching, extract a structured intent tuple using LLM semantic understanding, then route deterministically via an action × object matrix.
+
+**Step 1 — Extract structured intent from user input:**
+
+```json
+{
+  "action":    "<from action enum>",
+  "object":    "<from object enum>",
+  "scope":     "<module/file/area or null>",
+  "style":     "<from style enum>",
+  "urgency":   "<low | normal | high>"
+}
+```
+
+**Action enum** (what the user wants to do):
+
+| action | Semantic meaning |
+|--------|-----------------|
+| `create` | Build something new — feature, project, component, spec |
+| `fix` | Repair something broken — fix bug, resolve error, patch, 修复, 解决 |
+| `analyze` | Understand deeply — analyze, investigate, discuss, explore concept, 分析, 协作分析, 深度理解 |
+| `plan` | Design approach — plan, break down, roadmap, decompose, 规划, 拆解 |
+| `execute` | Implement planned work — execute, implement, develop, 实现, 开发 |
+| `explore` | Open-ended discovery — brainstorm, ideate, creative thinking, 头脑风暴, 发散 |
+| `debug` | Diagnose failures — debug, diagnose, troubleshoot, investigate log, 调试, 排查 |
+| `test` | Run or create tests — test, generate test, TDD, 测试, 写测试 |
+| `review` | Evaluate code quality — review, code review, 审查 |
+| `refactor` | Restructure code — refactor, clean up, tech debt, 重构 |
+| `convert` | Bridge between workflows — convert brainstorm to issue, 转换 |
+
+**Object enum** (what the action targets):
+
+| object | Meaning |
+|--------|---------|
+| `feature` | New functionality or enhancement |
+| `bug` | Defect, error, broken behavior (includes "问题" when meaning "something is wrong") |
+| `issue` | Issue-tracker item for batch/structured management |
+| `code` | Source code in general |
+| `test` | Tests, test suite, test coverage |
+| `spec` | Specification, PRD, product requirements |
+| `doc` | Documentation |
+| `ui` | User interface, design, component |
+| `performance` | Performance characteristics |
+| `security` | Security concerns |
+| `architecture` | System architecture, design decisions |
+| `project` | Entire project (greenfield) |
+| `team` | Team-based execution |
+
+**Style enum** (how the user wants to work):
+
+| style | Meaning |
+|-------|---------|
+| `quick` | Fast, lightweight, minimal ceremony |
+| `documented` | With file artifacts, discussion docs, hypothesis tracking |
+| `collaborative` | Multi-agent, multi-perspective, multi-CLI |
+| `structured` | Formal planning, spec-driven, phased |
+| `iterative` | Cycle-based, self-iterating with reflection |
+| `tdd` | Test-driven development |
+| `default` | No specific style preference |
+
+**Disambiguation rules for "问题" / "issue" / "problem":**
+- "问题" / "problem" describing **something broken** → `object: "bug"` (routes to bugfix)
+- "issue" referring to **batch tracked items** or used with "workflow/queue/discover" → `object: "issue"` (routes to issue workflow)
+- When ambiguous, prefer `"bug"` — it routes to fix workflows which are more actionable
+
+**Step 2 — Route via action × object × style matrix:**
+
+```javascript
+function detectTaskType(intent) {
+  const { action, object, style, urgency } = intent;
+
+  // ── Urgency override ──
+  if (urgency === 'high' && (action === 'fix' || object === 'bug')) return 'bugfix-hotfix';
+
+  // ── Style-first routing (style overrides generic action×object) ──
+  if (style === 'tdd') return 'tdd';
+  if (style === 'collaborative' && action === 'plan') return 'collaborative-plan';
+  if (style === 'collaborative' && action !== 'plan') return 'multi-cli';
+  if (style === 'iterative' && object === 'test') return 'integration-test';
+  if (style === 'iterative' && action === 'refactor') return 'refactor';
+
+  // ── Action × Object matrix ──
+  const matrix = {
+    'create': {
+      'project':       'greenfield',
+      'feature':       'feature',         // complexity routing in selectWorkflow
+      'spec':          'spec-driven',
+      'test':          'test-gen',
+      'doc':           'documentation',
+      'ui':            'ui-design',
+      'issue':         'issue-batch',
+      '_default':      'feature',
+    },
+    'fix': {
+      'bug':           'bugfix',
+      'test':          'test-fix',
+      'issue':         'issue-batch',
+      'code':          'bugfix',
+      'performance':   'bugfix',
+      'security':      'bugfix',
+      '_default':      'bugfix',
+    },
+    'analyze': {
+      'architecture':  'analyze-file',
+      'code':          'analyze-file',
+      'bug':           'debug-file',
+      'feature':       'analyze-file',
+      '_default':      'analyze-file',
+    },
+    'explore': {
+      'feature':       'brainstorm',
+      'architecture':  'brainstorm',
+      'issue':         'issue-batch',     // discover issues
+      '_default':      'exploration',
+    },
+    'plan': {
+      'feature':       'feature',         // complexity routing decides rapid vs coupled
+      'project':       'greenfield',
+      'issue':         'issue-transition',
+      '_default':      'feature',
+    },
+    'execute': {
+      'issue':         'issue-transition',
+      '_default':      'feature',
+    },
+    'debug': {
+      'bug':           style === 'documented' ? 'debug-file' : 'bugfix',
+      'code':          style === 'documented' ? 'debug-file' : 'bugfix',
+      '_default':      style === 'documented' ? 'debug-file' : 'bugfix',
+    },
+    'test': {
+      'test':          'test-fix',
+      'code':          'test-gen',
+      'feature':       'integration-test',
+      '_default':      'test-gen',
+    },
+    'review': {
+      '_default':      'review',
+    },
+    'refactor': {
+      '_default':      'refactor',
+    },
+    'convert': {
+      'issue':         object === 'issue' ? 'brainstorm-to-issue' : 'issue-transition',
+      '_default':      'issue-transition',
+    },
   };
-  for (const [type, pattern] of Object.entries(patterns)) {
-    if (pattern.test(text)) return type;
-  }
-  return 'feature';
+
+  // ── Special compound detections ──
+  // "roadmap" keyword → explicit roadmap flow
+  if (action === 'plan' && style === 'structured' && /roadmap|路线.*图/.test(rawInput)) return 'roadmap';
+  // team planex
+  if (object === 'team') return 'team-planex';
+
+  const actionMap = matrix[action];
+  if (!actionMap) return 'feature';
+  return actionMap[object] || actionMap['_default'] || 'feature';
 }
 ```
 
 **Output**: `Type: [task_type] | Goal: [goal] | Complexity: [complexity] | Clarity: [clarity_score]/3`
+
+**Routing examples (showing how structured extraction fixes regex misroutes):**
+
+| Input | Extraction | task_type |
+|-------|-----------|-----------|
+| "修复登录问题" | `{fix, bug}` | bugfix |
+| "fix this issue" | `{fix, bug}` | bugfix |
+| "Fix batch issues" | `{fix, issue}` | issue-batch |
+| "issue workflow queue" | `{execute, issue}` | issue-transition |
+| "从零开始: 用户系统" | `{create, project}` | greenfield |
+| "头脑风暴: 通知系统" | `{explore, feature}` | brainstorm |
+| "协作分析: 认证架构" | `{analyze, architecture}` | analyze-file |
+| "深度调试 WebSocket" | `{debug, bug, style:documented}` | debug-file |
+| "debug login crash" | `{debug, bug}` | bugfix |
+| "解决性能问题" | `{fix, performance}` | bugfix |
+| "创建一个 issue 跟踪" | `{create, issue}` | issue-batch |
 
 ---
 
@@ -653,8 +792,8 @@ Phase 5: Execute Command Chain
 
 ## Key Design Principles
 
-1. **Main Process Execution** - Use Skill in main process, no external CLI
-2. **Intent-Driven** - Auto-select workflow based on task intent
+1. **Semantic Routing** - LLM-native structured extraction (`action × object × style`) replaces regex; disambiguates polysemous words like "问题" by semantic context
+2. **Main Process Execution** - Use Skill in main process, no external CLI
 3. **Skill-Based Chaining** - Build command chain by composing independent Skills
 4. **Self-Contained Skills** - 每个 Skill 内部处理完整流水线，是天然的最小执行单元
 5. **Auto Chain** - With-File 产物自动传递给下游 Skill（如 analyze → lite-plan）

@@ -243,7 +243,6 @@ while (shouldContinue && iteration < maxIterations) {
   // Step 2: Batch wait for all dimension agents
   const dimensionAgentIds = dimensionAgents.map(a => a.agentId);
   const iterationResults = wait_agent({
-    targets: dimensionAgentIds,
     timeout_ms: 600000  // 10 minutes
   });
 
@@ -253,7 +252,7 @@ while (shouldContinue && iteration < maxIterations) {
   }
 
   // Step 4: Close all dimension agents
-  dimensionAgentIds.forEach(id => close_agent({ id }));
+  dimensionAgentIds.forEach(id => close_agent({ target: id }));
 
   // Collect and analyze iteration findings
   const iterationFindings = await collectIterationFindings(iterationDir, iterationPlan.dimensions);

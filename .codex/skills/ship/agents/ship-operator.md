@@ -8,7 +8,7 @@ Executes all 5 gated phases of the release pipeline sequentially, enforcing gate
 - **Role File**: `~/.codex/agents/ship-operator.md`
 - **task_name**: `ship-operator`
 - **Responsibility**: Code generation / Execution (write mode — git, file updates, push, PR)
-- **fork_context**: false
+- **fork_turns**: "none"
 
 ## Boundaries
 
@@ -244,7 +244,7 @@ This agent spawns a utility subagent during Phase 2 for AI code review:
 ```
 spawn_agent({
   task_name: "inline-code-review",
-  fork_context: false,
+  fork_turns: "none",
   model: "haiku",
   reasoning_effort: "medium",
   message: `### MANDATORY FIRST STEPS
@@ -263,7 +263,7 @@ Task:
 Expected: Risk level (low/medium/high), list of issues with severity and file:line reference, release recommendation (ship|hold|fix-first)
 Constraints: Focus on correctness and security | Flag breaking API changes | Ignore formatting-only changes`
 })
-const result = wait_agent({ targets: ["inline-code-review"], timeout_ms: 300000 })
+const result = wait_agent({ timeout_ms: 600000 })
 close_agent({ target: "inline-code-review" })
 ```
 

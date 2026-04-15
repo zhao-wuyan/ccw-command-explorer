@@ -327,10 +327,14 @@ const solutionLine = JSON.stringify({ id: solutionId, ...solution });
 // uid=$(cat /dev/urandom | tr -dc 'a-z0-9' | head -c 4)
 
 // Read existing, append new line, write back
+// For incremental updates to existing JSON files, use json_builder set
 const filePath = `.workflow/issues/solutions/${issueId}.jsonl`;
 const existing = existsSync(filePath) ? readFileSync(filePath) : '';
 const newContent = existing.trimEnd() + (existing ? '\n' : '') + solutionLine + '\n';
 Write({ file_path: filePath, content: newContent })
+
+// NOTE: When updating existing JSON files (not JSONL), use:
+// ccw tool exec json_builder '{"cmd":"set","target":"<file>","ops":[{"path":"field","value":...}]}'
 ```
 
 **Step 2: Bind decision**
@@ -348,7 +352,7 @@ Write({ file_path: filePath, content: newContent })
 .workflow/issues/solutions/{issue-id}.jsonl
 ```
 
-Each line is a solution JSON containing tasks. Schema: `cat ~/.ccw/workflows/cli-templates/schemas/solution-schema.json`
+Each line is a solution JSON containing tasks. Read template for structure: `Read(~/.ccw/workflows/cli-templates/schemas/solution-schema.json)`
 
 ### 2.2 Return Summary
 
@@ -388,7 +392,7 @@ Each line is a solution JSON containing tasks. Schema: `cat ~/.ccw/workflows/cli
 
 **ALWAYS**:
 1. **Search Tool Priority**: ACE (`mcp__ace-tool__search_context`) → CCW (`mcp__ccw-tools__smart_search`) / Built-in (`Grep`, `Glob`, `Read`)
-2. Read schema first: `cat ~/.ccw/workflows/cli-templates/schemas/solution-schema.json`
+2. Read template for structure: `Read(~/.ccw/workflows/cli-templates/schemas/solution-schema.json)`
 3. Use ACE semantic search as PRIMARY exploration tool
 4. Fetch issue details via `ccw issue status <id> --json`
 5. **Analyze failure history**: Check `issue.feedback` for type='failure', stage='execute'

@@ -18,19 +18,15 @@ export const COMMANDS: Command[] = [
     detail: '复杂需求分解器：分析你的需求，推荐需要执行的命令序列，你可以调整后再执行',
     usage: '一个任务需要多个命令配合完成，不知道怎么组合'
   },
-  { cmd: '/workflow-skill', desc: '直接启动任意工作流技能，按名称调用', status: 'new', category: 'main', cli: ['claude'], addedInVersion: 'v7.3',
-    detail: '技能快速启动器：直接指定技能名称和参数即可调用，无需经过意图分析。不传参数则显示技能目录供选择',
-    usage: '知道要用的技能名称，想快速调用'
+  { cmd: '/ccw-coordinate', desc: '团队代理流水线协调器 - 意图分类+技能链路由', status: 'new', category: 'main', cli: ['codex'], addedInVersion: 'v7.3',
+    detail: '流水线协调器：结构化意图提取(action×object×style) → 技能链路由 → 逐步骤 spawn agent 执行。支持30+预定义链、自动模式(-y)、断点续传(--continue)、dry-run预览',
+    usage: 'Codex 环境下想自动编排工作流，说需求即可自动匹配和执行技能链'
   },
 
   // ==================== Chain 工作流 ====================
   { cmd: '/ccw-chain', desc: 'Chain 链式工作流编排，意图分析+自动路由', status: 'new', category: 'workflow', cli: ['claude'], addedInVersion: 'v7.3',
     detail: '链式工作流引擎：通过 chain_loader 实现渐进式步骤加载和 LLM 决策路由。支持意图分析→工作流匹配→技能流水线执行，支持自动模式(-y)跳过确认',
     usage: '复杂任务需要多步骤编排、自动选择工作流链'
-  },
-  { cmd: '/chain-loader', desc: 'Chain 技能生成器，将线性技能转为链图结构', status: 'new', category: 'workflow', cli: ['claude'], addedInVersion: 'v7.3',
-    detail: '链式技能元工具：分析现有技能→设计节点图（步骤/决策/委托节点）→生成 chain JSON 并验证图连通性。支持 12 节点上限，超限自动拆分为主链+子链',
-    usage: '想把现有技能改造为链式结构、创建新的链式技能'
   },
 
   // ==================== 工作流核心 ====================
@@ -48,10 +44,6 @@ export const COMMANDS: Command[] = [
     detail: '证据驱动调试流程：Explore→Document→Log→Analyze→Correct→Fix→Verify。记录理解演变(understanding.md)，Gemini辅助纠正误解，保留学习成果',
     usage: '遇到难定位的复杂bug'
   },
-  { cmd: '/workflow:collaborative-plan-with-file', desc: '协作式规划', status: 'stable', category: 'workflow', cli: ['claude'], addedInVersion: 'v6.0',
-    detail: '多人协作规划：把大需求拆成多个领域，不同专业的人分别规划，最后自动检测冲突',
-    usage: '涉及多个技术领域的复杂功能，需要不同专业的人分工规划'
-  },
   { cmd: '/workflow:brainstorm-with-file', desc: '交互式头脑风暴 - 多CLI协作+发散收敛循环', status: 'stable', category: 'brainstorm', cli: ['claude'], addedInVersion: 'v6.0',
     detail: '多CLI协作头脑风暴：cli-explore-agent探索 + Multi-CLI视角(Gemini/Codex/Claude或专业角色)，发散-收敛循环(Diverge-Converge)，记录想法演变。支持creative/structured模式',
     usage: '需要创意思考、功能设计、架构方案讨论'
@@ -59,10 +51,6 @@ export const COMMANDS: Command[] = [
   { cmd: '/workflow:roadmap-with-file', desc: '路线图规划', status: 'new', category: 'workflow', cli: ['claude'], addedInVersion: 'v6.4',
     detail: '交互式路线图：与AI讨论需求，生成项目路线图和里程碑规划',
     usage: '需要规划项目路线图'
-  },
-  { cmd: '/workflow:unified-execute-with-file', desc: '通用执行引擎', status: 'stable', category: 'workflow', cli: ['claude'], addedInVersion: 'v6.2',
-    detail: '万能执行器：支持执行各种格式的规划文件(brainstorm、plan、issue等)，按依赖顺序执行',
-    usage: '有各种格式的规划文件需要执行'
   },
   { cmd: '/workflow:integration-test-cycle', desc: '集成测试循环', status: 'stable', category: 'test', cli: ['claude'], addedInVersion: 'v6.2',
     detail: '集成测试：生成集成测试→执行→发现失败修复→再测试。循环到全部通过',
@@ -223,7 +211,7 @@ export const COMMANDS: Command[] = [
   },
 
   // 记忆系统
-  { cmd: '/memory-capture', desc: '统一记忆捕获 - 会话压缩或快速技巧', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
+  { cmd: '/memory-capture', desc: '统一记忆捕获 - 会话压缩或快速技巧', status: 'stable', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
     detail: '两种模式：①完整压缩-把当前对话压缩成结构化笔记，方便下次恢复；②快速技巧-记下小贴士、代码片段',
     usage: '当前会话做得不错想保存经验、或者记下有用的技巧'
   },
@@ -538,5 +526,5 @@ export const STATS = {
   codexCommands: COMMANDS.filter(c => c.cli.includes('codex')).length,
   newCommands: COMMANDS.filter(c => c.status === 'new').length,
   recommendedCommands: COMMANDS.filter(c => c.status === 'recommended').length,
-  latestVersion: 'v7.3',  // 当前最新版本
+  latestVersion: 'v7.3.6',  // 当前最新版本
 };

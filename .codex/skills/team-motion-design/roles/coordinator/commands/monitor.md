@@ -134,9 +134,8 @@ state.tasks[taskId].status = 'in_progress'
 const agentId = spawn_agent({
   agent_type: "team_worker",
   task_name: taskId,  // e.g., "ANIM-001" -- enables named targeting
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: ${role}
 role_spec: ${skillRoot}/roles/${role}/role.md
 session: ${sessionFolder}
@@ -145,24 +144,23 @@ requirement: ${taskDescription}
 inner_loop: ${innerLoop}
 
 Read role_spec file to load Phase 2-4 domain instructions.
-Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).` },
+Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).
 
-    { type: "text", text: `## Task Context
+## Task Context
 task_id: ${taskId}
 title: ${taskTitle}
 description: ${taskDescription}
-pipeline_phase: ${pipelinePhase}` },
+pipeline_phase: ${pipelinePhase}
 
-    { type: "text", text: `## Upstream Context
-${prevContext}` }
-  ]
+## Upstream Context
+${prevContext}`
 })
 
 // 3) Track agent
 state.active_agents[taskId] = { agentId, role, started_at: now }
 
 // 4) Wait for completion -- use task_name for stable targeting (v4)
-const waitResult = wait_agent({ targets: [taskId], timeout_ms: 900000 })
+const waitResult = wait_agent({ timeout_ms: 900000 })
 if (waitResult.timed_out) {
   state.tasks[taskId].status = 'timed_out'
   close_agent({ target: taskId })
@@ -192,12 +190,12 @@ When spawning workers in a later pipeline phase, send upstream results as supple
 // Example: Send research results to running choreographer
 send_message({
   target: "<running-agent-task-name>",
-  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+  message: `## Supplementary Context\n${upstreamFindings}`
 })
 // Note: send_message queues info without interrupting the agent's current work
 ```
 
-Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
+Use `send_message` (not `followup_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
 
 5. Update tasks.json, output summary, STOP
 

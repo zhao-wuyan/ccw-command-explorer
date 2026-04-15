@@ -1,7 +1,7 @@
 ---
 name: team-brainstorm
 description: Unified team skill for brainstorming team. Uses team-worker agent architecture with role directories for domain logic. Coordinator orchestrates pipeline, workers are team-worker agents. Triggers on "team brainstorm".
-allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)
 ---
 
 # Team Brainstorm
@@ -53,7 +53,7 @@ Before calling ANY tool, apply this check:
 
 | Tool Call | Verdict | Reason |
 |-----------|---------|--------|
-| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `followup_task` | ALLOWED | Orchestration |
 | `list_agents` | ALLOWED | Agent health check |
 | `request_user_input` | ALLOWED | User interaction |
 | `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
@@ -85,9 +85,8 @@ Coordinator spawns workers using this template:
 spawn_agent({
   agent_type: "team_worker",
   task_name: "<task-id>",
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: <role>
 role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
@@ -95,21 +94,20 @@ session_id: <session-id>
 requirement: <topic-description>
 inner_loop: false
 
-Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.` },
+Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.
 
-    { type: "text", text: `## Task Context
+## Task Context
 task_id: <task-id>
 title: <task-title>
 description: <topic-description>
-pipeline_phase: <pipeline-phase>` },
+pipeline_phase: <pipeline-phase>
 
-    { type: "text", text: `## Upstream Context
-<prev_context>` }
-  ]
+## Upstream Context
+<prev_context>`
 })
 ```
 
-After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target: <name> })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target: <name> })` each worker.
 
 **Parallel ideator spawn** (Full pipeline with N angles):
 
@@ -119,9 +117,8 @@ When Full pipeline has N parallel IDEA tasks, spawn N distinct team-worker agent
 spawn_agent({
   agent_type: "team_worker",
   task_name: "ideator-<N>",
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: ideator
 role_spec: <skill_root>/roles/ideator/role.md
 session: <session-folder>
@@ -130,21 +127,20 @@ requirement: <topic-description>
 agent_name: ideator-<N>
 inner_loop: false
 
-Read role_spec file (<skill_root>/roles/ideator/role.md) to load Phase 2-4 domain instructions.` },
+Read role_spec file (<skill_root>/roles/ideator/role.md) to load Phase 2-4 domain instructions.
 
-    { type: "text", text: `## Task Context
+## Task Context
 task_id: <task-id>
 title: <task-title>
 description: <topic-description>
-pipeline_phase: <pipeline-phase>` },
+pipeline_phase: <pipeline-phase>
 
-    { type: "text", text: `## Upstream Context
-<prev_context>` }
-  ]
+## Upstream Context
+<prev_context>`
 })
 ```
 
-After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target: <name> })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target: <name> })` each worker.
 
 
 ### Model Selection Guide
@@ -161,10 +157,10 @@ Override model/reasoning_effort in spawn_agent when cost optimization is needed:
 spawn_agent({
   agent_type: "team_worker",
   task_name: "<task-id>",
-  fork_context: false,
+  fork_turns: "none",
   model: "<model-override>",
   reasoning_effort: "<effort-level>",
-  items: [...]
+  message: "..."
 })
 ```
 
@@ -212,7 +208,7 @@ spawn_agent({
 | Intent | API | Example |
 |--------|-----|---------|
 | Share idea context across ideators | `send_message` | Send seed ideas to running ideator for cross-pollination |
-| Not used in this skill | `assign_task` | No resident agents -- all workers are one-shot |
+| Not used in this skill | `followup_task` | No resident agents -- all workers are one-shot |
 | Check running agents | `list_agents` | Verify parallel ideator health during Full pipeline |
 
 ### Parallel Ideator Coordination (Full Pipeline)
@@ -223,9 +219,9 @@ Full pipeline spawns N parallel ideators for different brainstorming angles. Use
 // Spawn N ideators in parallel, each with a different angle
 const ideatorNames = ["IDEA-001", "IDEA-002", "IDEA-003"]
 for (const name of ideatorNames) {
-  spawn_agent({ agent_type: "team_worker", task_name: name, fork_context: false, ... })
+  spawn_agent({ agent_type: "team_worker", task_name: name, fork_turns: "none", ... })
 }
-wait_agent({ targets: ideatorNames, timeout_ms: 900000 })
+wait_agent({ timeout_ms: 900000 })
 // Collect all idea outputs, feed to challenger as upstream context
 ```
 
@@ -243,7 +239,7 @@ const running = list_agents({})
 ### Named Agent Targeting
 
 Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
-- `send_message({ target: "IDEA-002", items: [...] })` -- share context from another ideator
+- `send_message({ target: "IDEA-002", message: "..." })` -- share context from another ideator
 - `close_agent({ target: "IDEA-001" })` -- cleanup by name after wait_agent returns
 
 ## Error Handling

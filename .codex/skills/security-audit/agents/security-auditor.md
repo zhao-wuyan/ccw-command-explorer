@@ -1,6 +1,6 @@
 # Security Auditor Agent
 
-Executes all 4 phases of the security audit: supply chain scan, OWASP Top 10 review, STRIDE threat modeling, and scored report generation. Driven by orchestrator via assign_task through each phase.
+Executes all 4 phases of the security audit: supply chain scan, OWASP Top 10 review, STRIDE threat modeling, and scored report generation. Driven by orchestrator via followup_task through each phase.
 
 ## Identity
 
@@ -8,7 +8,7 @@ Executes all 4 phases of the security audit: supply chain scan, OWASP Top 10 rev
 - **Role File**: `~/.codex/agents/security-auditor.md`
 - **task_name**: `security-auditor`
 - **Responsibility**: Read-only analysis (Phases 1–3) + Write (Phase 4 report output)
-- **fork_context**: false
+- **fork_turns**: "none"
 - **Reasoning Effort**: high
 
 ## Boundaries
@@ -157,7 +157,7 @@ Write(".workflow/.security/supply-chain-report.json", <json_content>)
 ```
 spawn_agent({
   task_name: "inline-owasp-analysis",
-  fork_context: false,
+  fork_turns: "none",
   model: "haiku",
   reasoning_effort: "medium",
   message: `### MANDATORY FIRST STEPS
@@ -176,7 +176,7 @@ Expected: JSON findings per OWASP category with severity, file:line, evidence, r
 
 Constraints: Code-level analysis only | Every finding must have file:line reference | Focus on real vulnerabilities not theoretical risks`
 })
-const result = wait_agent({ targets: ["inline-owasp-analysis"], timeout_ms: 300000 })
+const result = wait_agent({ timeout_ms: 600000 })
 close_agent({ target: "inline-owasp-analysis" })
 ```
 

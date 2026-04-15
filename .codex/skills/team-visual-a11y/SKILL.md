@@ -1,7 +1,7 @@
 ---
 name: team-visual-a11y
 description: Unified team skill for visual accessibility QA. OKLCH color contrast, typography readability, focus management, WCAG AA/AAA audit at rendered level. Uses team-worker agent architecture. Triggers on "team visual a11y", "accessibility audit", "visual a11y".
-allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*), mcp__chrome-devtools__evaluate_script(*), mcp__chrome-devtools__take_screenshot(*), mcp__chrome-devtools__emulate(*), mcp__chrome-devtools__lighthouse_audit(*), mcp__chrome-devtools__navigate_page(*), mcp__chrome-devtools__resize_page(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*), mcp__chrome-devtools__evaluate_script(*), mcp__chrome-devtools__take_screenshot(*), mcp__chrome-devtools__emulate(*), mcp__chrome-devtools__lighthouse_audit(*), mcp__chrome-devtools__navigate_page(*), mcp__chrome-devtools__resize_page(*)
 ---
 
 # Team Visual Accessibility
@@ -65,7 +65,7 @@ Before calling ANY tool, apply this check:
 
 | Tool Call | Verdict | Reason |
 |-----------|---------|--------|
-| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `followup_task` | ALLOWED | Orchestration |
 | `list_agents` | ALLOWED | Agent health check |
 | `request_user_input` | ALLOWED | User interaction |
 | `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
@@ -99,9 +99,8 @@ Coordinator spawns workers using this template:
 spawn_agent({
   agent_type: "team_worker",
   task_name: "<task-id>",
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: <role>
 role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
@@ -109,17 +108,16 @@ session_id: <session-id>
 requirement: <task-description>
 inner_loop: <true|false>
 
-Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.` },
+Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.
 
-    { type: "text", text: `## Task Context
+## Task Context
 task_id: <task-id>
 title: <task-title>
 description: <task-description>
-pipeline_phase: <pipeline-phase>` },
+pipeline_phase: <pipeline-phase>
 
-    { type: "text", text: `## Upstream Context
-<prev_context>` }
-  ]
+## Upstream Context
+<prev_context>`
 })
 ```
 
@@ -132,9 +130,8 @@ The 3 auditors run in parallel. Spawn all 3, then wait for all 3:
 spawn_agent({
   agent_type: "team_worker",
   task_name: "COLOR-001",
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: color-auditor
 role_spec: ${skillRoot}/roles/color-auditor/role.md
 session: ${sessionFolder}
@@ -142,21 +139,20 @@ session_id: ${sessionId}
 requirement: ${colorTaskDescription}
 inner_loop: false
 
-Read role_spec file to load Phase 2-4 domain instructions.` },
-    { type: "text", text: `## Task Context
+Read role_spec file to load Phase 2-4 domain instructions.
+
+## Task Context
 task_id: COLOR-001
 title: OKLCH Color Contrast Audit
 description: ${colorTaskDescription}
-pipeline_phase: audit` }
-  ]
+pipeline_phase: audit`
 })
 
 spawn_agent({
   agent_type: "team_worker",
   task_name: "TYPO-001",
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: typo-auditor
 role_spec: ${skillRoot}/roles/typo-auditor/role.md
 session: ${sessionFolder}
@@ -164,21 +160,20 @@ session_id: ${sessionId}
 requirement: ${typoTaskDescription}
 inner_loop: false
 
-Read role_spec file to load Phase 2-4 domain instructions.` },
-    { type: "text", text: `## Task Context
+Read role_spec file to load Phase 2-4 domain instructions.
+
+## Task Context
 task_id: TYPO-001
 title: Typography Readability Audit
 description: ${typoTaskDescription}
-pipeline_phase: audit` }
-  ]
+pipeline_phase: audit`
 })
 
 spawn_agent({
   agent_type: "team_worker",
   task_name: "FOCUS-001",
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: focus-auditor
 role_spec: ${skillRoot}/roles/focus-auditor/role.md
 session: ${sessionFolder}
@@ -186,17 +181,17 @@ session_id: ${sessionId}
 requirement: ${focusTaskDescription}
 inner_loop: false
 
-Read role_spec file to load Phase 2-4 domain instructions.` },
-    { type: "text", text: `## Task Context
+Read role_spec file to load Phase 2-4 domain instructions.
+
+## Task Context
 task_id: FOCUS-001
 title: Focus & Keyboard Accessibility Audit
 description: ${focusTaskDescription}
-pipeline_phase: audit` }
-  ]
+pipeline_phase: audit`
 })
 
 // Wait for ALL 3 auditors to complete
-wait_agent({ targets: ["COLOR-001", "TYPO-001", "FOCUS-001"], timeout_ms: 900000 })
+wait_agent({ timeout_ms: 900000 })
 
 // Close all 3
 close_agent({ target: "COLOR-001" })
@@ -206,7 +201,7 @@ close_agent({ target: "FOCUS-001" })
 // Then spawn remediation-planner with all 3 audit results as upstream context
 ```
 
-After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
 
 ### Model Selection Guide
 
@@ -228,14 +223,11 @@ All 3 audit findings must reach remediation-planner via coordinator's upstream c
 spawn_agent({
   agent_type: "team_worker",
   task_name: "REMED-001",
-  fork_context: false,
-  items: [
-    ...,
-    { type: "text", text: `## Upstream Context
+  fork_turns: "none",
+  message: `## Upstream Context
 Color audit: <session>/audits/color/color-audit-001.md
 Typography audit: <session>/audits/typography/typo-audit-001.md
-Focus audit: <session>/audits/focus/focus-audit-001.md` }
-  ]
+Focus audit: <session>/audits/focus/focus-audit-001.md`
 })
 ```
 
@@ -285,7 +277,7 @@ Focus audit: <session>/audits/focus/focus-audit-001.md` }
 | Intent | API | Example |
 |--------|-----|---------|
 | Queue supplementary info (don't interrupt) | `send_message` | Send audit findings to running remediation-planner |
-| Assign new work from reviewed plan | `assign_task` | Assign FIX task after remediation plan ready |
+| Assign new work from reviewed plan | `followup_task` | Assign FIX task after remediation plan ready |
 | Check running agents | `list_agents` | Verify agent health during resume |
 
 ### Agent Health Check
@@ -302,8 +294,8 @@ const running = list_agents({})
 ### Named Agent Targeting
 
 Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
-- `send_message({ target: "REMED-001", items: [...] })` -- send additional audit findings to remediation-planner
-- `assign_task({ target: "FIX-001", items: [...] })` -- assign implementation from remediation plan
+- `send_message({ target: "REMED-001", message: "..." })` -- send additional audit findings to remediation-planner
+- `followup_task({ target: "FIX-001", message: "..." })` -- assign implementation from remediation plan
 - `close_agent({ target: "COLOR-001" })` -- cleanup after color audit
 
 ## Error Handling

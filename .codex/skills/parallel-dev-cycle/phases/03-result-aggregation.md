@@ -148,29 +148,28 @@ Update requirements.md if needed.
 }
 ```
 
-### Step 3.6: Send Feedback via assign_task
+### Step 3.6: Send Feedback via followup_task
 
 ```javascript
 const feedback = generateFeedback(parsedResults)
 
 // Send feedback to relevant agents
 if (feedback.ra) {
-  assign_task({
+  followup_task({
     target: agents.ra,
-    items: [{ type: "text", text: feedback.ra }]
+    message: feedback.ra
   })
 }
 
 if (feedback.cd) {
-  assign_task({
+  followup_task({
     target: agents.cd,
-    items: [{ type: "text", text: feedback.cd }]
+    message: feedback.cd
   })
 }
 
 // Wait for agents to process feedback and update
 const updatedResults = wait_agent({
-  targets: [agents.ra, agents.cd].filter(Boolean),
   timeout_ms: 900000  // 15 minutes for fixes
 })
 
@@ -213,7 +212,7 @@ Phase 3: Result Aggregation
 │   ├─ No → Phase 4 (Complete)
 │   └─ Yes
 │       ├─ iteration < max?
-│       │   ├─ Yes → Generate feedback → assign_task → Wait → Back to Phase 2
+│       │   ├─ Yes → Generate feedback → followup_task → Wait → Back to Phase 2
 │       │   └─ No → Phase 4 (Complete with issues)
 ```
 

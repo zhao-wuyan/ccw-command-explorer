@@ -59,6 +59,22 @@ CONTEXT: @**/*
 EXPECTED: JSON with: tech_stack[], architecture_patterns[], conventions[], integration_points[]" --tool gemini --mode analysis`, run_in_background: false })
 ```
 
+### Tech Profile Scan
+
+After codebase exploration, scan results for context-aware trigger signals (based on detected codebase characteristics):
+
+1. Check imports/dependencies → framework signals (`sql_detected`, `auth_detected`, `ml_detected`, `frontend_framework`)
+2. Check file patterns → infrastructure signals (`devops_detected`, `data_migration`, `realtime_detected`)
+3. Check code patterns → risk signals (`perf_sensitive`, `crypto_usage`, `legacy_patterns`, `test_gap`)
+4. Include `tech_profile` in Phase 5 state_update data:
+   ```json
+   "tech_profile": {
+     "signals": ["<detected signals>"],
+     "evidence": { "<signal>": ["<file paths>"] },
+     "confidence": "high|medium|low"
+   }
+   ```
+
 ## Phase 4: Context Packaging
 
 1. Write spec-config.json → <session>/spec/

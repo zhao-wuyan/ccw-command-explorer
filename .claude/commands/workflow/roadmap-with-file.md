@@ -128,6 +128,13 @@ Strategic requirement roadmap with **iterative decomposition**. Creates a single
 
 ---
 
+## Original Goal
+- {parsed goal from requirement — e.g., "implement OAuth + 2FA auth system"}
+- {key constraints — e.g., "must support existing user base", "deadline: Q3"}
+- {success criteria — e.g., "all auth flows pass E2E tests, <200ms latency"}
+
+---
+
 ## Strategy Assessment
 
 - **Uncertainty Level**: {high|medium|low}
@@ -136,6 +143,11 @@ Strategic requirement roadmap with **iterative decomposition**. Creates a single
 - **Goal**: {extracted goal}
 - **Constraints**: {extracted constraints}
 - **Stakeholders**: {extracted stakeholders}
+
+---
+
+## Current Understanding
+> To be populated after decomposition. (Replaced each round — NOT appended)
 
 ---
 
@@ -175,12 +187,36 @@ Strategic requirement roadmap with **iterative decomposition**. Creates a single
 
 ---
 
+## Goal Coverage
+> Tracks which original goal aspects are addressed by issues. Updated after decomposition + each round.
+
+| # | Original Goal Aspect | Status | Addressed By | Notes |
+|---|---------------------|--------|--------------|-------|
+| 1 | {goal aspect} | ✅ Covered | ISS-xxx | |
+| 2 | {constraint} | 🔄 Partially | ISS-yyy | Depends on execution |
+| 3 | {success criteria} | ❌ Not addressed | — | Needs additional issue |
+
+---
+
 ## Iteration History
 
 ### Round 1 - {timestamp}
+
 **User Feedback**: {feedback summary}
 **Changes Made**: {adjustments}
 **Status**: {approved|continue iteration}
+
+> **Decision**: {scope/convergence/strategy change}
+> - **Context**: User feedback: {trigger}
+> - **Options considered**: {alternatives}
+> - **Chosen**: {approach} — **Reason**: {rationale}
+> - **Impact**: {effect on roadmap}
+
+**Narrative Synthesis**:
+**起点**: 基于 {initial decomposition / prior round outcome}，本轮从 {user feedback point} 切入。
+**关键进展**: {changes made} {confirmed/refuted/modified} 了关于 {assumption} 的理解。
+**决策影响**: {scope adjustment / convergence refinement / re-decomposition} 导致 {impact on issue set}。
+**当前理解**: 经过本轮，路线图 {更清晰/需继续迭代/基本稳定}，核心认知更新为 {updated understanding}。
 
 ---
 
@@ -295,6 +331,35 @@ if (continueMode || file_exists(`${sessionFolder}/roadmap.md`)) {
 Bash(`mkdir -p ${sessionFolder}`)
 ```
 
+### Decision Recording Protocol
+
+**CRITICAL**: Record immediately when any of these occur:
+
+| Trigger | What to Record | Format |
+|---------|---------------|--------|
+| **Strategy selection** | Progressive vs direct, uncertainty basis | Decision Record |
+| **Scope adjustment** | Old → new scope, user feedback trigger | Decision Record |
+| **Convergence refinement** | Criteria change, verification update | Decision Record |
+| **Re-decomposition** | Old → new strategy/layering, trigger | Decision Record |
+| **Assumption correction** | Old assumption → new understanding | Assumption Record |
+
+**Decision Record Format**:
+```markdown
+> **Decision**: [Description]
+> - **Context**: [Trigger]
+> - **Options considered**: [Alternatives]
+> - **Chosen**: [Approach] — **Reason**: [Rationale]
+> - **Impact**: [Effect on roadmap]
+```
+
+**Assumption Record Format**:
+```markdown
+> **Corrected Assumption**: ~~[old]~~ → [new]
+> - **Discovered**: Round {N}
+> - **Evidence**: [user feedback, codebase finding]
+> - **Impact**: [what changed in roadmap]
+```
+
 ### Phase 1: Requirement Understanding & Strategy
 
 **Objective**: Parse requirement, assess uncertainty, select decomposition strategy, initialize roadmap.md.
@@ -333,11 +398,20 @@ Bash(`mkdir -p ${sessionFolder}`)
    })
    ```
 
-4. **Initialize roadmap.md** with Strategy Assessment section
+4. **Initialize roadmap.md** with Strategy Assessment section + Original Goal
+
+5. **Record Strategy Decision** (append to roadmap.md Strategy Assessment):
+   ```markdown
+   > **Decision**: Decomposition strategy — {progressive|direct}
+   > - **Context**: Uncertainty assessment: {N} high factors, {N} low factors
+   > - **Options considered**: progressive (MVP→iterations) / direct (topological)
+   > - **Chosen**: {strategy} — **Reason**: {rationale}
+   > - **Impact**: {decomposition approach, expected wave count}
+   ```
 
 **Success Criteria**:
-- roadmap.md created with Strategy Assessment
-- Strategy selected (progressive or direct)
+- roadmap.md created with Strategy Assessment + Original Goal
+- Strategy selected and Decision Recorded
 - Uncertainty factors documented
 
 ### Phase 2: Decomposition & Issue Creation
@@ -348,7 +422,7 @@ Bash(`mkdir -p ${sessionFolder}`)
 
 **Agent Tasks**:
 1. Analyze requirement with strategy context
-2. Execute CLI-assisted decomposition (Gemini → Qwen fallback)
+2. Execute CLI-assisted decomposition (Gemini → Claude fallback)
 3. Create issues via `ccw issue create`
 4. Generate roadmap table with Issue ID references
 5. Update roadmap.md
@@ -392,14 +466,45 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 2. **Append to .workflow/issues/issues.jsonl** via ccw issue create
 
 ### CLI Configuration
-- Primary: gemini, Fallback: qwen, Timeout: 60000ms
+- Primary: gemini, Fallback: claude, Timeout: 60000ms
 `
 })
 ```
 
+**Post-Decomposition Updates**:
+
+1. **Initial Goal Coverage Check** — populate `## Goal Coverage` in roadmap.md:
+   ```markdown
+   ## Goal Coverage (Post-Decomposition)
+   | # | Original Goal Aspect | Status | Addressed By | Notes |
+   |---|---------------------|--------|--------------|-------|
+   | 1 | {goal aspect} | ✅ Covered | ISS-xxx, ISS-yyy | |
+   | 2 | {constraint} | 🔄 Partially | ISS-zzz | Depends on execution |
+   | 3 | {success criteria} | ❌ Not addressed | — | Needs additional issue |
+   ```
+   If ❌ items exist → surface to user before Phase 3.
+
+2. **Update Current Understanding** — replace `## Current Understanding` block:
+   ```markdown
+   ## Current Understanding (Post-Decomposition)
+
+   ### Roadmap Shape
+   - **Issues**: {N} across {waves} waves
+   - **Strategy**: {progressive|direct} — {rationale}
+   - **Critical Path**: {wave 1 issues that gate everything}
+
+   ### Key Assumptions
+   - {assumption_1}: {basis}
+   - {assumption_2}: {basis}
+
+   ### Risk Assessment
+   - **Primary Risk**: {risk and mitigation}
+   ```
+
 **Success Criteria**:
 - Issues created in `.workflow/issues/issues.jsonl`
 - roadmap.md updated with Issue references
+- Goal Coverage check completed
 - No circular dependencies
 - Convergence criteria testable
 
@@ -437,15 +542,45 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
    - **Re-decompose**: Return to Phase 2 with new strategy
 
 4. **Update roadmap.md**
-   - Append to Iteration History section
+   - Append to Iteration History section (with Decision Record + Narrative Synthesis)
    - Update Roadmap table if changed
    - Increment round counter
 
-5. **Loop** (max 5 rounds, then force proceed)
+5. **Update Current Understanding** (replace block each round):
+   ```markdown
+   ## Current Understanding (Updated: Round {N})
+
+   ### Roadmap Shape
+   - **Issues**: {N} across {waves} waves ({delta from last round})
+   - **Stability**: {stable/evolving/volatile} — {N} rounds of changes
+   - **Critical Path**: {updated critical path}
+
+   ### Validated Assumptions
+   - {assumption confirmed by user feedback}
+
+   ### Corrected Assumptions
+   - ~~{old}~~ → {new} (Round {N})
+
+   ### Remaining Uncertainty
+   - {what still needs validation}
+   ```
+
+6. **Goal Drift Check** (round ≥ 2):
+   ```markdown
+   #### Goal Drift Check (Round {N})
+   - ✅ {goal aspect 1}: Still addressed by ISS-xxx
+   - 🔀 {goal aspect 2}: Transformed — original scope changed from {X} to {Y}
+   - ⚠️ {goal aspect 3}: Drifted — refinement focused on {tangent}, original goal underserved
+   - ❌ {goal aspect 4}: Lost coverage after scope adjustment
+   ```
+   If ⚠️ or ❌ items → log Assumption Record and surface to user.
+
+7. **Loop** (max 5 rounds, then force proceed)
 
 **Success Criteria**:
 - User approved OR max rounds reached
-- All changes recorded in Iteration History
+- All changes recorded in Iteration History with Decision Records
+- Goal Coverage updated each round
 - roadmap.md reflects final state
 
 ### Phase 4: Handoff
@@ -454,13 +589,49 @@ ${selectedMode === 'progressive' ? `**Progressive Mode**:
 
 **Steps**:
 
-1. **Display Summary**
+1. **Finalize roadmap.md** — append to end of roadmap.md:
+
+   ```markdown
+   ## Final Goal Coverage Matrix
+   | # | Original Goal Aspect | Status | Addressed By | Notes |
+   |---|---------------------|--------|--------------|-------|
+   | 1 | {goal} | ✅ Covered | ISS-xxx, ISS-yyy | |
+   | 2 | {constraint} | 🔀 Transformed | ISS-zzz | Original: X → Final: Y |
+   | 3 | {success criteria} | ❌ Missed | — | Reason |
+
+   ## Decision Trail
+   | Phase/Round | Decision | Outcome |
+   |-------------|----------|---------|
+   | Phase 1 | {strategy selection} | {progressive/direct}, {N} waves |
+   | Phase 2 | {decomposition approach} | {N} issues created |
+   | Round 1 | {user feedback response} | {scope/convergence adjustment} |
+   | Round N | {final adjustment} | Approved |
+   ```
+
+2. **Update Current Understanding (Final)** — replace `## Current Understanding` block:
+   ```markdown
+   ## Current Understanding (Final)
+
+   ### What We Established
+   - {confirmed roadmap structure and wave dependencies}
+
+   ### What Was Corrected
+   - ~~{old assumption}~~ → {corrected understanding} (Round {N})
+
+   ### Roadmap Health
+   - **Issues**: {N} across {waves} waves
+   - **Refinement Rounds**: {N}
+   - **Confidence**: {high/medium/low} — {rationale}
+   ```
+
+3. **Display Summary**
    ```markdown
    ## Roadmap Complete
 
    - **Session**: RMAP-{slug}-{date}
    - **Strategy**: {progressive|direct}
    - **Issues Created**: {count} across {waves} waves
+   - **Refinement Rounds**: {N}
    - **Roadmap**: .workflow/.roadmap/RMAP-{slug}-{date}/roadmap.md
 
    | Wave | Issue Count | Layer/Type |

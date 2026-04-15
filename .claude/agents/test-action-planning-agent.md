@@ -27,7 +27,7 @@ color: cyan
 ## Agent Inheritance
 
 **Base Agent**: `@action-planning-agent`
-- **Inherits**: 6-field JSON schema, context loading, document generation flow
+- **Inherits**: 6-field JSON template, context loading, document generation flow
 - **Extends**: Adds test-specific meta fields, flow_control fields, and quality gate specifications
 
 **Reference Documents**:

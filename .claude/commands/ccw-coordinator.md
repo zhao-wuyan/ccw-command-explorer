@@ -158,46 +158,72 @@ function analyzeRequirements(taskDescription) {
     task_type: detectTaskType(taskDescription)
   };
 }
+```
 
-// Task Type Detection Patterns (harmonized with ccw.md priority order)
-function detectTaskType(text) {
-  // Priority order (first match wins)
-  // Urgent bugfix (dual condition - must come first)
-  if (/urgent|production|critical/.test(text) && /fix|bug/.test(text)) return 'bugfix-hotfix';
-  // With-File workflow patterns (specific keywords - must come before generic bugfix)
-  if (/brainstorm.*issue|头脑风暴.*issue|idea.*issue|想法.*issue|从.*头脑风暴|convert.*brainstorm/.test(text)) return 'brainstorm-to-issue';
-  // 0→1 Greenfield detection (priority over brainstorm/roadmap)
-  if (/从零开始|from scratch|0.*to.*1|greenfield|全新.*开发|新项目|new project|build.*from.*ground/.test(text)) return 'greenfield';
-  if (/brainstorm|ideation|头脑风暴|创意|发散思维|creative thinking/.test(text)) return 'brainstorm-file';
-  if (/debug.*document|hypothesis.*debug|深度调试|假设.*验证|systematic debug/.test(text)) return 'debug-file';
-  if (/analyze.*document|collaborative analysis|协作分析|深度.*理解/.test(text)) return 'analyze-file';
-  if (/collaborative.*plan|协作.*规划|多人.*规划|multi.*agent.*plan|Plan Note|分工.*规划/.test(text)) return 'collaborative-plan';
-  if (/roadmap|路线.*图/.test(text)) return 'roadmap';  // Narrowed: only explicit roadmap keywords
-  if (/spec.*gen|specification|PRD|产品需求|产品文档|产品规格/.test(text)) return 'spec-driven';
-  // Cycle workflow patterns
-  if (/integration.*test|集成测试|端到端.*测试|e2e.*test|integration.*cycle/.test(text)) return 'integration-test';
-  if (/refactor|重构|tech.*debt|技术债务/.test(text)) return 'refactor';
-  // Team workflows (kept: team-planex only)
-  if (/team.*plan.*exec|team.*planex|团队.*规划.*执行|并行.*规划.*执行|wave.*pipeline/.test(text)) return 'team-planex';
-  // Standard workflows
-  if (/multi.*cli|多.*CLI|多模型.*协作|multi.*model.*collab/.test(text)) return 'multi-cli';
-  if (/fix|bug|error|crash|fail|debug|diagnose/.test(text)) return 'bugfix';
-  if (/tdd|test-driven|先写测试|test first/.test(text)) return 'tdd';
-  if (/测试失败|test fail|fix test|failing test/.test(text)) return 'test-fix';
-  if (/generate test|写测试|add test|补充测试/.test(text)) return 'test-gen';
-  if (/review|审查|code review/.test(text)) return 'review';
-  // Issue workflow patterns
-  if (/issues?.*batch|batch.*issues?|批量.*issue|issue.*批量/.test(text)) return 'issue-batch';
-  if (/issue workflow|structured workflow|queue|multi-stage|转.*issue|issue.*流程/.test(text)) return 'issue-transition';
-  // Additional task types (harmonized with ccw.md)
-  if (/不确定|explore|研究|what if|权衡/.test(text)) return 'exploration';
-  if (/quick|simple|small/.test(text) && /feature|function/.test(text)) return 'quick-task';
-  if (/ui|design|component|style/.test(text)) return 'ui-design';
-  if (/docs|documentation|readme/.test(text)) return 'documentation';
-  return 'feature';  // Default
+#### Task Type Detection: Structured Intent Extraction
+
+Instead of regex, extract a structured intent tuple using LLM semantic understanding, then route via action × object × style matrix.
+
+**Step 1 — Extract structured intent from user input:**
+
+```json
+{
+  "action":    "<create|fix|analyze|plan|execute|explore|debug|test|review|refactor|convert>",
+  "object":    "<feature|bug|issue|code|test|spec|doc|ui|performance|security|architecture|project|team>",
+  "style":     "<quick|documented|collaborative|structured|iterative|tdd|default>",
+  "urgency":   "<low|normal|high>"
 }
+```
 
-// Complexity Assessment
+**Disambiguation rules for "问题" / "issue" / "problem":**
+- "问题" / "problem" describing **something broken** → `object: "bug"` (routes to bugfix)
+- "issue" referring to **batch tracked items** or used with "workflow/queue/discover" → `object: "issue"` (routes to issue workflow)
+- When ambiguous, prefer `"bug"` — it routes to fix workflows which are more actionable
+
+**Step 2 — Route via action × object × style matrix:**
+
+```javascript
+function detectTaskType(intent) {
+  const { action, object, style, urgency } = intent;
+
+  // Urgency override
+  if (urgency === 'high' && (action === 'fix' || object === 'bug')) return 'bugfix-hotfix';
+
+  // Style-first routing
+  if (style === 'tdd') return 'tdd';
+  if (style === 'collaborative' && action === 'plan') return 'collaborative-plan';
+  if (style === 'collaborative' && action !== 'plan') return 'multi-cli';
+  if (style === 'iterative' && object === 'test') return 'integration-test';
+  if (style === 'iterative' && action === 'refactor') return 'refactor';
+
+  // Action × Object matrix
+  const matrix = {
+    'create': { 'project': 'greenfield', 'feature': 'feature', 'spec': 'spec-driven', 'test': 'test-gen', 'doc': 'documentation', 'ui': 'ui-design', 'issue': 'issue-batch', '_default': 'feature' },
+    'fix':    { 'bug': 'bugfix', 'test': 'test-fix', 'issue': 'issue-batch', 'code': 'bugfix', 'performance': 'bugfix', 'security': 'bugfix', '_default': 'bugfix' },
+    'analyze':{ 'architecture': 'analyze-file', 'code': 'analyze-file', 'bug': 'debug-file', '_default': 'analyze-file' },
+    'explore':{ 'feature': 'brainstorm-file', 'architecture': 'brainstorm-file', 'issue': 'issue-batch', '_default': 'exploration' },
+    'plan':   { 'feature': 'feature', 'project': 'greenfield', 'issue': 'issue-transition', '_default': 'feature' },
+    'execute':{ 'issue': 'issue-transition', '_default': 'feature' },
+    'debug':  { 'bug': style === 'documented' ? 'debug-file' : 'bugfix', '_default': style === 'documented' ? 'debug-file' : 'bugfix' },
+    'test':   { 'test': 'test-fix', 'code': 'test-gen', 'feature': 'integration-test', '_default': 'test-gen' },
+    'review': { '_default': 'review' },
+    'refactor':{ '_default': 'refactor' },
+    'convert':{ 'issue': 'brainstorm-to-issue', '_default': 'issue-transition' },
+  };
+
+  // Special: roadmap keyword, team planex
+  if (action === 'plan' && style === 'structured' && /roadmap|路线.*图/.test(rawInput)) return 'roadmap';
+  if (object === 'team') return 'team-planex';
+
+  const actionMap = matrix[action];
+  if (!actionMap) return 'feature';
+  return actionMap[object] || actionMap['_default'] || 'feature';
+}
+```
+
+#### Complexity Assessment
+
+```javascript
 function determineComplexity(text) {
   let score = 0;
   if (/refactor|重构|migrate|迁移|architect|架构|system|系统/.test(text)) score += 2;
@@ -215,7 +241,7 @@ Analysis Complete:
   Scope: [identified areas]
   Constraints: [identified constraints]
   Complexity: [level]
-  Task Type: [detected type]
+  Task Type: [detected type] (via {action, object, style})
 ```
 
 ### Phase 2: Discover Commands & Recommend Chain
@@ -527,7 +553,7 @@ function determinePortFlow(taskType, constraints) {
     'refactor':             { inputPort: 'codebase', outputPort: 'refactored-code' },
     // Team workflows (kept: team-planex only)
     'team-planex':          { inputPort: 'requirement', outputPort: 'code' },
-    // Additional task types (harmonized with ccw.md)
+    // Additional task types
     'bugfix-hotfix':        { inputPort: 'bug-report', outputPort: 'fixed-code' },
     'exploration':          { inputPort: 'exploration-topic', outputPort: 'test-passed' },
     'quick-task':           { inputPort: 'requirement', outputPort: constraints?.includes('skip-tests') ? 'code' : 'test-passed' },

@@ -60,6 +60,14 @@ Execute analysis based on detected project type:
 - Rank top 3-7 architecture issues by severity (Critical / High / Medium)
 - Record evidence: file paths, line numbers, measured values
 
+### Tech Profile Scan
+
+After analysis, scan findings for context-aware trigger signals (based on detected codebase characteristics):
+
+1. Check dependency analysis → signals (`sql_detected`, `auth_detected`, `ml_detected`)
+2. Check structural analysis → risk signals (`perf_sensitive`, `legacy_patterns`, `scaling_concern`)
+3. Include `tech_profile` in Phase 5 state_update data
+
 ## Phase 4: Report Generation
 
 1. Write architecture baseline to `<session>/artifacts/architecture-baseline.json`:

@@ -97,7 +97,7 @@ Find ready tasks, spawn workers, STOP.
       const agentId = spawn_agent({
         agent_type: "team_worker",
         task_name: taskId,  // e.g., "IDEA-001" — enables named targeting
-        items: [{ type: "text", text: `## Role Assignment
+        message: `## Role Assignment
       role: <role>
       role_spec: ~  or <project>/.codex/skills/team-brainstorm/roles/<role>/role.md
       session: <session-folder>
@@ -107,10 +107,10 @@ Find ready tasks, spawn workers, STOP.
       inner_loop: false
 
       Read role_spec file to load Phase 2-4 domain instructions.
-      Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).` }]
+      Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).`
       })
       ```
-   d. Collect agent results: `wait_agent({ targets: [taskId], timeout_ms: 900000 })`
+   d. Collect agent results: `wait_agent({ timeout_ms: 900000 })`
    e. Read discoveries from output files
    f. Update tasks.json with results
    g. Close agent: `close_agent({ target: taskId })`  // Use task_name, not agentId
@@ -130,12 +130,12 @@ for (const task of readyIdeatorTasks) {
   agentIds.push(spawn_agent({
     agent_type: "team_worker",
     task_name: task.id,  // e.g., "IDEA-001" — enables named targeting
-    items: [{ type: "text", text: `...role: ideator-<N>...` }]
+    message: `...role: ideator-<N>...`
   }))
 }
 // Use task_name for stable targeting (v4)
 const taskNames = readyIdeatorTasks.map(t => t.id)
-const results = wait_agent({ targets: taskNames, timeout_ms: 900000 })
+const results = wait_agent({ timeout_ms: 900000 })
 if (results.timed_out) {
   for (const taskId of taskNames) { state.tasks[taskId].status = 'timed_out'; close_agent({ target: taskId }) }
 } else {
@@ -152,12 +152,12 @@ When spawning workers in a later pipeline phase, send upstream results as supple
 // Example: Send ideation results to running challenger
 send_message({
   target: "<running-agent-task-name>",
-  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+  message: `## Supplementary Context\n${upstreamFindings}`
 })
 // Note: send_message queues info without interrupting the agent's current work
 ```
 
-Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
+Use `send_message` (not `followup_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
 
 6. Update session, output summary, STOP
 

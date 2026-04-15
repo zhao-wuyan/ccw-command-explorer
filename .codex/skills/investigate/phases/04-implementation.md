@@ -16,7 +16,7 @@ Implement the minimal fix and add a regression test. Iron Law gate enforced at e
 | Source | Required | Description |
 |--------|----------|-------------|
 | investigation-report (phase 3) | Yes | Must contain confirmed_root_cause with evidence chain |
-| assign_task message | Yes | Phase 4 instruction |
+| followup_task message | Yes | Phase 4 instruction |
 
 ## Iron Law Gate Check
 
@@ -156,7 +156,7 @@ fix_applied = {
 
 ### Step 5: Assemble Phase 4 Output
 
-Add `fix_applied` to investigation-report in memory. Output Phase 4 summary and await assign_task for Phase 5.
+Add `fix_applied` to investigation-report in memory. Output Phase 4 summary and await followup_task for Phase 5.
 
 ---
 

@@ -1,0 +1,20 @@
+{
+  "localVersion": "v7.3.6",
+  "pageVersion": "v7.3",
+  "newCommands": [
+    {
+      "cmd": "/ccw-coordinate",
+      "source": ".codex/skills/ccw-coordinate/SKILL.md",
+      "cli": ["codex"]
+    }
+  ],
+  "deprecatedCommands": [
+    { "cmd": "/chain-loader", "reason": "Chain 技能生成器已移除", "addedInVersion": "v7.3" },
+    { "cmd": "/workflow-skill", "reason": "技能快速启动器已移除", "addedInVersion": "v7.3" },
+    { "cmd": "/workflow:collaborative-plan-with-file", "reason": "协作式规划命令已移除", "addedInVersion": "v6.0" },
+    { "cmd": "/workflow:unified-execute-with-file", "reason": "通用执行引擎命令已移除", "addedInVersion": "v6.2" }
+  ],
+  "cliFixes": [
+    { "cmd": "/memory-capture", "from": ["claude"], "to": ["claude", "codex"] }
+  ]
+}

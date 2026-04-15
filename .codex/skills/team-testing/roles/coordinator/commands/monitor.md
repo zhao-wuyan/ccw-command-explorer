@@ -107,8 +107,7 @@ state.tasks[taskId].status = 'in_progress'
 const agentId = spawn_agent({
   agent_type: "team_worker",
   task_name: taskId,  // e.g., "STRATEGY-001" — enables named targeting
-  items: [
-    { type: "text", text: `## Role Assignment
+  message: `## Role Assignment
 role: ${task.role}
 role_spec: ${skillRoot}/roles/${task.role}/role.md
 session: ${sessionFolder}
@@ -119,18 +118,17 @@ inner_loop: ${task.role === 'generator' || task.role === 'executor'}
 
 ## Current Task
 - Task ID: ${taskId}
-- Task: ${task.title}` },
+- Task: ${task.title}
 
-    { type: "text", text: `Read role_spec file (${skillRoot}/roles/${task.role}/role.md) to load Phase 2-4 domain instructions.
-Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).` },
+Read role_spec file (${skillRoot}/roles/${task.role}/role.md) to load Phase 2-4 domain instructions.
+Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).
 
-    { type: "text", text: `## Task Context
+## Task Context
 task_id: ${taskId}
 title: ${task.title}
-description: ${task.description}` },
+description: ${task.description}
 
-    { type: "text", text: `## Upstream Context\n${prevContext}` }
-  ]
+## Upstream Context\n${prevContext}`
 })
 
 // 3) Track agent
@@ -148,7 +146,7 @@ After spawning all ready tasks:
 ```javascript
 // 4) Batch wait — use task_name for stable targeting (v4)
 const taskNames = Object.keys(state.active_agents)
-const waitResult = wait_agent({ targets: taskNames, timeout_ms: 900000 })
+const waitResult = wait_agent({ timeout_ms: 900000 })
 if (waitResult.timed_out) {
   for (const taskId of taskNames) {
     state.tasks[taskId].status = 'timed_out'
@@ -208,12 +206,12 @@ When spawning workers in a later pipeline phase, send upstream results as supple
 // Example: Send strategy results to running generators
 send_message({
   target: "<running-agent-task-name>",
-  items: [{ type: "text", text: `## Supplementary Context\n${upstreamFindings}` }]
+  message: `## Supplementary Context\n${upstreamFindings}`
 })
 // Note: send_message queues info without interrupting the agent's current work
 ```
 
-Use `send_message` (not `assign_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
+Use `send_message` (not `followup_task`) for supplementary info that enriches but doesn't redirect the agent's current task.
 
 ### Persist and Loop
 

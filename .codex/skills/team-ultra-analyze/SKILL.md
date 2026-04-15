@@ -1,7 +1,7 @@
 ---
 name: team-ultra-analyze
 description: Deep collaborative analysis team skill. All roles route via this SKILL.md. Beat model is coordinator-only (monitor.md). Structure is roles/ + specs/. Triggers on "team ultra-analyze", "team analyze".
-allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)
+allowed-tools: spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)
 ---
 
 # Team Ultra Analyze
@@ -62,7 +62,7 @@ Before calling ANY tool, apply this check:
 
 | Tool Call | Verdict | Reason |
 |-----------|---------|--------|
-| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `assign_task` | ALLOWED | Orchestration |
+| `spawn_agent`, `wait_agent`, `close_agent`, `send_message`, `followup_task` | ALLOWED | Orchestration |
 | `list_agents` | ALLOWED | Agent health check |
 | `request_user_input` | ALLOWED | User interaction |
 | `mcp__ccw-tools__team_msg` | ALLOWED | Message bus |
@@ -95,9 +95,8 @@ Coordinator spawns workers using this template:
 spawn_agent({
   agent_type: "team_worker",
   task_name: "<task-id>",
-  fork_context: false,
-  items: [
-    { type: "text", text: `## Role Assignment
+  fork_turns: "none",
+  message: `## Role Assignment
 role: <role>
 role_spec: <skill_root>/roles/<role>/role.md
 session: <session-folder>
@@ -105,21 +104,20 @@ session_id: <session-id>
 requirement: <topic-description>
 inner_loop: false
 
-Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.` },
+Read role_spec file (<skill_root>/roles/<role>/role.md) to load Phase 2-4 domain instructions.
 
-    { type: "text", text: `## Task Context
+## Task Context
 task_id: <task-id>
 title: <task-title>
 description: <task-description>
-pipeline_phase: <pipeline-phase>` },
+pipeline_phase: <pipeline-phase>
 
-    { type: "text", text: `## Upstream Context
-<prev_context>` }
-  ]
+## Upstream Context
+<prev_context>`
 })
 ```
 
-After spawning, use `wait_agent({ targets: [...], timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
 
 
 ### Model Selection Guide
@@ -136,10 +134,10 @@ Override model/reasoning_effort in spawn_agent when cost optimization is needed:
 spawn_agent({
   agent_type: "team_worker",
   task_name: "<task-id>",
-  fork_context: false,
+  fork_turns: "none",
   model: "<model-override>",
   reasoning_effort: "<effort-level>",
-  items: [...]
+  message: "..."
 })
 ```
 
@@ -180,7 +178,7 @@ spawn_agent({
 | Intent | API | Example |
 |--------|-----|---------|
 | Send exploration findings to running analysts | `send_message` | Queue upstream context without interrupting ANALYZE-* workers |
-| Not used in this skill | `assign_task` | No resident agents -- all workers are one-shot |
+| Not used in this skill | `followup_task` | No resident agents -- all workers are one-shot |
 | Check running agents | `list_agents` | Verify parallel explorer/analyst health during resume |
 
 ### Parallel Phase Coordination
@@ -193,7 +191,7 @@ const explorerNames = ["EXPLORE-001", "EXPLORE-002", ..., "EXPLORE-00N"]
 for (const name of explorerNames) {
   spawn_agent({ agent_type: "team_worker", task_name: name, ... })
 }
-wait_agent({ targets: explorerNames, timeout_ms: 900000 })
+wait_agent({ timeout_ms: 900000 })
 // Collect all results, then spawn ANALYZE phase
 
 // ANALYZE phase: send exploration context to analysts via items (not send_message)
@@ -215,7 +213,7 @@ const running = list_agents({})
 ### Named Agent Targeting
 
 Workers are spawned with `task_name: "<task-id>"` enabling direct addressing:
-- `send_message({ target: "ANALYZE-001", items: [...] })` -- queue supplementary exploration findings
+- `send_message({ target: "ANALYZE-001", message: "..." })` -- queue supplementary exploration findings
 - `close_agent({ target: "EXPLORE-001" })` -- cleanup by name after wait_agent returns
 
 ## Completion Action

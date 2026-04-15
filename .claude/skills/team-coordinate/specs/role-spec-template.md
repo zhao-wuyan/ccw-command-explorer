@@ -159,6 +159,9 @@ Coordinator MAY reference these patterns when composing Phase 2-4 content for a 
 - Phase 3: Multi-dimension analysis — perspectives and depth determined by task
 - Phase 4: Verify report exists + severity classification (Behavioral Traits) + update shared state
 
+**Tech Profile Scan**: When generating role-specs for analysis/exploration roles (responsibility_type includes "analysis", "exploration", or "research"), append to Phase 3:
+> After exploration, include `tech_profile` in state_update with detected signals (e.g., `sql_detected`, `auth_detected`, `perf_sensitive`) and evidence file paths. This enables coordinator to evaluate specialist injection needs.
+
 ### Validation / Testing
 
 - Phase 2: Detect test framework + identify changed files from upstream

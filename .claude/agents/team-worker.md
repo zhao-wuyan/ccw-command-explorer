@@ -124,6 +124,10 @@ After claiming a task, check if output artifacts already exist (indicates resume
 
 The role_spec contains Phase 2, Phase 3, and Phase 4 sections with domain-specific logic. Follow those instructions exactly. Key integration points with built-in infrastructure:
 
+### Context-Aware Signal Emission (Optional)
+
+During Phase 2-4, if you detect codebase signals (SQL usage, auth modules, ML imports, performance-sensitive code, etc.), include `tech_profile` in your Phase 5 state_update. Full signal catalog and schema: `skills_lib/specs/context-aware-trigger.md`. This enables the coordinator to evaluate specialist injection for the pipeline.
+
 ## CRITICAL LIMITATION: No Agent Delegation
 
 **Team workers CANNOT call the Agent() tool to spawn other agents.**
@@ -181,6 +185,96 @@ Discussion: <session-folder>/discussions/<round-id>-discussion.md
 
 ---
 
+## Progress Milestone Protocol
+
+Report progress via `mcp__ccw-tools__team_msg` at natural phase boundaries. This enables coordinator status dashboards and timeout forensics.
+
+### Milestone Reporting
+
+At each phase boundary, report progress:
+
+```javascript
+mcp__ccw-tools__team_msg({
+  operation: "log",
+  session_id: "<session_id>",
+  from: "<task_id>",
+  to: "coordinator",
+  type: "progress",
+  summary: "[<task_id>] <brief phase description> (<pct>%)",
+  data: {
+    task_id: "<task_id>",
+    role: "<role>",
+    status: "in_progress",
+    progress_pct: <0-100>,
+    phase: "<what just completed>",
+    key_info: "<most important finding or decision>"
+  }
+})
+```
+
+### Role-Specific Milestones
+
+| Role | ~30% | ~60% | ~90% |
+|------|------|------|------|
+| analyst/researcher | Context loaded | Core analysis done | Verification complete |
+| writer/drafter | Sources gathered | Draft written | Self-review done |
+| planner | Requirements parsed | Plan structured | Dependencies validated |
+| executor/implementer | Context loaded | Core changes done | Tests passing |
+| reviewer/tester | Scope mapped | Reviews/tests done | Report compiled |
+
+### Blocker Reporting
+
+Report blockers immediately (don't wait for next milestone):
+
+```javascript
+mcp__ccw-tools__team_msg({
+  operation: "log",
+  session_id: "<session_id>",
+  from: "<task_id>",
+  to: "coordinator",
+  type: "blocker",
+  summary: "[<task_id>] BLOCKED: <brief description>",
+  data: {
+    task_id: "<task_id>",
+    role: "<role>",
+    blocker_detail: "<what is blocking>",
+    severity: "high|medium",
+    attempted: "<what was tried>"
+  }
+})
+```
+
+### Completion Report
+
+After `report_agent_job_result` / Phase 5 SendMessage, also log:
+
+```javascript
+mcp__ccw-tools__team_msg({
+  operation: "log",
+  session_id: "<session_id>",
+  from: "<task_id>",
+  to: "coordinator",
+  type: "task_complete",
+  summary: "[<task_id>] Complete: <one-line result>",
+  data: {
+    task_id: "<task_id>",
+    role: "<role>",
+    status: "completed",
+    progress_pct: 100,
+    artifact: "<artifact_path>",
+    files_modified: []
+  }
+})
+```
+
+### Overhead Rule
+
+- Max 3-4 milestone messages per task (context loaded, core work done, verification complete, plus blockers)
+- Each message < 200 chars summary
+- Do NOT report every minor step — only natural phase boundaries
+
+---
+
 ## Phase 5: Report + Pipeline Notification (Built-in)
 
 After Phase 4 completes, determine Phase 5 variant (see Execution Flow for decision table).
@@ -203,7 +297,8 @@ After Phase 4 completes, determine Phase 5 variant (see Execution Flow for decis
        decisions: <from Phase 4>,
        files_modified: <from Phase 4>,
        artifact_path: "<artifact-path>",
-       verification: "<verification_method>"
+       verification: "<verification_method>",
+       tech_profile: <optional, from Phase 3/4 if signals detected>
      }
    )
    ```

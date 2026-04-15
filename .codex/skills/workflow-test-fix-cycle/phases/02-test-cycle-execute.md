@@ -140,12 +140,11 @@ const analysisAgentId = spawn_agent({
 
 // Wait for analysis completion
 const analysisResult = wait_agent({
-  targets: [analysisAgentId],
   timeout_ms: 2400000  // 40 minutes (CLI analysis timeout)
 });
 
 // Clean up
-close_agent({ id: analysisAgentId });
+close_agent({ target: analysisAgentId });
 ```
 
 **@test-fix-agent** (execution):
@@ -200,12 +199,11 @@ const fixAgentId = spawn_agent({
 
 // Wait for execution completion
 const fixResult = wait_agent({
-  targets: [fixAgentId],
   timeout_ms: 600000  // 10 minutes
 });
 
 // Clean up
-close_agent({ id: fixAgentId });
+close_agent({ target: fixAgentId });
 
 // Task Type Configurations
 const taskTypeObjective = {
@@ -390,11 +388,11 @@ Fallback is triggered when any of these conditions occur:
 ```javascript
 try {
   const agentId = spawn_agent({ message: "..." });
-  const result = wait_agent({ ids: [agentId], timeout_ms: 2400000 });
+  const result = wait_agent({ timeout_ms: 2400000 });
   // ... process result ...
-  close_agent({ id: agentId });
+  close_agent({ target: agentId });
 } catch (error) {
-  if (agentId) close_agent({ id: agentId });
+  if (agentId) close_agent({ target: agentId });
   // Save state for resume capability
   throw error;
 }

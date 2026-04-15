@@ -27,7 +27,7 @@ When `--yes` or `-y`: Auto-confirm prioritization, use recommended refactoring s
 /workflow:refactor-cycle --continue "认证模块"
 ```
 
-**Context Source**: cli-explore-agent + Gemini/Codex multi-dimensional analysis
+**Context Source**: cli-explore-agent + Gemini/Claude multi-dimensional analysis
 **Output Directory**: `.workflow/.refactor/{session-id}/`
 **Core Innovation**: Debt-driven refactoring with regression-safe iterative execution and reflection
 
@@ -150,7 +150,13 @@ Closed-loop tech debt lifecycle: **Discover → Assess → Plan → Refactor →
 - **Scope**: {module|project}
 - **Started**: {timestamp}
 
+## Original Goal
+- {parsed goal from user input}
+
 ---
+
+## Current Understanding
+> To be populated after discovery. (Replaced each phase — NOT appended)
 
 ## Phase 2: Debt Discovery
 > Pending...
@@ -164,8 +170,41 @@ Closed-loop tech debt lifecycle: **Discover → Assess → Plan → Refactor →
 ## Cumulative Learnings
 > (Replaced and updated after each refactoring item — not appended)
 
+## Goal Coverage
+> Updated after each item. Tracks which original goals are addressed.
+
 ## Conclusions
 > Final synthesis after completion...
+```
+
+### Decision Recording Protocol
+
+**CRITICAL**: Record immediately when any of these occur during refactoring:
+
+| Trigger | What to Record | Format |
+|---------|---------------|--------|
+| **Priority decision** | What chosen, alternatives, scoring rationale | Decision Record |
+| **Refactoring approach** | Approach chosen, alternatives considered, risk assessment | Decision Record |
+| **Validation outcome** | PASS/PARTIAL/FAIL, evidence, regression details | Validation Record |
+| **Strategy adjustment** | Old → new approach, trigger reason | Decision Record |
+| **Skipped item** | Why skipped, what was tried, impact on remaining | Decision Record |
+
+**Decision Record Format**:
+```markdown
+> **Decision**: [Description]
+> - **Context**: [Trigger]
+> - **Options considered**: [Alternatives]
+> - **Chosen**: [Approach] — **Reason**: [Rationale]
+> - **Impact**: [Effect on remaining items]
+```
+
+**Validation Record Format**:
+```markdown
+> **Validation**: [PASS|PARTIAL|FAIL] — Item {id}: {title}
+> - **Tests**: {pass_rate}% ({delta} from baseline)
+> - **Diagnostics**: {errors_delta} errors, {warnings_delta} warnings
+> - **Regression**: {none|description}
+> - **Evidence**: [file:line references]
 ```
 
 **Initialize state.json**:
@@ -407,6 +446,33 @@ AskUserQuestion({
 - Diagnostics: {errors} errors, {warnings} warnings
 ```
 
+6. **Update Current Understanding** (replace block):
+
+```markdown
+## Current Understanding (Updated: Phase 3)
+
+### Debt Landscape
+- **Total**: {N} items across {dimensions}
+- **Critical Path**: {highest impact items}
+- **Quick Wins**: {low-effort high-impact}
+
+### Execution Plan
+- **Queue**: {N} items, estimated {time}
+- **Strategy**: {ordering rationale}
+- **Risk**: {primary risk and mitigation}
+```
+
+7. **Initial Goal Coverage Check**:
+
+```markdown
+#### Goal Coverage Check
+- ✅ {goal aspect 1}: Addressed by {N} debt items (D-xxx, D-yyy)
+- 🔄 {goal aspect 2}: Partially covered, depends on execution
+- ❌ {goal aspect 3}: Not addressed by current queue — may need additional scan
+```
+
+If ❌ items exist → surface to user before starting Phase 4.
+
 ---
 
 ### Phase 4: Iterative Refactoring Cycle
@@ -567,6 +633,22 @@ Append to reflection-log.md `## Refactoring Timeline`:
 **What Broke** (if any): {regression details}
 **What We Learned**: {insight about this debt pattern}
 **Impact on Remaining Items**: {does this affect other queue items?}
+
+**Narrative Synthesis**:
+**起点**: 基于 {prior item outcome/baseline}，本项从 {starting point} 切入。
+**关键进展**: {refactoring changes} {confirmed/refuted/modified} 了关于 {assumption} 的理解。
+**决策影响**: {PASS→commit / PARTIAL→retry / FAIL→rollback} 导致 {impact on queue}。
+**当前理解**: 经过本项，代码健康度 {improved/unchanged/regressed}，核心认知更新为 {updated understanding}。
+```
+
+**Record Decision** (using Decision Recording Protocol):
+
+```markdown
+> **Decision**: {PASS|PARTIAL|FAIL} for {item.id}: {item.title}
+> - **Context**: Validation result — tests {pass_rate}%, diagnostics delta {errors}
+> - **Options considered**: {commit / retry with fix / rollback and skip}
+> - **Chosen**: {action} — **Reason**: {rationale}
+> - **Impact**: {effect on remaining queue items}
 ```
 
 Update `## Cumulative Learnings` (replace, not append):
@@ -654,6 +736,13 @@ Move to next item in queue.
 |----|-------|--------|
 | D-005 | ... | Regression not resolvable in 3 retries |
 
+### Goal Coverage Matrix
+| # | Original Goal | Status | Addressed By | Notes |
+|---|--------------|--------|--------------|-------|
+| 1 | {goal} | ✅ Addressed | D-001, D-003 | |
+| 2 | {goal} | 🔀 Transformed | D-002 | Original: X → Final: Y |
+| 3 | {goal} | ❌ Missed | — | Reason |
+
 ### Remaining Debt
 - {items not in queue or deferred}
 
@@ -661,9 +750,33 @@ Move to next item in queue.
 - {insight about codebase health}
 - {pattern for future refactoring}
 
+### Decision Trail
+| Item/Phase | Decision | Outcome |
+|------------|----------|---------|
+| Phase 3 | Prioritize {dimension} first | {N} items completed |
+| D-001 | {approach chosen} | PASS — {result} |
+| D-005 | Skip after 3 retries | Regression not resolvable |
+
 ### Recommendations
 - {what to address next}
 - {process improvement}
+```
+
+5. **Update Current Understanding (Final)** — replace `## Current Understanding` block:
+
+```markdown
+## Current Understanding (Final)
+
+### What We Established
+- {verified codebase health improvements}
+
+### What Was Corrected
+- ~~{old assumption}~~ → {corrected understanding} (Item D-xxx)
+
+### Code Health Assessment
+- **Before**: {baseline summary}
+- **After**: {final summary}
+- **Net Improvement**: {delta}
 ```
 
 4. **Post-Completion Options** (AskUserQuestion)
@@ -770,14 +883,14 @@ AskUserQuestion({
 | Scenario | Action |
 |----------|--------|
 | cli-explore-agent fails | Fallback to Grep/Glob manual scan |
-| CLI analysis timeout | Fallback: Gemini → Qwen → Codex |
+| CLI analysis timeout | Fallback: Gemini → Claude |
 | Test suite crashes | Log error, retry with minimal test subset |
 | Regression in refactoring | Retry up to 3 times, then rollback + skip |
 | All items skipped | Generate failure report, recommend manual review |
 | Circular dependency in queue | Detect in Phase 3, break cycle with extraction item |
 | Diagnostics unavailable | Skip diagnostics check, rely on tests only |
 
-**CLI Fallback Chain**: Gemini → Qwen → Codex
+**CLI Fallback Chain**: Gemini → Claude
 
 ---
 

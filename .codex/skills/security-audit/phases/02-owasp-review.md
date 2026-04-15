@@ -60,7 +60,7 @@ Spawn inline subagent using `cli-explore-agent` role to perform systematic OWASP
 ```
 spawn_agent({
   task_name: "inline-owasp-analysis",
-  fork_context: false,
+  fork_turns: "none",
   model: "haiku",
   reasoning_effort: "medium",
   message: `### MANDATORY FIRST STEPS
@@ -83,7 +83,7 @@ EXPECTED: JSON-structured findings per OWASP category with severity, file:line, 
 
 CONSTRAINTS: Code-level analysis only | Every finding must have file:line reference | Focus on real vulnerabilities not theoretical risks`
 })
-const result = wait_agent({ targets: ["inline-owasp-analysis"], timeout_ms: 300000 })
+const result = wait_agent({ timeout_ms: 600000 })
 close_agent({ target: "inline-owasp-analysis" })
 ```
 

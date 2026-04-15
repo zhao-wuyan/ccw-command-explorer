@@ -58,14 +58,14 @@ Phase 7:   Issue Export            -> issue-export-report.md                    
 
 ## Agent Registry
 
-| Agent | task_name | Role File | Responsibility | Pattern | fork_context |
+| Agent | task_name | Role File | Responsibility | Pattern | fork_turns |
 |-------|-----------|-----------|----------------|---------|-------------|
-| doc-generator (Phase 2) | `doc-gen-p2` | ~/.codex/agents/doc-generator.toml | Product brief + glossary generation | 2.1 Standard | false |
-| doc-generator (Phase 3) | `doc-gen-p3` | ~/.codex/agents/doc-generator.toml | Requirements / PRD generation | 2.1 Standard | false |
-| doc-generator (Phase 4) | `doc-gen-p4` | ~/.codex/agents/doc-generator.toml | Architecture + ADR generation | 2.1 Standard | false |
-| doc-generator (Phase 5) | `doc-gen-p5` | ~/.codex/agents/doc-generator.toml | Epics & Stories generation | 2.1 Standard | false |
-| doc-generator (Phase 6.5) | `doc-gen-fix` | ~/.codex/agents/doc-generator.toml | Auto-fix readiness issues | 2.1 Standard | false |
-| cli-explore-agent (Phase 1) | `spec-explorer` | ~/.codex/agents/cli-explore-agent.toml | Codebase exploration | 2.1 Standard | false |
+| doc-generator (Phase 2) | `doc-gen-p2` | ~/.codex/agents/doc-generator.toml | Product brief + glossary generation | 2.1 Standard | "none" |
+| doc-generator (Phase 3) | `doc-gen-p3` | ~/.codex/agents/doc-generator.toml | Requirements / PRD generation | 2.1 Standard | "none" |
+| doc-generator (Phase 4) | `doc-gen-p4` | ~/.codex/agents/doc-generator.toml | Architecture + ADR generation | 2.1 Standard | "none" |
+| doc-generator (Phase 5) | `doc-gen-p5` | ~/.codex/agents/doc-generator.toml | Epics & Stories generation | 2.1 Standard | "none" |
+| doc-generator (Phase 6.5) | `doc-gen-fix` | ~/.codex/agents/doc-generator.toml | Auto-fix readiness issues | 2.1 Standard | "none" |
+| cli-explore-agent (Phase 1) | `spec-explorer` | ~/.codex/agents/cli-explore-agent.toml | Codebase exploration | 2.1 Standard | "none" |
 
 > **COMPACT PROTECTION**: Agent files are execution documents. When context compression occurs and agent instructions are reduced to summaries, **you MUST immediately `Read` the corresponding agent file to reload before continuing execution**.
 
@@ -73,16 +73,16 @@ Phase 7:   Issue Export            -> issue-export-report.md                    
 
 ## Fork Context Strategy
 
-| Agent | task_name | fork_context | fork_from | Rationale |
+| Agent | task_name | fork_turns | fork_from | Rationale |
 |-------|-----------|-------------|-----------|-----------|
-| cli-explore-agent | `spec-explorer` | false | — | Independent utility: codebase scan, isolated task |
-| doc-generator (P2) | `doc-gen-p2` | false | — | Sequential pipeline: context passed via file paths in message |
-| doc-generator (P3) | `doc-gen-p3` | false | — | Sequential pipeline: reads P2 output files from disk |
-| doc-generator (P4) | `doc-gen-p4` | false | — | Sequential pipeline: reads P2-P3 output files from disk |
-| doc-generator (P5) | `doc-gen-p5` | false | — | Sequential pipeline: reads P2-P4 output files from disk |
-| doc-generator (P6.5) | `doc-gen-fix` | false | — | Utility fix: reads readiness-report.md + affected phase files |
+| cli-explore-agent | `spec-explorer` | "none" | — | Independent utility: codebase scan, isolated task |
+| doc-generator (P2) | `doc-gen-p2` | "none" | — | Sequential pipeline: context passed via file paths in message |
+| doc-generator (P3) | `doc-gen-p3` | "none" | — | Sequential pipeline: reads P2 output files from disk |
+| doc-generator (P4) | `doc-gen-p4` | "none" | — | Sequential pipeline: reads P2-P3 output files from disk |
+| doc-generator (P5) | `doc-gen-p5` | "none" | — | Sequential pipeline: reads P2-P4 output files from disk |
+| doc-generator (P6.5) | `doc-gen-fix` | "none" | — | Utility fix: reads readiness-report.md + affected phase files |
 
-**Why all `fork_context: false`**: This is a Pipeline pattern (2.5) — each phase produces files on disk and the next phase reads them. No agent needs the orchestrator's conversation history; all context is explicitly passed via file paths in the spawn message.
+**Why all `fork_turns: "none"`**: This is a Pipeline pattern (2.5) — each phase produces files on disk and the next phase reads them. No agent needs the orchestrator's conversation history; all context is explicitly passed via file paths in the spawn message.
 
 ---
 
@@ -125,8 +125,8 @@ Phase 1: Discovery & Seed Analysis
    |- Parse input (text or file reference)
    |- Gemini CLI seed analysis (problem, users, domain, dimensions)
    |- Codebase exploration (conditional, if project detected)
-   |  |- spawn_agent({ task_name: "spec-explorer", fork_context: false, message: ... })
-   |  |- wait_agent({ targets: ["spec-explorer"], timeout_ms: 300000 })
+   |  |- spawn_agent({ task_name: "spec-explorer", fork_turns: "none", message: ... })
+   |  |- wait_agent({ timeout_ms: 600000 })
    |  |- close_agent({ target: "spec-explorer" })
    |- Spec type selection: service|api|library|platform (interactive, -y defaults to service)
    |- User confirmation (interactive, -y skips)
@@ -147,44 +147,44 @@ Phase 1.5: Requirement Expansion & Clarification
 Phase 1.5 → 2: functions.update_plan([{id:"phase-1.5",status:"completed"},{id:"phase-2",status:"in_progress"}])
 
 Phase 2: Product Brief  [AGENT: doc-generator]
-   |- spawn_agent({ task_name: "doc-gen-p2", fork_context: false, message: <context envelope> })
+   |- spawn_agent({ task_name: "doc-gen-p2", fork_turns: "none", message: <context envelope> })
    |- Agent reads: phases/02-product-brief.md
    |- Agent executes: 3 parallel CLI analyses + synthesis + glossary generation
    |- Agent writes: product-brief.md, glossary.json
-   |- wait_agent({ targets: ["doc-gen-p2"], timeout_ms: 600000 })
+   |- wait_agent({ timeout_ms: 600000 })
    |- close_agent({ target: "doc-gen-p2" })
    |- Orchestrator validates: files exist, spec-config.json updated
 
 Phase 2 → 3: functions.update_plan([{id:"phase-2",status:"completed"},{id:"phase-3",status:"in_progress"}])
 
 Phase 3: Requirements / PRD  [AGENT: doc-generator]
-   |- spawn_agent({ task_name: "doc-gen-p3", fork_context: false, message: <context envelope> })
+   |- spawn_agent({ task_name: "doc-gen-p3", fork_turns: "none", message: <context envelope> })
    |- Agent reads: phases/03-requirements.md
    |- Agent executes: Gemini expansion + Codex review (Step 2.5) + priority sorting
    |- Agent writes: requirements/ directory (_index.md + REQ-*.md + NFR-*.md)
-   |- wait_agent({ targets: ["doc-gen-p3"], timeout_ms: 600000 })
+   |- wait_agent({ timeout_ms: 600000 })
    |- close_agent({ target: "doc-gen-p3" })
    |- Orchestrator validates: directory exists, file count matches
 
 Phase 3 → 4: functions.update_plan([{id:"phase-3",status:"completed"},{id:"phase-4",status:"in_progress"}])
 
 Phase 4: Architecture  [AGENT: doc-generator]
-   |- spawn_agent({ task_name: "doc-gen-p4", fork_context: false, message: <context envelope> })
+   |- spawn_agent({ task_name: "doc-gen-p4", fork_turns: "none", message: <context envelope> })
    |- Agent reads: phases/04-architecture.md
    |- Agent executes: Gemini analysis + Codex review + codebase mapping
    |- Agent writes: architecture/ directory (_index.md + ADR-*.md)
-   |- wait_agent({ targets: ["doc-gen-p4"], timeout_ms: 600000 })
+   |- wait_agent({ timeout_ms: 600000 })
    |- close_agent({ target: "doc-gen-p4" })
    |- Orchestrator validates: directory exists, ADR files present
 
 Phase 4 → 5: functions.update_plan([{id:"phase-4",status:"completed"},{id:"phase-5",status:"in_progress"}])
 
 Phase 5: Epics & Stories  [AGENT: doc-generator]
-   |- spawn_agent({ task_name: "doc-gen-p5", fork_context: false, message: <context envelope> })
+   |- spawn_agent({ task_name: "doc-gen-p5", fork_turns: "none", message: <context envelope> })
    |- Agent reads: phases/05-epics-stories.md
    |- Agent executes: Gemini decomposition + Codex review (Step 2.5) + validation
    |- Agent writes: epics/ directory (_index.md + EPIC-*.md)
-   |- wait_agent({ targets: ["doc-gen-p5"], timeout_ms: 600000 })
+   |- wait_agent({ timeout_ms: 600000 })
    |- close_agent({ target: "doc-gen-p5" })
    |- Orchestrator validates: directory exists, MVP epics present
 
@@ -202,10 +202,10 @@ Phase 6: Readiness Check  [INLINE + ENHANCED]
    |- Handoff options: Phase 7 (issue export), lite-plan, req-plan, plan, iterate
 
 Phase 6.5: Auto-Fix (conditional)  [AGENT: doc-generator]
-   |- spawn_agent({ task_name: "doc-gen-fix", fork_context: false, message: <context envelope> })
+   |- spawn_agent({ task_name: "doc-gen-fix", fork_turns: "none", message: <context envelope> })
    |- Agent reads: phases/06-5-auto-fix.md + readiness-report.md
    |- Agent executes: fix affected Phase 2-5 documents
-   |- wait_agent({ targets: ["doc-gen-fix"], timeout_ms: 600000 })
+   |- wait_agent({ timeout_ms: 600000 })
    |- close_agent({ target: "doc-gen-fix" })
    |- Re-run Phase 6 validation
    |- Max 2 iterations, then force handoff
@@ -349,7 +349,7 @@ For Phase 2-5 and 6.5, the orchestrator delegates to a `doc-generator` agent via
 ```
 spawn_agent({
   task_name: "doc-gen-p<N>",
-  fork_context: false,
+  fork_turns: "none",
   message: `
 ## Spec Generator - Phase <N>: <phase-name>
 
@@ -389,15 +389,15 @@ After each agent phase, the orchestrator validates output:
 
 ```
 // 1. Wait for agent completion
-const result = wait_agent({ targets: ["doc-gen-p<N>"], timeout_ms: 600000 })
+const result = wait_agent({ timeout_ms: 600000 })
 
 // 2. Handle timeout
 if (result.timed_out) {
-  assign_task({
+  followup_task({
     target: "doc-gen-p<N>",
-    items: [{ type: "text", text: "Please finalize current work and output results immediately." }]
+    message: "Please finalize current work and output results immediately."
   })
-  const retryResult = wait_agent({ targets: ["doc-gen-p<N>"], timeout_ms: 120000 })
+  const retryResult = wait_agent({ timeout_ms: 300000 })
   if (retryResult.timed_out) {
     close_agent({ target: "doc-gen-p<N>" })
     // Fall back to inline execution for this phase
@@ -433,12 +433,12 @@ phasesSummaries[N] = summary
 
 | Phase | task_name | Default Timeout | On Timeout |
 |-------|-----------|-----------------|------------|
-| Phase 1 (explore) | `spec-explorer` | 300000ms (5min) | assign_task "finalize" → re-wait 120s → close |
-| Phase 2 | `doc-gen-p2` | 600000ms (10min) | assign_task "finalize" → re-wait 120s → close + inline fallback |
-| Phase 3 | `doc-gen-p3` | 600000ms (10min) | assign_task "finalize" → re-wait 120s → close + inline fallback |
-| Phase 4 | `doc-gen-p4` | 600000ms (10min) | assign_task "finalize" → re-wait 120s → close + inline fallback |
-| Phase 5 | `doc-gen-p5` | 600000ms (10min) | assign_task "finalize" → re-wait 120s → close + inline fallback |
-| Phase 6.5 | `doc-gen-fix` | 600000ms (10min) | assign_task "finalize" → re-wait 120s → close + force handoff |
+| Phase 1 (explore) | `spec-explorer` | 600000ms (10min) | followup_task "finalize" → re-wait 300s → close |
+| Phase 2 | `doc-gen-p2` | 600000ms (10min) | followup_task "finalize" → re-wait 300s → close + inline fallback |
+| Phase 3 | `doc-gen-p3` | 600000ms (10min) | followup_task "finalize" → re-wait 300s → close + inline fallback |
+| Phase 4 | `doc-gen-p4` | 600000ms (10min) | followup_task "finalize" → re-wait 300s → close + inline fallback |
+| Phase 5 | `doc-gen-p5` | 600000ms (10min) | followup_task "finalize" → re-wait 300s → close + inline fallback |
+| Phase 6.5 | `doc-gen-fix` | 600000ms (10min) | followup_task "finalize" → re-wait 300s → close + force handoff |
 
 ### Cleanup Protocol
 
@@ -543,7 +543,7 @@ activeAgents.forEach(name => {
 | Phase 7 | ccw issue create fails for one Epic | No | Log error, continue with remaining Epics |
 | Phase 7 | No EPIC files found | Yes | Error and return to Phase 5 |
 | Phase 7 | All issue creations fail | Yes | Error with CLI diagnostic, suggest manual creation |
-| Phase 2-5 | Agent timeout (wait_agent timed_out) | No | assign_task "finalize" → re-wait → close + inline fallback |
+| Phase 2-5 | Agent timeout (wait_agent timed_out) | No | followup_task "finalize" → re-wait → close + inline fallback |
 | Phase 2-5 | Agent returns incomplete files | No | Log gaps, attempt inline completion for missing files |
 | Any | close_agent on non-existent agent | No | Catch error, continue (agent may have self-terminated) |
 

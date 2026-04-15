@@ -16,7 +16,7 @@ Form hypotheses from evidence and test each one. Enforce the 3-strike escalation
 | Source | Required | Description |
 |--------|----------|-------------|
 | investigation-report (phases 1-2) | Yes | Evidence, affected files, pattern analysis, initial suspects |
-| assign_task message | Yes | Phase 3 instruction |
+| followup_task message | Yes | Phase 3 instruction |
 
 ## Execution Steps
 
@@ -169,7 +169,7 @@ confirmed_root_cause = {
 
 Add `hypothesis_tests` and `confirmed_root_cause` to investigation-report in memory.
 
-Output Phase 3 results and await assign_task for Phase 4.
+Output Phase 3 results and await followup_task for Phase 4.
 
 ---
 

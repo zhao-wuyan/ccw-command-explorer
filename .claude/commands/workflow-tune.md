@@ -7,732 +7,462 @@ allowed-tools: Agent(*), AskUserQuestion(*), TaskCreate(*), TaskUpdate(*), TaskL
 
 # Workflow Tune
 
-测试 Claude command/skill 的执行效果并优化。提取可执行命令，逐步通过 `ccw cli --tool claude` 执行，分析产物质量，生成优化建议。
-
-## Tool Assignment
-
-| Phase | Tool | Mode | Rule |
-|-------|------|------|------|
-| Execute | `claude` | `write` | `universal-rigorous-style` |
-| Analyze | `gemini` | `analysis` | `analysis-review-code-quality` |
-| Synthesize | `gemini` | `analysis` | `analysis-review-architecture` |
+测试 command/skill 执行效果。提取可执行命令 → 沙箱逐步执行 → 分析产物质量 → 生成优化建议。
 
 ## Architecture
 
 ```
-Input → Parse → GenTestTask → Confirm → Setup → [resolveCmd → readMeta → assemblePrompt → Execute → STOP → Analyze → STOP]×N → Synthesize → STOP → Report
-                    ↑                                       ↑
-          Claude 直接生成测试任务            prompt 中注入 test_task
-          (无需 CLI 调用)                  作为命令的执行输入
+Input → Parse → GenTestTask → Confirm → Setup
+  → [assemblePrompt → Execute(claude) → STOP → Analyze(gemini) → STOP]×N
+  → Synthesize(gemini) → STOP → Report
 ```
+
+**Tool Assignment**: Execute=`claude --mode write`, Analyze=`gemini --mode analysis`, Synthesize=`gemini --mode analysis`
+
+## P0 Rules
+
+> 这些规则的优先级高于所有其他指令。违反任何一条都是已知的复发缺陷。
+
+1. **ONE STEP = ONE CLI CALL**. 每次 `ccw cli` 调用只处理一个 step。禁止将 plan+execute 或 execute+quality 合并为一次调用。
+2. **STOP After Each CLI Call**. 每次 `ccw cli` 以 `run_in_background: true` 执行后立即 STOP，等 hook callback。
+3. **UPSTREAM-SCOPE RULE**. 当上游步骤产出清单/计划（plan/list/queue/manifest），下游步骤必须消费全量，禁止挑选子集。
+   - 判断: 上游命令/test_task 含 `plan|list|queue|spec|manifest|计划|任务`，且当前步骤含 `execute|run|dispatch|build|执行|组装`
+   - 正确: 功能点="按依赖顺序执行全部任务"，验收标准="产出文件数=plan中task数"
+   - 错误: 功能点="撰写 Introduction (TASK-001)"，验收标准="introduction.md 存在" ← 仅完成 1/N
+4. **Sandbox Isolation**. 全部执行在 `sandbox/` 目录（独立 git 仓库），不影响真实项目。
+5. **State Machine**. 通过 `current_step` + `current_phase` 推进，禁止同步循环。
+6. **ABSOLUTE PATHS for --cd**. `ccw cli --cd` 必须使用绝对路径。相对路径会被 ccw cli 再次拼接 CWD 导致路径重复。`workDir`/`sandboxDir` 在创建时就解析为绝对路径。
+7. **FIXED --rule VALUES**. `--rule` 值已硬编码在各 Phase 代码中，禁止替换为其他模板。Execute=`workflow-tune-execute`，Analyze=`analysis-review-code-quality`，Synthesize=`analysis-review-architecture`。
+8. **NO-SKIP-INSTRUCTION**. test_task 和 prompt 中禁止包含 skip/跳过/omit/ignore 等指示执行 agent 跳过任何任务的指令。沙箱环境缺乏运行时依赖（matplotlib、xelatex 等），应改为生成代码/骨架文件而非跳过。
+   - 错误: "Skip figure/generate tasks as they require external tools"
+   - 正确: "For figure/generate tasks, produce Python matplotlib code (.py) + SVG files. Do NOT skip any tasks."
 
 ## Input Formats
 
-```
-1. --file workflow.json               → JSON definition
-2. "cmd1 | cmd2 | cmd3"              → pipe-separated commands
-3. "skill-a,skill-b,skill-c"         → comma-separated skills
-4. natural language                   → semantic decomposition
-   4a: <file-path> <intent>           → extract commands from reference doc via LLM
-   4b: <pure intent text>             → intent-verb matching → ccw cli command assembly
-```
+| Format | Pattern | Example |
+|--------|---------|---------|
+| JSON definition | `--file workflow.json` | `--file motor-benchmark.json` |
+| Pipe-separated | `"cmd1 \| cmd2 \| cmd3"` | `"/workspace:init \| /workspace:new-paper"` |
+| Comma-separated | `"skill-a,skill-b"` | `"workflow-lite-plan,workflow-lite-execute"` |
+| Reference doc + intent | `<path> <intent>` | `COMMAND-FLOW.md 测试前5个命令` |
+| Pure intent | `<text>` | `"分析代码质量，然后修复问题"` |
 
-**ANTI-PATTERN**: Steps like `{ command: "分析 Phase 管线" }` are WRONG — descriptions, not commands. Correct: `{ command: "/workflow-lite-plan analyze auth module" }` or `{ command: "ccw cli -p '...' --tool claude --mode write" }`
+**ANTI-PATTERN**: `{ command: "分析代码" }` 是描述不是命令。正确: `{ command: "/workflow-lite-plan ..." }` 或 `{ command: "ccw cli -p '...' --tool claude --mode write" }`
 
-## Utility: Shell Escaping
-
-```javascript
-function escapeForShell(str) {
-  // Replace single quotes with escaped version, wrap in single quotes
-  return "'" + str.replace(/'/g, "'\\''") + "'";
-}
-```
+---
 
 ## Phase 1: Setup
 
-### Step 1.1: Parse Input + Preference Collection
+### 1.1 Parse Input + Preferences
 
 ```javascript
 const args = $ARGUMENTS.trim();
 const autoYes = /\b(-y|--yes)\b/.test(args);
-
-// Preference collection (skip if -y)
-if (autoYes) {
-  workflowPreferences = { autoYes: true, analysisDepth: 'standard', autoFix: false };
-} else {
-  const prefResponse = AskUserQuestion({
-    questions: [
-      { question: "选择调优配置：", header: "Tune Config", multiSelect: false,
-        options: [
-          { label: "Quick (轻量分析)", description: "每步简要检查" },
-          { label: "Standard (标准分析) (Recommended)", description: "每步详细分析" },
-          { label: "Deep (深度分析)", description: "深度审查含架构建议" }
-        ]
-      },
-      { question: "是否自动应用优化建议？", header: "Auto Fix", multiSelect: false,
-        options: [
-          { label: "No (仅报告) (Recommended)", description: "只分析不修改" },
-          { label: "Yes (自动应用)", description: "自动应用高优先级建议" }
-        ]
-      }
-    ]
-  });
-  const depthMap = { "Quick": "quick", "Standard": "standard", "Deep": "deep" };
-  const selectedDepth = Object.keys(depthMap).find(k => prefResponse["Tune Config"].startsWith(k)) || "Standard";
-  workflowPreferences = {
-    autoYes: false,
-    analysisDepth: depthMap[selectedDepth],
-    autoFix: prefResponse["Auto Fix"].startsWith("Yes")
-  };
-}
-
-// Parse --depth override
 const depthMatch = args.match(/--depth\s+(quick|standard|deep)/);
-if (depthMatch) workflowPreferences.analysisDepth = depthMatch[1];
 
-// ── Format Detection ──
-let steps = [], workflowName = 'unnamed-workflow', inputFormat = '';
-let projectScenario = '';  // ★ 统一虚构项目场景，所有步骤共享（在 Step 1.1a 生成）
+const workflowPreferences = autoYes
+  ? { autoYes: true, analysisDepth: depthMatch?.[1] || 'standard', autoFix: /--auto-fix/.test(args) }
+  : /* AskUserQuestion: depth(quick/standard/deep) + autoFix(yes/no) */;
 
+// Format detection → steps[]
+let steps, workflowName, projectScenario, inputFormat;
 const fileMatch = args.match(/--file\s+"?([^\s"]+)"?/);
-if (fileMatch) {
-  const wfDef = JSON.parse(Read(fileMatch[1]));
-  workflowName = wfDef.name || 'unnamed-workflow';
-  projectScenario = wfDef.project_scenario || wfDef.description || '';
-  steps = wfDef.steps;
+
+if (fileMatch) {                                    // JSON definition
+  const wf = JSON.parse(Read(fileMatch[1]));
+  steps = wf.steps; workflowName = wf.name; projectScenario = wf.project_scenario;
   inputFormat = 'json';
 }
-else if (args.includes('|')) {
-  const rawSteps = args.split(/(?:--context|--depth|-y|--yes|--auto-fix)\s+("[^"]*"|\S+)/)[0];
-  steps = rawSteps.split('|').map((cmd, i) => ({
-    name: `step-${i + 1}`,
-    command: cmd.trim(),
-    expected_artifacts: [], success_criteria: ''
-  }));
-  inputFormat = 'pipe';
-}
-else if (/^[\w-]+(,[\w-]+)+/.test(args.split(/\s/)[0])) {
-  const skillNames = args.match(/^([^\s]+)/)[1].split(',');
-  steps = skillNames.map(name => ({
-    name, command: `/${name}`,
-    expected_artifacts: [], success_criteria: ''
-  }));
-  inputFormat = 'skills';
-}
+else if (args.includes('|'))  { /* split by | → steps[] */ inputFormat = 'pipe'; }
+else if (/^[\w-]+(,[\w-]+)+/.test(args.split(/\s/)[0])) { /* split by , → steps[] */ inputFormat = 'skills'; }
 else {
   inputFormat = 'natural-language';
-  let naturalLanguageInput = args.replace(/--\w+\s+"[^"]*"/g, '').replace(/--\w+\s+\S+/g, '').replace(/-y|--yes/g, '').trim();
-  const filePathPattern = /(?:[A-Za-z]:[\\\/][^\s,;]+|\/[^\s,;]+\.(?:md|txt|json|yaml|yml|toml)|\.\/?[^\s,;]+\.(?:md|txt|json|yaml|yml|toml))/g;
-  const detectedPaths = naturalLanguageInput.match(filePathPattern) || [];
-  let referenceDocContent = null, referenceDocPath = null;
-  if (detectedPaths.length > 0) {
-    referenceDocPath = detectedPaths[0];
-    try {
-      referenceDocContent = Read(referenceDocPath);
-      naturalLanguageInput = naturalLanguageInput.replace(referenceDocPath, '').trim();
-    } catch (e) { referenceDocContent = null; }
-  }
-  // → Mode 4a/4b in Step 1.1b
+  // Detect file path in args → Mode 4a (reference doc extraction via claude CLI)
+  // No file path → Mode 4b (intent-verb matching → ccw cli command assembly)
+  // Both modes output steps[] with executable commands
 }
-
-// workflowContext 已移除 — 统一使用 projectScenario（在 Step 1.1a 生成）
 ```
 
-### Step 1.1a: Generate Test Task (测试任务直接生成)
+### 1.2 Generate Test Tasks
 
-> **核心概念**: 所有步骤共享一个**统一虚构项目场景**（如"在线书店网站"），每个命令根据自身能力获得该场景下的一个子任务。由当前 Claude 直接生成，不需要额外 CLI 调用。所有执行在独立沙箱目录中进行，不影响真实项目。
+> 所有步骤共享统一虚构项目场景。由当前 Claude 直接生成，无需 CLI 调用。
 
 ```javascript
-// ★ 测试任务直接生成 — 无需 CLI 调用
-// 来源优先级：
-//   1. JSON 定义中的 step.test_task 字段 (已有则跳过)
-//   2. 当前 Claude 直接生成
-
 const stepsNeedTask = steps.filter(s => !s.test_task);
+if (stepsNeedTask.length === 0) goto('1.3');
 
-if (stepsNeedTask.length > 0) {
-  // ── Step A: 生成统一项目场景 ──
-  // 根据命令链的整体复杂度，选一个虚构项目作为测试场景
-  // 场景必须：完全虚构、与当前工作空间无关、足够支撑所有步骤
+// Step A: 选择虚构项目场景（按步骤数量选规模）
+//   1-2 步: 小型 ("CLI TODO 工具")
+//   3-4 步: 中型 ("团队任务看板")
+//   5+ 步:  大型 ("电商平台")
+projectScenario = /* 选择或自创场景 */;
+
+// Step B: 为每步生成 test_task
+for (const [stepIdx, step] of stepsNeedTask.entries()) {
+  const cmdMeta = readCommandMeta(resolveCommandFile(step.command));
+  const cmdDesc = (cmdMeta?.description || step.command).toLowerCase();
+
+  // ★ Upstream-scope detection (P0 Rule #3)
+  const hasUpstreamScope = stepIdx > 0
+    && /plan|list|catalog|queue|todo|spec|manifest|清单|计划|任务/i.test(
+         (steps[stepIdx - 1]?.command || '') + ' ' + (steps[stepIdx - 1]?.test_task || ''))
+    && /execute|run|process|consume|iterate|dispatch|assemble|build|执行|运行|组装/i.test(cmdDesc);
+
+  const upstreamFlags = step.flags || '';  // from JSON definition (e.g. "--type draft-section")
+
+  // test_task 模板:
+  //   项目: {projectScenario}
+  //   任务: {子任务描述}
+  //   功能点: 1. ... 2. ... 3. ...
+  //   验收标准: 1. ... 2. ...
   //
-  // 场景池示例（根据步骤数量和类型选择合适规模）：
-  //   1-2 步: 小型项目 — "命令行 TODO 工具" "Markdown 转 HTML 工具" "天气查询 CLI"
-  //   3-4 步: 中型项目 — "在线书店网站" "团队任务看板" "博客系统"
-  //   5+ 步:  大型项目 — "多租户 SaaS 平台" "电商系统" "在线教育平台"
+  // ★ hasUpstreamScope=true 时:
+  //   - 任务 = "按上游计划的依赖顺序执行全部任务"（禁止挑选子集）
+  //   - 若 upstreamFlags 非空，在任务中传递（如 "--type draft-section"）
+  //   - 命令参数不含单个 task ID，用 --all 或 --type 或无参数
+  //   - 验收标准必须含全量覆盖率（"产出文件数 = plan 中 task 数"）
+  //   - ★ TYPE-AWARE CRITERIA: 从上游 plan 产物（plan.json 等）中提取
+  //     task type 分布，为每种 type 生成对应的验收标准:
+  //       文本类(draft-section/writing/review) → "对应 .md 文件数 >= N"
+  //       代码类(figure/generate, experiment/*) → "代码文件(.py/.svg) 数 >= N"
+  //       数据类(data/*, assembly/*) → "数据/组装文件数 >= N"
+  //     这确保非文本类产出（图片代码、实验脚本、组装产物）不被静默跳过。
+  //     若上游 plan 不可读，退回通用全量覆盖标准。
+  //
+  // ★ hasUpstreamScope=false 时:
+  //   - 按命令类型分配子任务: plan→架构设计, implement→功能实现, analyze→分析, test→测试
 
-  projectScenario = /* Claude 从上述池中选择或自创一个场景 */;
-  // 例如: "在线书店网站 — 支持用户注册登录、书籍搜索浏览、购物车、订单管理、评论系统"
-
-  // ── Step B: 为每步生成子任务 ──
-  for (const step of stepsNeedTask) {
-    const cmdFile = resolveCommandFile(step.command);
-    const cmdMeta = readCommandMeta(cmdFile);
-    const cmdDesc = (cmdMeta?.description || step.command).toLowerCase();
-
-    // 根据命令类型分配场景下的子任务
-    // 每个子任务必须按以下模板生成：
-    //
-    // ┌─────────────────────────────────────────────────┐
-    // │ 项目: {projectScenario}                          │
-    // │ 任务: {具体子任务描述}                            │
-    // │ 功能点:                                          │
-    // │   1. {功能点1 — 具体到接口/组件/模块}             │
-    // │   2. {功能点2}                                   │
-    // │   3. {功能点3}                                   │
-    // │ 技术约束: {语言/框架/架构要求}                    │
-    // │ 验收标准:                                        │
-    // │   1. {可验证的标准1}                              │
-    // │   2. {可验证的标准2}                              │
-    // └─────────────────────────────────────────────────┘
-    //
-    // 命令类型 → 子任务映射：
-    //   plan/design   → 架构设计任务: "为{场景}设计技术架构，包含模块划分、数据模型、API 设计"
-    //   implement     → 功能实现任务: "实现{场景}的{某模块}，包含{具体功能点}"
-    //   analyze/review→ 代码分析任务: "先在沙箱创建{场景}的{某模块}示例代码，然后分析其质量"
-    //   test          → 测试任务:     "为{场景}的{某模块}编写测试，覆盖{具体场景}"
-    //   fix/debug     → 修复任务:     "先在沙箱创建含已知 bug 的代码，然后诊断修复"
-    //   refactor      → 重构任务:     "先在沙箱创建可工作但需重构的代码，然后重构"
-
-    step.test_task = /* 按上述模板生成，必须包含：项目、任务、功能点、技术约束、验收标准 */;
-    step.acceptance_criteria = /* 从 test_task 中提取 2-4 条可验证标准 */;
-    step.complexity_level = /plan|design|architect/i.test(cmdDesc) ? 'high'
-      : /test|lint|format/i.test(cmdDesc) ? 'low' : 'medium';
+  // ★ P0 Rule #8: NO-SKIP-INSTRUCTION validation
+  // 检测 test_task 中是否包含跳过指令，若有则重写为沙箱兼容指令
+  const skipPattern = /skip|跳过|omit|ignore| bypass|不需要|无需.*任务/i;
+  if (skipPattern.test(step.test_task)) {
+    // 将跳过指令替换为沙箱兼容降级指令
+    step.test_task = step.test_task.replace(
+      /skip\s+(.+?tasks?.*?)(?:\s*as\s+they\s+.+?)/i,
+      'For $1, produce code/skeleton files in sandbox (no runtime execution required).'
+    ).replace(
+      /跳过\s*(.+?(?:任务|task).+?)(?:\s*(?:因为|由于).+?)/i,
+      '对于 $1，生成代码/骨架文件（无需运行时依赖）。'
+    );
+    // 通用兜底：移除残留的跳过指令
+    step.test_task = step.test_task.replace(
+      /(?:do\s+not|不要|禁止)\s+(?:attempt|尝试|执行)\s+(.+?tasks?.*?)(?:\.|$)/gi,
+      'Attempt all tasks including $1. For tasks requiring unavailable dependencies, produce code approximations.'
+    );
   }
+
+  // ★ Sandbox artifact type detection
+  // 检测 test_task 涉及的任务类型，补充沙箱兼容验收标准
+  const artifactTypes = [];
+  if (/figure|chart|plot|graph|图|svg|png/i.test(step.test_task)) artifactTypes.push('code(.py)+svg');
+  if (/assembly|assemble|manuscript|bib|latex|tex|组装|论文/i.test(step.test_task)) artifactTypes.push('code(.bib,.tex)');
+  if (/experiment|data|csv|excel|实验|数据/i.test(step.test_task)) artifactTypes.push('code(.py,.csv)');
+
+  step.test_task = /* 按上述规则生成 */;
+  step.acceptance_criteria = /* 2-4 条可验证标准 */;
+
+  // 补充沙箱兼容验收标准：涉及代码/图表/组装时，必须产出代码文件
+  if (artifactTypes.length > 0) {
+    const sandboxCriteria = `Sandbox produces code artifacts: ${artifactTypes.join(', ')}`;
+    if (!step.acceptance_criteria.some(c => /code|artifact|file/i.test(c))) {
+      step.acceptance_criteria.push(sandboxCriteria);
+    }
+  }
+
+  step.complexity_level = /plan|design|architect/i.test(cmdDesc) ? 'high'
+    : /test|lint|format/i.test(cmdDesc) ? 'low' : 'medium';
 }
 ```
 
-**模拟示例** — 输入 `workflow-lite-plan,workflow-lite-execute`:
-
-```
-场景: 在线书店网站 — 支持用户注册登录、书籍搜索、购物车、订单管理
-
-Step 1 (workflow-lite-plan → plan 类, high):
-  项目: 在线书店网站
-  任务: 为在线书店设计技术架构和实现计划
-  功能点:
-    1. 用户模块 — 注册、登录、个人信息管理
-    2. 书籍模块 — 搜索、分类浏览、详情页
-    3. 交易模块 — 购物车、下单、支付状态
-    4. 数据模型 — User, Book, Order, CartItem 表结构设计
-  技术约束: TypeScript + Express + SQLite, REST API
-  验收标准:
-    1. 输出包含模块划分和依赖关系
-    2. 包含数据模型定义
-    3. 包含 API 路由清单
-    4. 包含实现步骤分解
-
-Step 2 (workflow-lite-execute → implement 类, medium):
-  项目: 在线书店网站
-  任务: 根据 Step 1 的计划，实现书籍搜索和浏览模块
-  功能点:
-    1. GET /api/books — 分页列表，支持按标题/作者搜索
-    2. GET /api/books/:id — 书籍详情
-    3. GET /api/categories — 分类列表
-    4. Book 数据模型 + seed 数据
-  技术约束: TypeScript + Express + SQLite, 沿用 Step 1 架构
-  验收标准:
-    1. API 可正常调用返回 JSON
-    2. 搜索支持模糊匹配
-    3. 包含至少 5 条 seed 数据
-```
-
-### Step 1.1b: Semantic Decomposition (Format 4 only)
-
-#### Mode 4a: Reference Document → LLM Extraction
+### 1.3 Confirm + Create Workspace
 
 ```javascript
-if (inputFormat === 'natural-language' && referenceDocContent) {
-  const extractPrompt = `PURPOSE: Extract ACTUAL EXECUTABLE COMMANDS from the reference document. The user wants to TEST these commands by running them.
+// Show execution plan table, ask confirmation (skip if autoYes)
+const commandDoc = generateCommandDoc(steps, workflowName, projectScenario, analysisDepth);
+if (!autoYes) { /* AskUserQuestion: confirm or cancel */ }
 
-USER INTENT: ${naturalLanguageInput}
-REFERENCE DOCUMENT: ${referenceDocPath}
-
-DOCUMENT CONTENT:
-${referenceDocContent}
-
-CRITICAL RULES:
-- "command" field MUST be a real executable: slash command (/skill-name args), ccw cli call, or shell command
-- CORRECT: { "command": "/workflow-lite-plan analyze auth module" }
-- CORRECT: { "command": "ccw cli -p 'review code' --tool claude --mode write" }
-- WRONG:  { "command": "分析 Phase 管线" } ← DESCRIPTION, not command
-- Default mode to "write"
-
-EXPECTED OUTPUT (strict JSON):
-{
-  "workflow_name": "<name>",
-  "project_scenario": "<虚构项目场景>",
-  "steps": [{ "name": "", "command": "<executable>", "expected_artifacts": [], "success_criteria": "" }]
-}`;
-
-  Bash({
-    command: `ccw cli -p ${escapeForShell(extractPrompt)} --tool claude --mode write --rule universal-rigorous-style`,
-    run_in_background: true, timeout: 300000
-  });
-  // ■ STOP — wait for hook callback, parse JSON → steps[]
-}
-```
-
-#### Mode 4b: Pure Intent → Command Assembly
-
-```javascript
-if (inputFormat === 'natural-language' && !referenceDocContent) {
-  // Intent → rule mapping for ccw cli command generation
-  const intentMap = [
-    { pattern: /分析|analyze|审查|inspect|scan/i, name: 'analyze', rule: 'analysis-analyze-code-patterns' },
-    { pattern: /评审|review|code.?review/i, name: 'review', rule: 'analysis-review-code-quality' },
-    { pattern: /诊断|debug|排查|diagnose/i, name: 'diagnose', rule: 'analysis-diagnose-bug-root-cause' },
-    { pattern: /安全|security|漏洞/i, name: 'security-audit', rule: 'analysis-assess-security-risks' },
-    { pattern: /性能|performance|perf/i, name: 'perf-analysis', rule: 'analysis-analyze-performance' },
-    { pattern: /架构|architecture/i, name: 'arch-review', rule: 'analysis-review-architecture' },
-    { pattern: /修复|fix|repair|解决/i, name: 'fix', rule: 'development-debug-runtime-issues' },
-    { pattern: /实现|implement|开发|create|新增/i, name: 'implement', rule: 'development-implement-feature' },
-    { pattern: /重构|refactor/i, name: 'refactor', rule: 'development-refactor-codebase' },
-    { pattern: /测试|test/i, name: 'test', rule: 'development-generate-tests' },
-    { pattern: /规划|plan|设计|design/i, name: 'plan', rule: 'planning-plan-architecture-design' },
-  ];
-
-  const segments = naturalLanguageInput
-    .split(/[，,；;、]|(?:然后|接着|之后|最后|再|并|and then|then|finally|next)\s*/i)
-    .map(s => s.trim()).filter(Boolean);
-
-  // ★ 将意图文本转化为完整的 ccw cli 命令
-  steps = segments.map((segment, i) => {
-    const matched = intentMap.find(m => m.pattern.test(segment));
-    const rule = matched?.rule || 'universal-rigorous-style';
-    // 组装真正可执行的命令
-    const command = `ccw cli -p ${escapeForShell('PURPOSE: ' + segment + '\\nTASK: Execute based on intent\\nCONTEXT: @**/*')} --tool claude --mode write --rule ${rule}`;
-    return {
-      name: matched?.name || `step-${i + 1}`,
-      command,
-      original_intent: segment,  // 保留原始意图用于分析
-      expected_artifacts: [], success_criteria: ''
-    };
-  });
-}
-```
-
-### Step 1.1c: Execution Plan Confirmation
-
-```javascript
-function generateCommandDoc(steps, workflowName, projectScenario, analysisDepth) {
-  const stepTable = steps.map((s, i) => {
-    const cmdPreview = s.command.length > 60 ? s.command.substring(0, 57) + '...' : s.command;
-    const taskPreview = (s.test_task || '-').length > 40 ? s.test_task.substring(0, 37) + '...' : (s.test_task || '-');
-    return `| ${i + 1} | ${s.name} | \`${cmdPreview}\` | ${taskPreview} |`;
-  }).join('\n');
-
-  return `# Workflow Tune — Execution Plan\n\n**Workflow**: ${workflowName}\n**Test Project**: ${projectScenario}\n**Steps**: ${steps.length}\n**Depth**: ${analysisDepth}\n\n| # | Name | Command | Test Task |\n|---|------|---------|-----------|\n${stepTable}`;
-}
-
-const commandDoc = generateCommandDoc(steps, workflowName, projectScenario, workflowPreferences.analysisDepth);
-
-if (!workflowPreferences.autoYes) {
-  const confirmation = AskUserQuestion({
-    questions: [{
-      question: commandDoc + "\n\n确认执行以上 Workflow 调优计划？", header: "Confirm Execution", multiSelect: false,
-      options: [
-        { label: "Execute (确认执行)", description: "按计划开始执行" },
-        { label: "Cancel (取消)", description: "取消" }
-      ]
-    }]
-  });
-  if (confirmation["Confirm Execution"].startsWith("Cancel")) return;
-}
-```
-
-### Step 1.2: (Merged into Step 1.1a)
-
-> Test requirements (acceptance_criteria) are now generated together with test_task in Step 1.1a, avoiding an extra CLI call.
-
-### Step 1.3: Create Workspace + Sandbox Project
-
-```javascript
-const ts = Date.now();
-const workDir = `.workflow/.scratchpad/workflow-tune-${ts}`;
-
-// ★ 创建独立沙箱项目目录 — 所有命令执行在此目录中，不影响真实项目
+// Create sandbox — MUST resolve absolute path (P0 Rule #6)
+const cwd = Bash('pwd').stdout.trim();
+const workDir = `${cwd}/.workflow/.scratchpad/workflow-tune-${Date.now()}`;
 const sandboxDir = `${workDir}/sandbox`;
 Bash(`mkdir -p "${workDir}/steps" "${sandboxDir}"`);
-// 初始化沙箱为独立 git 仓库（部分命令依赖 git 环境）
-Bash(`cd "${sandboxDir}" && git init && echo "# Sandbox Project" > README.md && git add . && git commit -m "init sandbox"`);
+Bash(`cd "${sandboxDir}" && git init && echo "# Sandbox" > README.md && git add . && git commit -m "init"`);
 
-for (let i = 0; i < steps.length; i++) Bash(`mkdir -p "${workDir}/steps/step-${i + 1}/artifacts"`);
-
-Write(`${workDir}/command-doc.md`, commandDoc);
-
-const initialState = {
+// Initialize state
+const state = {
   status: 'running', started_at: new Date().toISOString(),
   workflow_name: workflowName, project_scenario: projectScenario,
-  analysis_depth: workflowPreferences.analysisDepth, auto_fix: workflowPreferences.autoFix,
-  sandbox_dir: sandboxDir,  // ★ 独立沙箱项目目录
-  current_step: 0,  // ★ State machine cursor
-  current_phase: 'execute',  // 'execute' | 'analyze'
-  steps: steps.map((s, i) => ({
-    ...s, index: i, status: 'pending',
-    test_task: s.test_task || '',  // ★ 每步的测试任务
-    execution: null, analysis: null,
-    test_requirements: s.test_requirements || null
-  })),
-  gemini_session_id: null,  // ★ Updated after each gemini callback
-  work_dir: workDir,
+  analysis_depth: analysisDepth, auto_fix: autoFix,
+  sandbox_dir: sandboxDir, current_step: 0, current_phase: 'execute',
+  steps: steps.map((s, i) => ({ ...s, index: i, status: 'pending', execution: null, analysis: null })),
+  gemini_session_id: null, work_dir: workDir,
   errors: [], error_count: 0, max_errors: 3
 };
-
-Write(`${workDir}/workflow-state.json`, JSON.stringify(initialState, null, 2));
-Write(`${workDir}/process-log.md`, `# Process Log\n\n**Workflow**: ${workflowName}\n**Test Project**: ${projectScenario}\n**Steps**: ${steps.length}\n**Started**: ${new Date().toISOString()}\n\n---\n\n`);
+Write(`${workDir}/workflow-state.json`, JSON.stringify(state, null, 2));
+Write(`${workDir}/command-doc.md`, commandDoc);
 ```
+
+---
 
 ## Phase 2: Execute Step
 
-### resolveCommandFile — Slash command → file path
+### Utilities
 
 ```javascript
+function escapeForShell(str) { return "'" + str.replace(/'/g, "'\\''") + "'"; }
+
 function resolveCommandFile(command) {
-  const cmdMatch = command.match(/^\/?([^\s]+)/);
-  if (!cmdMatch) return null;
-  const cmdName = cmdMatch[1];
-  const cmdPath = cmdName.replace(/:/g, '/');
-
-  const searchRoots = ['.claude', '~/.claude'];
-
-  for (const root of searchRoots) {
-    const candidates = [
-      `${root}/commands/${cmdPath}.md`,
-      `${root}/commands/${cmdPath}/index.md`,
-    ];
-    for (const candidate of candidates) {
-      try { Read(candidate, { limit: 1 }); return candidate; } catch {}
+  const cmdPath = command.match(/^\/?([^\s]+)/)?.[1]?.replace(/:/g, '/');
+  if (!cmdPath) return null;
+  for (const root of ['.claude', '~/.claude']) {
+    for (const p of [`${root}/commands/${cmdPath}.md`, `${root}/commands/${cmdPath}/index.md`,
+                      `${root}/skills/${cmdPath}/SKILL.md`]) {
+      try { Read(p, { limit: 1 }); return p; } catch {}
     }
   }
-
-  for (const root of searchRoots) {
-    const candidates = [
-      `${root}/skills/${cmdName}/SKILL.md`,
-      `${root}/skills/${cmdPath.replace(/\//g, '-')}/SKILL.md`,
-    ];
-    for (const candidate of candidates) {
-      try { Read(candidate, { limit: 1 }); return candidate; } catch {}
-    }
-  }
-
   return null;
 }
-```
 
-### readCommandMeta — Read YAML frontmatter + body summary
-
-```javascript
 function readCommandMeta(filePath) {
   if (!filePath) return null;
-
   const content = Read(filePath);
   const meta = { filePath, name: '', description: '', argumentHint: '', allowedTools: '', bodySummary: '' };
-
-  const yamlMatch = content.match(/^---\n([\s\S]*?)\n---/);
-  if (yamlMatch) {
-    const yaml = yamlMatch[1];
-    const nameMatch = yaml.match(/^name:\s*(.+)$/m);
-    const descMatch = yaml.match(/^description:\s*(.+)$/m);
-    const hintMatch = yaml.match(/^argument-hint:\s*"?(.+?)"?\s*$/m);
-    const toolsMatch = yaml.match(/^allowed-tools:\s*(.+)$/m);
-
-    if (nameMatch) meta.name = nameMatch[1].trim();
-    if (descMatch) meta.description = descMatch[1].trim();
-    if (hintMatch) meta.argumentHint = hintMatch[1].trim();
-    if (toolsMatch) meta.allowedTools = toolsMatch[1].trim();
+  const yaml = content.match(/^---\n([\s\S]*?)\n---/)?.[1];
+  if (yaml) {
+    meta.name = yaml.match(/^name:\s*(.+)$/m)?.[1]?.trim() || '';
+    meta.description = yaml.match(/^description:\s*(.+)$/m)?.[1]?.trim() || '';
+    meta.argumentHint = yaml.match(/^argument-hint:\s*"?(.+?)"?\s*$/m)?.[1]?.trim() || '';
+    meta.allowedTools = yaml.match(/^allowed-tools:\s*(.+)$/m)?.[1]?.trim() || '';
   }
-
   const bodyStart = content.indexOf('---', content.indexOf('---') + 3);
-  if (bodyStart !== -1) {
-    const body = content.substring(bodyStart + 3).trim();
-    meta.bodySummary = body.split('\n').slice(0, 30).join('\n');
-  }
-
+  if (bodyStart !== -1) meta.bodySummary = content.substring(bodyStart + 3).trim().split('\n').slice(0, 30).join('\n');
   return meta;
 }
 ```
 
-### assembleStepPrompt — Build execution prompt from command metadata
+### assembleStepPrompt
 
 ```javascript
 function assembleStepPrompt(step, stepIdx, state) {
-  // ── 1. Resolve command file + metadata ──
   const isSlashCmd = step.command.startsWith('/');
   const cmdFile = isSlashCmd ? resolveCommandFile(step.command) : null;
   const cmdMeta = readCommandMeta(cmdFile);
   const cmdArgs = isSlashCmd ? step.command.replace(/^\/?[^\s]+\s*/, '').trim() : '';
+  const cmdDesc = (cmdMeta?.description || step.command).toLowerCase();
 
-  // ── 2. Prior/next step context ──
   const prevStep = stepIdx > 0 ? state.steps[stepIdx - 1] : null;
   const nextStep = stepIdx < state.steps.length - 1 ? state.steps[stepIdx + 1] : null;
 
-  const priorContext = prevStep
-    ? `PRIOR STEP: "${prevStep.name}" — ${prevStep.command}\n  Status: ${prevStep.status} | Artifacts: ${prevStep.execution?.artifact_count || 0}`
-    : 'PRIOR STEP: None (first step)';
+  // Upstream-scope detection (P0 Rule #3)
+  const isUpstreamScope = prevStep
+    && /plan|list|catalog|queue|todo|spec|manifest|清单|计划|任务/i.test(
+         (prevStep.command || '') + ' ' + (prevStep.test_task || ''))
+    && /execute|run|process|consume|iterate|dispatch|assemble|build|执行|运行|组装/i.test(cmdDesc);
 
-  const nextContext = nextStep
-    ? `NEXT STEP: "${nextStep.name}" — ${nextStep.command}\n  Ensure output is consumable by next step`
-    : 'NEXT STEP: None (last step)';
+  const prior = !prevStep ? 'None (first step)'
+    : isUpstreamScope
+      ? `"${prevStep.name}" — ${prevStep.status} | ${prevStep.execution?.artifact_count || 0} artifacts
+  ★ UPSTREAM SCOPE: Must consume ALL outputs. Prior task: ${(prevStep.test_task || '').substring(0, 300)}`
+    : `"${prevStep.name}" — ${prevStep.status} | ${prevStep.execution?.artifact_count || 0} artifacts`;
 
-  // ── 3. Acceptance criteria (from test_task generation) ──
-  const criteria = step.acceptance_criteria || [];
-  const testReqSection = criteria.length > 0
-    ? `ACCEPTANCE CRITERIA:\n${criteria.map((c, i) => `  ${i + 1}. ${c}`).join('\n')}`
+  const next = nextStep ? `"${nextStep.name}" — ensure output is consumable` : 'None (last step)';
+
+  const criteria = (step.acceptance_criteria || []).map((c, i) => `  ${i + 1}. ${c}`).join('\n');
+  const testTask = step.test_task ? `TEST TASK:\n  ${step.test_task}` : '';
+  const upstreamWarning = isUpstreamScope
+    ? '\n★ UPSTREAM SCOPE: Execute ALL items from prior plan — do NOT pick a subset. Use --all or --type flag, not single task IDs.'
     : '';
 
-  // ── 4. Test task — the concrete scenario to drive execution ──
-  const testTask = step.test_task || '';
-  const testTaskSection = testTask
-    ? `TEST TASK (用此任务驱动命令执行):\n  ${testTask}`
-    : '';
+  // ★ Sandbox compatibility instructions (P0 Rule #8)
+  // 沙箱是纯文件环境，无 matplotlib/xelatex 等运行时，但仍需产出代码文件
+  const testTaskLower = (step.test_task || '').toLowerCase();
+  let sandboxInstructions = '';
+  if (/figure|chart|plot|graph|图|visual/i.test(testTaskLower)) {
+    sandboxInstructions += '\nSANDBOX MODE: For figure/chart tasks, generate Python matplotlib code (.py) + SVG output. Do NOT skip — produce code artifacts even if rendering is unavailable.';
+  }
+  if (/assembly|assemble|manuscript|bib|latex|tex|组装|参考文献/i.test(testTaskLower)) {
+    sandboxInstructions += '\nSANDBOX MODE: For assembly tasks, generate .bib (BibTeX entries) and .tex (LaTeX skeleton) files. Do NOT skip — produce structural artifacts.';
+  }
+  if (/experiment|data|csv|实验|数据处理/i.test(testTaskLower)) {
+    sandboxInstructions += '\nSANDBOX MODE: For experiment/data tasks, generate Python analysis scripts (.py) and sample data files (.csv). Do NOT skip.';
+  }
+  // 通用兜底：检测到 test_task 涉及多任务类型时，确保无跳过指令
+  if (isUpstreamScope) {
+    sandboxInstructions += '\nSANDBOX MODE: Execute ALL tasks. If a task requires unavailable runtime dependencies (matplotlib, xelatex, etc.), produce source code (.py/.tex/.bib) instead of rendered output. NEVER skip any task.';
+  }
 
-  // ── 5. Build prompt based on whether command has metadata ──
   if (cmdMeta) {
-    // Slash command with resolved file — rich context prompt
-    return `PURPOSE: Execute workflow step "${step.name}" (${stepIdx + 1}/${state.steps.length}).
+    return `PURPOSE: Execute step "${step.name}" (${stepIdx + 1}/${state.steps.length}).
 
-COMMAND DEFINITION:
-  Name: ${cmdMeta.name}
-  Description: ${cmdMeta.description}
-  Argument Format: ${cmdMeta.argumentHint || 'none'}
-  Allowed Tools: ${cmdMeta.allowedTools || 'default'}
-  Source: ${cmdMeta.filePath}
-
-COMMAND TO EXECUTE: ${step.command}
-ARGUMENTS: ${cmdArgs || '(no arguments)'}
-
-${testTaskSection}
-
-COMMAND REFERENCE (first 30 lines):
-${cmdMeta.bodySummary}
-
-PROJECT: ${state.project_scenario}
-SANDBOX PROJECT: ${state.sandbox_dir}
-OUTPUT DIR: ${state.work_dir}/steps/step-${stepIdx + 1}
-
-${priorContext}
-${nextContext}
-${testReqSection}
-
-TASK: Execute the command as described in COMMAND DEFINITION, using TEST TASK as the input/scenario. Use the COMMAND REFERENCE to understand expected behavior. All work happens in the SANDBOX PROJECT directory (an isolated empty project, NOT the real workspace). Auto-confirm all prompts.
-CONSTRAINTS: Stay scoped to this step only. Follow the command's own execution flow. The TEST TASK is the real work — treat it as the $ARGUMENTS input to the command. Do NOT read/modify files outside SANDBOX PROJECT.`;
-
-  } else {
-    // Shell command, ccw cli command, or unresolved command
-    return `PURPOSE: Execute workflow step "${step.name}" (${stepIdx + 1}/${state.steps.length}).
 COMMAND: ${step.command}
-${testTaskSection}
+ARGUMENTS: ${cmdArgs || '(none)'}
+DEFINITION: ${cmdMeta.name} — ${cmdMeta.description}
+SOURCE: ${cmdMeta.filePath}
+
+${testTask}
+
 PROJECT: ${state.project_scenario}
-SANDBOX PROJECT: ${state.sandbox_dir}
-OUTPUT DIR: ${state.work_dir}/steps/step-${stepIdx + 1}
+SANDBOX: ${state.sandbox_dir}
 
-${priorContext}
-${nextContext}
-${testReqSection}
+PRIOR STEP: ${prior}
+NEXT STEP: ${next}
+${criteria ? `ACCEPTANCE CRITERIA:\n${criteria}` : ''}${sandboxInstructions}
 
-TASK: Execute the COMMAND above with TEST TASK as the input scenario. All work happens in the SANDBOX PROJECT directory (an isolated empty project). Auto-confirm all prompts.
-CONSTRAINTS: Stay scoped to this step only. The TEST TASK is the real work to execute. Do NOT read/modify files outside SANDBOX PROJECT.`;
+TASK: Execute the command using TEST TASK as input. Auto-confirm all prompts. All work in SANDBOX directory.${upstreamWarning}
+CONSTRAINTS: Stay scoped to this step. Do NOT modify files outside SANDBOX.`;
+  } else {
+    return `PURPOSE: Execute step "${step.name}" (${stepIdx + 1}/${state.steps.length}).
+COMMAND: ${step.command}
+${testTask}
+PROJECT: ${state.project_scenario}
+SANDBOX: ${state.sandbox_dir}
+PRIOR STEP: ${prior}
+NEXT STEP: ${next}
+${criteria ? `ACCEPTANCE CRITERIA:\n${criteria}` : ''}${sandboxInstructions}
+TASK: Execute COMMAND with TEST TASK as input. Auto-confirm all prompts.${upstreamWarning}
+CONSTRAINTS: Stay scoped. All work in SANDBOX.`;
   }
 }
 ```
 
-### Step Execution
+### Execute + Collect
 
 ```javascript
 const stepIdx = state.current_step;
 const step = state.steps[stepIdx];
 const stepDir = `${state.work_dir}/steps/step-${stepIdx + 1}`;
 
-// Pre-execution: snapshot sandbox directory files
-const preFiles = Bash(`find "${state.sandbox_dir}" -type f 2>/dev/null | sort`).stdout.trim();
-Write(`${stepDir}/pre-exec-snapshot.txt`, preFiles || '(empty)');
+// Pre-snapshot
+Write(`${stepDir}/pre-exec-snapshot.txt`,
+  Bash(`find "${state.sandbox_dir}" -type f 2>/dev/null | sort`).stdout.trim() || '(empty)');
 
-const startTime = Date.now();
 const prompt = assembleStepPrompt(step, stepIdx, state);
+Write(`${stepDir}/prompt.txt`, prompt);
 
-// ★ All steps execute via ccw cli --tool claude --mode write
-// ★ --cd 指向沙箱目录（独立项目），不影响真实工作空间
 Bash({
-  command: `ccw cli -p ${escapeForShell(prompt)} --tool claude --mode write --rule universal-rigorous-style --cd "${state.sandbox_dir}"`,
+  command: `ccw cli -p ${escapeForShell(prompt)} --tool claude --mode write --rule workflow-tune-execute --cd "${state.sandbox_dir}"`,
   run_in_background: true, timeout: 600000
 });
 // ■ STOP — wait for hook callback
-```
 
-### Post-Execute Callback Handler
+// === Post-Execute (after callback) ===
+const newArtifacts = Bash(`find "${state.sandbox_dir}" -type f -newer "${stepDir}/pre-exec-snapshot.txt" 2>/dev/null | sort`)
+  .stdout.trim().split('\n').filter(f => f && !f.includes('.git/'));
 
-```javascript
-// ★ This runs after receiving the ccw cli callback
-
-const duration = Date.now() - startTime;
-
-// Collect artifacts by scanning sandbox (not git diff — sandbox is an independent project)
-const postFiles = Bash(`find "${state.sandbox_dir}" -type f -newer "${stepDir}/pre-exec-snapshot.txt" 2>/dev/null | sort`).stdout.trim();
-const newArtifacts = postFiles ? postFiles.split('\n').filter(f => !f.endsWith('.git/')) : [];
-
-const artifactManifest = {
-  step: step.name, step_index: stepIdx,
-  success: true, duration_ms: duration,
-  artifacts: newArtifacts.map(f => ({
-    path: f,
-    type: f.endsWith('.md') ? 'markdown' : f.endsWith('.json') ? 'json' : 'other'
-  })),
+Write(`${stepDir}/artifacts-manifest.json`, JSON.stringify({
+  step: step.name, step_index: stepIdx, success: true,
+  duration_ms: Date.now() - startTime,
+  artifacts: newArtifacts.map(f => ({ path: f, type: f.match(/\.(md|json|jsonl|py|tex|bib|svg|csv)$/)?.[1] || 'other' })),
   collected_at: new Date().toISOString()
-};
-Write(`${stepDir}/artifacts-manifest.json`, JSON.stringify(artifactManifest, null, 2));
+}, null, 2));
 
-// Update state
 state.steps[stepIdx].status = 'executed';
-state.steps[stepIdx].execution = {
-  success: true, duration_ms: duration,
-  artifact_count: newArtifacts.length
-};
+state.steps[stepIdx].execution = { success: true, duration_ms: Date.now() - startTime, artifact_count: newArtifacts.length };
 state.current_phase = 'analyze';
 Write(`${state.work_dir}/workflow-state.json`, JSON.stringify(state, null, 2));
-
-// → Proceed to Phase 3 for this step
 ```
+
+---
 
 ## Phase 3: Analyze Step (per step, via gemini)
 
 ```javascript
 const manifest = JSON.parse(Read(`${stepDir}/artifacts-manifest.json`));
 
-// Build artifact content for analysis
-let artifactSummary = '';
-if (state.analysis_depth === 'quick') {
-  artifactSummary = manifest.artifacts.map(a => `- ${a.path} (${a.type})`).join('\n');
-} else {
-  const maxLines = state.analysis_depth === 'deep' ? 300 : 150;
-  artifactSummary = manifest.artifacts.map(a => {
-    try { return `--- ${a.path} ---\n${Read(a.path, { limit: maxLines })}`; }
-    catch { return `--- ${a.path} --- [unreadable]`; }
-  }).join('\n\n');
-}
+// Build artifact content (depth-dependent)
+const maxLines = state.analysis_depth === 'quick' ? 0 : state.analysis_depth === 'deep' ? 300 : 150;
+const artifactSummary = maxLines === 0
+  ? manifest.artifacts.map(a => `- ${a.path} (${a.type})`).join('\n')
+  : manifest.artifacts.map(a => {
+      try { return `--- ${a.path} ---\n${Read(a.path, { limit: maxLines })}`; }
+      catch { return `--- ${a.path} --- [unreadable]`; }
+    }).join('\n\n');
 
-const criteria = step.acceptance_criteria || [];
-const testTaskDesc = step.test_task ? `TEST TASK: ${step.test_task}` : '';
-const criteriaSection = criteria.length > 0
-  ? `ACCEPTANCE CRITERIA:\n${criteria.map((c, i) => `  ${i + 1}. ${c}`).join('\n')}`
-  : '';
+// ★ Detect upstream plan artifact for type-aware evaluation
+// Scans sandbox for plan.json/plan.yaml → extracts task type distribution
+// Enables gemini to evaluate whether ALL task types produced outputs
+const planTypeContext = (() => {
+  try {
+    const planFiles = Glob(`${state.sandbox_dir}/**/plan.json`);
+    if (!planFiles.length) return '';
+    const plan = JSON.parse(Read(planFiles[0]));
+    if (!plan.tasks?.length) return '';
+    const typeDist = {};
+    plan.tasks.forEach(t => { typeDist[t.type] = (typeDist[t.type] || 0) + 1; });
+    return `\nPLAN TASK TYPES: ${JSON.stringify(typeDist)}\nNOTE: Evaluate output completeness per task type. Missing types (e.g. plan has figure tasks but no .py/.png/.svg outputs) are critical gaps.`;
+  } catch { return ''; }
+})();
 
-const analysisPrompt = `PURPOSE: Evaluate execution quality of step "${step.name}" (${stepIdx + 1}/${state.steps.length}).
+const analysisPrompt = `PURPOSE: Evaluate step "${step.name}" (${stepIdx + 1}/${state.steps.length}).
 WORKFLOW: ${state.workflow_name} — ${state.project_scenario}
 COMMAND: ${step.command}
-${testTaskDesc}
-${criteriaSection}
-EXECUTION: Duration ${step.execution.duration_ms}ms | Artifacts: ${manifest.artifacts.length}
-ARTIFACTS:\n${artifactSummary}
-EXPECTED OUTPUT (strict JSON):
-{ "quality_score": <0-100>, "requirement_match": { "pass": <bool>, "criteria_met": [], "criteria_missed": [], "fail_signals_detected": [] }, "execution_assessment": { "success": <bool>, "completeness": "", "notes": "" }, "artifact_assessment": { "count": <n>, "quality": "", "key_outputs": [], "missing_outputs": [] }, "issues": [{ "severity": "critical|high|medium|low", "description": "", "suggestion": "" }], "optimization_opportunities": [{ "area": "", "description": "", "impact": "high|medium|low" }], "step_summary": "" }`;
+TEST TASK: ${step.test_task || 'N/A'}
+ACCEPTANCE CRITERIA: ${(step.acceptance_criteria || []).join('; ') || 'N/A'}
+EXECUTION: ${step.execution.duration_ms}ms | ${manifest.artifacts.length} artifacts${planTypeContext}
+ARTIFACTS:
+${artifactSummary}
 
-let cliCommand = `ccw cli -p ${escapeForShell(analysisPrompt)} --tool gemini --mode analysis --rule analysis-review-code-quality`;
-if (state.gemini_session_id) cliCommand += ` --resume ${state.gemini_session_id}`;
-Bash({ command: cliCommand, run_in_background: true, timeout: 300000 });
+OUTPUT (strict JSON): { "quality_score": <0-100>, "requirement_match": { "pass": <bool>, "criteria_met": [], "criteria_missed": [] }, "execution_assessment": { "success": <bool>, "completeness": "" }, "artifact_assessment": { "count": <n>, "quality": "", "key_outputs": [], "missing_outputs": [] }, "type_coverage": { "plan_types": {}, "output_types": {}, "missing": [] }, "issues": [{ "severity": "critical|high|medium|low", "description": "", "suggestion": "" }], "optimization_opportunities": [{ "area": "", "impact": "high|medium|low", "description": "" }], "step_summary": "" }`;
+
+let cmd = `ccw cli -p ${escapeForShell(analysisPrompt)} --tool gemini --mode analysis --rule analysis-review-code-quality`;
+if (state.gemini_session_id) cmd += ` --resume ${state.gemini_session_id}`;
+Bash({ command: cmd, run_in_background: true, timeout: 300000 });
 // ■ STOP — wait for hook callback
-```
 
-### Post-Analyze Callback Handler
-
-```javascript
-// ★ Parse analysis result JSON from callback
-const analysisResult = /* parsed from callback output */;
-
-// ★ Capture gemini session ID for resume chain
-// Session ID is in stderr: [CCW_EXEC_ID=gem-xxxxxx-xxxx]
-state.gemini_session_id = /* captured from callback exec_id */;
-
+// === Post-Analyze (after callback) ===
+// Parse JSON result, capture gemini_session_id from [CCW_EXEC_ID=...] in stderr
 Write(`${stepDir}/step-${stepIdx + 1}-analysis.json`, JSON.stringify(analysisResult, null, 2));
 
-// Update state
 state.steps[stepIdx].analysis = {
   quality_score: analysisResult.quality_score,
   requirement_pass: analysisResult.requirement_match?.pass,
   issue_count: (analysisResult.issues || []).length
 };
 state.steps[stepIdx].status = 'completed';
-
-// Append to process log
-const logEntry = `## Step ${stepIdx + 1}: ${step.name}\n- Score: ${analysisResult.quality_score}/100\n- Req: ${analysisResult.requirement_match?.pass ? 'PASS' : 'FAIL'}\n- Issues: ${(analysisResult.issues || []).length}\n- Summary: ${analysisResult.step_summary}\n\n`;
-Edit(`${state.work_dir}/process-log.md`, /* append logEntry */);
-
-// ★ Advance state machine
 state.current_step = stepIdx + 1;
-state.current_phase = 'execute';
+state.current_phase = state.current_step < state.steps.length ? 'execute' : 'synthesize';
 Write(`${state.work_dir}/workflow-state.json`, JSON.stringify(state, null, 2));
 
-// ★ Decision: advance or synthesize
-if (state.current_step < state.steps.length) {
-  // → Back to Phase 2 for next step
-} else {
-  // → Phase 4: Synthesize
-}
+// Append to process log
+Edit(`${state.work_dir}/process-log.md`, /* append step summary */);
 ```
 
-## Step Loop — State Machine
-
-```
-NOT a sync for-loop. Each step follows this state machine:
-
-  ┌─────────────────────────────────────────────────────┐
-  │ state.current_step = N, state.current_phase = X     │
-  ├─────────────────────────────────────────────────────┤
-  │ phase='execute' → Phase 2 → ccw cli claude → STOP  │
-  │   callback → collect artifacts → phase='analyze'    │
-  │ phase='analyze' → Phase 3 → ccw cli gemini → STOP  │
-  │   callback → save analysis → current_step++         │
-  │   if current_step < total → phase='execute' (loop)  │
-  │   else → Phase 4 (synthesize)                       │
-  └─────────────────────────────────────────────────────┘
-
-Error handling:
-  - Execute timeout → retry once, then mark failed, advance
-  - Analyze failure → retry without --resume, then skip analysis
-  - 3+ consecutive errors → terminate, jump to Phase 5 partial report
-```
+---
 
 ## Phase 4: Synthesize (via gemini)
 
 ```javascript
-const stepAnalyses = state.steps.map((step, i) => {
-  try { return { step: step.name, content: Read(`${state.work_dir}/steps/step-${i + 1}/step-${i + 1}-analysis.json`) }; }
-  catch { return { step: step.name, content: '[Not available]' }; }
-});
+const stepAnalyses = state.steps.map((s, i) => {
+  try { return `### ${s.name}\n${Read(`${state.work_dir}/steps/step-${i + 1}/step-${i + 1}-analysis.json`)}`; }
+  catch { return `### ${s.name}\n[Not available]`; }
+}).join('\n\n---\n\n');
 
 const scores = state.steps.map(s => s.analysis?.quality_score).filter(Boolean);
-const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
 
-const synthesisPrompt = `PURPOSE: Synthesize all step analyses into holistic workflow assessment with actionable optimization plan.
+const synthesisPrompt = `PURPOSE: Synthesize all step analyses into workflow assessment.
 WORKFLOW: ${state.workflow_name} — ${state.project_scenario}
 Steps: ${state.steps.length} | Avg Quality: ${avgScore}/100
-STEP ANALYSES:\n${stepAnalyses.map(a => `### ${a.step}\n${a.content}`).join('\n\n---\n\n')}
-Evaluate: coherence across steps, handoff quality, redundancy, bottlenecks.
-EXPECTED OUTPUT (strict JSON):
-{ "workflow_score": <0-100>, "coherence": { "score": <0-100>, "assessment": "", "gaps": [] }, "bottlenecks": [{ "step": "", "issue": "", "suggestion": "" }], "per_step_improvements": [{ "step": "", "priority": "high|medium|low", "action": "" }], "workflow_improvements": [{ "area": "", "description": "", "impact": "high|medium|low" }], "summary": "" }`;
+STEP ANALYSES:
+${stepAnalyses}
 
-let cliCommand = `ccw cli -p ${escapeForShell(synthesisPrompt)} --tool gemini --mode analysis --rule analysis-review-architecture`;
-if (state.gemini_session_id) cliCommand += ` --resume ${state.gemini_session_id}`;
-Bash({ command: cliCommand, run_in_background: true, timeout: 300000 });
-// ■ STOP — wait for hook callback → parse JSON, write synthesis.json, update state
+Evaluate: cross-step coherence, handoff quality, bottlenecks, redundancy.
+TYPE COVERAGE: If any step involved plan→execute, check whether ALL task types in the plan produced corresponding outputs. Missing types (e.g. plan has figure/code tasks but sandbox has only .md files) reduce workflow_score by 10 per missing type.
+OUTPUT (strict JSON): { "workflow_score": <0-100>, "coherence": { "score": <0-100>, "assessment": "", "gaps": [] }, "type_coverage": { "types_in_plan": [], "types_with_output": [], "missing_types": [], "coverage_rate": "<pct>" }, "bottlenecks": [{ "step": "", "issue": "", "suggestion": "" }], "per_step_improvements": [{ "step": "", "priority": "high|medium|low", "action": "" }], "workflow_improvements": [{ "area": "", "impact": "high|medium|low", "description": "" }], "summary": "" }`;
+
+let cmd = `ccw cli -p ${escapeForShell(synthesisPrompt)} --tool gemini --mode analysis --rule analysis-review-architecture`;
+if (state.gemini_session_id) cmd += ` --resume ${state.gemini_session_id}`;
+Bash({ command: cmd, run_in_background: true, timeout: 300000 });
+// ■ STOP — wait for hook callback → parse JSON → write synthesis.json
 ```
+
+---
 
 ## Phase 5: Report
 
 ```javascript
 const synthesis = JSON.parse(Read(`${state.work_dir}/synthesis.json`));
-const scores = state.steps.map(s => s.analysis?.quality_score).filter(Boolean);
-const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-const totalIssues = state.steps.reduce((sum, s) => sum + (s.analysis?.issue_count || 0), 0);
-
-const stepTable = state.steps.map((s, i) => {
-  const reqStr = s.analysis?.requirement_pass === true ? 'PASS' : s.analysis?.requirement_pass === false ? 'FAIL' : '-';
-  return `| ${i + 1} | ${s.name} | ${s.execution?.success ? 'OK' : 'FAIL'} | ${reqStr} | ${s.analysis?.quality_score || '-'} | ${s.analysis?.issue_count || 0} |`;
-}).join('\n');
-
-const improvements = (synthesis.per_step_improvements || [])
-  .filter(imp => imp.priority === 'high')
-  .map(imp => `- **${imp.step}**: ${imp.action}`)
-  .join('\n');
+const avgScore = /* compute from steps */;
 
 const report = `# Workflow Tune Report
 
@@ -740,72 +470,53 @@ const report = `# Workflow Tune Report
 |---|---|
 | Workflow | ${state.workflow_name} |
 | Test Project | ${state.project_scenario} |
-| Workflow Score | ${synthesis.workflow_score || avgScore}/100 |
-| Avg Step Score | ${avgScore}/100 |
-| Total Issues | ${totalIssues} |
+| Score | ${synthesis.workflow_score || avgScore}/100 |
 | Coherence | ${synthesis.coherence?.score || '-'}/100 |
 
 ## Step Results
 
 | # | Step | Exec | Req | Quality | Issues |
 |---|------|------|-----|---------|--------|
-${stepTable}
+${state.steps.map((s, i) => `| ${i+1} | ${s.name} | ${s.execution?.success ? 'OK' : 'FAIL'} | ${s.analysis?.requirement_pass ? 'PASS' : 'FAIL'} | ${s.analysis?.quality_score || '-'} | ${s.analysis?.issue_count || 0} |`).join('\n')}
 
 ## High Priority Improvements
-
-${improvements || 'None'}
-
-## Workflow-Level Improvements
-
-${(synthesis.workflow_improvements || []).map(w => `- **${w.area}** (${w.impact}): ${w.description}`).join('\n') || 'None'}
+${(synthesis.per_step_improvements || []).filter(i => i.priority === 'high').map(i => `- **${i.step}**: ${i.action}`).join('\n') || 'None'}
 
 ## Bottlenecks
-
 ${(synthesis.bottlenecks || []).map(b => `- **${b.step}**: ${b.issue} → ${b.suggestion}`).join('\n') || 'None'}
 
 ## Summary
+${synthesis.summary || 'N/A'}`;
 
-${synthesis.summary || 'N/A'}
-`;
-
-Write(`${state.work_dir}/final-report.md`, report);
+Write(`${state.work_dir}/report.md`, report);
 state.status = 'completed';
 Write(`${state.work_dir}/workflow-state.json`, JSON.stringify(state, null, 2));
-
-// Output report to user
 ```
 
-## Resume Chain
+---
+
+## State Machine
 
 ```
-Step 1 Execute → ccw cli claude --mode write --rule universal-rigorous-style --cd step-1/ → STOP → callback → artifacts
-Step 1 Analyze → ccw cli gemini --mode analysis --rule analysis-review-code-quality         → STOP → callback → gemini_session_id = exec_id
-Step 2 Execute → ccw cli claude --mode write --rule universal-rigorous-style --cd step-2/ → STOP → callback → artifacts
-Step 2 Analyze → ccw cli gemini --mode analysis --resume gemini_session_id                 → STOP → callback → gemini_session_id = exec_id
-  ...
-Synthesize   → ccw cli gemini --mode analysis --resume gemini_session_id                   → STOP → callback → synthesis
-Report       → local generation (no CLI call)
+┌─────────────────────────────────────────────────────┐
+│ current_step = N, current_phase = X                 │
+├─────────────────────────────────────────────────────┤
+│ execute  → ccw cli claude → STOP → callback         │
+│         → collect artifacts → phase = 'analyze'     │
+│ analyze  → ccw cli gemini → STOP → callback         │
+│         → save analysis → step++ → phase = 'execute'│
+│ (if last step) → phase = 'synthesize'               │
+│ synthesize → ccw cli gemini → STOP → callback       │
+│         → report → done                             │
+└─────────────────────────────────────────────────────┘
 ```
 
 ## Error Handling
 
 | Phase | Error | Recovery |
 |-------|-------|----------|
-| Execute | CLI timeout | Retry once, then mark step failed and advance |
+| Execute | CLI timeout | Retry once, then mark failed, advance |
 | Execute | Command not found | Skip step, note in process-log |
-| Analyze | CLI fails | Retry without --resume, then skip analysis |
+| Analyze | CLI fails | Retry without `--resume`, then skip |
 | Synthesize | CLI fails | Generate report from step analyses only |
-| Any | 3+ consecutive errors | Terminate, produce partial report |
-
-## Core Rules
-
-1. **STOP After Each CLI Call**: Every `ccw cli` call runs in background — STOP output immediately, wait for hook callback
-2. **State Machine**: Advance via `current_step` + `current_phase`, never use sync loops for async operations
-3. **Test Task Drives Execution**: 每个命令必须有 test_task（完整需求说明），作为命令的 $ARGUMENTS 输入。test_task 由当前 Claude 直接根据命令链复杂度生成，不需要额外 CLI 调用
-4. **All Execution via claude**: `ccw cli --tool claude --mode write --rule universal-rigorous-style`
-5. **All Analysis via gemini**: `ccw cli --tool gemini --mode analysis`, chained via `--resume`
-6. **Session Capture**: After each gemini callback, capture exec_id → `gemini_session_id` for resume chain
-7. **Sandbox Isolation**: 所有命令在独立沙箱目录（`sandbox/`）中执行，使用虚构测试任务，不影响真实项目
-8. **Artifact Collection**: Scan sandbox filesystem (not git diff), compare pre/post snapshots
-9. **Prompt Assembly**: Every step goes through `assembleStepPrompt()` — resolves command file, reads YAML metadata, injects test_task, builds rich context
-10. **Auto-Confirm**: All prompts auto-confirmed, no blocking interactions during execution
+| Any | 3+ consecutive errors | Terminate, partial report |

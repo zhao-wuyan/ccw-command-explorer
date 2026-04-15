@@ -165,7 +165,6 @@ ${getPerspectiveGuidance(perspective)}
 // Step 2: Batch wait for all agents
 const agentIds = perspectiveAgents.map(a => a.agentId);
 const results = wait_agent({
-  targets: agentIds,
   timeout_ms: 600000  // 10 minutes
 });
 
@@ -183,7 +182,7 @@ perspectiveAgents.forEach(({ agentId, perspective }) => {
 });
 
 // Step 5: Close all agents
-agentIds.forEach(id => close_agent({ id }));
+agentIds.forEach(id => close_agent({ target: id }));
 ```
 
 ### Exa Research Agent (for security and best-practices)
@@ -221,11 +220,10 @@ Research industry best practices for ${perspective} using Exa search
   });
 
   const exaResult = wait_agent({
-    targets: [exaAgentId],
-    timeout_ms: 300000  // 5 minutes
+    timeout_ms: 600000  // 10 minutes
   });
 
-  close_agent({ id: exaAgentId });
+  close_agent({ target: exaAgentId });
 }
 ```
 

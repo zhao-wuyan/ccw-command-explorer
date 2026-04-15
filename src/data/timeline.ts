@@ -246,25 +246,26 @@ export const TIMELINE: TimelineItem[] = [
   },
   {
     date: '2026-04',
-    version: 'v7.3',
+    version: 'v7.3.6',
     title: 'Chain 链式工作流',
     desc: '当前最新版本',
     color: COLORS.primary,
-    commands: 114,
+    commands: 111,
     detail: {
-      version: 'v7.3.0',
+      version: 'v7.3.6',
       highlights: [
         '新 Skill: ccw-chain 链式工作流编排引擎',
-        '新 Skill: chain-loader 链式技能生成器',
-        '新命令: workflow-skill 技能快速启动器',
+        '新 Skill: ccw-coordinate 流水线协调器(Codex)',
+        '移除: chain-loader、workflow-skill',
+        '移除: workflow:collaborative-plan-with-file、workflow:unified-execute-with-file',
         '移除: flow-create、cli:cli-init、cli:codex-review',
+        'memory-capture 支持 Codex',
       ],
       newCommands: [
         '/ccw-chain',
-        '/chain-loader',
-        '/workflow-skill',
+        '/ccw-coordinate',
       ],
-      usage: 'v7.3 引入 Chain 链式工作流架构，支持渐进式步骤加载和 LLM 决策路由。新增技能快速启动器，移除过时的 CLI 工具命令和流程模板命令。'
+      usage: 'v7.3 引入 Chain 链式工作流架构和流水线协调器。移除 chain-loader、workflow-skill 和 with-file 系列过时命令。memory-capture 现同时支持 Claude Code 和 Codex。'
     }
   },
 ];

@@ -1,0 +1,31 @@
+.workflow/.scratchpad/wiki-sync-2026-04-15/version-diff.json
+  4c79ae71d00f0fc8 1-6
+src/data/deprecated.ts
+  4c79ae71d00f0fc8 120-124
+.workflow/.scratchpad/wiki-sync-2026-04-15/command-changes.json
+  4c79ae71d00f0fc8 1-20
+src/data/commands.ts
+  4c79ae71d00f0fc8 21-23,214,529
+src/data/timeline.ts
+  4c79ae71d00f0fc8 249,253,255,258-260,262,266,268
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "3c404e184be194687436b47c202a3246e52b0115",
+  "prompts": {
+    "4c79ae71d00f0fc8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "59a86ffd-bad5-4717-83a2-a96a15f61fb7",
+        "model": "Kimi-K2.5-Internal-XAIO-CP-cuton"
+      },
+      "human_author": "zhao-wuyan",
+      "messages": [],
+      "total_additions": 1388,
+      "total_deletions": 1378,
+      "accepted_lines": 1273,
+      "overriden_lines": 37
+    }
+  }
+}

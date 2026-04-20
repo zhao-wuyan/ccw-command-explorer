@@ -1,0 +1,23 @@
+.workflow/.scratchpad/wiki-sync-2026-04-20/version-diff.json
+  3ae81026e906f0d4 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "19756be5945466f1d7b725702f218f092449ec88",
+  "prompts": {
+    "3ae81026e906f0d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4d07db72-b2ba-4583-b19f-5f4e453a1069",
+        "model": "GLM-5-Internal-XAIO-CP-2026s"
+      },
+      "human_author": "zhao-wuyan",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 13,
+      "overriden_lines": 0
+    }
+  }
+}

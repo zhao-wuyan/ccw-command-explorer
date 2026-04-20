@@ -2,6 +2,16 @@
 
 Create a pull request via GitHub CLI with a structured body, linked issues, and release metadata.
 
+## Skip Conditions
+
+Skip this phase (proceed directly to Phase 6) when:
+
+- Current branch is `main` / `master` and the project uses trunk-based development (release commit was pushed directly to the default branch)
+- User explicitly passes `--no-pr`
+- No remote write access to create PRs (rare — usually a BLOCKED signal instead)
+
+When skipped, record `phase: "pr-creation", overall: "skip", reason: "..."` in the skill output and move on.
+
 ## Objective
 
 - Create a PR using `gh pr create` with structured body
@@ -11,7 +21,7 @@ Create a pull request via GitHub CLI with a structured body, linked issues, and 
 
 ## Gate Condition
 
-PR created successfully and URL returned.
+PR created successfully and URL returned — OR skip condition matched.
 
 ## Execution Steps
 
@@ -138,26 +148,8 @@ echo "PR created: $pr_url"
 }
 ```
 
-## Completion
+## Next Phase
 
-After PR creation, output the final Completion Status:
+After PR creation (or skip), proceed to [Phase 6: Platform Publish](06-platform-publish.md).
 
-```
-## STATUS: DONE
-
-**Summary**: Released vX.Y.Z — PR created at {pr_url}
-
-### Details
-- Phases completed: 5/5
-- Version: {previous} -> {new} ({bump_type})
-- PR: {pr_url}
-- Key outputs: CHANGELOG.md updated, release commit pushed, PR created
-
-### Outputs
-- CHANGELOG.md (updated)
-- {version_file} (version bumped)
-- Release commit: {sha}
-- PR: {pr_url}
-```
-
-If there were review warnings, use `DONE_WITH_CONCERNS` and list the warnings in the Details section.
+**Note**: Final completion status is emitted by Phase 7 (the terminal phase), not here. PR URL flows through to the final STATUS output as part of the release record.

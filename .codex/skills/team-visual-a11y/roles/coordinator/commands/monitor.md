@@ -58,7 +58,7 @@ Worker completed (wait_agent returns). Process and advance.
    spawn_agent({ agent_type: "team_worker", task_name: "FOCUS-001", ... })
 
    // Wait for ALL 3 to complete
-   wait_agent({ timeout_ms: 900000 })
+   wait_agent({ timeout_ms: 1800000 })  // 30 min — apply timeout cascade if timed_out
 
    // Close all 3
    close_agent({ target: "COLOR-001" })
@@ -75,7 +75,7 @@ Worker completed (wait_agent returns). Process and advance.
    ```javascript
    spawn_agent({ agent_type: "team_worker", task_name: "COLOR-002", ... })
    spawn_agent({ agent_type: "team_worker", task_name: "FOCUS-002", ... })
-   wait_agent({ timeout_ms: 900000 })
+   wait_agent({ timeout_ms: 1800000 })  // 30 min — apply timeout cascade if timed_out
    close_agent({ target: "COLOR-002" })
    close_agent({ target: "FOCUS-002" })
    ```
@@ -197,11 +197,21 @@ ${upstreamContext}`
 state.active_agents[taskId] = { agentId, role, started_at: now }
 
 // 4) Wait for completion -- use task_name for stable targeting (v4)
-const waitResult = wait_agent({ timeout_ms: 900000 })
+const waitResult = wait_agent({ timeout_ms: 1800000 })  // 30 min
 if (waitResult.timed_out) {
-  state.tasks[taskId].status = 'timed_out'
-  close_agent({ target: taskId })
-  delete state.active_agents[taskId]
+  // Status probe before closing
+  followup_task({ target: taskId, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." })
+  const status = wait_agent({ timeout_ms: 180000 })  // 3 min
+  if (status.timed_out) {
+    followup_task({ target: taskId, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true })
+    const forced = wait_agent({ timeout_ms: 180000 })  // 3 min
+    if (forced.timed_out) {
+      state.tasks[taskId].status = 'timed_out'
+      close_agent({ target: taskId })
+      delete state.active_agents[taskId]
+    }
+  }
+  // else: status received, continue processing
 } else {
   // 5) Collect results and update tasks.json
   state.tasks[taskId].status = 'completed'

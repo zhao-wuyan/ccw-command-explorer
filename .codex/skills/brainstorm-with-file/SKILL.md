@@ -54,7 +54,7 @@ When `--yes` or `-y`: Auto-confirm exploration decisions, use recommended perspe
 | `--perspectives` | creative,pragmatic,systematic | Comma-separated perspective list |
 | `--max-ideas` | 15 | Maximum ideas to track |
 
-**Session ID format**: `BS-{slug}-{YYYY-MM-DD}`
+**Session ID format**: `BS-{YYYY-MM-DD}-{slug}`
 - slug: lowercase, alphanumeric + CJK characters, max 40 chars
 - date: YYYY-MM-DD (UTC+8)
 - Auto-detect continue: session folder + brainstorm.md exists → continue mode
@@ -64,7 +64,7 @@ When `--yes` or `-y`: Auto-confirm exploration decisions, use recommended perspe
 ```
 Step 0: Session Setup
    ├─ Parse topic, flags (--perspectives, --continue, -y)
-   ├─ Generate session ID: BS-{slug}-{date}
+   ├─ Generate session ID: BS-{date}-{slug}
    ├─ Create session folder (or detect existing → continue mode)
    └─ functions.update_plan (5 phases: Seed → Explore → Refine → Converge → GATE)
 
@@ -207,7 +207,7 @@ const projectRoot = functions.exec_command('git rev-parse --show-toplevel 2>/dev
 
 const slug = topic.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').substring(0, 40)
 const dateStr = getUtc8ISOString().substring(0, 10)
-const sessionId = `BS-${slug}-${dateStr}`
+const sessionId = `BS-${dateStr}-${slug}`
 const sessionFolder = `${projectRoot}/.workflow/.brainstorm/${sessionId}`
 
 // Auto-detect continue: session folder + brainstorm.md exists → continue mode
@@ -918,7 +918,7 @@ Remaining questions or exploration directions
 ### Output Structure
 
 ```
-{projectRoot}/.workflow/.brainstorm/BS-{slug}-{date}/
+{projectRoot}/.workflow/.brainstorm/BS-{date}-{slug}/
 ├── brainstorm.md                  # Complete thought evolution timeline
 ├── exploration-codebase.json      # Phase 2: Codebase context
 ├── perspectives/                  # Phase 2: Individual perspective outputs

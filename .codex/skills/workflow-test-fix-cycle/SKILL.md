@@ -104,11 +104,19 @@ Get results from subagent (only way to retrieve results).
 
 ```javascript
 const result = wait_agent({
-  timeout_ms: 600000  // 10 minutes
+  timeout_ms: 1800000  // 30 minutes
 })
 
 if (result.timed_out) {
-  // Handle timeout - can use followup_task to prompt completion
+  followup_task({ target: agentId, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." })
+  const status = wait_agent({ timeout_ms: 180000 })  // 3 min
+  if (status.timed_out) {
+    followup_task({ target: agentId, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true })
+    const forced = wait_agent({ timeout_ms: 180000 })  // 3 min
+    if (forced.timed_out) {
+      close_agent({ target: agentId })
+    }
+  }
 }
 ```
 
@@ -343,7 +351,7 @@ functions.update_plan([
 ```javascript
 try {
   const agentId = spawn_agent({ message: "..." });
-  const result = wait_agent({ timeout_ms: 600000 });
+  const result = wait_agent({ timeout_ms: 1800000 });  // 30 minutes
   // ... process result ...
   close_agent({ target: agentId });
 } catch (error) {

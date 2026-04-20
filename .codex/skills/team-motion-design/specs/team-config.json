@@ -89,7 +89,7 @@
   },
 
   "session_dirs": {
-    "base": ".workflow/.team/MD-{slug}-{YYYY-MM-DD}/",
+    "base": ".workflow/.team/MD-{YYYY-MM-DD}-{slug}/",
     "research": "research/",
     "choreography": "choreography/",
     "animations": "animations/",

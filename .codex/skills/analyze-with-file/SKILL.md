@@ -54,7 +54,7 @@ When `--yes` or `-y`: Auto-confirm exploration decisions, use recommended analys
 | `--continue` | false | Continue existing session |
 | `--depth` | standard | Analysis depth: quick / standard / deep |
 
-**Session ID format**: `ANL-{slug}-{YYYY-MM-DD}`
+**Session ID format**: `ANL-{YYYY-MM-DD}-{slug}`
 - slug: lowercase, alphanumeric + CJK characters, max 40 chars
 - date: YYYY-MM-DD (UTC+8)
 - Auto-detect continue: session folder + discussion.md exists → continue mode
@@ -64,7 +64,7 @@ When `--yes` or `-y`: Auto-confirm exploration decisions, use recommended analys
 ```
 Step 0: Session Setup
    ├─ Parse topic, flags (--depth, --continue, -y)
-   ├─ Generate session ID: ANL-{slug}-{date}
+   ├─ Generate session ID: ANL-{date}-{slug}
    ├─ Create session folder (or detect existing → continue mode)
    └─ Initialize progress tracking: functions.update_plan([...phases])
 
@@ -208,7 +208,7 @@ const projectRoot = functions.exec_command('git rev-parse --show-toplevel 2>/dev
 
 const slug = topic.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').substring(0, 40)
 const dateStr = getUtc8ISOString().substring(0, 10)
-const sessionId = `ANL-${slug}-${dateStr}`
+const sessionId = `ANL-${dateStr}-${slug}`
 const sessionFolder = `${projectRoot}/.workflow/.analysis/${sessionId}`
 
 // Auto-detect continue: session folder + discussion.md exists → continue mode
@@ -1031,7 +1031,7 @@ Remaining questions or areas for investigation
 ### Output Structure
 
 ```
-{projectRoot}/.workflow/.analysis/ANL-{slug}-{date}/
+{projectRoot}/.workflow/.analysis/ANL-{date}-{slug}/
 ├── discussion.md              # Evolution of understanding & discussions
 ├── exploration-codebase.json  # Phase 2: Codebase context
 ├── research.json              # Phase 2: External research findings (if topic warrants)

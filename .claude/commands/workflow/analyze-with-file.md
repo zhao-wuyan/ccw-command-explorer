@@ -102,7 +102,7 @@ All `AskUserQuestion` calls MUST comply:
 **Initialize session and create progress tracking.**
 
 1. Extract topic/question from `$ARGUMENTS`
-2. Generate session ID: `ANL-{slug}-{date}` (slug: lowercase alphanumeric+Chinese, max 40 chars; date: YYYY-MM-DD UTC+8)
+2. Generate session ID: `ANL-{date}-{slug}` (date: YYYY-MM-DD UTC+8; slug: lowercase alphanumeric+Chinese, max 40 chars)
 3. Define session folder: `.workflow/.analysis/{session-id}`
 4. Parse options: `-c`/`--continue` for continuation, `-y`/`--yes` for auto-approval
 5. Auto-detect: If session folder + discussion.md exist -> continue mode

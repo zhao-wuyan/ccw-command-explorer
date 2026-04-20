@@ -116,7 +116,7 @@ Find ready tasks, spawn workers, STOP.
         ```
       - Add to active_workers
 5. Update session, output summary, STOP
-6. Use `wait_agent({ timeout_ms: 900000 })` to wait for callbacks. If `result.timed_out`, mark tasks as `timed_out` and close agents. Use `close_agent({ target: taskId })` with task_name for cleanup. Workers use `report_agent_job_result()` to send results back.
+6. Use `wait_agent({ timeout_ms: 1800000 })` to wait for callbacks. If `result.timed_out`, send STATUS_CHECK via followup_task (wait 3 min), then FINALIZE with interrupt (wait 3 min), then mark timed_out and close agents. Use `close_agent({ target: taskId })` with task_name for cleanup. Workers use `report_agent_job_result()` to send results back.
 
 **Cross-Agent Supplementary Context** (v4):
 

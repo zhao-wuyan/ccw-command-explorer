@@ -179,7 +179,28 @@ const reviewResults = wait_agent({
 
 // Step 3: Check results and handle timeouts
 if (reviewResults.timed_out) {
-  console.log('Some dimension reviews timed out, continuing with completed results');
+  console.log('Some dimension reviews timed out, requesting status...');
+  reviewAgents.forEach((agentId, index) => {
+    if (!reviewResults.status[agentId].completed) {
+      followup_task({ target: agentId, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." })
+    }
+  });
+  const statusResults = wait_agent({ timeout_ms: 180000 });  // 3 min
+  if (statusResults.timed_out) {
+    reviewAgents.forEach((agentId, index) => {
+      if (!statusResults.status[agentId].completed) {
+        followup_task({ target: agentId, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true })
+      }
+    });
+    const forcedResults = wait_agent({ timeout_ms: 180000 });  // 3 min
+    if (forcedResults.timed_out) {
+      reviewAgents.forEach((agentId, index) => {
+        if (!forcedResults.status[agentId].completed) {
+          close_agent({ target: agentId });
+        }
+      });
+    }
+  }
 }
 
 reviewAgents.forEach((agentId, index) => {
@@ -301,7 +322,28 @@ const reviewResults = wait_agent({
 
 // Step 3: Check results and handle timeouts
 if (reviewResults.timed_out) {
-  console.log('Some dimension reviews timed out, continuing with completed results');
+  console.log('Some dimension reviews timed out, requesting status...');
+  reviewAgents.forEach((agentId, index) => {
+    if (!reviewResults.status[agentId].completed) {
+      followup_task({ target: agentId, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." })
+    }
+  });
+  const statusResults = wait_agent({ timeout_ms: 180000 });  // 3 min
+  if (statusResults.timed_out) {
+    reviewAgents.forEach((agentId, index) => {
+      if (!statusResults.status[agentId].completed) {
+        followup_task({ target: agentId, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true })
+      }
+    });
+    const forcedResults = wait_agent({ timeout_ms: 180000 });  // 3 min
+    if (forcedResults.timed_out) {
+      reviewAgents.forEach((agentId, index) => {
+        if (!forcedResults.status[agentId].completed) {
+          close_agent({ target: agentId });
+        }
+      });
+    }
+  }
 }
 
 reviewAgents.forEach((agentId, index) => {

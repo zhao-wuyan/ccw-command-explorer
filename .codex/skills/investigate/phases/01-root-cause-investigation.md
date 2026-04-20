@@ -123,7 +123,7 @@ CONTEXT: @<affected_files_from_step3> | Evidence: <error_messages_and_traces>
 EXPECTED: Top 3 likely root causes ranked by evidence strength, each with file:line reference
 CONSTRAINTS: Read-only analysis | Focus on <affected_module>`
 })
-const diagResult = wait_agent({ timeout_ms: 600000 })
+const diagResult = wait_agent({ timeout_ms: 300000 })  // 5 minutes (inline subagent)
 close_agent({ target: "inline-cli-analysis" })
 ```
 

@@ -74,7 +74,7 @@ Before calling ANY tool, apply this check:
 ## Shared Constants
 
 - **Session prefix**: `MD`
-- **Session path**: `.workflow/.team/MD-<slug>-<date>/`
+- **Session path**: `.workflow/.team/MD-<date>-<slug>/`
 - **CLI tools**: `ccw cli --mode analysis` (read-only), `ccw cli --mode write` (modifications)
 - **Message bus**: `mcp__ccw-tools__team_msg(session_id=<session-id>, ...)`
 - **Max GC rounds**: 2
@@ -109,7 +109,7 @@ pipeline_phase: <pipeline-phase>
 })
 ```
 
-After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 1800000 })` to collect results. If `result.timed_out`, send STATUS_CHECK via followup_task (wait 3 min), then FINALIZE with interrupt (wait 3 min), then mark timed_out and close agents. Use `close_agent({ target })` each worker.
 
 
 ### Model Selection Guide
@@ -156,7 +156,7 @@ Easing catalog: <session>/research/easing-catalog.json`
 ## Session Directory
 
 ```
-.workflow/.team/MD-<slug>-<date>/
+.workflow/.team/MD-<date>-<slug>/
 +-- .msg/
 |   +-- messages.jsonl         # Team message bus
 |   +-- meta.json              # Pipeline config + GC state

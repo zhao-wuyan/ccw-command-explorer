@@ -170,7 +170,7 @@ if (feedback.cd) {
 
 // Wait for agents to process feedback and update
 const updatedResults = wait_agent({
-  timeout_ms: 900000  // 15 minutes for fixes
+  timeout_ms: 1800000  // 30 minutes for fixes
 })
 
 console.log('Agents updated, continuing...')

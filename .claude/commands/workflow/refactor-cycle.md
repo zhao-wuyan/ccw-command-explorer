@@ -59,7 +59,7 @@ Closed-loop tech debt lifecycle: **Discover → Assess → Plan → Refactor →
 | `.trace/` | Raw logs | CLI analysis outputs, test outputs, diagnostics snapshots |
 
 ```
-.workflow/.refactor/RFT-{slug}-{date}/
+.workflow/.refactor/RFT-{date}-{slug}/
 ├── reflection-log.md    # ⭐ Debt discovery + prioritization + per-item reflections + conclusions
 ├── state.json           # Debt inventory + queue + plans + validation + iteration state
 └── .trace/              # Raw logs (CLI outputs, test results, diagnostics)
@@ -129,9 +129,9 @@ Closed-loop tech debt lifecycle: **Discover → Assess → Plan → Refactor →
 
 **Required Actions**:
 1. Extract module/goal from `$ARGUMENTS`
-2. Generate session ID: `RFT-{slug}-{date}`
-   - slug: lowercase, alphanumeric + Chinese, max 40 chars
+2. Generate session ID: `RFT-{date}-{slug}`
    - date: YYYY-MM-DD (UTC+8)
+   - slug: lowercase, alphanumeric + Chinese, max 40 chars
 3. Session folder: `.workflow/.refactor/{session-id}`
 4. Parse options:
    - `-c` / `--continue`: Resume existing session

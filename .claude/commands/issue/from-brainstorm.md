@@ -349,7 +349,7 @@ brainstorm-with-file
 ### Input Files
 
 ```
-.workflow/.brainstorm/BS-{slug}-{date}/
+.workflow/.brainstorm/BS-{date}-{slug}/
 ├── synthesis.json           # REQUIRED - Top ideas with scores
 ├── perspectives.json        # OPTIONAL - Multi-CLI insights
 ├── brainstorm.md           # Reference only

@@ -103,7 +103,7 @@ TEXT-LEVEL ONLY. No source code reading.
 1. Resolve workspace paths (MUST do first):
    - `project_root` = result of `Bash("pwd")`
    - `skill_root` = `<project_root>/.codex/skills/team-brainstorm`
-2. Generate session ID: `BRS-<topic-slug>-<date>`
+2. Generate session ID: `BRS-<date>-<topic-slug>`
 3. Create session folder structure: ideas/, critiques/, synthesis/, evaluation/, wisdom/, .msg/
 4. Create session folder + initialize `tasks.json` (empty array)
 5. Write session.json with pipeline, angles, gc_round=0, max_gc_rounds=2
@@ -155,7 +155,7 @@ Delegate to @commands/monitor.md#handleSpawnNext:
 
 ### Message Semantics
 - **send_message**: Queue supplementary info to a running agent. Does NOT interrupt current processing. Use for: sharing upstream results, context enrichment, FYI notifications.
-- **followup_task**: Assign new work and trigger processing. Use for: waking idle agents, redirecting work, requesting new output.
+- **followup_task**: Assign new work and trigger processing. Use for: waking idle agents, redirecting work, requesting new output, **status probing on timeout**.
 
 ### Agent Lifecycle Management
 - **list_agents({})**: Returns all running agents. Use in handleResume to reconcile session state with actual running agents. Use in handleComplete to verify clean shutdown.

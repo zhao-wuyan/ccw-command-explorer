@@ -118,12 +118,12 @@ TEXT-LEVEL ONLY. No source code reading.
 2. Generate session ID: `IC-<slug>-<YYYY-MM-DD>`
 3. Create session folder structure:
    ```
-   .workflow/.team/IC-<slug>-<date>/research/
-   .workflow/.team/IC-<slug>-<date>/interaction/blueprints/
-   .workflow/.team/IC-<slug>-<date>/build/components/
-   .workflow/.team/IC-<slug>-<date>/a11y/
-   .workflow/.team/IC-<slug>-<date>/wisdom/
-   .workflow/.team/IC-<slug>-<date>/.msg/
+   .workflow/.team/IC-<date>-<slug>/research/
+   .workflow/.team/IC-<date>-<slug>/interaction/blueprints/
+   .workflow/.team/IC-<date>-<slug>/build/components/
+   .workflow/.team/IC-<date>-<slug>/a11y/
+   .workflow/.team/IC-<date>-<slug>/wisdom/
+   .workflow/.team/IC-<date>-<slug>/.msg/
    ```
 4. Initialize `.msg/meta.json` via team_msg state_update with pipeline metadata
 5. Write initial tasks.json:

@@ -260,11 +260,11 @@ Get results from subagent (only way to retrieve results).
 
 ```javascript
 const result = wait_agent({
-  timeout_ms: 600000  // 10 minutes
+  timeout_ms: 1800000  // 30 minutes
 })
 
 if (result.timed_out) {
-  // Handle timeout - can use followup_task to prompt completion
+  // Handle timeout via 4-step cascade: status probe → force finalize → close
 }
 
 // Check completion status

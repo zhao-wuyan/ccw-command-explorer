@@ -98,7 +98,7 @@ TEXT-LEVEL ONLY. No source code reading.
 1. Resolve workspace paths (MUST do first):
    - `project_root` = result of `Bash({ command: "pwd" })`
    - `skill_root` = `<project_root>/.codex/skills/team-review`
-2. Generate session ID: RV-<slug>-<date>
+2. Generate session ID: RV-<date>-<slug>
 3. Create session folder structure (scan/, review/, fix/, wisdom/)
 4. Read specs/pipelines.md -> select pipeline based on mode
 5. Initialize tasks.json:

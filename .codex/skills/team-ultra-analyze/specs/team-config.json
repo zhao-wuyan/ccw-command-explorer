@@ -106,7 +106,7 @@
   ],
 
   "session_directory": {
-    "pattern": ".workflow/.team/UAN-{slug}-{date}",
+    "pattern": ".workflow/.team/UAN-{date}-{slug}",
     "subdirectories": ["explorations", "analyses", "discussions"]
   },
 

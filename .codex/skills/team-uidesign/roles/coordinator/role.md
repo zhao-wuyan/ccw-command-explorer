@@ -116,14 +116,14 @@ TEXT-LEVEL ONLY. No source code reading.
 2. Generate session ID: `UDS-<slug>-<YYYY-MM-DD>`
 3. Create session folder structure:
    ```
-   .workflow/.team/UDS-<slug>-<date>/research/
-   .workflow/.team/UDS-<slug>-<date>/design/component-specs/
-   .workflow/.team/UDS-<slug>-<date>/design/layout-specs/
-   .workflow/.team/UDS-<slug>-<date>/audit/
-   .workflow/.team/UDS-<slug>-<date>/build/token-files/
-   .workflow/.team/UDS-<slug>-<date>/build/component-files/
-   .workflow/.team/UDS-<slug>-<date>/wisdom/
-   .workflow/.team/UDS-<slug>-<date>/.msg/
+   .workflow/.team/UDS-<date>-<slug>/research/
+   .workflow/.team/UDS-<date>-<slug>/design/component-specs/
+   .workflow/.team/UDS-<date>-<slug>/design/layout-specs/
+   .workflow/.team/UDS-<date>-<slug>/audit/
+   .workflow/.team/UDS-<date>-<slug>/build/token-files/
+   .workflow/.team/UDS-<date>-<slug>/build/component-files/
+   .workflow/.team/UDS-<date>-<slug>/wisdom/
+   .workflow/.team/UDS-<date>-<slug>/.msg/
    ```
 4. Initialize `.msg/meta.json` via team_msg state_update with pipeline metadata
 5. Write initial tasks.json:

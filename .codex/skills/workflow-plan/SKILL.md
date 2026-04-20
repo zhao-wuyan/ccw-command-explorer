@@ -271,7 +271,7 @@ Format: {
 `
 })
 
-wait_agent({ timeout_ms: 600000 })
+wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 close_agent({ target: ctxAgent })
 
 // Parse outputs
@@ -403,7 +403,7 @@ ${contextPkg.conflict_risk === 'medium' || contextPkg.conflict_risk === 'high'
 `
      })
 
-     wait_agent({ timeout_ms: 600000 })
+     wait_agent({ timeout_ms: 1800000 })  // 30 minutes
      close_agent({ target: planAgent })
    }
    ```
@@ -439,7 +439,7 @@ Mark cross-module dependencies as CROSS::${'{module}'}::${'{task}'}
      }
 
      // Wait for all module planners
-     wait_agent({ timeout_ms: 600000 })
+     wait_agent({ timeout_ms: 1800000 })  // 30 minutes
      moduleAgents.forEach(a => close_agent({ target: a.id }))
 
      // +1 Coordinator: integrate all modules
@@ -460,7 +460,7 @@ Integrate ${uniqueModules.length} module plans into unified IMPL_PLAN.md.
 `
      })
 
-     wait_agent({ timeout_ms: 600000 })
+     wait_agent({ timeout_ms: 1800000 })  // 30 minutes
      close_agent({ target: coordAgent })
    }
    ```
@@ -601,7 +601,7 @@ ${replanTaskId ? `**Target Task**: ${sessionFolder}/.task/${replanTaskId}.json` 
 `
   })
 
-  wait_agent({ timeout_ms: 600000 })
+  wait_agent({ timeout_ms: 1800000 })  // 30 minutes
   close_agent({ target: replanAgent })
 
   console.log(`  Replan complete. Review: ${sessionFolder}/IMPL_PLAN.md`)

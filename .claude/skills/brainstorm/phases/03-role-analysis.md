@@ -33,7 +33,8 @@ When called from auto mode, launch N role-analysis calls simultaneously:
 
 ```javascript
 // Single message with multiple Skill invokes for parallelism
-// For each selected role:
+// For each selected role EXCLUDING ui-designer:
+// ui-designer handled in Phase 3.5 (sequential, after text roles)
 Skill(skill="brainstorm", args="{role-name} --session {session-id} --skip-questions")
 
 // For ui-designer with style-skill:

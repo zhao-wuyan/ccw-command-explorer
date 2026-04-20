@@ -1,13 +1,13 @@
 {
   "_metadata": {
     "version": "4.0.0",
-    "generated": "2026-04-02T10:34:48.094Z",
-    "total_commands": 140,
+    "generated": "2026-04-20T16:31:46.199Z",
+    "total_commands": 138,
     "sources": {
-      "claude_commands": 42,
-      "claude_skills": 53,
+      "claude_commands": 38,
+      "claude_skills": 54,
       "codex_prompts": 0,
-      "codex_skills": 45
+      "codex_skills": 46
     }
   },
   "commands": [
@@ -93,7 +93,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/brainstorm/SKILL.md",
-      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "spawn_agents_on_csv, spawn_agent, wait_agent, send_message, followup_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "brainstorm-with-file",
@@ -138,6 +138,20 @@
       "allowed_tools": "Skill(*), TodoWrite(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*)"
     },
     {
+      "name": "ccw-chain",
+      "command": "/ccw-chain",
+      "description": "Chain-based CCW workflow orchestrator. Intent analysis, workflow routing, and Skill pipeline execution via progressive chain loading. Triggers on \"ccw chain\", \"chain ccw\", \"workflow chain\".",
+      "h1_description": "Chain-based workflow orchestrator using `chain_loader` for progressive step loading and LLM-driven decision routing.",
+      "arguments": "",
+      "category": "skill",
+      "subcategory": null,
+      "usage_scenario": "general",
+      "difficulty": "Intermediate",
+      "cli": "claude",
+      "source": ".claude/skills/ccw-chain/SKILL.md",
+      "allowed_tools": "Skill(*), TodoWrite(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*)"
+    },
+    {
       "name": "ccw-cli-tools",
       "command": "/ccw-cli-tools",
       "description": "CLI tools execution specification (gemini/claude/codex/qwen/opencode) with unified prompt template, mode options, and auto-invoke triggers for code analysis and implementation tasks. Supports configurable CLI endpoints for analysis, write, and review modes.",
@@ -150,6 +164,20 @@
       "cli": "codex",
       "source": ".codex/skills/ccw-cli-tools/SKILL.md",
       "allowed_tools": ""
+    },
+    {
+      "name": "ccw-coordinate",
+      "command": "/ccw-coordinate",
+      "description": "Team-agent pipeline coordinator — classifies intent via structured extraction (action × object × style), maps to skill chain, spawns one agent per step whose prompt contains the skill invocation ($skill-name \"intent\"). Step results propagate as context to each successor. Session state at .workflow/.ccw-coordinate/{session-id}/state.json.",
+      "h1_description": "",
+      "arguments": "\\\"intent text\\\" [-y] [-c|--continue] [--dry-run] [--chain <name>]",
+      "category": "skill",
+      "subcategory": "codex",
+      "usage_scenario": "session-management",
+      "difficulty": "Advanced",
+      "cli": "codex",
+      "source": ".codex/skills/ccw-coordinate/SKILL.md",
+      "allowed_tools": "spawn_agent, wait_agent, send_message, followup_task, close_agent, Read, Write, Bash, Glob, Grep"
     },
     {
       "name": "ccw-coordinator",
@@ -206,34 +234,6 @@
       "cli": "codex",
       "source": ".codex/skills/clean/SKILL.md",
       "allowed_tools": ""
-    },
-    {
-      "name": "cli-init",
-      "command": "/cli:cli-init",
-      "description": "Generate .gemini/ and .qwen/ config directories with settings.json and ignore files based on workspace technology detection",
-      "h1_description": "",
-      "arguments": "[--tool gemini|qwen|all] [--output path] [--preview]",
-      "category": "cli",
-      "subcategory": null,
-      "usage_scenario": "implementation",
-      "difficulty": "Intermediate",
-      "cli": "claude",
-      "source": ".claude/commands/cli/cli-init.md",
-      "allowed_tools": "Bash(*), Read(*), Write(*), Glob(*)"
-    },
-    {
-      "name": "codex-review",
-      "command": "/cli:codex-review",
-      "description": "Interactive code review using Codex CLI via ccw endpoint with configurable review target, model, and custom instructions",
-      "h1_description": "",
-      "arguments": "[--uncommitted|--base <branch>|--commit <sha>] [--model <model>] [--title <title>] [prompt]",
-      "category": "cli",
-      "subcategory": null,
-      "usage_scenario": "analysis",
-      "difficulty": "Intermediate",
-      "cli": "claude",
-      "source": ".claude/commands/cli/codex-review.md",
-      "allowed_tools": "Bash(*), AskUserQuestion(*), Read(*)"
     },
     {
       "name": "compact",
@@ -457,7 +457,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/issue-discover/SKILL.md",
-      "allowed_tools": "spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__exa__search"
+      "allowed_tools": "spawn_agent, wait_agent, send_message, followup_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__exa__search"
     },
     {
       "name": "issue-manage",
@@ -597,7 +597,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/parallel-dev-cycle/SKILL.md",
-      "allowed_tools": "spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "spawn_agent, wait_agent, send_message, followup_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "plan",
@@ -812,8 +812,8 @@
     {
       "name": "ship",
       "command": "/ship",
-      "description": "Structured release pipeline with pre-flight checks, AI code review, version bump, changelog, and PR creation. Triggers on \"ship\", \"release\", \"publish\".",
-      "h1_description": "Structured release pipeline that guides code from working branch to pull request through 5 gated phases: pre-flight checks, automated code review, version bump, changelog generation, and PR creation.",
+      "description": "Structured release pipeline with pre-flight checks, AI code review, version bump, changelog, PR creation, platform publish, and GitHub release. Triggers on \"ship\", \"release\", \"publish\".",
+      "h1_description": "Structured release pipeline that guides code from working branch to a published release through 7 gated phases: pre-flight checks, automated code review, version bump, changelog generation, PR creation, platform publish (npm/PyPI/etc.), and GitHub release.",
       "arguments": "",
       "category": "skill",
       "subcategory": null,
@@ -933,7 +933,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/spec-setup/SKILL.md",
-      "allowed_tools": "spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "spawn_agent, wait_agent, send_message, followup_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "start",
@@ -1003,7 +1003,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/team-arch-opt/SKILL.md",
-      "allowed_tools": "Agent, TaskCreate, TaskList, TaskGet, TaskUpdate, TeamCreate, TeamDelete, SendMessage, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context"
+      "allowed_tools": "Agent, TaskCreate, TaskList, TaskGet, TaskUpdate, TeamCreate, TeamDelete, SendMessage, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__ccw-tools__team_msg"
     },
     {
       "name": "team-arch-opt",
@@ -1017,7 +1017,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-arch-opt/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-brainstorm",
@@ -1031,7 +1031,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/team-brainstorm/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-brainstorm",
@@ -1045,7 +1045,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-brainstorm/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-coordinate",
@@ -1059,7 +1059,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/team-coordinate/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-coordinate",
@@ -1073,7 +1073,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-coordinate/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-designer",
@@ -1087,7 +1087,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/team-designer/SKILL.md",
-      "allowed_tools": "Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-designer",
@@ -1101,7 +1101,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/team-designer/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-executor",
@@ -1115,7 +1115,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/team-executor/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-executor",
@@ -1129,7 +1129,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-executor/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-frontend",
@@ -1143,7 +1143,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/team-frontend/SKILL.md",
-      "allowed_tools": "Agent(*), TaskCreate(*), TaskList(*), TaskGet(*), TaskUpdate(*), TeamCreate(*), TeamDelete(*), SendMessage(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), WebFetch(*), WebSearch(*), mcp__ace-tool__search_context(*)"
+      "allowed_tools": "Agent(*), TaskCreate(*), TaskList(*), TaskGet(*), TaskUpdate(*), TeamCreate(*), TeamDelete(*), SendMessage(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), WebFetch(*), WebSearch(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-frontend",
@@ -1157,7 +1157,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/team-frontend/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), WebFetch(*), WebSearch(*), mcp__ace-tool__search_context(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), WebFetch(*), WebSearch(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-frontend-debug",
@@ -1171,7 +1171,7 @@
       "difficulty": "Beginner",
       "cli": "claude",
       "source": ".claude/skills/team-frontend-debug/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__chrome-devtools__*(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*), mcp__chrome-devtools__*(*)"
     },
     {
       "name": "team-frontend-debug",
@@ -1185,7 +1185,7 @@
       "difficulty": "Beginner",
       "cli": "codex",
       "source": ".codex/skills/team-frontend-debug/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__chrome-devtools__*(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__chrome-devtools__*(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-interactive-craft",
@@ -1213,7 +1213,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-interactive-craft/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-issue",
@@ -1241,7 +1241,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-issue/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__team_msg(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-lifecycle-v4",
@@ -1255,7 +1255,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/team-lifecycle-v4/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-lifecycle-v4",
@@ -1269,7 +1269,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/team-lifecycle-v4/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), request_user_input(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), request_user_input(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-motion-design",
@@ -1297,7 +1297,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-motion-design/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*), mcp__chrome-devtools__evaluate_script(*), mcp__chrome-devtools__take_screenshot(*), mcp__chrome-devtools__performance_start_trace(*), mcp__chrome-devtools__performance_stop_trace(*), mcp__chrome-devtools__performance_analyze_insight(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*), mcp__chrome-devtools__evaluate_script(*), mcp__chrome-devtools__take_screenshot(*), mcp__chrome-devtools__performance_start_trace(*), mcp__chrome-devtools__performance_stop_trace(*), mcp__chrome-devtools__performance_analyze_insight(*)"
     },
     {
       "name": "team-perf-opt",
@@ -1311,7 +1311,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/team-perf-opt/SKILL.md",
-      "allowed_tools": "Agent, TaskCreate, TaskList, TaskGet, TaskUpdate, TeamCreate, TeamDelete, SendMessage, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context"
+      "allowed_tools": "Agent, TaskCreate, TaskList, TaskGet, TaskUpdate, TeamCreate, TeamDelete, SendMessage, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep, mcp__ace-tool__search_context, mcp__ccw-tools__team_msg"
     },
     {
       "name": "team-perf-opt",
@@ -1325,7 +1325,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-perf-opt/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-planex",
@@ -1353,7 +1353,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/team-planex/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-quality-assurance",
@@ -1367,7 +1367,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/team-quality-assurance/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-quality-assurance",
@@ -1381,7 +1381,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/team-quality-assurance/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-review",
@@ -1395,7 +1395,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/team-review/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-review",
@@ -1409,7 +1409,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/team-review/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-roadmap-dev",
@@ -1423,7 +1423,7 @@
       "difficulty": "Intermediate",
       "cli": "claude",
       "source": ".claude/skills/team-roadmap-dev/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-roadmap-dev",
@@ -1437,7 +1437,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/team-roadmap-dev/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-tech-debt",
@@ -1465,7 +1465,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-tech-debt/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-testing",
@@ -1479,7 +1479,7 @@
       "difficulty": "Advanced",
       "cli": "claude",
       "source": ".claude/skills/team-testing/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-testing",
@@ -1493,7 +1493,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-testing/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-ui-polish",
@@ -1521,7 +1521,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-ui-polish/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*), mcp__chrome-devtools__evaluate_script(*), mcp__chrome-devtools__take_screenshot(*), mcp__chrome-devtools__navigate_page(*), mcp__chrome-devtools__resize_page(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*), mcp__chrome-devtools__evaluate_script(*), mcp__chrome-devtools__take_screenshot(*), mcp__chrome-devtools__navigate_page(*), mcp__chrome-devtools__resize_page(*)"
     },
     {
       "name": "team-uidesign",
@@ -1549,7 +1549,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-uidesign/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-ultra-analyze",
@@ -1563,7 +1563,7 @@
       "difficulty": "Beginner",
       "cli": "claude",
       "source": ".claude/skills/team-ultra-analyze/SKILL.md",
-      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "TeamCreate(*), TeamDelete(*), SendMessage(*), TaskCreate(*), TaskUpdate(*), TaskList(*), TaskGet(*), Agent(*), AskUserQuestion(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-ultra-analyze",
@@ -1577,7 +1577,7 @@
       "difficulty": "Beginner",
       "cli": "codex",
       "source": ".codex/skills/team-ultra-analyze/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-ux-improve",
@@ -1605,7 +1605,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-ux-improve/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*)"
     },
     {
       "name": "team-visual-a11y",
@@ -1633,21 +1633,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/team-visual-a11y/SKILL.md",
-      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), assign_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*), mcp__chrome-devtools__evaluate_script(*), mcp__chrome-devtools__take_screenshot(*), mcp__chrome-devtools__emulate(*), mcp__chrome-devtools__lighthouse_audit(*), mcp__chrome-devtools__navigate_page(*), mcp__chrome-devtools__resize_page(*)"
-    },
-    {
-      "name": "unified-execute-with-file",
-      "command": "/workflow:unified-execute-with-file",
-      "description": "Universal execution engine for consuming any planning/brainstorm/analysis output with minimal progress tracking, multi-agent coordination, and incremental execution",
-      "h1_description": "",
-      "arguments": "[-y|--yes] [<path>[,<path2>] | -p|--plan <path>[,<path2>]] [--auto-commit] [--commit-prefix \\\"prefix\\\"] [\\\"execution context or task name\\\"]",
-      "category": "workflow",
-      "subcategory": null,
-      "usage_scenario": "planning",
-      "difficulty": "Advanced",
-      "cli": "claude",
-      "source": ".claude/commands/workflow/unified-execute-with-file.md",
-      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Grep(*), Glob(*), Bash(*), Edit(*), Write(*)"
+      "allowed_tools": "spawn_agent(*), wait_agent(*), send_message(*), followup_task(*), close_agent(*), list_agents(*), report_agent_job_result(*), request_user_input(*), Read(*), Write(*), Edit(*), Bash(*), Glob(*), Grep(*), mcp__ccw-tools__read_file(*), mcp__ccw-tools__write_file(*), mcp__ccw-tools__edit_file(*), mcp__ccw-tools__team_msg(*), mcp__chrome-devtools__evaluate_script(*), mcp__chrome-devtools__take_screenshot(*), mcp__chrome-devtools__emulate(*), mcp__chrome-devtools__lighthouse_audit(*), mcp__chrome-devtools__navigate_page(*), mcp__chrome-devtools__resize_page(*)"
     },
     {
       "name": "wf-composer",
@@ -1801,7 +1787,7 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/workflow-plan/SKILL.md",
-      "allowed_tools": "spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "spawn_agent, wait_agent, send_message, followup_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-skill-designer",
@@ -1843,7 +1829,7 @@
       "difficulty": "Advanced",
       "cli": "codex",
       "source": ".codex/skills/workflow-tdd-plan/SKILL.md",
-      "allowed_tools": "spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "spawn_agent, wait_agent, send_message, followup_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-tdd-plan-plan",
@@ -1885,13 +1871,13 @@
       "difficulty": "Intermediate",
       "cli": "codex",
       "source": ".codex/skills/workflow-test-fix-cycle/SKILL.md",
-      "allowed_tools": "spawn_agent, wait_agent, send_message, assign_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
+      "allowed_tools": "spawn_agent, wait_agent, send_message, followup_task, close_agent, request_user_input, Read, Write, Edit, Bash, Glob, Grep"
     },
     {
       "name": "workflow-tune",
       "command": "/workflow-tune",
       "description": "Workflow tuning - extract commands from reference docs or natural language, execute each via ccw cli --tool claude --mode write, then analyze artifacts via gemini. For testing how commands execute in Claude.",
-      "h1_description": "测试 Claude command/skill 的执行效果并优化。提取可执行命令，逐步通过 `ccw cli --tool claude` 执行，分析产物质量，生成优化建议。",
+      "h1_description": "测试 command/skill 执行效果。提取可执行命令 → 沙箱逐步执行 → 分析产物质量 → 生成优化建议。",
       "arguments": "<file-path> <intent> | \\\"step1 | step2 | step3\\\" | \\\"skill-a,skill-b\\\" | --file workflow.json [--depth quick|standard|deep] [-y|--yes] [--auto-fix]",
       "category": "general",
       "subcategory": null,
@@ -1914,20 +1900,6 @@
       "cli": "claude",
       "source": ".claude/skills/workflow-wave-plan/SKILL.md",
       "allowed_tools": "Task, AskUserQuestion, Read, Write, Edit, Bash, Glob, Grep"
-    },
-    {
-      "name": "workflow:collaborative-plan-with-file",
-      "command": "/workflow:collaborative-plan-with-file",
-      "description": "Collaborative planning with Plan Note - Understanding agent creates shared plan-note.md template, parallel agents fill pre-allocated sections, conflict detection without merge. Outputs executable plan-note.md.",
-      "h1_description": "",
-      "arguments": "[-y|--yes] <task description> [--max-agents=5]",
-      "category": "workflow",
-      "subcategory": null,
-      "usage_scenario": "planning",
-      "difficulty": "Advanced",
-      "cli": "claude",
-      "source": ".claude/commands/workflow/collaborative-plan-with-file.md",
-      "allowed_tools": "TodoWrite(*), Agent(*), AskUserQuestion(*), Read(*), Bash(*), Write(*), Glob(*), Grep(*), mcp__ace-tool__search_context(*)"
     },
     {
       "name": "workflow:ui-design:codify-style",
@@ -1973,7 +1945,6 @@
     }
   ],
   "categories": [
-    "cli",
     "general",
     "issue",
     "memory",

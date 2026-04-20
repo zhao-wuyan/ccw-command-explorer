@@ -75,7 +75,7 @@ Before calling ANY tool, apply this check:
 ## Shared Constants
 
 - **Session prefix**: `QA`
-- **Session path**: `.workflow/.team/QA-<slug>-<date>/`
+- **Session path**: `.workflow/.team/QA-<date>-<slug>/`
 - **Team name**: `quality-assurance`
 - **CLI tools**: `ccw cli --mode analysis` (read-only), `ccw cli --mode write` (modifications)
 - **Message bus**: `mcp__ccw-tools__team_msg(session_id=<session-id>, ...)`
@@ -110,7 +110,7 @@ pipeline_phase: <pipeline-phase>
 })
 ```
 
-After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 1800000 })` to collect results. If `result.timed_out`, send STATUS_CHECK via followup_task (wait 3 min), then FINALIZE with interrupt (wait 3 min), then mark timed_out and close agents. Use `close_agent({ target })` each worker.
 
 
 ### Model Selection Guide
@@ -198,7 +198,7 @@ functions.request_user_input({
 ## Session Directory
 
 ```
-.workflow/.team/QA-<slug>-<date>/
+.workflow/.team/QA-<date>-<slug>/
 ├── .msg/messages.jsonl     # Team message bus
 ├── .msg/meta.json          # Session state + shared memory
 ├── wisdom/                 # Cross-task knowledge

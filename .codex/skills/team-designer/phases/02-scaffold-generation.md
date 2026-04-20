@@ -100,7 +100,7 @@ Parse `$ARGUMENTS`:
 ## Shared Constants
 
 - **Session prefix**: `${teamConfig.sessionPrefix}`
-- **Session path**: `.workflow/.team/${teamConfig.sessionPrefix}-<slug>-<date>/`
+- **Session path**: `.workflow/.team/${teamConfig.sessionPrefix}-<date>-<slug>/`
 - **CLI tools**: `ccw cli --mode analysis` (read-only), `ccw cli --mode write` (modifications)
 - **Message bus**: `mcp__ccw-tools__team_msg(session_id=<session-id>, ...)`
 ```
@@ -175,7 +175,7 @@ ${teamConfig.specs.map(s =>
 ## Session Directory
 
 \```
-.workflow/.team/${teamConfig.sessionPrefix}-<slug>-<date>/
+.workflow/.team/${teamConfig.sessionPrefix}-<date>-<slug>/
 ├── team-session.json           # Session state + role registry
 ├── spec/                       # Spec phase outputs
 ├── plan/                       # Implementation plan + TASK-*.json

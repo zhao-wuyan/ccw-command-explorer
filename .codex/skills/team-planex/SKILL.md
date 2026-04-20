@@ -73,7 +73,7 @@ Before calling ANY tool, apply this check:
 ## Shared Constants
 
 - **Session prefix**: `PEX`
-- **Session path**: `.workflow/.team/PEX-<slug>-<date>/`
+- **Session path**: `.workflow/.team/PEX-<date>-<slug>/`
 - **CLI tools**: `ccw cli --mode analysis` (read-only), `ccw cli --mode write` (modifications)
 - **Message bus**: `mcp__ccw-tools__team_msg(session_id=<session-id>, ...)`
 
@@ -108,7 +108,7 @@ pipeline_phase: <pipeline-phase>
 })
 ```
 
-After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 1800000 })` to collect results. If `result.timed_out`, send STATUS_CHECK via followup_task (wait 3 min), then FINALIZE with interrupt (wait 3 min), then mark timed_out and close agents. Use `close_agent({ target })` each worker.
 
 
 ### Model Selection Guide
@@ -178,7 +178,7 @@ Plan-and-execute is a **Two-Phase pattern**: planner creates solution plans (PLA
 ```
 // Phase 1: Planner runs, creates EXEC-* tasks in tasks.json
 spawn_agent({ agent_type: "team_worker", task_name: "PLAN-001", ... })
-wait_agent({ timeout_ms: 900000 })
+wait_agent({ timeout_ms: 1800000 })  // 30 min — apply timeout cascade if timed_out
 // Phase 2: Executors run per-issue, may run in sequence or parallel
 // Inner loop: planner/executor handle multiple tasks internally
 ```

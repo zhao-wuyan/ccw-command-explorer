@@ -76,7 +76,7 @@
   "collaboration_patterns": ["CP-1", "CP-3", "CP-7"],
 
   "session_dirs": {
-    "base": ".workflow/.team/BRS-{slug}-{YYYY-MM-DD}/",
+    "base": ".workflow/.team/BRS-{YYYY-MM-DD}-{slug}/",
     "ideas": "ideas/",
     "critiques": "critiques/",
     "synthesis": "synthesis/",

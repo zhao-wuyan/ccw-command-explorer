@@ -263,7 +263,7 @@ Task:
 Expected: Risk level (low/medium/high), list of issues with severity and file:line reference, release recommendation (ship|hold|fix-first)
 Constraints: Focus on correctness and security | Flag breaking API changes | Ignore formatting-only changes`
 })
-const result = wait_agent({ timeout_ms: 600000 })
+const result = wait_agent({ timeout_ms: 300000 })  // 5 minutes (inline subagent)
 close_agent({ target: "inline-code-review" })
 ```
 

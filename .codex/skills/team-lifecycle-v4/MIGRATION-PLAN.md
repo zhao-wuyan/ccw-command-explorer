@@ -300,7 +300,7 @@ pipeline_phase: ${task.pipeline_phase}` },
 
   // 2) 批量等待
   if (agentMap.length > 0) {
-    wait_agent({ targets: agentMap.map(a => a.agentId), timeout_ms: 900000 })
+    wait_agent({ targets: agentMap.map(a => a.agentId), timeout_ms: 1800000 })  // 30 min — apply timeout cascade if timed_out
   }
 
   // 3) 收集结果，合并到 tasks.json

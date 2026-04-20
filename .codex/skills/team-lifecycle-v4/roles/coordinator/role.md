@@ -100,7 +100,7 @@ TEXT-LEVEL ONLY. No source code reading.
 1. Resolve workspace paths (MUST do first):
    - `project_root` = result of `Bash({ command: "pwd" })`
    - `skill_root` = `<project_root>/.codex/skills/team-lifecycle-v4`
-2. Generate session ID: TLV4-<slug>-<date>
+2. Generate session ID: TLV4-<date>-<slug>
 3. Create session folder structure:
    ```bash
    mkdir -p .workflow/.team/${SESSION_ID}/{artifacts,discoveries,wisdom,role-specs}

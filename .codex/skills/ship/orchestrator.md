@@ -130,7 +130,7 @@ Goal: Execute Phase 1 Pre-Flight Checks for the release pipeline.
 Execute all four checks (git clean, branch validation, test suite, build verification).
 Output structured preflight-report JSON plus gate status.`
 })
-const phase1Result = wait_agent({ timeout_ms: 600000 })
+const phase1Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Gate Decision**:
@@ -140,7 +140,7 @@ const phase1Result = wait_agent({ timeout_ms: 600000 })
 | All four checks pass (overall: "pass") | Fast-advance: assign Phase 2 task to ship-operator |
 | Any check fails (overall: "fail") | BLOCKED — report failure details, halt pipeline |
 | Branch is main/master (warn) | Ask user to confirm direct-to-main release before proceeding |
-| Timeout | followup_task "Finalize current work and output results", re-wait 120s |
+| Timeout | Status probe (3 min) → force finalize (3 min) → close |
 
 **Output**:
 
@@ -183,7 +183,7 @@ Execute Phase 2 Code Review:
 4. Spawn inline-code-review subagent for AI analysis
 5. Evaluate review results and report gate status`
 })
-const phase2Result = wait_agent({ timeout_ms: 600000 })
+const phase2Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Gate Decision**:
@@ -194,7 +194,7 @@ const phase2Result = wait_agent({ timeout_ms: 600000 })
 | Critical issues found (overall: "fail") | BLOCKED — report critical issues list, halt pipeline |
 | Warnings only (overall: "warn") | Fast-advance to Phase 3, flag DONE_WITH_CONCERNS |
 | Review subagent timeout/error | Ask user whether to proceed or retry; if proceed, flag warn |
-| Timeout on phase2Result | followup_task "Finalize current work", re-wait 120s |
+| Timeout on phase2Result | Status probe (3 min) → force finalize (3 min) → close |
 
 **Output**:
 
@@ -237,7 +237,7 @@ Execute Phase 3 Version Bump:
 6. Verify update
 Output version change record JSON plus gate status.`
 })
-const phase3Result = wait_agent({ timeout_ms: 600000 })
+const phase3Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Gate Decision**:
@@ -248,7 +248,7 @@ const phase3Result = wait_agent({ timeout_ms: 600000 })
 | Version file not found | NEEDS_CONTEXT — ask user which file to use; halt until answered |
 | Version mismatch after update (overall: "fail") | BLOCKED — report mismatch, halt pipeline |
 | User declines major bump | BLOCKED — halt, user must re-trigger with explicit bump type |
-| Timeout | followup_task "Finalize current work", re-wait 120s |
+| Timeout | Status probe (3 min) → force finalize (3 min) → close |
 
 **Output**:
 
@@ -294,7 +294,7 @@ Execute Phase 4 Changelog & Commit:
 6. Push branch to remote
 Output commit record JSON plus gate status.`
 })
-const phase4Result = wait_agent({ timeout_ms: 600000 })
+const phase4Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Gate Decision**:
@@ -305,7 +305,7 @@ const phase4Result = wait_agent({ timeout_ms: 600000 })
 | Push rejected (non-fast-forward) | BLOCKED — report error, suggest `git pull --rebase` |
 | Permission denied | BLOCKED — report error, advise check remote access |
 | No remote configured | BLOCKED — report error, suggest `git remote add` |
-| Timeout | followup_task "Finalize current work", re-wait 120s |
+| Timeout | Status probe (3 min) → force finalize (3 min) → close |
 
 **Output**:
 
@@ -355,7 +355,7 @@ Execute Phase 5 PR Creation:
 6. Capture and report PR URL
 Output PR creation record JSON plus final completion status.`
 })
-const phase5Result = wait_agent({ timeout_ms: 600000 })
+const phase5Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Gate Decision**:
@@ -366,7 +366,7 @@ const phase5Result = wait_agent({ timeout_ms: 600000 })
 | PR created with review warnings | Pipeline complete — output DONE_WITH_CONCERNS |
 | gh CLI not available | BLOCKED — report error, advise `gh auth login` |
 | PR creation fails | BLOCKED — report error details, halt |
-| Timeout | followup_task "Finalize current work", re-wait 120s |
+| Timeout | Status probe (3 min) → force finalize (3 min) → close |
 
 **Output**:
 
@@ -385,11 +385,11 @@ const phase5Result = wait_agent({ timeout_ms: 600000 })
 
 | Phase | Default Timeout | On Timeout |
 |-------|-----------------|------------|
-| Phase 1: Pre-Flight | 600000 ms (10 min) | followup_task "Finalize current work", re-wait 300s |
-| Phase 2: Code Review | 600000 ms (10 min) | followup_task "Finalize current work", re-wait 300s |
-| Phase 3: Version Bump | 600000 ms (10 min) | followup_task "Finalize current work", re-wait 300s |
-| Phase 4: Changelog & Commit | 600000 ms (10 min) | followup_task "Finalize current work", re-wait 300s |
-| Phase 5: PR Creation | 600000 ms (10 min) | followup_task "Finalize current work", re-wait 300s |
+| Phase 1: Pre-Flight | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close |
+| Phase 2: Code Review | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close |
+| Phase 3: Version Bump | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close |
+| Phase 4: Changelog & Commit | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close |
+| Phase 5: PR Creation | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close |
 
 ### Cleanup Protocol
 
@@ -414,7 +414,7 @@ if (remaining.length > 0) {
 
 | Scenario | Resolution |
 |----------|------------|
-| Agent timeout (first) | followup_task with "Finalize current work and output results" + re-wait 300s |
+| Agent timeout (first) | Status probe via followup_task (3 min) → force finalize with interrupt (3 min) → close_agent |
 | Agent timeout (second) | Log error, close_agent({ target: "ship-operator" }), report partial results |
 | Gate fail — any phase | Log BLOCKED status with phase name and failure detail, close_agent, halt |
 | NEEDS_CONTEXT | Pause pipeline, surface question to user, resume with followup_task on answer |

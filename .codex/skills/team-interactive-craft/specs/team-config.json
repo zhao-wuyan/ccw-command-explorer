@@ -95,7 +95,7 @@
   },
 
   "session_dirs": {
-    "base": ".workflow/.team/IC-{slug}-{YYYY-MM-DD}/",
+    "base": ".workflow/.team/IC-{YYYY-MM-DD}-{slug}/",
     "research": "research/",
     "interaction": "interaction/blueprints/",
     "build": "build/components/",

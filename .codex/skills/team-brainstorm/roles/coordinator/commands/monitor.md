@@ -110,7 +110,7 @@ Find ready tasks, spawn workers, STOP.
       Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 (report).`
       })
       ```
-   d. Collect agent results: `wait_agent({ timeout_ms: 900000 })`
+   d. Collect agent results: `wait_agent({ timeout_ms: 1800000 })` — apply timeout cascade if timed_out
    e. Read discoveries from output files
    f. Update tasks.json with results
    g. Close agent: `close_agent({ target: taskId })`  // Use task_name, not agentId
@@ -135,9 +135,23 @@ for (const task of readyIdeatorTasks) {
 }
 // Use task_name for stable targeting (v4)
 const taskNames = readyIdeatorTasks.map(t => t.id)
-const results = wait_agent({ timeout_ms: 900000 })
+const results = wait_agent({ timeout_ms: 1800000 })  // 30 min
 if (results.timed_out) {
-  for (const taskId of taskNames) { state.tasks[taskId].status = 'timed_out'; close_agent({ target: taskId }) }
+  // Status probe before closing
+  for (const taskId of taskNames) {
+    followup_task({ target: taskId, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." })
+  }
+  const status = wait_agent({ timeout_ms: 180000 })  // 3 min
+  if (status.timed_out) {
+    for (const taskId of taskNames) {
+      followup_task({ target: taskId, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true })
+    }
+    const forced = wait_agent({ timeout_ms: 180000 })  // 3 min
+    if (forced.timed_out) {
+      for (const taskId of taskNames) { state.tasks[taskId].status = 'timed_out'; close_agent({ target: taskId }) }
+    }
+  }
+  // else: status received, continue processing
 } else {
   // Process results, close agents
   for (const taskId of taskNames) { close_agent({ target: taskId }) }

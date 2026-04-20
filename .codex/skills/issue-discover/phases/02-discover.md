@@ -165,12 +165,31 @@ ${getPerspectiveGuidance(perspective)}
 // Step 2: Batch wait for all agents
 const agentIds = perspectiveAgents.map(a => a.agentId);
 const results = wait_agent({
-  timeout_ms: 600000  // 10 minutes
+  timeout_ms: 1800000  // 30 minutes
 });
 
-// Step 3: Check for timeouts
+// Step 3: Check for timeouts (4-step cascade)
 if (results.timed_out) {
-  console.log('Some perspective analyses timed out, continuing with completed results');
+  console.log('Some perspective analyses timed out, attempting status probe...');
+  // Status probe for timed-out agents
+  agentIds.forEach(id => {
+    if (!results.status[id]?.completed) {
+      followup_task({ target: id, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." });
+    }
+  });
+  const statusResults = wait_agent({ timeout_ms: 180000 });  // 3 min
+  if (statusResults.timed_out) {
+    // Force finalize remaining agents
+    agentIds.forEach(id => {
+      if (!statusResults.status[id]?.completed) {
+        followup_task({ target: id, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true });
+      }
+    });
+    const forcedResults = wait_agent({ timeout_ms: 180000 });  // 3 min
+    if (forcedResults.timed_out) {
+      console.log('Some agents still timed out after force finalize, continuing with completed results');
+    }
+  }
 }
 
 // Step 4: Collect results
@@ -220,7 +239,7 @@ Research industry best practices for ${perspective} using Exa search
   });
 
   const exaResult = wait_agent({
-    timeout_ms: 600000  // 10 minutes
+    timeout_ms: 1800000  // 30 minutes
   });
 
   close_agent({ target: exaAgentId });

@@ -125,11 +125,11 @@ TEXT-LEVEL ONLY. No source code reading.
 1. Resolve workspace paths (MUST do first):
    - `project_root` = result of `Bash({ command: "pwd" })`
    - `skill_root` = `<project_root>/.codex/skills/team-ultra-analyze`
-3. Generate session ID: `UAN-{slug}-{YYYY-MM-DD}`
+3. Generate session ID: `UAN-{YYYY-MM-DD}-{slug}`
 4. Create session folder structure:
 
 ```
-.workflow/.team/UAN-{slug}-{date}/
+.workflow/.team/UAN-{date}-{slug}/
 +-- .msg/messages.jsonl
 +-- .msg/meta.json
 +-- discussion.md

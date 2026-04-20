@@ -44,7 +44,7 @@ for (let i = 0; i < batches.length; i += MAX_PARALLEL) {
 
   // Step 2: Batch wait for all agents in this chunk
   const chunkResults = wait_agent({
-    timeout_ms: 600000  // 10 minutes
+    timeout_ms: 1800000  // 30 minutes
   });
 
   // Step 3: Collect results from this chunk
@@ -204,7 +204,7 @@ Before finalizing outputs:
 
 // Wait for completion
 const result = wait_agent({
-  timeout_ms: 600000  // 10 minutes
+  timeout_ms: 1800000  // 30 minutes
 });
 
 // Cleanup

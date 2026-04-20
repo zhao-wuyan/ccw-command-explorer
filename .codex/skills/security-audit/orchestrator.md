@@ -154,17 +154,31 @@ Deliverables:
 - .workflow/.security/supply-chain-report.json
 - Structured output summary with finding counts by severity`
 })
-const phase1Result = wait_agent({ timeout_ms: 600000 })
+const phase1Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
-**On timeout**:
+**On timeout** (4-step cascade):
 
 ```
+// Step 2: Status probe (non-interrupting, 3 min)
 followup_task({
   target: "security-auditor",
-  message: "Finalize current supply chain scan and output supply-chain-report.json now."
+  message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work."
 })
-const phase1Result = wait_agent({ timeout_ms: 300000 })
+const status = wait_agent({ timeout_ms: 180000 })  // 3 min
+if (status.timed_out) {
+  // Step 3: Force finalize (interrupt, 3 min)
+  followup_task({
+    target: "security-auditor",
+    message: "FINALIZE: Output all current findings immediately. Time limit reached.",
+    interrupt: true
+  })
+  const forced = wait_agent({ timeout_ms: 180000 })  // 3 min
+  if (forced.timed_out) {
+    // Step 4: Abort
+    close_agent({ target: "security-auditor" })
+  }
+}
 ```
 
 **Output**:
@@ -224,7 +238,7 @@ Deliverables:
 - .workflow/.security/owasp-findings.json
 - Coverage for all 10 OWASP categories (A01–A10)`
 })
-const phase2Result = wait_agent({ timeout_ms: 600000 })
+const phase2Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Output**:
@@ -266,7 +280,7 @@ Deliverables:
 - All 6 STRIDE categories (S, T, R, I, D, E) evaluated per component
 - Trust boundaries and attack surface quantified`
 })
-const phase3Result = wait_agent({ timeout_ms: 600000 })
+const phase3Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Output**:
@@ -315,7 +329,7 @@ Deliverables:
 - .workflow/.security/audit-report-<YYYY-MM-DD>.json
 - Updated copies of all phase outputs in .workflow/.security/`
 })
-const phase4Result = wait_agent({ timeout_ms: 600000 })
+const phase4Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Output**:
@@ -352,10 +366,10 @@ close_agent({ target: "security-auditor" })
 
 | Phase | Default Timeout | On Timeout |
 |-------|-----------------|------------|
-| Phase 1: Supply Chain | 600000 ms (10 min) | followup_task "Finalize output now", re-wait 300s |
-| Phase 2: OWASP Review | 600000 ms (10 min) | followup_task "Output partial findings", re-wait 300s |
-| Phase 3: Threat Modeling | 600000 ms (10 min) | followup_task "Output partial threat model", re-wait 300s |
-| Phase 4: Report | 600000 ms (10 min) | followup_task "Write report with available data", re-wait 300s |
+| Phase 1: Supply Chain | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close |
+| Phase 2: OWASP Review | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close |
+| Phase 3: Threat Modeling | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close |
+| Phase 4: Report | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close |
 
 ### Cleanup Protocol
 
@@ -371,7 +385,7 @@ close_agent({ target: "security-auditor" })
 
 | Scenario | Resolution |
 |----------|------------|
-| Agent timeout (first) | followup_task "Finalize current work and output now" + re-wait 300000 ms |
+| Agent timeout (first) | Status probe via followup_task (3 min) → force finalize with interrupt (3 min) → close_agent |
 | Agent timeout (second) | Log error, close_agent({ target: "security-auditor" }), report partial results |
 | Phase output file missing | followup_task requesting specific file output, re-wait |
 | Audit tool not installed (npm/pip) | Phase 1 logs as INFO finding and continues — not a blocker |

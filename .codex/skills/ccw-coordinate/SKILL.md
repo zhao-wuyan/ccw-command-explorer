@@ -317,11 +317,22 @@ for (const step of state.steps.filter(s => s.status === 'pending')) {
   // Spawn step agent
   const agent = spawn_agent({ message: stepPrompt })
 
-  // Wait — with timeout urge
-  let result = wait_agent({ timeout_ms: 600000 })
+  // Wait — with 4-step timeout cascade
+  let result = wait_agent({ timeout_ms: 1800000 })
   if (result.timed_out) {
-    followup_task({ target: agent, message: "Please wrap up and output your findings JSON now." })
-    result = wait_agent({ timeout_ms: 600000 })
+    // Status probe
+    followup_task({ target: agent, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." })
+    const status = wait_agent({ timeout_ms: 180000 })  // 3 min
+    if (status.timed_out) {
+      // Force finalize
+      followup_task({ target: agent, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true })
+      result = wait_agent({ timeout_ms: 180000 })  // 3 min
+      if (result.timed_out) {
+        close_agent({ target: agent })
+      }
+    } else {
+      result = status
+    }
   }
 
   // Parse structured output from agent
@@ -460,6 +471,6 @@ Resume: $ccw-coordinate --continue
 5. **Skip on Failure**: Step failure immediately marks all remaining steps `skipped` and aborts the loop
 6. **Close before spawn**: Always `close_agent` the current step agent before spawning the next
 7. **Dry-run is read-only**: Stop after displaying the chain plan — never spawn agents
-8. **Timeout handling**: One urge via `followup_task`; if still timed out → mark `failed`
+8. **Timeout handling**: 4-step cascade: status probe (3 min) → force finalize (3 min) → close; if still timed out → mark `failed`
 9. **No CLI fallback**: All execution is agent-native — no `exec_command("maestro cli ...")`
 10. **Semantic Routing**: Use LLM structured extraction (`action × object × style`) not regex for intent classification

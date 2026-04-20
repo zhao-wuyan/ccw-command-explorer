@@ -146,13 +146,27 @@ After spawning all ready tasks:
 ```javascript
 // 4) Batch wait — use task_name for stable targeting (v4)
 const taskNames = Object.keys(state.active_agents)
-const waitResult = wait_agent({ timeout_ms: 900000 })
+const waitResult = wait_agent({ timeout_ms: 1800000 })  // 30 min
 if (waitResult.timed_out) {
+  // Status probe before closing
   for (const taskId of taskNames) {
-    state.tasks[taskId].status = 'timed_out'
-    close_agent({ target: taskId })
-    delete state.active_agents[taskId]
+    followup_task({ target: taskId, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." })
   }
+  const status = wait_agent({ timeout_ms: 180000 })  // 3 min
+  if (status.timed_out) {
+    for (const taskId of taskNames) {
+      followup_task({ target: taskId, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true })
+    }
+    const forced = wait_agent({ timeout_ms: 180000 })  // 3 min
+    if (forced.timed_out) {
+      for (const taskId of taskNames) {
+        state.tasks[taskId].status = 'timed_out'
+        close_agent({ target: taskId })
+        delete state.active_agents[taskId]
+      }
+    }
+  }
+  // else: status received, continue processing
 } else {
   // 5) Collect results
   for (const [taskId, agent] of Object.entries(state.active_agents)) {

@@ -79,7 +79,7 @@ const getUtc8ISOString = () => new Date(Date.now() + 8 * 60 * 60 * 1000).toISOSt
 const bugSlug = bug_description.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30)
 const dateStr = getUtc8ISOString().substring(0, 10)
 
-const sessionId = `DBG-${bugSlug}-${dateStr}`
+const sessionId = `DBG-${dateStr}-${bugSlug}`
 const sessionFolder = `.workflow/.debug/${sessionId}`
 const debugLogPath = `${sessionFolder}/debug.log`
 const understandingPath = `${sessionFolder}/understanding.md`
@@ -450,7 +450,7 @@ Remove all temporary debug logging statements added during investigation. Verify
 ## Session Folder Structure
 
 ```
-.workflow/.debug/DBG-{slug}-{date}/
+.workflow/.debug/DBG-{date}-{slug}/
 ├── debug.log           # NDJSON log (execution evidence)
 ├── understanding.md    # NEW: Exploration timeline + consolidated understanding
 ├── hypotheses.json     # NEW: Hypothesis history with verdicts
@@ -535,9 +535,9 @@ After Reproduction (/workflow:debug-with-file "error"):
        └─ All rejected → Gemini-assisted new hypotheses
 
 Output:
-   ├─ .workflow/.debug/DBG-{slug}-{date}/debug.log
-   ├─ .workflow/.debug/DBG-{slug}-{date}/understanding.md (evolving document)
-   └─ .workflow/.debug/DBG-{slug}-{date}/hypotheses.json (history)
+   ├─ .workflow/.debug/DBG-{date}-{slug}/debug.log
+   ├─ .workflow/.debug/DBG-{date}-{slug}/understanding.md (evolving document)
+   └─ .workflow/.debug/DBG-{date}-{slug}/hypotheses.json (history)
 ```
 
 ## Gemini Integration Points

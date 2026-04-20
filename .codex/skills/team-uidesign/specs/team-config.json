@@ -97,7 +97,7 @@
   },
 
   "session_dirs": {
-    "base": ".workflow/.team/UDS-{slug}-{YYYY-MM-DD}/",
+    "base": ".workflow/.team/UDS-{YYYY-MM-DD}-{slug}/",
     "research": "research/",
     "design": "design/",
     "audit": "audit/",

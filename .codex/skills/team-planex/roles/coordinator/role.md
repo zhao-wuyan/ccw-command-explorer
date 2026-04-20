@@ -102,7 +102,7 @@ TEXT-LEVEL ONLY. No source code reading.
 1. Resolve workspace paths (MUST do first):
    - `project_root` = result of `Bash("pwd")`
    - `skill_root` = `<project_root>/.codex/skills/team-planex`
-2. Generate session ID: `PEX-<slug>-<date>`
+2. Generate session ID: `PEX-<date>-<slug>`
 3. Create session folder: `.workflow/.team/<session-id>/`
 4. Create subdirectories: `artifacts/solutions/`, `wisdom/`
 5. Create session folder + initialize `tasks.json` (empty array)

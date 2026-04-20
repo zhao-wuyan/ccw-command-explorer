@@ -116,13 +116,13 @@ TEXT-LEVEL ONLY. No source code reading.
 2. Generate session ID: `UIP-<slug>-<YYYY-MM-DD>`
 3. Create session folder structure:
    ```
-   .workflow/.team/UIP-<slug>-<date>/scan/
-   .workflow/.team/UIP-<slug>-<date>/diagnosis/
-   .workflow/.team/UIP-<slug>-<date>/optimization/
-   .workflow/.team/UIP-<slug>-<date>/verification/
-   .workflow/.team/UIP-<slug>-<date>/evidence/
-   .workflow/.team/UIP-<slug>-<date>/wisdom/
-   .workflow/.team/UIP-<slug>-<date>/.msg/
+   .workflow/.team/UIP-<date>-<slug>/scan/
+   .workflow/.team/UIP-<date>-<slug>/diagnosis/
+   .workflow/.team/UIP-<date>-<slug>/optimization/
+   .workflow/.team/UIP-<date>-<slug>/verification/
+   .workflow/.team/UIP-<date>-<slug>/evidence/
+   .workflow/.team/UIP-<date>-<slug>/wisdom/
+   .workflow/.team/UIP-<date>-<slug>/.msg/
    ```
 4. Initialize `.msg/meta.json` via team_msg state_update with pipeline metadata
 5. Write initial tasks.json:

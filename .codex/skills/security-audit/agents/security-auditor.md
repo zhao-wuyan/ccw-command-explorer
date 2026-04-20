@@ -176,7 +176,7 @@ Expected: JSON findings per OWASP category with severity, file:line, evidence, r
 
 Constraints: Code-level analysis only | Every finding must have file:line reference | Focus on real vulnerabilities not theoretical risks`
 })
-const result = wait_agent({ timeout_ms: 600000 })
+const result = wait_agent({ timeout_ms: 300000 })  // 5 minutes (inline subagent)
 close_agent({ target: "inline-owasp-analysis" })
 ```
 

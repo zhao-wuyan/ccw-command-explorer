@@ -166,14 +166,30 @@ After spawning all ready tasks:
 const agentIds = Object.values(state.active_agents)
   .filter(a => !a.resident)
   .map(a => a.agentId)
-const waitResult = wait_agent({ timeout_ms: 900000 })
+const waitResult = wait_agent({ timeout_ms: 1800000 })  // 30 min
 if (waitResult.timed_out) {
+  // Status probe before closing
   for (const [taskId, agent] of Object.entries(state.active_agents)) {
     if (agent.resident) continue
-    state.tasks[taskId].status = 'timed_out'
-    close_agent({ target: agent.agentId })
-    delete state.active_agents[taskId]
+    followup_task({ target: agent.agentId, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." })
   }
+  const status = wait_agent({ timeout_ms: 180000 })  // 3 min
+  if (status.timed_out) {
+    for (const [taskId, agent] of Object.entries(state.active_agents)) {
+      if (agent.resident) continue
+      followup_task({ target: agent.agentId, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true })
+    }
+    const forced = wait_agent({ timeout_ms: 180000 })  // 3 min
+    if (forced.timed_out) {
+      for (const [taskId, agent] of Object.entries(state.active_agents)) {
+        if (agent.resident) continue
+        state.tasks[taskId].status = 'timed_out'
+        close_agent({ target: agent.agentId })
+        delete state.active_agents[taskId]
+      }
+    }
+  }
+  // else: status received, continue processing
 } else {
   // Collect results from discoveries/{task_id}.json
   for (const [taskId, agent] of Object.entries(state.active_agents)) {

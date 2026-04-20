@@ -298,7 +298,7 @@ Format: {
 `
 })
 
-wait_agent({ timeout_ms: 600000 })
+wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 close_agent({ target: ctxAgent })
 
 // Parse outputs
@@ -367,7 +367,7 @@ Format: {
 `
 })
 
-wait_agent({ timeout_ms: 600000 })
+wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 close_agent({ target: testAgent })
 
 const testContext = JSON.parse(Read(`${sessionFolder}/.process/test-context-package.json`) || '{}')
@@ -500,7 +500,7 @@ Each task MUST include Red-Green-Refactor cycle:
 `
 })
 
-wait_agent({ timeout_ms: 600000 })
+wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 close_agent({ target: planAgent })
 
 console.log(`  TDD tasks generated`)
@@ -690,7 +690,7 @@ BLOCKED: Critical failures, must fix before execution
 `
   })
 
-  wait_agent({ timeout_ms: 600000 })
+  wait_agent({ timeout_ms: 1800000 })  // 30 minutes
   close_agent({ target: verifyAgent })
 
   const report = Read(`${sessionFolder}/.process/TDD_COMPLIANCE_REPORT.md`)

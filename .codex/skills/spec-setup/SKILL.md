@@ -184,12 +184,21 @@ Project root: ${projectRoot}
   })
 
   // Wait for completion
-  const result = wait_agent({ timeout_ms: 600000 })
+  const result = wait_agent({ timeout_ms: 1800000 })
 
   if (result.timed_out) {
-    followup_task({ target: exploreAgent, message: "Complete analysis now and write project-tech.json." })
-    const retry = wait_agent({ timeout_ms: 600000 })
-    if (retry.timed_out) throw new Error('Agent timeout')
+    // Status probe
+    followup_task({ target: exploreAgent, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." })
+    const status = wait_agent({ timeout_ms: 180000 })  // 3 min
+    if (status.timed_out) {
+      // Force finalize
+      followup_task({ target: exploreAgent, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true })
+      const forced = wait_agent({ timeout_ms: 180000 })  // 3 min
+      if (forced.timed_out) {
+        close_agent({ target: exploreAgent })
+        throw new Error('Agent timeout')
+      }
+    }
   }
 
 } finally {

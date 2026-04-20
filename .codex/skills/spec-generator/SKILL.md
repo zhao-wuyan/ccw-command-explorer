@@ -121,12 +121,12 @@ Phase 0 → 1: functions.update_plan([{id:"phase-0",status:"completed"},{id:"pha
 
 Phase 1: Discovery & Seed Analysis
    |- Ref: phases/01-discovery.md
-   |- Generate session ID: SPEC-{slug}-{YYYY-MM-DD}
+   |- Generate session ID: SPEC-{YYYY-MM-DD}-{slug}
    |- Parse input (text or file reference)
    |- Gemini CLI seed analysis (problem, users, domain, dimensions)
    |- Codebase exploration (conditional, if project detected)
    |  |- spawn_agent({ task_name: "spec-explorer", fork_turns: "none", message: ... })
-   |  |- wait_agent({ timeout_ms: 600000 })
+   |  |- wait_agent({ timeout_ms: 1800000 })
    |  |- close_agent({ target: "spec-explorer" })
    |- Spec type selection: service|api|library|platform (interactive, -y defaults to service)
    |- User confirmation (interactive, -y skips)
@@ -151,7 +151,7 @@ Phase 2: Product Brief  [AGENT: doc-generator]
    |- Agent reads: phases/02-product-brief.md
    |- Agent executes: 3 parallel CLI analyses + synthesis + glossary generation
    |- Agent writes: product-brief.md, glossary.json
-   |- wait_agent({ timeout_ms: 600000 })
+   |- wait_agent({ timeout_ms: 1800000 })
    |- close_agent({ target: "doc-gen-p2" })
    |- Orchestrator validates: files exist, spec-config.json updated
 
@@ -162,7 +162,7 @@ Phase 3: Requirements / PRD  [AGENT: doc-generator]
    |- Agent reads: phases/03-requirements.md
    |- Agent executes: Gemini expansion + Codex review (Step 2.5) + priority sorting
    |- Agent writes: requirements/ directory (_index.md + REQ-*.md + NFR-*.md)
-   |- wait_agent({ timeout_ms: 600000 })
+   |- wait_agent({ timeout_ms: 1800000 })
    |- close_agent({ target: "doc-gen-p3" })
    |- Orchestrator validates: directory exists, file count matches
 
@@ -173,7 +173,7 @@ Phase 4: Architecture  [AGENT: doc-generator]
    |- Agent reads: phases/04-architecture.md
    |- Agent executes: Gemini analysis + Codex review + codebase mapping
    |- Agent writes: architecture/ directory (_index.md + ADR-*.md)
-   |- wait_agent({ timeout_ms: 600000 })
+   |- wait_agent({ timeout_ms: 1800000 })
    |- close_agent({ target: "doc-gen-p4" })
    |- Orchestrator validates: directory exists, ADR files present
 
@@ -184,7 +184,7 @@ Phase 5: Epics & Stories  [AGENT: doc-generator]
    |- Agent reads: phases/05-epics-stories.md
    |- Agent executes: Gemini decomposition + Codex review (Step 2.5) + validation
    |- Agent writes: epics/ directory (_index.md + EPIC-*.md)
-   |- wait_agent({ timeout_ms: 600000 })
+   |- wait_agent({ timeout_ms: 1800000 })
    |- close_agent({ target: "doc-gen-p5" })
    |- Orchestrator validates: directory exists, MVP epics present
 
@@ -205,7 +205,7 @@ Phase 6.5: Auto-Fix (conditional)  [AGENT: doc-generator]
    |- spawn_agent({ task_name: "doc-gen-fix", fork_turns: "none", message: <context envelope> })
    |- Agent reads: phases/06-5-auto-fix.md + readiness-report.md
    |- Agent executes: fix affected Phase 2-5 documents
-   |- wait_agent({ timeout_ms: 600000 })
+   |- wait_agent({ timeout_ms: 1800000 })
    |- close_agent({ target: "doc-gen-fix" })
    |- Re-run Phase 6 validation
    |- Max 2 iterations, then force handoff
@@ -243,7 +243,7 @@ Phase 6/7 -> Handoff Bridge (conditional, based on user selection):
 // Session ID generation
 const slug = topic.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').slice(0, 40);
 const date = new Date().toISOString().slice(0, 10);
-const sessionId = `SPEC-${slug}-${date}`;
+const sessionId = `SPEC-${date}-${slug}`;
 const workDir = `.workflow/.spec/${sessionId}`;
 
 Bash(`mkdir -p "${workDir}"`);
@@ -265,7 +265,7 @@ functions.update_plan([
 ## Output Structure
 
 ```
-.workflow/.spec/SPEC-{slug}-{YYYY-MM-DD}/
+.workflow/.spec/SPEC-{YYYY-MM-DD}-{slug}/
 +-- spec-config.json              # Session configuration + phase state
 +-- discovery-context.json        # Codebase exploration results (optional)
 +-- refined-requirements.json     # Phase 1.5: Confirmed requirements after discussion
@@ -389,18 +389,29 @@ After each agent phase, the orchestrator validates output:
 
 ```
 // 1. Wait for agent completion
-const result = wait_agent({ timeout_ms: 600000 })
+const result = wait_agent({ timeout_ms: 1800000 })
 
-// 2. Handle timeout
+// 2. Handle timeout (4-step cascade)
 if (result.timed_out) {
+  // Step 1: Status probe
   followup_task({
     target: "doc-gen-p<N>",
-    message: "Please finalize current work and output results immediately."
+    message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work."
   })
-  const retryResult = wait_agent({ timeout_ms: 300000 })
-  if (retryResult.timed_out) {
-    close_agent({ target: "doc-gen-p<N>" })
-    // Fall back to inline execution for this phase
+  const status = wait_agent({ timeout_ms: 180000 })  // 3 min
+  if (status.timed_out) {
+    // Step 2: Force finalize
+    followup_task({
+      target: "doc-gen-p<N>",
+      message: "FINALIZE: Output all current findings immediately. Time limit reached.",
+      interrupt: true
+    })
+    const forced = wait_agent({ timeout_ms: 180000 })  // 3 min
+    if (forced.timed_out) {
+      // Step 3: Close agent
+      close_agent({ target: "doc-gen-p<N>" })
+      // Step 4: Fall back to inline execution for this phase
+    }
   }
 }
 
@@ -433,12 +444,12 @@ phasesSummaries[N] = summary
 
 | Phase | task_name | Default Timeout | On Timeout |
 |-------|-----------|-----------------|------------|
-| Phase 1 (explore) | `spec-explorer` | 600000ms (10min) | followup_task "finalize" → re-wait 300s → close |
-| Phase 2 | `doc-gen-p2` | 600000ms (10min) | followup_task "finalize" → re-wait 300s → close + inline fallback |
-| Phase 3 | `doc-gen-p3` | 600000ms (10min) | followup_task "finalize" → re-wait 300s → close + inline fallback |
-| Phase 4 | `doc-gen-p4` | 600000ms (10min) | followup_task "finalize" → re-wait 300s → close + inline fallback |
-| Phase 5 | `doc-gen-p5` | 600000ms (10min) | followup_task "finalize" → re-wait 300s → close + inline fallback |
-| Phase 6.5 | `doc-gen-fix` | 600000ms (10min) | followup_task "finalize" → re-wait 300s → close + force handoff |
+| Phase 1 (explore) | `spec-explorer` | 1800000ms (30min) | Status probe (3 min) → force finalize (3 min) → close |
+| Phase 2 | `doc-gen-p2` | 1800000ms (30min) | Status probe (3 min) → force finalize (3 min) → close + inline fallback |
+| Phase 3 | `doc-gen-p3` | 1800000ms (30min) | Status probe (3 min) → force finalize (3 min) → close + inline fallback |
+| Phase 4 | `doc-gen-p4` | 1800000ms (30min) | Status probe (3 min) → force finalize (3 min) → close + inline fallback |
+| Phase 5 | `doc-gen-p5` | 1800000ms (30min) | Status probe (3 min) → force finalize (3 min) → close + inline fallback |
+| Phase 6.5 | `doc-gen-fix` | 1800000ms (30min) | Status probe (3 min) → force finalize (3 min) → close + force handoff |
 
 ### Cleanup Protocol
 
@@ -543,7 +554,7 @@ activeAgents.forEach(name => {
 | Phase 7 | ccw issue create fails for one Epic | No | Log error, continue with remaining Epics |
 | Phase 7 | No EPIC files found | Yes | Error and return to Phase 5 |
 | Phase 7 | All issue creations fail | Yes | Error with CLI diagnostic, suggest manual creation |
-| Phase 2-5 | Agent timeout (wait_agent timed_out) | No | followup_task "finalize" → re-wait → close + inline fallback |
+| Phase 2-5 | Agent timeout (wait_agent timed_out) | No | Status probe (3 min) → force finalize (3 min) → close + inline fallback |
 | Phase 2-5 | Agent returns incomplete files | No | Log gaps, attempt inline completion for missing files |
 | Any | close_agent on non-existent agent | No | Catch error, continue (agent may have self-terminated) |
 

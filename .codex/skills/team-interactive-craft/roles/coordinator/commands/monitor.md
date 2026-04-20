@@ -151,11 +151,21 @@ Execute built-in Phase 1 (task discovery) -> role Phase 2-4 -> built-in Phase 5 
 state.active_agents[taskId] = { agentId, role, started_at: now }
 
 // 4) Wait for completion -- use task_name for stable targeting (v4)
-const waitResult = wait_agent({ timeout_ms: 900000 })
+const waitResult = wait_agent({ timeout_ms: 1800000 })  // 30 min
 if (waitResult.timed_out) {
-  state.tasks[taskId].status = 'timed_out'
-  close_agent({ target: taskId })
-  delete state.active_agents[taskId]
+  // Status probe before closing
+  followup_task({ target: taskId, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." })
+  const status = wait_agent({ timeout_ms: 180000 })  // 3 min
+  if (status.timed_out) {
+    followup_task({ target: taskId, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true })
+    const forced = wait_agent({ timeout_ms: 180000 })  // 3 min
+    if (forced.timed_out) {
+      state.tasks[taskId].status = 'timed_out'
+      close_agent({ target: taskId })
+      delete state.active_agents[taskId]
+    }
+  }
+  // else: status received, continue processing
 } else {
   // 5) Collect results and update tasks.json
   state.tasks[taskId].status = 'completed'

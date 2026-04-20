@@ -59,7 +59,7 @@ Unified integration test workflow: **Explore → Design → Develop → Test →
 | `.trace/` | 原始日志 | CLI 输出和测试日志，仅调试用：`cli-{N}.txt`、`test-output.log` |
 
 ```
-.workflow/.integration-test/ITG-{slug}-{date}/
+.workflow/.integration-test/ITG-{date}-{slug}/
 ├── reflection-log.md    # ⭐ 唯一人类可读文档 (exploration + design + iterations + conclusions)
 ├── state.json           # 唯一机器状态 (exploration + design + inventory + iterations + results + summary)
 └── .trace/              # 原始日志 (仅调试参考)
@@ -130,9 +130,9 @@ Unified integration test workflow: **Explore → Design → Develop → Test →
 
 **Required Actions**:
 1. Extract module/feature description from `$ARGUMENTS`
-2. Generate session ID: `ITG-{slug}-{date}`
-   - slug: lowercase, alphanumeric + Chinese, max 40 chars
+2. Generate session ID: `ITG-{date}-{slug}`
    - date: YYYY-MM-DD (UTC+8)
+   - slug: lowercase, alphanumeric + Chinese, max 40 chars
 3. Define session folder: `.workflow/.integration-test/{session-id}`
 4. Parse command options:
    - `-c` or `--continue` for session continuation

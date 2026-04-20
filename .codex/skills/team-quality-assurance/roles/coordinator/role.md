@@ -101,7 +101,7 @@ TEXT-LEVEL ONLY. No source code reading.
 1. Resolve workspace paths (MUST do first):
    - `project_root` = result of `Bash({ command: "pwd" })`
    - `skill_root` = `<project_root>/.claude/skills/team-quality-assurance`
-2. Generate session ID: QA-<slug>-<date>
+2. Generate session ID: QA-<date>-<slug>
 3. Create session folder structure
 4. Initialize session folder structure (replaces TeamCreate)
 5. Read specs/pipelines.md -> select pipeline based on mode

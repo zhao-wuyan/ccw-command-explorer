@@ -62,7 +62,7 @@
   },
 
   "session_dirs": {
-    "base": ".workflow/.team/UIP-{slug}-{YYYY-MM-DD}/",
+    "base": ".workflow/.team/UIP-{YYYY-MM-DD}-{slug}/",
     "scan": "scan/",
     "diagnosis": "diagnosis/",
     "optimization": "optimization/",

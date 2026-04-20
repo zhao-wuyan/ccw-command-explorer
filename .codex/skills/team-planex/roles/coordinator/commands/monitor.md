@@ -142,11 +142,21 @@ inner_loop: true
 execution_method: <method>`
          })
          // Collect results — use task_name for stable targeting (v4):
-         const result = wait_agent({ timeout_ms: 900000 })
+         const result = wait_agent({ timeout_ms: 1800000 })  // 30 min
          if (result.timed_out) {
-           state.tasks[taskId].status = 'timed_out'
-           close_agent({ target: taskId })
-           // Report timeout, STOP
+           // Status probe before closing
+           followup_task({ target: taskId, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." })
+           const status = wait_agent({ timeout_ms: 180000 })  // 3 min
+           if (status.timed_out) {
+             followup_task({ target: taskId, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true })
+             const forced = wait_agent({ timeout_ms: 180000 })  // 3 min
+             if (forced.timed_out) {
+               state.tasks[taskId].status = 'timed_out'
+               close_agent({ target: taskId })
+               // Report timeout, STOP
+             }
+           }
+           // else: status received, continue processing
          } else {
            // Process result, update tasks.json
            close_agent({ target: taskId })  // Use task_name, not agentId

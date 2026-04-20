@@ -74,7 +74,7 @@ Before calling ANY tool, apply this check:
 ## Shared Constants
 
 - **Session prefix**: `TST`
-- **Session path**: `.workflow/.team/TST-<slug>-<date>/`
+- **Session path**: `.workflow/.team/TST-<date>-<slug>/`
 - **Team name**: `testing`
 - **CLI tools**: `ccw cli --mode analysis` (read-only), `ccw cli --mode write` (modifications)
 - **Message bus**: `mcp__ccw-tools__team_msg(session_id=<session-id>, ...)`
@@ -109,7 +109,7 @@ pipeline_phase: <pipeline-phase>
 })
 ```
 
-After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 1800000 })` to collect results. If `result.timed_out`, send STATUS_CHECK via followup_task (wait 3 min), then FINALIZE with interrupt (wait 3 min), then mark timed_out and close agents. Use `close_agent({ target })` each worker.
 
 
 ### Model Selection Guide
@@ -162,7 +162,7 @@ const genNames = ["TESTGEN-001", "TESTGEN-002"]
 for (const name of genNames) {
   spawn_agent({ agent_type: "team_worker", task_name: name, ... })
 }
-wait_agent({ timeout_ms: 900000 })
+wait_agent({ timeout_ms: 1800000 })  // 30 min — apply timeout cascade if timed_out
 ```
 
 ### GC Loop Coordination
@@ -208,7 +208,7 @@ functions.request_user_input({
 ## Session Directory
 
 ```
-.workflow/.team/TST-<slug>-<date>/
+.workflow/.team/TST-<date>-<slug>/
 ├── .msg/messages.jsonl     # Team message bus
 ├── .msg/meta.json          # Session metadata
 ├── wisdom/                 # Cross-task knowledge

@@ -493,8 +493,8 @@ export const COMMANDS: Command[] = [
     detail: '4阶段审计：供应链扫描→OWASP Top 10代码分析→STRIDE威胁建模→趋势追踪报告。产出结构化JSON报告',
     usage: '需要对代码进行安全审计和威胁评估'
   },
-  { cmd: '/ship', desc: '发布流水线 - 预检→审查→版本→更新日志→PR', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
-    detail: '5阶段门控流水线：预检检查(git/分支/测试/构建)→AI代码审查→版本号更新→更新日志生成→PR创建。每个阶段必须通过才能进入下一阶段',
+  { cmd: '/ship', desc: '发布流水线 - 预检→审查→版本→更新日志→PR→发布→GitHub Release', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
+    detail: '7阶段门控流水线：预检检查(git/分支/测试/构建)→AI代码审查→版本号更新→更新日志生成→PR创建→平台发布(npm/PyPI等)→GitHub Release。Phase 5/6可按条件跳过(主干分支/私有包)',
     usage: '代码开发完成，准备发布上线'
   },
   { cmd: '/team-interactive-craft', desc: '交互组件团队 - 零依赖交互组件研发(Vanilla JS)', status: 'new', category: 'skill', cli: ['claude', 'codex'], addedInVersion: 'v7.2.28',
@@ -526,5 +526,5 @@ export const STATS = {
   codexCommands: COMMANDS.filter(c => c.cli.includes('codex')).length,
   newCommands: COMMANDS.filter(c => c.status === 'new').length,
   recommendedCommands: COMMANDS.filter(c => c.status === 'recommended').length,
-  latestVersion: 'v7.3.6',  // 当前最新版本
+  latestVersion: 'v7.3.8',  // 当前最新版本
 };

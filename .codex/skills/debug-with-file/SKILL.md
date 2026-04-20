@@ -83,7 +83,7 @@ const projectRoot = bash('git rev-parse --show-toplevel 2>/dev/null || pwd').tri
 const bugSlug = "$BUG".toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30)
 const dateStr = getUtc8ISOString().substring(0, 10)
 
-const sessionId = `DBG-${bugSlug}-${dateStr}`
+const sessionId = `DBG-${dateStr}-${bugSlug}`
 const sessionFolder = `${projectRoot}/.workflow/.debug/${sessionId}`
 const debugLogPath = `${sessionFolder}/debug.log`
 const understandingPath = `${sessionFolder}/understanding.md`
@@ -445,7 +445,7 @@ for (const file of instrumentedFiles) {
 ## Session Folder Structure
 
 ```
-{projectRoot}/.workflow/.debug/DBG-{slug}-{date}/
+{projectRoot}/.workflow/.debug/DBG-{date}-{slug}/
 ├── debug.log           # NDJSON log (execution evidence)
 ├── understanding.md    # Exploration timeline + consolidated understanding
 └── hypotheses.json     # Hypothesis history with verdicts
@@ -546,9 +546,9 @@ After Reproduction (BUG="error"):
        └─ All rejected → Assisted new hypotheses
 
 Output:
-   ├─ {projectRoot}/.workflow/.debug/DBG-{slug}-{date}/debug.log
-   ├─ {projectRoot}/.workflow/.debug/DBG-{slug}-{date}/understanding.md (evolving document)
-   └─ {projectRoot}/.workflow/.debug/DBG-{slug}-{date}/hypotheses.json (history)
+   ├─ {projectRoot}/.workflow/.debug/DBG-{date}-{slug}/debug.log
+   ├─ {projectRoot}/.workflow/.debug/DBG-{date}-{slug}/understanding.md (evolving document)
+   └─ {projectRoot}/.workflow/.debug/DBG-{date}-{slug}/hypotheses.json (history)
 ```
 
 ## Error Handling

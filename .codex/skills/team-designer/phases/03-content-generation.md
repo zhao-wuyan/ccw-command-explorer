@@ -70,7 +70,7 @@ If `.workflow/.team/${teamConfig.sessionPrefix}-*/team-session.json` exists:
 
 ## Phase 2: Team Setup
 
-- Session folder creation with session ID: `${teamConfig.sessionPrefix}-<slug>-<date>`
+- Session folder creation with session ID: `${teamConfig.sessionPrefix}-<date>-<slug>`
 - Initialize team_msg message bus
 - Create session directory structure
 

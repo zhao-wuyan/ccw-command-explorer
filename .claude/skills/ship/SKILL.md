@@ -1,12 +1,14 @@
 ---
 name: ship
-description: Structured release pipeline with pre-flight checks, AI code review, version bump, changelog, and PR creation. Triggers on "ship", "release", "publish".
+description: Structured release pipeline with pre-flight checks, AI code review, version bump, changelog, PR creation, platform publish, and GitHub release. Triggers on "ship", "release", "publish".
 allowed-tools: Read, Write, Bash, Glob, Grep
 ---
 
 # Ship
 
-Structured release pipeline that guides code from working branch to pull request through 5 gated phases: pre-flight checks, automated code review, version bump, changelog generation, and PR creation.
+Structured release pipeline that guides code from working branch to a published release through 7 gated phases: pre-flight checks, automated code review, version bump, changelog generation, PR creation, platform publish (npm/PyPI/etc.), and GitHub release.
+
+Phases 5 (PR) and 6 (Publish) are conditionally skippable — trunk-based workflows that commit directly to `main` skip Phase 5; private packages skip Phase 6. Phase 7 (GitHub release) is the terminal phase and always runs unless the publish step failed.
 
 ## Key Design Principles
 
@@ -49,11 +51,24 @@ User: "ship" / "release" / "publish"
 │  → Output: commit SHA                                    │
 │  → Gate: Push successful                                 │
 ├──────────────────────────────────────────────────────────┤
-│  Phase 5: PR Creation                                    │
+│  Phase 5: PR Creation (skippable for trunk-based)        │
 │  → gh pr create with structured body                     │
 │  → auto-link issues from commits                         │
 │  → Output: PR URL                                        │
-│  → Gate: PR created                                      │
+│  → Gate: PR created OR skipped (direct-to-main)          │
+├──────────────────────────────────────────────────────────┤
+│  Phase 6: Platform Publish (skippable if private)        │
+│  → detect registry (npm / PyPI / crates.io)              │
+│  → npm publish / twine upload / cargo publish            │
+│  → verify new version is live on registry                │
+│  → Output: published artifact metadata                   │
+│  → Gate: registry confirms version OR skipped (private)  │
+├──────────────────────────────────────────────────────────┤
+│  Phase 7: GitHub Release                                 │
+│  → git tag -a vX.Y.Z + push tag                          │
+│  → gh release create with structured notes               │
+│  → Output: release URL                                   │
+│  → Gate: release URL returned                            │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -65,7 +80,9 @@ Execute phases sequentially. Each phase has a gate condition — if the gate fai
 2. **Phase 2**: [Code Review](phases/02-code-review.md) -- AI-powered diff review with risk assessment
 3. **Phase 3**: [Version Bump](phases/03-version-bump.md) -- Detect and update version across project types
 4. **Phase 4**: [Changelog & Commit](phases/04-changelog-commit.md) -- Generate changelog, create release commit, push
-5. **Phase 5**: [PR Creation](phases/05-pr-creation.md) -- Create PR with structured body and issue links
+5. **Phase 5**: [PR Creation](phases/05-pr-creation.md) -- Create PR with structured body and issue links *(skip for trunk-based)*
+6. **Phase 6**: [Platform Publish](phases/06-platform-publish.md) -- Publish to npm / PyPI / crates.io *(skip for private packages)*
+7. **Phase 7**: [GitHub Release](phases/07-github-release.md) -- Tag release commit and publish GitHub release notes
 
 ## Pre-Flight Checklist (Quick Reference)
 
@@ -84,10 +101,10 @@ Every execution terminates with one of:
 
 | Status | When |
 |--------|------|
-| **DONE** | All 5 phases completed, PR created |
-| **DONE_WITH_CONCERNS** | PR created but with review warnings or non-critical issues |
-| **BLOCKED** | A gate failed (dirty git, tests fail, push rejected) |
-| **NEEDS_CONTEXT** | Cannot determine bump type, ambiguous branch target |
+| **DONE** | All applicable phases completed, GitHub release published |
+| **DONE_WITH_CONCERNS** | Release published but with review warnings, skipped publish (private pkg), or non-critical issues |
+| **BLOCKED** | A gate failed (dirty git, tests fail, push rejected, publish failed, tag conflict) |
+| **NEEDS_CONTEXT** | Cannot determine bump type, ambiguous branch target, unclear registry target |
 
 ### Escalation
 
@@ -101,5 +118,7 @@ Follows the Three-Strike Rule (SKILL-DESIGN-SPEC section 14). On 3 consecutive f
 | [phases/02-code-review.md](phases/02-code-review.md) | AI-powered diff review |
 | [phases/03-version-bump.md](phases/03-version-bump.md) | Version detection and bump |
 | [phases/04-changelog-commit.md](phases/04-changelog-commit.md) | Changelog generation and release commit |
-| [phases/05-pr-creation.md](phases/05-pr-creation.md) | PR creation with issue linking |
+| [phases/05-pr-creation.md](phases/05-pr-creation.md) | PR creation with issue linking (skippable) |
+| [phases/06-platform-publish.md](phases/06-platform-publish.md) | npm / PyPI / crates.io publish (skippable) |
+| [phases/07-github-release.md](phases/07-github-release.md) | Tag and GitHub release notes |
 | [../_shared/SKILL-DESIGN-SPEC.md](../_shared/SKILL-DESIGN-SPEC.md) | Skill design spec (completion protocol, escalation) |

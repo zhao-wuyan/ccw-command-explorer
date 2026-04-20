@@ -79,7 +79,7 @@ Before calling ANY tool, apply this check:
 ## Shared Constants
 
 - **Session prefix**: `RD`
-- **Session path**: `.workflow/.team/RD-<slug>-<date>/`
+- **Session path**: `.workflow/.team/RD-<date>-<slug>/`
 - **Team name**: `roadmap-dev`
 - **CLI tools**: `ccw cli --mode analysis` (read-only), `ccw cli --mode write` (modifications)
 - **Message bus**: `mcp__ccw-tools__team_msg(session_id=<session-id>, ...)`
@@ -114,7 +114,7 @@ pipeline_phase: <pipeline-phase>
 })
 ```
 
-After spawning, use `wait_agent({ timeout_ms: 900000 })` to collect results, then `close_agent({ target })` each worker.
+After spawning, use `wait_agent({ timeout_ms: 1800000 })` to collect results. If `result.timed_out`, send STATUS_CHECK via followup_task (wait 3 min), then FINALIZE with interrupt (wait 3 min), then mark timed_out and close agents. Use `close_agent({ target })` each worker.
 
 **All worker roles** (planner, executor, verifier): Set `inner_loop: true`.
 
@@ -141,7 +141,7 @@ All roles are inner_loop=true, enabling coordinator to send additional context v
 ## Session Directory
 
 ```
-.workflow/.team/RD-<slug>-<date>/
+.workflow/.team/RD-<date>-<slug>/
 +-- roadmap.md                 # Phase plan with requirements and success criteria
 +-- state.md                   # Living memory (<100 lines)
 +-- config.json                # Session settings (mode, depth, gates)

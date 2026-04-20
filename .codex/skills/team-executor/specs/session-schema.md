@@ -89,7 +89,7 @@ team-executor validates the following before execution:
 
 ```json
 {
-  "session_id": "TC-<slug>-<date>",
+  "session_id": "TC-<date>-<slug>",
   "task_description": "<original user input>",
   "status": "active | paused | completed",
   "team_name": "<team-name>",

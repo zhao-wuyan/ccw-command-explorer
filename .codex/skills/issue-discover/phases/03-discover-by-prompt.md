@@ -243,12 +243,31 @@ while (shouldContinue && iteration < maxIterations) {
   // Step 2: Batch wait for all dimension agents
   const dimensionAgentIds = dimensionAgents.map(a => a.agentId);
   const iterationResults = wait_agent({
-    timeout_ms: 600000  // 10 minutes
+    timeout_ms: 1800000  // 30 minutes
   });
 
-  // Step 3: Check for timeouts
+  // Step 3: Check for timeouts (4-step cascade)
   if (iterationResults.timed_out) {
-    console.log(`Iteration ${iteration}: some agents timed out, using completed results`);
+    console.log(`Iteration ${iteration}: some agents timed out, attempting status probe...`);
+    // Status probe for timed-out agents
+    dimensionAgentIds.forEach(id => {
+      if (!iterationResults.status[id]?.completed) {
+        followup_task({ target: id, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." });
+      }
+    });
+    const statusResults = wait_agent({ timeout_ms: 180000 });  // 3 min
+    if (statusResults.timed_out) {
+      // Force finalize remaining agents
+      dimensionAgentIds.forEach(id => {
+        if (!statusResults.status[id]?.completed) {
+          followup_task({ target: id, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true });
+        }
+      });
+      const forcedResults = wait_agent({ timeout_ms: 180000 });  // 3 min
+      if (forcedResults.timed_out) {
+        console.log(`Iteration ${iteration}: some agents still timed out after force finalize, using completed results`);
+      }
+    }
   }
 
   // Step 4: Close all dimension agents

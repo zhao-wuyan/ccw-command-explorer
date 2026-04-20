@@ -83,7 +83,7 @@ Before calling ANY tool, apply this check:
 ## Shared Constants
 
 - **Session prefix**: `TLV4`
-- **Session path**: `.workflow/.team/TLV4-<slug>-<date>/`
+- **Session path**: `.workflow/.team/TLV4-<date>-<slug>/`
 - **State file**: `<session>/tasks.json`
 - **Discovery files**: `<session>/discoveries/{task_id}.json`
 - **CLI tools**: `ccw cli --mode analysis` (read-only), `ccw cli --mode write` (modifications)
@@ -153,7 +153,7 @@ task_id: <CHECKPOINT-NNN>
 scope: [<upstream-task-ids>]
 pipeline_progress: <done>/<total> tasks completed`
 })
-wait_agent({ timeout_ms: 900000 })
+wait_agent({ timeout_ms: 1800000 })  // 30 min — apply timeout cascade if timed_out
 ```
 
 ### Shutdown (pipeline complete)
@@ -196,7 +196,7 @@ For each wave in the pipeline:
 3. **Build upstream context** -- For each task, gather findings from `context_from` tasks via tasks.json and `discoveries/{id}.json`
 4. **Separate task types** -- Split into regular tasks and CHECKPOINT tasks
 5. **Spawn regular tasks** -- For each regular task, call `spawn_agent({ agent_type: "team_worker", message: "..." })`, collect agent IDs
-6. **Wait** -- `wait_agent({ timeout_ms: 900000 })`
+6. **Wait** -- `wait_agent({ timeout_ms: 1800000 })` — apply timeout cascade if timed_out
 7. **Collect results** -- Read `discoveries/{task_id}.json` for each agent, update tasks.json status/findings/error, then `close_agent({ target })` each worker
 8. **Execute checkpoints** -- For each CHECKPOINT task, `followup_task` to supervisor, `wait_agent`, read checkpoint report from `artifacts/`, parse verdict
 9. **Handle block** -- If verdict is `block`, prompt user via `request_user_input` with options: Override / Revise upstream / Abort
@@ -274,7 +274,7 @@ functions.request_user_input({
 ## Session Directory
 
 ```
-.workflow/.team/TLV4-<slug>-<date>/
+.workflow/.team/TLV4-<date>-<slug>/
 ├── tasks.json                  # Task state (JSON)
 ├── discoveries/                # Per-task findings ({task_id}.json)
 ├── spec/                       # Spec phase outputs

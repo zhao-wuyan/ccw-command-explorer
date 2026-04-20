@@ -199,7 +199,7 @@ const fixAgentId = spawn_agent({
 
 // Wait for execution completion
 const fixResult = wait_agent({
-  timeout_ms: 600000  // 10 minutes
+  timeout_ms: 1800000  // 30 minutes
 });
 
 // Clean up

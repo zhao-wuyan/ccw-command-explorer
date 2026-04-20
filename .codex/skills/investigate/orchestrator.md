@@ -132,7 +132,7 @@ Execute Phase 1 per the phase file. Produce investigation-report (in-memory) and
 - Await next phase assignment.`
 })
 
-const p1Result = wait_agent({ timeout_ms: 600000 })
+const p1Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Output**:
@@ -173,7 +173,7 @@ Using your Phase 1 findings, execute Phase 2:
 Report back with pattern_analysis section and scope classification. Await next phase assignment.`
 })
 
-const p2Result = wait_agent({ timeout_ms: 600000 })
+const p2Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Output**:
@@ -216,7 +216,7 @@ Report back with hypothesis test results and either:
   OR  BLOCKED: <escalation dump> (halt)`
 })
 
-const p3Result = wait_agent({ timeout_ms: 600000 })
+const p3Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Phase 3 Gate Decision**:
@@ -226,7 +226,7 @@ const p3Result = wait_agent({ timeout_ms: 600000 })
 | p3Result contains `confirmed_root_cause` | Proceed to Phase 4 |
 | p3Result contains `BLOCKED` | Halt workflow, output escalation dump to user, close investigator |
 | p3Result contains `ESCALATION: 3-Strike Limit Reached` | Halt workflow, output diagnostic dump, close investigator |
-| Timeout | followup_task "Finalize Phase 3 results now", re-wait 120s; if still timeout → halt |
+| Timeout | Status probe (3 min) → force finalize (3 min) → close; halt |
 
 If BLOCKED: close investigator and surface the diagnostic dump to the user. Do not proceed to Phase 4.
 
@@ -263,7 +263,7 @@ Iron Law gate confirmed — proceed with implementation:
 Report back with fix_applied section. Await Phase 5 assignment.`
 })
 
-const p4Result = wait_agent({ timeout_ms: 600000 })
+const p4Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Output**:
@@ -304,7 +304,7 @@ Final phase:
 - Output completion status: DONE | DONE_WITH_CONCERNS | BLOCKED`
 })
 
-const p5Result = wait_agent({ timeout_ms: 600000 })
+const p5Result = wait_agent({ timeout_ms: 1800000 })  // 30 minutes
 ```
 
 **Output**:
@@ -323,11 +323,11 @@ const p5Result = wait_agent({ timeout_ms: 600000 })
 
 | Phase | Default Timeout | On Timeout |
 |-------|-----------------|------------|
-| Phase 1 (spawn + wait) | 600000 ms | followup_task "Finalize Phase 1 now" + wait 300s; if still timeout → halt |
-| Phase 2 (assign + wait) | 600000 ms | followup_task "Finalize Phase 2 now" + wait 300s; if still timeout → halt |
-| Phase 3 (assign + wait) | 600000 ms | followup_task "Finalize Phase 3 now" + wait 300s; if still timeout → halt BLOCKED |
-| Phase 4 (assign + wait) | 600000 ms | followup_task "Finalize Phase 4 now" + wait 300s; if still timeout → halt |
-| Phase 5 (assign + wait) | 600000 ms | followup_task "Finalize Phase 5 now" + wait 300s; if still timeout → partial report |
+| Phase 1 (spawn + wait) | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close; halt |
+| Phase 2 (assign + wait) | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close; halt |
+| Phase 3 (assign + wait) | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close; halt BLOCKED |
+| Phase 4 (assign + wait) | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close; halt |
+| Phase 5 (assign + wait) | 1800000 ms (30 min) | Status probe (3 min) → force finalize (3 min) → close; partial report |
 
 ### Cleanup Protocol
 
@@ -343,7 +343,7 @@ close_agent({ target: "investigator" })
 
 | Scenario | Resolution |
 |----------|------------|
-| Agent timeout (first) | followup_task "Finalize current work and output results" + re-wait 300000 ms |
+| Agent timeout (first) | Status probe via followup_task (3 min) → force finalize with interrupt (3 min) → close_agent |
 | Agent timeout (second) | close_agent, report partial results to user |
 | Phase 3 BLOCKED | close_agent, surface full escalation dump to user, halt |
 | Phase 4 Iron Law violation | close_agent, report "Cannot proceed: no confirmed root cause" |

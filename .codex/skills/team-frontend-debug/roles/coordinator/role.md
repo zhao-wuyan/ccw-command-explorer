@@ -99,10 +99,10 @@ TEXT-LEVEL ONLY. No source code reading.
 1. Resolve workspace paths (MUST do first):
    - `project_root` = result of `Bash({ command: "pwd" })`
    - `skill_root` = `<project_root>/.claude/skills/team-frontend-debug`
-2. Generate session ID: TFD-<slug>-<date>
+2. Generate session ID: TFD-<date>-<slug>
 3. Create session folder structure:
    ```
-   .workflow/.team/TFD-<slug>-<date>/
+   .workflow/.team/TFD-<date>-<slug>/
    ├── team-session.json
    ├── evidence/
    ├── artifacts/

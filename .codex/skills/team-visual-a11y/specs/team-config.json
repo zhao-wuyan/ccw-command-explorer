@@ -96,7 +96,7 @@
   },
 
   "session_dirs": {
-    "base": ".workflow/.team/VA-{slug}-{YYYY-MM-DD}/",
+    "base": ".workflow/.team/VA-{YYYY-MM-DD}-{slug}/",
     "color_audit": "audits/color/",
     "typo_audit": "audits/typography/",
     "focus_audit": "audits/focus/",

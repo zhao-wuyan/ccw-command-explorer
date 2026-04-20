@@ -119,7 +119,7 @@
   ],
 
   "session_directory": {
-    "pattern": ".workflow/.team/QA-{slug}-{date}",
+    "pattern": ".workflow/.team/QA-{date}-{slug}",
     "subdirectories": ["scan", "strategy", "results", "analysis"]
   },
 

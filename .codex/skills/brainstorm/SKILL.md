@@ -556,7 +556,7 @@ Follow the same analysis protocol as wave role analysis but with interactive ref
 `
   })
 
-  wait_agent({ timeout_ms: 600000 })
+  wait_agent({ timeout_ms: 1800000 })
   close_agent({ target: agentId })
 
   console.log(`\n✓ ${roleName} analysis complete: ${roleDir}/analysis.md`)
@@ -631,7 +631,7 @@ Evaluate complexity score (0-8):
 `
    })
 
-   wait_agent({ timeout_ms: 600000 })
+   wait_agent({ timeout_ms: 1800000 })
    close_agent({ target: synthesisAgent })
    ```
 

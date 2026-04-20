@@ -31,7 +31,7 @@ OK: Write(".workflow/.team/TC-xxx/tasks.json", ...)   — task management
 OK: Read("roles/coordinator/commands/analyze-task.md") — own instructions
 OK: Read("specs/role-spec-template.md")               — generating role-specs
 OK: spawn_agent({ agent_type: "team_worker", ... })   — delegation
-OK: wait_agent({ timeout_ms: 900000 })                     — monitoring
+OK: wait_agent({ timeout_ms: 1800000 })                    — monitoring
 ```
 
 **Self-check gate**: After Phase 1 analysis, before ANY other action, ask yourself:
@@ -242,7 +242,7 @@ After Phase 1 completes, the ONLY valid next step is Phase 2 (generate role-spec
      - Merge research findings into task context
      - Update task-analysis.json with enriched context
 
-3. **Generate session ID**: `TC-<slug>-<date>` (slug from first 3 meaningful words of task)
+3. **Generate session ID**: `TC-<date>-<slug>` (slug from first 3 meaningful words of task)
 
 4. **Create session folder structure**:
    ```
@@ -380,7 +380,7 @@ Delegate to `@commands/dispatch.md` which creates the full task chain:
 
 ### Message Semantics
 - **send_message**: Queue supplementary info to a running agent. Does NOT interrupt current processing. Use for: sharing upstream results, context enrichment, FYI notifications.
-- **followup_task**: Assign new work and trigger processing. Use for: waking idle agents, redirecting work, requesting new output.
+- **followup_task**: Assign new work and trigger processing. Use for: waking idle agents, redirecting work, requesting new output, **status probing on timeout**.
 
 ### Agent Lifecycle Management
 - **list_agents({})**: Returns all running agents. Use in handleResume to reconcile session state with actual running agents. Use in handleComplete to verify clean shutdown.

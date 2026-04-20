@@ -40,15 +40,17 @@ When `--yes` or `-y`: Auto-confirm decisions, use recommended roles, balanced ex
 | 3 | Updated `brainstorm.md` | Round 3-6 refinement cycles |
 | 4 | `synthesis.json` | Final synthesis with top ideas, recommendations |
 | 4 | Final `brainstorm.md` | Complete thought evolution with conclusions |
+| 4.5 | `brainstorm-dashboard.html` | Interactive visualization of synthesis results |
 
 ## Output Structure
 
 ```
-.workflow/.brainstorm/BS-{slug}-{date}/
+.workflow/.brainstorm/BS-{date}-{slug}/
 ├── brainstorm.md                  # ⭐ Complete thought evolution timeline
 ├── exploration-codebase.json      # Phase 2: Codebase context
 ├── perspectives.json              # Phase 2: Multi-CLI findings
 ├── synthesis.json                 # Phase 4: Final synthesis
+├── brainstorm-dashboard.html      # Phase 4.5: Interactive visualization
 └── ideas/                         # Phase 3: Individual idea deep-dives
     ├── idea-1.md
     ├── idea-2.md
@@ -98,7 +100,7 @@ When `--yes` or `-y`: Auto-confirm decisions, use recommended roles, balanced ex
 ### Session Initialization
 
 1. Extract idea/topic from `$ARGUMENTS`
-2. Generate session ID: `BS-{slug}-{date}` (slug: lowercase, alphanumeric + Chinese, max 40 chars; date: YYYY-MM-DD UTC+8)
+2. Generate session ID: `BS-{date}-{slug}` (date: YYYY-MM-DD UTC+8; slug: lowercase, alphanumeric + Chinese, max 40 chars)
 3. Define session folder: `.workflow/.brainstorm/{session-id}`
 4. Parse command options:
    - `-c` or `--continue` for session continuation
@@ -433,6 +435,64 @@ CONSTRAINTS: Don't force incompatible ideas together
 **synthesis.json Schema**: `session_id`, `topic`, `completed` (timestamp), `total_rounds`, `top_ideas[]`, `parked_ideas[]`, `key_insights[]`, `recommendations` (primary/alternatives/not_recommended), `follow_up[]`
 
 2. **Final brainstorm.md Update**: Executive summary, top ideas ranked, primary recommendation with rationale, alternative approaches, parked ideas, key insights, session statistics (rounds, ideas generated/survived, duration), and finalize the `## Artifact Index` with relative links to all produced files (exploration-codebase.json, perspectives.json, synthesis.json, each ideas/*.md)
+
+#### Phase 4.5: Brainstorm Dashboard Visualization
+
+**Trigger**: `synthesis.json` exists, `top_ideas.length >= 2`, not `--yes` mode.
+
+Generate a self-contained `brainstorm-dashboard.html` in the session folder:
+
+```javascript
+const synthesis = JSON.parse(Read(`${sessionFolder}/synthesis.json`))
+
+if (synthesis.top_ideas?.length >= 2 && !autoYes) {
+  // Generate brainstorm-dashboard.html with:
+  // 1. Idea Cards Grid — each idea as a card with:
+  //    - Title, description, source_perspective badge
+  //    - Score / Novelty / Feasibility rating bars
+  //    - Strengths list, challenges list
+  // 2. Perspective Comparison — 3-column layout:
+  //    - Creative (Gemini) | Pragmatic (Claude) | Systematic (Agent)
+  //    - Ideas grouped by source perspective
+  // 3. Evolution Timeline — round-by-round progression:
+  //    - Each round as a timeline node
+  //    - Ideas introduced, merged, parked per round
+  // 4. Key Insights — callout cards with icons
+  // 5. Recommendations — primary highlighted, alternatives listed
+
+  // Design tokens (self-contained, dark theme):
+  const tokens = {
+    '--bg-primary': '#0d1117',
+    '--bg-card': '#161b22',
+    '--border': '#30363d',
+    '--text-primary': '#c9d1d9',
+    '--text-secondary': '#7d8590',
+    '--color-green': '#3fb950',
+    '--color-blue': '#58a6ff',
+    '--color-purple': '#d2a8ff',
+    '--color-yellow': '#d29922',
+    '--color-red': '#f85149',
+    '--font-sans': 'system-ui, -apple-system, sans-serif',
+    '--font-mono': 'ui-monospace, monospace'
+  }
+
+  Write(`${sessionFolder}/brainstorm-dashboard.html`, generateDashboardHTML(synthesis, tokens))
+
+  // Inform user
+  Tell user: "Brainstorm dashboard generated. Open in browser to review:"
+  Tell user: `  → ${sessionFolder}/brainstorm-dashboard.html`
+}
+```
+
+**HTML Requirements**:
+- Fully self-contained (inline CSS/JS, no external dependencies)
+- Dark theme with CSS custom properties
+- Responsive grid layout (adapts to viewport)
+- Score bars rendered as inline CSS width percentages
+- Perspective badges color-coded (Creative=purple, Pragmatic=blue, Systematic=green)
+- Collapsible sections for details
+
+**Skip**: If only 1 top idea or `--yes` mode, skip dashboard generation.
 
 3. **MANDATORY GATE: Next Step Selection** — workflow MUST NOT end without executing this step.
 

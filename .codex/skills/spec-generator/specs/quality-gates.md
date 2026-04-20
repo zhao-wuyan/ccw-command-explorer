@@ -82,7 +82,7 @@ Content provides sufficient detail for execution teams.
 
 | Check | Criteria | Severity |
 |-------|----------|----------|
-| Session ID valid | Matches `SPEC-{slug}-{date}` format | Error |
+| Session ID valid | Matches `SPEC-{date}-{slug}` format | Error |
 | Problem statement exists | Non-empty, >= 20 characters | Error |
 | Target users identified | >= 1 user group | Error |
 | Dimensions generated | 3-5 exploration dimensions | Warning |

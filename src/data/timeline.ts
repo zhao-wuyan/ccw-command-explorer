@@ -246,20 +246,21 @@ export const TIMELINE: TimelineItem[] = [
   },
   {
     date: '2026-04',
-    version: 'v7.3.6',
+    version: 'v7.3.8',
     title: 'Chain 链式工作流',
     desc: '当前最新版本',
     color: COLORS.primary,
     commands: 111,
     detail: {
-      version: 'v7.3.6',
+      version: 'v7.3.8',
       highlights: [
         '新 Skill: ccw-chain 链式工作流编排引擎',
         '新 Skill: ccw-coordinate 流水线协调器(Codex)',
         '移除: chain-loader、workflow-skill',
         '移除: workflow:collaborative-plan-with-file、workflow:unified-execute-with-file',
-        '移除: flow-create、cli:cli-init、cli:codex-review',
+        '移除: flow-create、cli:li-init、cli:codex-review',
         'memory-capture 支持 Codex',
+        'ship 流水线扩展至 7 阶段(新增平台发布+GitHub Release)',
       ],
       newCommands: [
         '/ccw-chain',

@@ -119,7 +119,7 @@ const slug = requirement.toLowerCase()
   .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
   .substring(0, 40)
 const dateStr = getUtc8ISOString().substring(0, 10).replace(/-/g, '')
-const sessionId = `doc-${slug}-${dateStr}`
+const sessionId = `doc-${dateStr}-${slug}`
 const sessionFolder = `.workflow/.csv-wave/${sessionId}`
 
 Bash(`mkdir -p ${sessionFolder}/docs ${sessionFolder}/wave-summaries`)
@@ -762,7 +762,7 @@ console.log(`
 ## Optimized Output Structure
 
 ```
-.workflow/.csv-wave/doc-{slug}-{date}/
+.workflow/.csv-wave/doc-{date}-{slug}/
 ├── project-info.json              # 项目分析结果
 ├── tasks.csv                      # Master CSV (动态生成的任务)
 ├── results.csv                    # 最终结果

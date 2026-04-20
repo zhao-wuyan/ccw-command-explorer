@@ -102,7 +102,7 @@ TEXT-LEVEL ONLY. No source code reading.
 1. Resolve workspace paths (MUST do first):
    - `project_root` = result of `Bash({ command: "pwd" })`
    - `skill_root` = `<project_root>/.codex/skills/team-testing`
-2. Generate session ID: TST-<slug>-<date>
+2. Generate session ID: TST-<date>-<slug>
 3. Create session folder structure:
    ```bash
    mkdir -p .workflow/.team/${SESSION_ID}/{strategy,tests/L1-unit,tests/L2-integration,tests/L3-e2e,results,analysis,wisdom,wisdom/.msg}

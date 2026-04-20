@@ -116,14 +116,14 @@ TEXT-LEVEL ONLY. No source code reading.
 2. Generate session ID: `MD-<slug>-<YYYY-MM-DD>`
 3. Create session folder structure:
    ```
-   .workflow/.team/MD-<slug>-<date>/research/perf-traces/
-   .workflow/.team/MD-<slug>-<date>/choreography/sequences/
-   .workflow/.team/MD-<slug>-<date>/animations/keyframes/
-   .workflow/.team/MD-<slug>-<date>/animations/orchestrators/
-   .workflow/.team/MD-<slug>-<date>/testing/traces/
-   .workflow/.team/MD-<slug>-<date>/testing/reports/
-   .workflow/.team/MD-<slug>-<date>/wisdom/
-   .workflow/.team/MD-<slug>-<date>/.msg/
+   .workflow/.team/MD-<date>-<slug>/research/perf-traces/
+   .workflow/.team/MD-<date>-<slug>/choreography/sequences/
+   .workflow/.team/MD-<date>-<slug>/animations/keyframes/
+   .workflow/.team/MD-<date>-<slug>/animations/orchestrators/
+   .workflow/.team/MD-<date>-<slug>/testing/traces/
+   .workflow/.team/MD-<date>-<slug>/testing/reports/
+   .workflow/.team/MD-<date>-<slug>/wisdom/
+   .workflow/.team/MD-<date>-<slug>/.msg/
    ```
 4. Initialize `.msg/meta.json` via team_msg state_update with pipeline metadata
 5. Write initial tasks.json:

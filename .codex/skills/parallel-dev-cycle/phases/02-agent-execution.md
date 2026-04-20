@@ -417,22 +417,28 @@ const results = wait_agent({
 
 ```javascript
 if (results.timed_out) {
-  console.log('Some agents timed out, sending convergence request...')
+  console.log('Some agents timed out, requesting status...')
   Object.entries(agents).forEach(([name, id]) => {
     if (!results.status[id].completed) {
-      followup_task({
-        target: id,
-        message: `
-## TIMEOUT NOTIFICATION
-
-Execution timeout reached. Please:
-1. Output current progress to markdown file
-2. Save all state updates
-3. Return completion status
-`
-      })
+      followup_task({ target: id, message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work." })
     }
   })
+  const statusResults = wait_agent({ timeout_ms: 180000 })  // 3 min
+  if (statusResults.timed_out) {
+    Object.entries(agents).forEach(([name, id]) => {
+      if (!statusResults.status[id].completed) {
+        followup_task({ target: id, message: "FINALIZE: Output all current findings immediately. Time limit reached.", interrupt: true })
+      }
+    })
+    const forcedResults = wait_agent({ timeout_ms: 180000 })  // 3 min
+    if (forcedResults.timed_out) {
+      Object.entries(agents).forEach(([name, id]) => {
+        if (!forcedResults.status[id].completed) {
+          close_agent({ target: id })
+        }
+      })
+    }
+  }
 }
 ```
 

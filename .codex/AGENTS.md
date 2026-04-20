@@ -110,7 +110,7 @@ ACE search_context (semantic) → smart_search (structured) → read_file (batch
 | Workflow | Directory | Summary File |
 |----------|-----------|-------------|
 | `workflow-plan` | `.workflow/active/WFS-*/` | `workflow-session.json` |
-| `workflow-lite-plan` | `.workflow/.lite-plan/{slug}-{date}/` | `plan.json` |
+| `workflow-lite-plan` | `.workflow/.lite-plan/{date}-{slug}/` | `plan.json` |
 | `analyze-with-file` | `.workflow/.analysis/ANL-*/` | `conclusions.json` |
 | `multi-cli-plan` | `.workflow/.multi-cli-plan/*/` | `session-state.json` |
 | `lite-fix` | `.workflow/.lite-fix/*/` | `fix-plan.json` |

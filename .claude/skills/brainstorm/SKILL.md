@@ -95,12 +95,12 @@ Seven-phase interactive workflow: Context collection → Topic analysis → Role
 #### Phase 3: Parallel Role Analysis
    Ref: phases/03-role-analysis.md
 
-Execute role analysis for EACH selected role in parallel.
+Execute role analysis for EACH selected role in parallel (excluding ui-designer, which runs sequentially in Phase 3.5).
 
 **Input**: selected_roles[] from Phase 2, session_id, guidance-specification.md
 **Output**: {role}/analysis*.md for each role
 
-**Parallel Execution**: Launch N role-analysis calls simultaneously (one message with multiple Skill invokes). Each role with `--skip-questions` flag.
+**Parallel Execution**: Launch N role-analysis calls simultaneously (one message with multiple Skill invokes). Each role with `--skip-questions` flag. **Note**: ui-designer is excluded from this parallel batch — it runs in Phase 3.5 with access to all text-role analyses.
 
 For ui-designer: append `--style-skill {package}` if provided.
 
@@ -115,6 +115,20 @@ For ui-designer: append `--style-skill {package}` if provided.
 - Output validation report with score and recommendations
 
 **TodoWrite**: Attach N parallel sub-tasks, execute concurrently, collapse on completion.
+
+#### Phase 3.5: UI Design Exploration
+   Ref: phases/03a-ui-design-exploration.md
+
+Sequential phase after text-role analyses complete. Generates tangible UI artifacts (HTML prototypes, ASCII mockups, or API sketches) based on project type detection.
+
+**Input**: all role analyses from Phase 3 (read-only), guidance-specification.md, style_skill (optional)
+**Output**: `html-prototypes/` or `ascii-mockups/` or `api-sketches/` directory with feature-index.json
+
+**Skip Conditions**: project type is library/service, no ui-designer in selected_roles, `--yes` mode without `--ui-explore`
+
+**Optional Review**: If 2+ prototypes and not `--yes`, load `Ref: ~/.ccw/workflows/brainstorm-visualize.md` for multi-round interactive review with intelligent grouping.
+
+**TodoWrite**: Attach single task with sub-tasks (Detection → Generate → Validate → Review → Feedback), collapse on completion.
 
 #### Phase 4: Synthesis Integration
    Ref: phases/04-synthesis.md
@@ -149,6 +163,7 @@ Execute role analysis for ONE specified role with optional interactive context g
 | 1 | [phases/01-mode-routing.md](phases/01-mode-routing.md) | Parameter parsing, mode detection, interactive routing | Both modes |
 | 2 | [phases/02-artifacts.md](phases/02-artifacts.md) | Interactive framework generation (7 phases) | Auto mode only |
 | 3 | [phases/03-role-analysis.md](phases/03-role-analysis.md) | Role-specific analysis generation | Both modes |
+| 3.5 | [phases/03a-ui-design-exploration.md](phases/03a-ui-design-exploration.md) | UI prototype generation and review | Auto mode only |
 | 4 | [phases/04-synthesis.md](phases/04-synthesis.md) | Cross-role synthesis and feature specs | Auto mode only |
 
 ## Core Rules
@@ -243,6 +258,11 @@ Phase 3:
           style_skill (for ui-designer)
   Output: {role}/analysis*.md (N files, immutable after this point)
           ↓
+Phase 3.5:
+  Input:  all analysis*.md (read-only), guidance-specification.md, style_skill
+  Output: html-prototypes/ OR ascii-mockups/ OR api-sketches/
+          feature-index.json, review_decisions (optional)
+          ↓
 Phase 4:
   Input:  session_id, all analysis files (read-only)
   Output: feature-specs/F-{id}-{slug}.md
@@ -261,8 +281,12 @@ Initial → Phase 1 Mode Routing (completed)
            → Execute sequentially
            → Sub-tasks COLLAPSED
        → Phase 3 Parallel Role Analysis (in_progress)
-           → N role sub-tasks ATTACHED simultaneously
+           → N role sub-tasks ATTACHED simultaneously (excluding ui-designer)
            → Execute concurrently
+           → Sub-tasks COLLAPSED
+       → Phase 3.5 UI Design Exploration (in_progress)
+           → Sub-tasks: Detection → Generate → Validate → Review → Feedback
+           → Execute sequentially
            → Sub-tasks COLLAPSED
        → Phase 4 Synthesis (in_progress)
            → 8 sub-tasks ATTACHED
@@ -289,6 +313,7 @@ Initial → Phase 1 Mode Routing (completed)
   {"content": "Phase 1: Mode detection and parameter parsing", "status": "in_progress", "activeForm": "Detecting mode"},
   {"content": "Phase 2: Interactive Framework Generation", "status": "pending", "activeForm": "Generating framework"},
   {"content": "Phase 3: Parallel Role Analysis", "status": "pending", "activeForm": "Executing parallel analysis"},
+  {"content": "Phase 3.5: UI Design Exploration", "status": "pending", "activeForm": "Generating UI prototypes"},
   {"content": "Phase 4: Synthesis Integration", "status": "pending", "activeForm": "Executing synthesis"}
 ]
 ```
@@ -353,6 +378,14 @@ Initial → Phase 1 Mode Routing (completed)
     │       └── system-architect-template.md  # System architect analysis template
     ├── agents/
     │   └── role-analysis-reviewer-agent.md   # Role analysis validation agent
+    ├── html-prototypes/               # Phase 3.5 (web/mobile/desktop-gui)
+    │   ├── README.md                  # Prototype summary
+    │   ├── feature-index.json         # File-to-feature mapping
+    │   └── {feature-slug}.html        # Self-contained prototypes
+    ├── ascii-mockups/                 # Phase 3.5 (cli projects)
+    │   └── {feature-slug}.md
+    ├── api-sketches/                  # Phase 3.5 (library/service projects)
+    │   └── {feature-slug}.md
     ├── {role}/                        # Role analyses (IMMUTABLE after Phase 3)
     │   ├── {role}-context.md          # Interactive Q&A responses
     │   ├── analysis.md                # Main/index document

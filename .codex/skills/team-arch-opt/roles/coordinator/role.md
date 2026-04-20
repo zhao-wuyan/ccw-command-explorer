@@ -106,7 +106,7 @@ TEXT-LEVEL ONLY. No source code reading.
 1. Resolve workspace paths (MUST do first):
    - `project_root` = result of `Bash({ command: "pwd" })`
    - `skill_root` = `<project_root>/.codex/skills/team-arch-opt`
-2. Generate session ID: `TAO-<slug>-<date>`
+2. Generate session ID: `TAO-<date>-<slug>`
 3. Create session folder structure:
    ```bash
    mkdir -p .workflow/.team/${SESSION_ID}/{artifacts,artifacts/branches,artifacts/pipelines,wisdom,wisdom/.msg}
@@ -179,7 +179,7 @@ Delegate to @commands/monitor.md#handleSpawnNext:
 
 ### Message Semantics
 - **send_message**: Queue supplementary info to a running agent. Does NOT interrupt current processing. Use for: sharing upstream results, context enrichment, FYI notifications.
-- **followup_task**: Assign new work and trigger processing. Use for: waking idle agents, redirecting work, requesting new output.
+- **followup_task**: Assign new work and trigger processing. Use for: waking idle agents, redirecting work, requesting new output, **status probing on timeout**.
 
 ### Agent Lifecycle Management
 - **list_agents({})**: Returns all running agents. Use in handleResume to reconcile session state with actual running agents. Use in handleComplete to verify clean shutdown.

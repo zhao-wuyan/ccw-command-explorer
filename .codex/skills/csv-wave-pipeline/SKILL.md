@@ -207,7 +207,7 @@ const slug = requirement.toLowerCase()
   .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
   .substring(0, 40)
 const dateStr = getUtc8ISOString().substring(0, 10).replace(/-/g, '')
-sessionId = `cwp-${slug}-${dateStr}`
+sessionId = `cwp-${dateStr}-${slug}`
 sessionFolder = `.workflow/.csv-wave/${sessionId}`
 
 // Continue mode: find existing session

@@ -59,7 +59,7 @@ spec-generator/
 ## Runtime Output
 
 ```
-.workflow/.spec/SPEC-{slug}-{YYYY-MM-DD}/
+.workflow/.spec/SPEC-{YYYY-MM-DD}-{slug}/
 |- spec-config.json              # Session state
 |- discovery-context.json        # Codebase context (optional)
 |- refined-requirements.json     # Phase 1.5 (requirement expansion)

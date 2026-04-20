@@ -192,7 +192,7 @@ Bash("ccw team log --session-id <session-id> --from coordinator --type <type> --
 | File not found | Invoke `Skill(skill="workflow:init")` |
 
 4. Load project context from project-tech.json
-5. Create session directory: `.workflow/.team/RD-<slug>-<date>/`
+5. Create session directory: `.workflow/.team/RD-<date>-<slug>/`
 6. Initialize state.md with project reference, current position, task description
 
 **Success**: Session directory created, state.md initialized.
@@ -225,7 +225,7 @@ Delegate to `@commands/roadmap-discuss.md`:
    - `project_root` = result of `Bash({ command: "pwd" })`
    - `skill_root` = `<project_root>/.claude/skills/team-roadmap-dev`
 
-2. Create session folder: `.workflow/.team/RD-<slug>-<date>/`
+2. Create session folder: `.workflow/.team/RD-<date>-<slug>/`
 
 3. Initialize meta.json with pipeline metadata:
 ```typescript
@@ -265,7 +265,7 @@ mcp__ccw-tools__team_msg({
 
 **Design**: Spawn-and-Stop + Callback pattern.
 - Spawn workers with `spawn_agent()` -> immediately return
-- Worker completes -> report_agent_job_result() -> coordinator receives via wait_agent({ timeout_ms: 900000 }) -> auto-advance
+- Worker completes -> report_agent_job_result() -> coordinator receives via wait_agent({ timeout_ms: 1800000 }) -> auto-advance (apply timeout cascade if timed_out)
 - User can use "check" / "resume" to manually advance
 - Coordinator does one operation per invocation, then STOPS
 

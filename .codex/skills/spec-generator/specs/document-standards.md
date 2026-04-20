@@ -19,7 +19,7 @@ Every generated document MUST begin with YAML frontmatter:
 
 ```yaml
 ---
-session_id: SPEC-{slug}-{YYYY-MM-DD}
+session_id: SPEC-{YYYY-MM-DD}-{slug}
 phase: {1-6}
 document_type: {product-brief|requirements|architecture|epics|readiness-report|spec-summary|issue-export-report}
 status: draft|review|complete
@@ -65,7 +65,7 @@ In auto mode (`-y`), documents are promoted directly from `draft` to `complete`.
 ### Session ID Format
 
 ```
-SPEC-{slug}-{YYYY-MM-DD}
+SPEC-{YYYY-MM-DD}-{slug}
 ```
 
 - **slug**: Lowercase, alphanumeric + Chinese characters, hyphens as separators, max 40 chars

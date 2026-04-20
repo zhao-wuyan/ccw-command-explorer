@@ -282,7 +282,7 @@ Execute built-in Phase 1 -> role-spec Phase 2-4 -> built-in Phase 5.`
 })
 ```
 
-Workers report results via `report_agent_job_result()`. Coordinator receives results via `wait_agent({ timeout_ms: 900000 })`. If `result.timed_out`, mark tasks as `timed_out` and close agents. Use `close_agent({ target: taskId })` with task_name for cleanup.
+Workers report results via `report_agent_job_result()`. Coordinator receives results via `wait_agent({ timeout_ms: 1800000 })`. If `result.timed_out`, send STATUS_CHECK via followup_task (wait 3 min), then FINALIZE with interrupt (wait 3 min), then mark timed_out and close agents. Use `close_agent({ target: taskId })` with task_name for cleanup.
 
 **Cross-Agent Supplementary Context** (v4):
 

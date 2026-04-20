@@ -35,7 +35,7 @@ const slug = idea.toLowerCase()
   .replace(/^-|-$/g, '')
   .slice(0, 40);
 const date = new Date().toISOString().slice(0, 10);
-const sessionId = `SPEC-${slug}-${date}`;
+const sessionId = `SPEC-${date}-${slug}`;
 const workDir = `.workflow/.spec/${sessionId}`;
 
 // Check for continue mode
@@ -161,13 +161,26 @@ Schema:
 `
   });
 
-  const exploreResult = wait_agent({ timeout_ms: 600000 });
+  const exploreResult = wait_agent({ timeout_ms: 1800000 });
   if (exploreResult.timed_out) {
+    // Status probe
     followup_task({
       target: "spec-explorer",
-      message: "Finalize current findings and write discovery-context.json immediately."
+      message: "STATUS_CHECK: Report current progress, findings so far, and estimated remaining work."
     });
-    wait_agent({ timeout_ms: 300000 });
+    const status = wait_agent({ timeout_ms: 180000 });  // 3 min
+    if (status.timed_out) {
+      // Force finalize
+      followup_task({
+        target: "spec-explorer",
+        message: "FINALIZE: Output all current findings immediately. Time limit reached.",
+        interrupt: true
+      });
+      const forced = wait_agent({ timeout_ms: 180000 });  // 3 min
+      if (forced.timed_out) {
+        close_agent({ target: "spec-explorer" });
+      }
+    }
   }
   close_agent({ target: "spec-explorer" });
 }
@@ -257,7 +270,7 @@ Write(`${workDir}/spec-config.json`, JSON.stringify(specConfig, null, 2));
 
 ## Quality Checklist
 
-- [ ] Session ID matches `SPEC-{slug}-{date}` format
+- [ ] Session ID matches `SPEC-{date}-{slug}` format
 - [ ] Problem statement exists and is >= 20 characters
 - [ ] Target users identified (>= 1)
 - [ ] 3-5 exploration dimensions generated

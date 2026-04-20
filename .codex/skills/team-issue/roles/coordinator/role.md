@@ -119,10 +119,10 @@ TEXT-LEVEL ONLY. No source code reading.
 1. Resolve workspace paths (MUST do first):
    - `project_root` = result of `Bash("pwd")`
    - `skill_root` = `<project_root>/.codex/skills/team-issue`
-2. Generate session ID: `TISL-<issue-slug>-<date>`
+2. Generate session ID: `TISL-<date>-<issue-slug>`
 3. Create session folder structure:
    ```
-   Bash("mkdir -p .workflow/.team/TISL-<slug>-<date>/{explorations,solutions,audits,queue,builds,wisdom,.msg}")
+   Bash("mkdir -p .workflow/.team/TISL-<date>-<slug>/{explorations,solutions,audits,queue,builds,wisdom,.msg}")
    ```
 4. Create session folder + initialize `tasks.json` (empty array)
 5. Write session.json with pipeline_mode, issue_ids, execution_method, fix_cycles=0, max_fix_cycles=2

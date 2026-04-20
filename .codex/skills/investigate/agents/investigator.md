@@ -317,7 +317,7 @@ CONSTRAINTS: Read-only analysis | Focus on <affected_module>>
 
 Expected: Structured findings with file:line references`
 })
-const result = wait_agent({ timeout_ms: 600000 })
+const result = wait_agent({ timeout_ms: 300000 })  // 5 minutes (inline subagent)
 close_agent({ target: "inline-cli-analysis" })
 ```
 

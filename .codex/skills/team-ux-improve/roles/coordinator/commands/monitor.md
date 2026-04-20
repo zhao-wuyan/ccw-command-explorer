@@ -139,7 +139,7 @@ Inner loop roles: implementer (inner_loop: true)
 Single-task roles: scanner, diagnoser, designer, tester (inner_loop: false)
 
 5. Add to active_workers, update session, output summary, STOP
-6. Use `wait_agent({ timeout_ms: 900000 })` to wait for callbacks. If `result.timed_out`, mark tasks as `timed_out` and close agents. Use `close_agent({ target: taskId })` with task_name for cleanup.
+6. Use `wait_agent({ timeout_ms: 1800000 })` to wait for callbacks. If `result.timed_out`, send STATUS_CHECK via followup_task (wait 3 min), then FINALIZE with interrupt (wait 3 min), then mark timed_out and close agents. Use `close_agent({ target: taskId })` with task_name for cleanup.
 
 **Cross-Agent Supplementary Context** (v4):
 

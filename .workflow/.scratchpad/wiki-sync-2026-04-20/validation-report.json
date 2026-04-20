@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-04-20T16:30:00Z",
+  "version": {
+    "old": "v7.3.6",
+    "new": "v7.3.8",
+    "isMajorUpdate": false,
+    "updateType": "小版本 (c 变化: .6 → .8)"
+  },
+  "stats": {
+    "totalCommands": 111,
+    "synced": true
+  },
+  "commandChanges": {
+    "new": 0,
+    "deleted": 0,
+    "stale": 0,
+    "modified": 1,
+    "skippedLogicUpdates": 58
+  },
+  "filesUpdated": [
+    "src/data/commands.ts",
+    "src/data/timeline.ts"
+  ],
+  "details": {
+    "/ship": {
+      "desc_old": "发布流水线 - 预检→审查→版本→更新日志→PR",
+      "desc_new": "发布流水线 - 预检→审查→版本→更新日志→PR→发布→GitHub Release",
+      "detail_old": "5阶段门控流水线",
+      "detail_new": "7阶段门控流水线（新增平台发布+GitHub Release）"
+    },
+    "logicUpdatesSkipped": "58 个命令的 SKILL.md 有内部实现变更（phase 细节、架构说明等），但 desc 描述未发生变化，无需更新 commands.ts"
+  }
+}

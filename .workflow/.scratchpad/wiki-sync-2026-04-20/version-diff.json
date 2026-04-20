@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-04-20T16:00:00Z",
+  "localVersion": "v7.3.8",
+  "npmLatestVersion": null,
+  "pageVersion": "v7.3.6",
+  "comparison": {
+    "needsUpdate": true,
+    "reason": "local_newer",
+    "level": 2
+  },
+  "localIsOutdated": false,
+  "recommendation": "Update page version to match local"
+}

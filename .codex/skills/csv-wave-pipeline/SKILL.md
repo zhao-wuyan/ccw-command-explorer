@@ -225,6 +225,67 @@ if (continueMode) {
 Bash(`mkdir -p ${sessionFolder}`)
 ```
 
+### Upstream Handoff Intake (Optional)
+
+csv-wave-pipeline can receive structured context from analyze-with-file or workflow-lite-plan via handoff.json:
+
+```javascript
+// Check if requirement references a prior analysis session
+const handoffPathMatch = requirement.match(/handoff:(.+\.json)/)
+let handoffContext = null
+
+if (handoffPathMatch) {
+  const handoffPath = handoffPathMatch[1]
+  if (file_exists(handoffPath)) {
+    handoffContext = JSON.parse(Read(handoffPath))
+    // handoffContext: { source, session_id, summary, implementation_scope[], code_anchors[], key_findings[], exploration_artifacts{} }
+
+    // Enrich requirement with handoff context for CLI decomposition in Phase 1
+    requirement = `${handoffContext.summary}\n\n` +
+      `## Implementation Scope\n${handoffContext.implementation_scope.map((s, i) =>
+        `${i+1}. **${s.objective}** [${s.priority}]\n   Files: ${s.target_files?.join(', ') || 'TBD'}\n   Done when: ${s.acceptance_criteria?.join('; ') || 'TBD'}`
+      ).join('\n')}\n\n` +
+      (handoffContext.key_findings?.length > 0
+        ? `## Key Findings\n${handoffContext.key_findings.map(f => `- ${f.point || f}`).join('\n')}\n\n`
+        : '') +
+      (handoffContext.code_anchors?.length > 0
+        ? `## Code Anchors\n${handoffContext.code_anchors.slice(0, 8).map(a => `- \`${a.file}:${a.lines}\`: ${a.significance}`).join('\n')}\n\n`
+        : '')
+
+    // Load exploration artifacts into discoveries.ndjson seed (if available)
+    if (handoffContext.exploration_artifacts?.exploration_codebase && file_exists(handoffContext.exploration_artifacts.exploration_codebase)) {
+      const codebaseData = JSON.parse(Read(handoffContext.exploration_artifacts.exploration_codebase))
+      const seedDiscoveries = [
+        ...(codebaseData.patterns || []).map(p => JSON.stringify({
+          ts: getUtc8ISOString(), worker: 'handoff', type: 'code_pattern',
+          data: { name: p.pattern || p, file: p.files?.[0] || '', description: p.description || '' }
+        })),
+        ...(codebaseData.relevant_files || []).slice(0, 5).map(f => JSON.stringify({
+          ts: getUtc8ISOString(), worker: 'handoff', type: 'integration_point',
+          data: { file: f.path, description: f.annotation || f.summary || '' }
+        }))
+      ]
+      if (seedDiscoveries.length > 0) {
+        Write(`${sessionFolder}/discoveries.ndjson`, seedDiscoveries.join('\n') + '\n')
+      }
+    }
+
+    console.log(`[Handoff] Loaded from ${handoffContext.source} session ${handoffContext.session_id}: ${handoffContext.implementation_scope?.length || 0} scope items`)
+  }
+}
+```
+
+**Usage with handoff**:
+```bash
+$csv-wave-pipeline "handoff:.workflow/.analysis/ANL-2026-04-29-auth/handoff.json"
+$csv-wave-pipeline -y "handoff:.workflow/.lite-plan/auth-plan/handoff.json"
+```
+
+When handoff is provided:
+- `implementation_scope[]` enriches the CLI decomposition prompt in Phase 1 with pre-analyzed objectives, target files, and acceptance criteria
+- `code_anchors[]` give agents specific file:line entry points
+- `exploration_artifacts.exploration_codebase` seeds `discoveries.ndjson` with known patterns and integration points, so Wave 1 agents skip redundant codebase exploration
+
 ### CSV Utility Functions
 
 ```javascript

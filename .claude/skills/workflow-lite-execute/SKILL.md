@@ -1,6 +1,6 @@
 ---
 name: workflow-lite-execute
-description: Lightweight execution engine - multi-mode input, task grouping, batch execution, chain to test-review
+description: Lightweight execution engine - multi-mode input, task grouping, batch execution, chain to workflow-lite-test-review
 allowed-tools: Skill, Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
 ---
 
@@ -101,7 +101,7 @@ function selectExecutionOptions() {
         ]
       },
       {
-        question: "Convergence review in test-review phase?",
+        question: "Convergence review in workflow-lite-test-review phase?",
         header: "Convergence Review",
         multiSelect: false,
         options: [
@@ -490,12 +490,12 @@ testReviewContext = {
   }
 }
 
-// Chain to lite-test-review (Mode 1: In-Memory)
-Skill("lite-test-review")
+// Chain to workflow-lite-test-review (Mode 1: In-Memory)
+Skill("workflow-lite-test-review")
 // testReviewContext passed as global variable
 ```
 
-**After test-review returns**: Ask user whether to expand into issues (enhance/refactor/doc). Selected items call `/issue:new "{summary} - {dimension}"`.
+**After workflow-lite-test-review returns**: Ask user whether to expand into issues (enhance/refactor/doc). Selected items call `/issue:new "{summary} - {dimension}"`.
 
 ## Error Handling
 

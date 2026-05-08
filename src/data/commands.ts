@@ -6,8 +6,8 @@ import { CATEGORIES } from './constants';
 
 export const COMMANDS: Command[] = [
   // ==================== 主入口命令 ====================
-  { cmd: '/ccw', desc: '主入口！智能分析意图，自动选择命令', status: 'recommended', category: 'main', cli: ['claude'], addedInVersion: 'v6.2',
-    detail: '万能入口！告诉它你想做什么，它会分析你的意图，自动选择最合适的命令或命令组合执行。不用背命令，说人话就行',
+  { cmd: '/ccw', desc: '主入口！智能分析意图，自动选择命令', status: 'recommended', category: 'main', cli: ['claude', 'codex'], addedInVersion: 'v6.2',
+    detail: '万能入口！结构化意图提取(action×object×style)→技能链路由→波浪式执行。Claude Code 和 Codex 通用，支持自动模式(-y)、断点续传(--continue)、dry-run预览',
     usage: '不知道用什么命令时，直接说 /ccw 你想做的事，比如"/ccw 修复登录bug"'
   },
   { cmd: '/ccw-help', desc: '命令帮助系统，搜索和浏览所有命令', status: 'stable', category: 'main', cli: ['claude'], addedInVersion: 'v6.2',
@@ -17,10 +17,6 @@ export const COMMANDS: Command[] = [
   { cmd: '/ccw-coordinator', desc: '交互式命令编排，分析需求推荐命令链', status: 'stable', category: 'main', cli: ['claude'], addedInVersion: 'v6.2',
     detail: '复杂需求分解器：分析你的需求，推荐需要执行的命令序列，你可以调整后再执行',
     usage: '一个任务需要多个命令配合完成，不知道怎么组合'
-  },
-  { cmd: '/ccw-coordinate', desc: '团队代理流水线协调器 - 意图分类+技能链路由', status: 'new', category: 'main', cli: ['codex'], addedInVersion: 'v7.3',
-    detail: '流水线协调器：结构化意图提取(action×object×style) → 技能链路由 → 逐步骤 spawn agent 执行。支持30+预定义链、自动模式(-y)、断点续传(--continue)、dry-run预览',
-    usage: 'Codex 环境下想自动编排工作流，说需求即可自动匹配和执行技能链'
   },
 
   // ==================== Chain 工作流 ====================
@@ -352,11 +348,11 @@ export const COMMANDS: Command[] = [
     usage: '有规划好的任务列表需要执行时'
   },
   { cmd: '/workflow-lite-plan', desc: '轻量规划技能 - 快速内存规划', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
-    detail: '快速规划：在内存中分析→拆解任务→排列顺序。不生成文件，适合中小任务，规划完立即执行',
+    detail: '快速规划：在内存中分析→拆解任务→排列顺序。支持从 analyze-with-file 接收 handoff 上下文，规划完立即执行',
     usage: '任务不复杂，想快速规划然后马上开始做'
   },
   { cmd: '/workflow-lite-execute', desc: '轻量执行引擎 - 多模式输入执行', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.2',
-    detail: '轻量执行：三种输入模式 ①内存模式（--in-memory 从 workflow-lite-plan 传递）；②提示描述模式；③文件内容模式。支持任务分组、批量执行、代码审查',
+    detail: '轻量执行：三种输入模式 ①内存模式（--in-memory 从 workflow-lite-plan 传递）；②提示描述模式；③文件内容模式。支持任务分组、批量执行、代码审查。可链式调用 workflow-lite-test-review',
     usage: '需要执行规划文件或直接执行任务'
   },
   { cmd: '/workflow-multi-cli-plan', desc: '多 CLI 规划 - 并行 CLI 执行', status: 'stable', category: 'skill', cli: ['claude'], addedInVersion: 'v6.2',
@@ -397,9 +393,9 @@ export const COMMANDS: Command[] = [
     detail: '模板执行引擎：加载 JSON 模板 → 绑定变量 → DAG 拓扑排序 → 执行节点（支持 checkpoint 暂停恢复）→ 完成归档',
     usage: '有准备好的工作流模板需要执行'
   },
-  { cmd: '/workflow-lite-test-review', desc: '轻量测试审查 - lite-execute 后的收敛验证+测试', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.20',
+  { cmd: '/workflow-lite-test-review', desc: '轻量测试审查 - workflow-lite-execute 后的收敛验证+测试', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.20',
     detail: '后执行审查流水线：收敛验证（对照计划检查实现）→ 运行测试 → 生成检查清单 → 自动修复失败（最多3轮）→ 报告输出',
-    usage: 'lite-execute 完成后进行测试验证和收敛检查'
+    usage: 'workflow-lite-execute 完成后进行测试验证和收敛检查'
   },
   { cmd: '/workflow-tune', desc: '工作流调优 - 测试命令执行效果并生成优化建议', status: 'new', category: 'skill', cli: ['claude'], addedInVersion: 'v7.2.20',
     detail: '命令效果测试：解析命令链 → 生成测试任务 → 逐步执行（claude）→ 质量分析（gemini）→ 综合评估 → 优化建议报告',
@@ -417,7 +413,7 @@ export const COMMANDS: Command[] = [
 
   // 分析/头脑风暴类
   { cmd: '/analyze-with-file', desc: '交互式协作分析 - CLI探索+多视角+文档化', status: 'stable', category: 'skill', cli: ['codex'], addedInVersion: 'v6.0',
-    detail: '4阶段分析流程：①主题理解→②CLI探索(cli-explore-agent)+外部研究(workflow-research-agent)→③交互讨论(Intent Drift检测)→④综合结论(Findings Coverage Matrix)。支持多视角并行(Technical/Architectural/Business/Domain最多4个)、决策记录协议、产出discussion.md+conclusions.json',
+    detail: '交互式协作分析：Topic→Explore→Discuss→Refine→Conclude→Next Step。CLI探索+外部研究+多轮交互讨论，产出discussion.md+conclusions.json。支持自动模式(-y)',
     usage: '需要深入分析代码库、理解复杂架构、研究技术方案、多角度评估决策'
   },
   { cmd: '/brainstorm-with-file', desc: '交互式头脑风暴 - 多CLI协作+发散收敛循环', status: 'stable', category: 'skill', cli: ['codex'], addedInVersion: 'v6.0',
@@ -464,7 +460,7 @@ export const COMMANDS: Command[] = [
     usage: '项目做久了文件变多，想清理不需要的东西'
   },
   { cmd: '/csv-wave-pipeline', desc: 'CSV 波浪流水线 - 批量任务执行', status: 'new', category: 'skill', cli: ['codex'], addedInVersion: 'v6.4',
-    detail: 'CSV驱动批量执行：读取 tasks.csv，分波次执行任务，支持进度保存和断点续传',
+    detail: 'CSV驱动批量执行：读取 tasks.csv，分波次执行任务，支持进度保存和断点续传。支持从 analyze-with-file 或 workflow-lite-plan 接收 handoff 上下文',
     usage: '有任务清单(CSV格式)需要批量执行'
   },
   { cmd: '/project-documentation-workflow', desc: '波式项目文档生成器 - 动态任务分解', status: 'new', category: 'skill', cli: ['codex'], addedInVersion: 'v7.2.2',
@@ -526,5 +522,5 @@ export const STATS = {
   codexCommands: COMMANDS.filter(c => c.cli.includes('codex')).length,
   newCommands: COMMANDS.filter(c => c.status === 'new').length,
   recommendedCommands: COMMANDS.filter(c => c.status === 'recommended').length,
-  latestVersion: 'v7.3.8',  // 当前最新版本
+  latestVersion: 'v7.3.14',  // 当前最新版本
 };

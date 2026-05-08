@@ -71,7 +71,8 @@ if (typeof workflowPreferences === 'undefined' || workflowPreferences === null) 
 **Session Setup** (MANDATORY):
 ```javascript
 const getUtc8ISOString = () => new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
-const taskSlug = task_description.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 40)
+const priorHeader = task_description.match(/^## Prior (?:Analysis|Brainstorm) \((.+?)\)/m)
+const taskSlug = (priorHeader ? priorHeader[1] : task_description).toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 40).replace(/^-+|-+$/g, '')
 const dateStr = getUtc8ISOString().substring(0, 10)
 const sessionId = `${taskSlug}-${dateStr}`
 const sessionFolder = `.workflow/.lite-plan/${sessionId}`
@@ -103,10 +104,29 @@ if (hasHandoffSpec) {
   if (specMatch) {
     handoffSpec = JSON.parse(specMatch[1])
     // handoffSpec contains: { source, session_id, session_folder, summary,
-    //   implementation_scope[], code_anchors[], key_files[], key_findings[], decision_context[] }
+    //   implementation_scope[], code_anchors[], key_files[], key_findings[], decision_context[],
+    //   exploration_artifacts: { exploration_codebase, explorations, perspectives, research, deep_dives[] } }
     // implementation_scope[]: { objective, rationale, priority, target_files[], acceptance_criteria[], change_summary }
     console.log(`[Handoff] From ${handoffSpec.source} session ${handoffSpec.session_id}`)
     console.log(`[Handoff] ${handoffSpec.implementation_scope.length} scoped items with acceptance criteria`)
+
+    // Enrich task_description with handoff context for downstream planning agent
+    // These fields were previously produced but unused — now injected into planning context
+    if (handoffSpec.summary) {
+      task_description += `\n\n## Analysis Summary\n${handoffSpec.summary}`
+    }
+    if (handoffSpec.key_findings?.length > 0) {
+      task_description += `\n\n## Key Findings\n${handoffSpec.key_findings.map((f, i) =>
+        `${i+1}. ${f.point || f} (${f.confidence || 'medium'})`).join('\n')}`
+    }
+    if (handoffSpec.decision_context?.length > 0) {
+      task_description += `\n\n## Decision Context\n${handoffSpec.decision_context.map(d =>
+        `- **${d.decision || d}**: ${d.reason || ''}`).join('\n')}`
+    }
+    if (handoffSpec.code_anchors?.length > 0) {
+      task_description += `\n\n## Code Anchors\n${handoffSpec.code_anchors.slice(0, 10).map(a =>
+        `- \`${a.file}:${a.lines}\`: ${a.significance}`).join('\n')}`
+    }
   }
 }
 
@@ -123,8 +143,47 @@ needsExploration = workflowPreferences.forceExplore ? true
      task.modifies_existing_code)
 
 if (!needsExploration) {
-  // manifest absent; LP-Phase 3 loads with safe fallback
-  // If handoffSpec exists, it provides pre-scoped implementation context
+  // Bridge: Build manifest from analyze session's exploration artifacts
+  if (isAnalysisSource && handoffSpec?.exploration_artifacts) {
+    const artifacts = handoffSpec.exploration_artifacts
+    const explorationEntries = []
+    let idx = 1
+    const artifactMapping = [
+      { key: 'exploration_codebase', angle: 'codebase-discovery' },
+      { key: 'explorations', angle: 'analysis-findings' },
+      { key: 'perspectives', angle: 'multi-perspective' },
+      { key: 'research', angle: 'external-research' }
+    ]
+    artifactMapping.forEach(({ key, angle }) => {
+      if (artifacts[key] && file_exists(artifacts[key])) {
+        explorationEntries.push({
+          angle, file: artifacts[key].split('/').pop(),
+          path: artifacts[key], source_schema: 'analyze', index: idx++
+        })
+      }
+    })
+    if (artifacts.deep_dives?.length > 0) {
+      artifacts.deep_dives.forEach(divePath => {
+        if (file_exists(divePath)) {
+          const name = divePath.match(/explorations\/(.+)\.json$/)?.[1] || `deep-dive-${idx}`
+          explorationEntries.push({
+            angle: name, file: `${name}.json`,
+            path: divePath, source_schema: 'analyze', index: idx++
+          })
+        }
+      })
+    }
+    if (explorationEntries.length > 0) {
+      Write(`${sessionFolder}/explorations-manifest.json`, JSON.stringify({
+        session_id: sessionId, task_description, timestamp: getUtc8ISOString(),
+        complexity, exploration_count: explorationEntries.length,
+        source: 'analyze-with-file', source_session: handoffSpec.session_id,
+        explorations: explorationEntries
+      }, null, 2))
+      console.log(`[Analyze Bridge] ${explorationEntries.length} artifacts from ${handoffSpec.session_id}`)
+    }
+  }
+  // If no manifest built; LP-Phase 3 loads with safe fallback
   proceed_to_next_phase()
 }
 ```
@@ -478,7 +537,7 @@ if (workflowPreferences.autoYes) {
         ]
       },
       {
-        question: "Convergence review in test-review phase?",
+        question: "Convergence review in workflow-lite-test-review phase?",
         header: "Convergence Review",
         multiSelect: false,
         options: [
@@ -566,22 +625,22 @@ Skill("workflow-lite-execute")
 ├── planning-context.md               # Evidence paths + understanding
 ├── plan.json                         # Plan overview (task_ids[])
 ├── code-review.md                    # Generated by workflow-lite-execute Step 4
-├── test-checklist.json               # Generated by lite-test-review
-├── test-review.md                    # Generated by lite-test-review
+├── test-checklist.json               # Generated by workflow-lite-test-review
+├── test-review.md                    # Generated by workflow-lite-test-review
 └── .task/
     ├── TASK-001.json
     ├── TASK-002.json
     └── ...
 ```
 
-## Chain: lite-plan → workflow-lite-execute → lite-test-review
+## Chain: lite-plan → workflow-lite-execute → workflow-lite-test-review
 
 ```
 lite-plan (LP-Phase 1-5)
   └─ Skill("workflow-lite-execute")     ← executionContext (global)
        ├─ Step 1-3: Task Execution
        ├─ Step 4: Code Review (quality/correctness/security)
-       └─ Step 5: Skill("lite-test-review")  ← testReviewContext (global)
+       └─ Step 5: Skill("workflow-lite-test-review")  ← testReviewContext (global)
             ├─ TR-Phase 1: Detect test framework
             ├─ TR-Phase 2: Convergence verification (plan criteria)
             ├─ TR-Phase 3-4: Run tests + Auto-fix

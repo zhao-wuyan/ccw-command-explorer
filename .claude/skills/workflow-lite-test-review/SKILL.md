@@ -1,12 +1,12 @@
 ---
 name: workflow-lite-test-review
-description: Post-execution test review and fix - chain from lite-execute or standalone. Reviews implementation against plan, runs tests, auto-fixes failures.
+description: Post-execution test review and fix - chain from workflow-lite-execute or standalone. Reviews implementation against plan, runs tests, auto-fixes failures.
 allowed-tools: Skill, Agent, AskUserQuestion, TodoWrite, Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Workflow-Lite-Test-Review
 
-Test review and fix engine for lite-execute chain or standalone invocation.
+Test review and fix engine for workflow-lite-execute chain or standalone invocation.
 
 **Project Context**: Run `ccw spec load --category test` for test framework conventions, coverage targets, and fixtures.
 
@@ -20,20 +20,20 @@ Test review and fix engine for lite-execute chain or standalone invocation.
 
 | Flag | Description |
 |------|-------------|
-| `--in-memory` | Mode 1: Chain from lite-execute via `testReviewContext` global variable |
+| `--in-memory` | Mode 1: Chain from workflow-lite-execute via `testReviewContext` global variable |
 | `--skip-fix` | Review only, do not auto-fix failures |
 
 ## Input Modes
 
-### Mode 1: In-Memory Chain (from lite-execute)
+### Mode 1: In-Memory Chain (from workflow-lite-execute)
 
 **Trigger**: `--in-memory` flag or `testReviewContext` global variable available
 
-**Input Source**: `testReviewContext` global variable set by lite-execute Step 4
+**Input Source**: `testReviewContext` global variable set by workflow-lite-execute Step 4
 
 **Behavior**: Skip session discovery, inherit convergenceReviewTool from execution chain, proceed directly to TR-Phase 1.
 
-> **Note**: lite-execute Step 5 is the chain gate. Mode 1 invocation means execution + code review are complete — proceed with convergence verification + tests.
+> **Note**: workflow-lite-execute Step 5 is the chain gate. Mode 1 invocation means execution + code review are complete — proceed with convergence verification + tests.
 
 ### Mode 2: Standalone
 
@@ -45,7 +45,7 @@ Test review and fix engine for lite-execute chain or standalone invocation.
 let sessionPath, plan, taskFiles, convergenceReviewTool
 
 if (testReviewContext) {
-  // Mode 1: from lite-execute chain
+  // Mode 1: from workflow-lite-execute chain
   sessionPath = testReviewContext.session.folder
   plan = testReviewContext.planObject
   taskFiles = testReviewContext.taskFiles.map(tf => JSON.parse(Read(tf.path)))
@@ -129,9 +129,9 @@ ${taskCriteria}
 CHANGED FILES: ${changedFiles.join(', ')}
 
 MODE: analysis
-CONTEXT: @${sessionPath}/plan.json @${sessionPath}/.task/*.json @**/* | Memory: lite-execute completed
+CONTEXT: @${sessionPath}/plan.json @${sessionPath}/.task/*.json @**/* | Memory: workflow-lite-execute completed
 EXPECTED: Per-task verdict (PASS/PARTIAL/FAIL) with per-criterion evidence + test gap list
-CONSTRAINTS: Read-only | Focus strictly on convergence criteria verification, NOT code quality (code review already done in lite-execute)" --tool ${convergenceReviewTool} --mode analysis --id ${reviewId}`, { run_in_background: true })
+CONSTRAINTS: Read-only | Focus strictly on convergence criteria verification, NOT code quality (code review already done in workflow-lite-execute)" --tool ${convergenceReviewTool} --mode analysis --id ${reviewId}`, { run_in_background: true })
 // STOP - wait for hook callback, then parse CLI output into reviewResults format
 ```
 
@@ -220,7 +220,7 @@ Skill({ skill: "workflow:session:sync", args: `-y "Test review: ${testChecklist.
 
 ## Data Structures
 
-### testReviewContext (Input - Mode 1, set by lite-execute Step 5)
+### testReviewContext (Input - Mode 1, set by workflow-lite-execute Step 5)
 
 ```javascript
 {
@@ -279,7 +279,7 @@ Skill({ skill: "workflow:session:sync", args: `-y "Test review: ${testChecklist.
 
 | Error | Resolution |
 |-------|------------|
-| No session found | "No lite-plan sessions found. Run lite-plan first." |
+| No session found | "No workflow-lite-plan sessions found. Run workflow-lite-plan first." |
 | Missing plan.json | "Invalid session: missing plan.json at {path}" |
 | No test framework | Skip TR-Phase 3 execution, still generate review report |
 | Test timeout | Capture partial output, report as FAIL |

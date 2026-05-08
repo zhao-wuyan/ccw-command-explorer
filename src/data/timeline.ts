@@ -245,17 +245,22 @@ export const TIMELINE: TimelineItem[] = [
     }
   },
   {
-    date: '2026-04',
-    version: 'v7.3.8',
+    date: '2026-05',
+    version: 'v7.3.14',
     title: 'Chain 链式工作流',
     desc: '当前最新版本',
     color: COLORS.primary,
-    commands: 111,
+    commands: 110,
     detail: {
-      version: 'v7.3.8',
+      version: 'v7.3.14',
       highlights: [
         '新 Skill: ccw-chain 链式工作流编排引擎',
-        '新 Skill: ccw-coordinate 流水线协调器(Codex)',
+        '/ccw 统一入口扩展支持 Codex (原 ccw-coordinate 合并入)',
+        '废弃: ccw-coordinate (合并到 /ccw)',
+        'workflow-lite-plan 新增 handoff 上下文注入',
+        'workflow-lite-execute/test-review 命名链式更新',
+        'analyze-with-file (Codex) 简化重写 + auto mode',
+        'csv-wave-pipeline 新增 upstream handoff intake',
         '移除: chain-loader、workflow-skill',
         '移除: workflow:collaborative-plan-with-file、workflow:unified-execute-with-file',
         '移除: flow-create、cli:li-init、cli:codex-review',
@@ -264,9 +269,8 @@ export const TIMELINE: TimelineItem[] = [
       ],
       newCommands: [
         '/ccw-chain',
-        '/ccw-coordinate',
       ],
-      usage: 'v7.3 引入 Chain 链式工作流架构和流水线协调器。移除 chain-loader、workflow-skill 和 with-file 系列过时命令。memory-capture 现同时支持 Claude Code 和 Codex。'
+      usage: 'v7.3 引入 Chain 链式工作流架构，/ccw 统一入口现已支持 Claude Code 和 Codex 双平台。workflow-lite 系列增强 handoff 上下文传递。移除 chain-loader、workflow-skill 和 with-file 系列过时命令。'
     }
   },
 ];

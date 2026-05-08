@@ -122,4 +122,7 @@ export const DEPRECATED_COMMANDS: DeprecatedCommand[] = [
   { old: '/chain-loader', newCmd: null, reason: 'Chain 技能生成器已移除', deprecatedInVersion: 'v7.3.6' },
   { old: '/workflow:collaborative-plan-with-file', newCmd: null, reason: '协作式规划命令已移除', deprecatedInVersion: 'v7.3.6' },
   { old: '/workflow:unified-execute-with-file', newCmd: null, reason: '通用执行引擎命令已移除', deprecatedInVersion: 'v7.3.6' },
+
+  // v7.3.14 废弃 - CCW 统一入口
+  { old: '/ccw-coordinate', newCmd: '/ccw', reason: 'Codex 流水线协调器合并到统一 CCW 主入口，/ccw 现已支持 Claude Code 和 Codex 双平台', deprecatedInVersion: 'v7.3.14' },
 ];

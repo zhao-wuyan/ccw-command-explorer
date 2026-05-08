@@ -4,47 +4,13 @@ description: Interactive collaborative analysis with documented discussions, inl
 argument-hint: "TOPIC=\"<question or topic>\" [--depth=quick|standard|deep] [--continue]"
 ---
 
-# Codex Analyze-With-File Prompt
+# Analyze-With-File
 
-## Overview
+Interactive collaborative analysis with documented discussion process. Records understanding evolution, facilitates multi-round Q&A, and uses inline search + external research for deep exploration.
 
-Interactive collaborative analysis workflow with **documented discussion process**. Records understanding evolution, facilitates multi-round Q&A, and uses inline search + external research for deep exploration.
+**Core flow**: Topic → Explore → Discuss → Refine → Conclude → Next Step
 
-**Core workflow**: Topic → Explore → Research → Discuss → Document → Refine → Conclude → Next Step
-
-**Key features**:
-- **Documented discussion timeline**: Captures understanding evolution across all phases
-- **Decision recording at every critical point**: Mandatory recording of key findings, direction changes, and trade-offs
-- **Technical solution tracking**: Records proposed/validated/rejected solutions with evidence and alternatives
-- **Multi-perspective analysis**: Supports up to 4 analysis perspectives (serial, inline)
-- **External research**: Web search for best practices, patterns, and industry standards via `web.run`
-- **Interactive discussion**: Multi-round Q&A with user feedback, direction adjustments, and research requests
-- **Progress tracking**: `functions.update_plan` for real-time phase progress visibility
-- **Structured handoff**: Terminal gate with execution planning, issue creation, or completion
-
-## Auto Mode
-
-When `--yes` or `-y`: Auto-confirm exploration decisions, use recommended analysis angles, skip interactive scoping.
-
-## Quick Start
-
-```bash
-# Basic usage
-/codex:analyze-with-file TOPIC="How to optimize this project's authentication architecture"
-
-# With depth selection
-/codex:analyze-with-file TOPIC="Performance bottleneck analysis" --depth=deep
-
-# Continue existing session
-/codex:analyze-with-file TOPIC="authentication architecture" --continue
-
-# Auto mode (skip confirmations)
-/codex:analyze-with-file -y TOPIC="Caching strategy analysis"
-```
-
-## Target Topic
-
-**$TOPIC**
+**Auto mode** (`-y`): Auto-confirm exploration decisions, use recommended angles, skip interactive scoping.
 
 ## Configuration
 
@@ -52,170 +18,122 @@ When `--yes` or `-y`: Auto-confirm exploration decisions, use recommended analys
 |------|---------|-------------|
 | `-y, --yes` | false | Auto-confirm all decisions |
 | `--continue` | false | Continue existing session |
-| `--depth` | standard | Analysis depth: quick / standard / deep |
+| `--depth` | standard | quick / standard / deep |
 
-**Session ID format**: `ANL-{YYYY-MM-DD}-{slug}`
-- slug: lowercase, alphanumeric + CJK characters, max 40 chars
-- date: YYYY-MM-DD (UTC+8)
+**Session ID**: `ANL-{YYYY-MM-DD}-{slug}`
+- slug: `topic.toLowerCase()` → keep `[a-z0-9\u4e00-\u9fa5]`, replace rest with `-`, max 40 chars
+- date: YYYY-MM-DD in UTC+8
 - Auto-detect continue: session folder + discussion.md exists → continue mode
+
+## Artifacts
+
+```
+{projectRoot}/.workflow/.analysis/ANL-{date}-{slug}/
+├── discussion.md              # Single source of truth: rounds, decisions, conclusions, synthesis
+├── state.json                 # Session state: config, confidence, quality tracking
+├── exploration-codebase.json  # Codebase exploration: files, patterns, constraints
+├── research.json              # External research: best practices, pitfalls, sources
+└── handoff.json               # Structured handoff (only on "执行任务")
+```
+
+| File | When Created | Purpose |
+|------|-------------|---------|
+| `discussion.md` | Phase 1 | All analysis content: session metadata, round-by-round findings, multi-perspective synthesis, decisions, intent coverage, conclusions, recommendations. **Overwritten** sections: `## Current Understanding`. **Appended** sections: `## Discussion Timeline`. |
+| `state.json` | Phase 0 | Machine-readable: current round, dimension scores, confidence history, quality tracking (pressure pass, challenge modes, stall counter), exploration metadata. Updated every round. |
+| `exploration-codebase.json` | Phase 2 | Codebase context: `project_type`, `relevant_files[{path, relevance, summary, dimensions[]}]`, `patterns[{pattern, files, description}]`, `constraints[]`, `integration_points[{location, description}]`, `key_findings[]`, `_metadata{timestamp, exploration_scope}` |
+| `research.json` | Phase 2 | External research: `findings[{finding, detail, confidence, source_url}]`, `best_practices[{practice, rationale, source}]`, `alternatives[{option, pros, cons, verdict}]`, `pitfalls[{issue, mitigation, source}]`, `codebase_gaps[{gap, current_approach, recommended_approach}]`, `sources[{title, url, key_takeaway}]` |
+| `handoff.json` | Phase 4 | Only on "执行任务": `source`, `session_id`, `session_folder`, `summary`, `implementation_scope[{objective, rationale, priority, target_files[], acceptance_criteria[], change_summary}]`, `code_anchors[]`, `key_files[]`, `key_findings[]`, `decision_context[]`, `exploration_artifacts{exploration_codebase, research}` — keys align with workflow-lite-plan artifactMapping |
+
+---
 
 ## Analysis Flow
 
 ```
-Step 0: Session Setup
-   ├─ Parse topic, flags (--depth, --continue, -y)
-   ├─ Generate session ID: ANL-{date}-{slug}
-   ├─ Create session folder (or detect existing → continue mode)
-   └─ Initialize progress tracking: functions.update_plan([...phases])
+Phase 0: Session Setup
+   ├─ Parse topic, flags, generate session ID
+   ├─ Detect project root (git rev-parse --show-toplevel || pwd)
+   ├─ Create session folder (or detect existing → continue)
+   ├─ Initialize state.json + discussion.md
+   └─ functions.update_plan([phase-1..phase-4, next-step])
 
-Step 1: Topic Understanding
-   ├─ Parse topic, identify analysis dimensions
-   ├─ Initial scoping with user: functions.request_user_input (focus, perspectives, depth)
-   └─ Initialize discussion.md
+Phase 1: Topic Understanding
+   ├─ Identify analysis dimensions from topic keywords
+   ├─ Scope with user: focus, perspectives (1-4), depth
+   ├─ Generate initial questions from dimensions
+   └─ Write initial sections to discussion.md
 
-Step 2: Exploration (Inline + External Research)
-   ├─ Detect codebase → search relevant modules, patterns
-   │   ├─ functions.exec_command('ccw spec load --category exploration')
-   │   ├─ functions.exec_command('ccw spec load --category debug')
-   │   └─ Use Grep, Glob, Read, mcp__ace-tool__search_context
-   ├─ External research (if topic warrants): web.run for best practices, patterns
-   ├─ Multi-perspective analysis (if selected, serial)
-   │   ├─ Single: Comprehensive analysis
-   │   └─ Multi (≤4): Serial per-perspective analysis with synthesis
-   ├─ Aggregate findings → explorations.json / perspectives.json
-   ├─ Update discussion.md with Round 1
-   │   ├─ Replace ## Current Understanding with initial findings
-   │   └─ Update ## Table of Contents
-   └─ Initial Intent Coverage Check (early drift detection)
+Phase 2: Exploration
+   ├─ Load project specs (ccw spec load)
+   ├─ Codebase search → exploration-codebase.json
+   ├─ External research via web.run → research.json
+   ├─ Multi-perspective analysis → write to discussion.md
+   ├─ Context budget gate (>30 files → rank + trim)
+   ├─ Initial intent coverage check
+   └─ Baseline confidence scoring → state.json
 
-Step 3: Interactive Discussion (Multi-Round, max 5)
-   ├─ Current Understanding Summary (round ≥ 2, before findings)
-   ├─ Present exploration findings
-   ├─ Gather user feedback: functions.request_user_input
-   ├─ Process response:
-   │   ├─ Deepen → context-driven + heuristic options → deeper inline analysis
-   │   ├─ External Research → web.run for specific tech/pattern investigation
-   │   ├─ Adjust → new inline analysis with adjusted focus
-   │   ├─ Questions → direct answers with evidence
-   │   └─ Complete → exit loop for synthesis
-   ├─ Record-Before-Continue: write findings to discussion.md BEFORE updating
-   ├─ Technical Solution Triggers: detect and record proposed solutions
-   ├─ Update discussion.md:
-   │   ├─ Append round details + Narrative Synthesis
-   │   ├─ Replace ## Current Understanding with latest state
-   │   └─ Update ## Table of Contents
-   ├─ Intent Drift Check (round ≥ 2, building on Phase 2 initial check)
-   └─ Repeat until user selects complete or max rounds
+Phase 3: Interactive Discussion (max 5 rounds)
+   ├─ Present findings + confidence + weakest dimension
+   ├─ User direction: Deepen / Research / Adjust / Complete
+   ├─ Cumulative context: always include prior findings
+   ├─ Record-before-continue: write to discussion.md BEFORE state update
+   ├─ Quality mechanisms:
+   │   ├─ Pressure pass (mandatory ≥1 before Phase 4)
+   │   ├─ Challenge injection (auto, round ≥2)
+   │   ├─ Stall detection (2 consecutive no-progress rounds)
+   │   └─ Re-score confidence → state.json
+   ├─ Pre-synthesis readiness gate (on "Complete")
+   ├─ Intent drift check (round ≥2)
+   └─ Update discussion.md: append round + overwrite Current Understanding
 
-Step 4: Synthesis & Conclusion
+Phase 4: Synthesis & Terminal Gate
    ├─ Intent Coverage Verification (mandatory gate)
-   ├─ Findings-to-Recommendations Traceability (mandatory gate)
-   ├─ Consolidate all insights → conclusions.json (with steps[] per recommendation)
-   ├─ Update discussion.md with final synthesis
-   ├─ Interactive Recommendation Review: functions.request_user_input (batch confirm)
-   └─ MANDATORY Terminal Gate: functions.request_user_input (next step selection)
-       ├─ 执行任务 → Build implementation scope → handoff to downstream planning
-       ├─ 产出Issue → functions.exec_command('ccw issue create')
-       └─ 完成 → Display artifact paths, end
+   ├─ Findings → Recommendations Traceability (mandatory gate)
+   ├─ Write synthesis + conclusions to discussion.md
+   ├─ Recommendation review with user
+   └─ Terminal gate: 执行任务 → handoff.json | 产出Issue | 完成
 ```
 
-## Recording Protocol
+---
 
-**CRITICAL**: During analysis, the following situations **MUST** trigger immediate recording to discussion.md:
+## Phase 0: Session Setup
 
-| Trigger | What to Record | Target Section |
-|---------|---------------|----------------|
-| **Direction choice** | What was chosen, why, what alternatives were discarded | `#### Decision Log` |
-| **Key finding** | Finding content, impact scope, confidence level, hypothesis impact | `#### Key Findings` |
-| **Assumption change** | Old assumption → new understanding, reason, impact | `#### Corrected Assumptions` |
-| **User feedback** | User's original input, rationale for adoption/adjustment | `#### User Input` |
-| **Disagreement & trade-off** | Conflicting viewpoints, trade-off basis, final choice | `#### Decision Log` |
-| **Scope adjustment** | Before/after scope, trigger reason | `#### Decision Log` |
-| **Technical solution proposed/validated/rejected** | Solution, rationale, alternatives, status, evidence | `#### Technical Solutions` |
+1. Parse `{{ARGUMENTS}}` for topic, flags (`--depth`, `--continue`, `-y`)
+2. Detect project root: `git rev-parse --show-toplevel 2>/dev/null || pwd`
+3. Generate session ID: `ANL-{date}-{slug}`, session folder: `{projectRoot}/.workflow/.analysis/{sessionId}`
+4. If session folder + discussion.md exists → auto-enter continue mode (load state.json, resume from last round)
+5. Create session folder: `mkdir -p {sessionFolder}`
+6. Initialize `state.json`:
 
-### Decision Record Format
-
-```markdown
-> **Decision**: [Description of the decision]
-> - **Context**: [What triggered this decision]
-> - **Options considered**: [Alternatives evaluated]
-> - **Chosen**: [Selected approach] — **Reason**: [Rationale]
-> - **Rejected**: [Why other options were discarded]
-> - **Impact**: [Effect on analysis direction/conclusions]
+```json
+{
+  "session_id": "ANL-{date}-{slug}",
+  "topic": "...",
+  "depth": "standard",
+  "dimensions": [],
+  "perspectives": [],
+  "focus_areas": [],
+  "current_round": 0,
+  "current_phase": "setup",
+  "confidence": {
+    "dimensions": {},
+    "overall": 0,
+    "weakest": null,
+    "history": []
+  },
+  "quality": {
+    "pressure_pass_done": false,
+    "challenge_modes_used": [],
+    "stall_counter": 0,
+    "last_findings_count": 0,
+    "readiness_gate_passed": false,
+    "residual_risks": []
+  }
+}
 ```
 
-### Key Finding Record Format
+7. Initialize progress tracking:
 
-```markdown
-> **Finding**: [Content]
-> - **Confidence**: [High/Medium/Low] — **Why**: [Evidence basis]
-> - **Hypothesis Impact**: [Confirms/Refutes/Modifies] hypothesis "[name]"
-> - **Scope**: [What areas this affects]
 ```
-
-### Technical Solution Record Format
-
-Record when: an implementation approach is described with specific files/patterns, 2+ alternatives are compared, user confirms/modifies/rejects an approach, or a concrete code change strategy emerges.
-
-```markdown
-> **Solution**: [Description — what approach, pattern, or implementation]
-> - **Status**: [Proposed / Validated / Rejected]
-> - **Problem**: [What problem this solves]
-> - **Rationale**: [Why this approach]
-> - **Alternatives**: [Other options considered and why not chosen]
-> - **Evidence**: [file:line or code anchor references]
-> - **Next Action**: [Follow-up required or none]
-```
-
-### Narrative Synthesis Format
-
-Append after each round update:
-
-```markdown
-### Round N: Narrative Synthesis
-**起点**: 基于上一轮的 [conclusions/questions]，本轮从 [starting point] 切入。
-**关键进展**: [New findings] [confirmed/refuted/modified] 了之前关于 [hypothesis] 的理解。
-**决策影响**: 用户选择 [feedback type]，导致分析方向 [adjusted/deepened/maintained]。
-**当前理解**: 经过本轮，核心认知更新为 [updated understanding]。
-**遗留问题**: [remaining questions driving next round]
-```
-
-### Recording Principles
-
-- **Immediacy**: Record decisions as they happen, not at the end of a phase
-- **Completeness**: Capture context, options, chosen approach, reason, and rejected alternatives
-- **Traceability**: Later phases must be able to trace back why a decision was made
-- **Depth**: Capture reasoning and hypothesis impact, not just outcomes
-
-## Implementation Details
-
-### Phase 0: Session Initialization
-
-```javascript
-const getUtc8ISOString = () => new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
-
-// Parse flags
-const autoYes = $ARGUMENTS.includes('--yes') || $ARGUMENTS.includes('-y')
-const continueMode = $ARGUMENTS.includes('--continue')
-const depthMatch = $ARGUMENTS.match(/--depth[=\s](quick|standard|deep)/)
-const analysisDepth = depthMatch ? depthMatch[1] : 'standard'
-
-// Extract topic
-const topic = $ARGUMENTS.replace(/--yes|-y|--continue|--depth[=\s]\w+|TOPIC=/g, '').replace(/^["']|["']$/g, '').trim()
-
-// Determine project root
-const projectRoot = functions.exec_command('git rev-parse --show-toplevel 2>/dev/null || pwd').trim()
-
-const slug = topic.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').substring(0, 40)
-const dateStr = getUtc8ISOString().substring(0, 10)
-const sessionId = `ANL-${dateStr}-${slug}`
-const sessionFolder = `${projectRoot}/.workflow/.analysis/${sessionId}`
-
-// Auto-detect continue: session folder + discussion.md exists → continue mode
-// If continue → load discussion.md + explorations, resume from last round
-functions.exec_command(`mkdir -p ${sessionFolder}`)
-
-// Initialize progress tracking (MANDATORY)
 functions.update_plan([
   { id: "phase-1", title: "Phase 1: Topic Understanding", status: "in_progress" },
   { id: "phase-2", title: "Phase 2: Exploration & Research", status: "pending" },
@@ -225,875 +143,703 @@ functions.update_plan([
 ])
 ```
 
-### Phase 1: Topic Understanding
+---
 
-**Objective**: Parse the topic, identify relevant analysis dimensions, scope the analysis with user input, and initialize the discussion document.
+## Phase 1: Topic Understanding
 
-##### Step 1.1: Parse Topic & Identify Dimensions
+### 1.1 Identify Dimensions
 
-Match topic keywords against analysis dimensions (see [Dimensions Reference](#analysis-dimensions)):
+Match topic keywords against [Analysis Dimensions](#analysis-dimensions). If multiple match, include all. If none match, default to "architecture" + "implementation".
 
-```javascript
-// Match topic text against keyword lists from Dimensions Reference
-// If multiple dimensions match, include all
-// If none match, default to "architecture" and "implementation"
-const dimensions = identifyDimensions(topic, ANALYSIS_DIMENSIONS)
-```
+### 1.2 Initial Scoping (new session, not auto mode)
 
-##### Step 1.2: Initial Scoping (New Session Only)
+Single `functions.request_user_input` call with up to 3 questions (constraint: 1-4 questions, 2-4 options each):
 
-For new sessions, gather user preferences (skipped in auto mode or continue mode):
+**Question 1 — Focus areas** (multiSelect: true):
+- Generate options dynamically from matched dimensions using [Dimension-Direction Mapping](#dimension-direction-mapping), max 4 options
 
-```javascript
-if (!autoYes && !continueMode) {
-  // Single call with up to 3 questions (functions.request_user_input constraint: 1-4 questions, 2-4 options each)
-  const scoping = functions.request_user_input({
-    questions: [
-      {
-        id: "focus",
-        header: "聚焦领域",
-        question: "Select analysis focus areas:",
-        multiSelect: true,
-        options: generateFocusOptions(dimensions) // Dynamic from Dimension-Direction Mapping, max 4
-      },
-      {
-        id: "perspectives",
-        header: "分析视角",
-        question: "Select analysis perspectives (single = focused, multi = broader):",
-        multiSelect: true,
-        options: [
-          { label: "Technical", description: "Implementation patterns, code structure, feasibility" },
-          { label: "Architectural", description: "System design, scalability, interactions" },
-          { label: "Security", description: "Security patterns, vulnerabilities, access control" },
-          { label: "Performance", description: "Bottlenecks, optimization, resource utilization" }
-        ]  // max 4 perspectives
-      },
-      {
-        id: "depth",
-        header: "分析深度",
-        question: "Analysis depth level:",
-        multiSelect: false,
-        options: [
-          { label: "Standard(Recommended)", description: "Balanced analysis with good coverage" },
-          { label: "Quick Overview", description: "Fast surface-level understanding" },
-          { label: "Deep Dive", description: "Comprehensive multi-round investigation" }
-        ]
-      }
-    ]
-  })
-}
-```
+**Question 2 — Perspectives** (multiSelect: true):
+- Technical: Implementation patterns, code structure, feasibility
+- Architectural: System design, scalability, interactions
+- Security: Security patterns, vulnerabilities, access control
+- Performance: Bottlenecks, optimization, resource utilization
 
-##### Step 1.3: Initialize discussion.md
+Max 4 perspectives. Single perspective is default.
 
-```javascript
-const discussionMd = `# Analysis Discussion
+**Question 3 — Depth** (multiSelect: false):
+- Standard (Recommended): Balanced analysis with good coverage
+- Quick Overview: Fast surface-level understanding
+- Deep Dive: Comprehensive multi-round investigation
 
-**Session ID**: ${sessionId}
-**Topic**: ${topic}
-**Started**: ${getUtc8ISOString()}
-**Dimensions**: ${dimensions.join(', ')}
-**Depth**: ${analysisDepth}
+### 1.3 Initialize discussion.md
 
-## Table of Contents
-<!-- TOC: Auto-updated after each round/phase. Links to major sections. -->
-- [Analysis Context](#analysis-context)
-- [Current Understanding](#current-understanding)
-- [Discussion Timeline](#discussion-timeline)
-- [Decision Trail](#decision-trail)
+Write the full initial template (see [discussion.md Structure](#discussionmd-structure)):
+- Header: session ID, topic, timestamp (UTC+8), dimensions, depth
+- Table of Contents (auto-updated each round)
+- Current Understanding: "To be populated after exploration"
+- Analysis Context: focus areas, perspectives, depth
+- Initial Questions: generated from topic + dimensions (key questions that the analysis should answer)
+- Initial Decisions: record WHY these dimensions/focus areas were selected, what was excluded and why
+- Discussion Timeline: empty, rounds appended later
+- Decision Trail: empty, populated in Phase 4
 
-## Current Understanding
-<!-- REPLACEABLE BLOCK: Overwrite (not append) after each round with latest consolidated understanding.
-     Follow Consolidation Rules: promote confirmed insights, track corrections, focus on current state. -->
-
-> To be populated after exploration.
-
-## Analysis Context
-- Focus areas: ${focusAreas.join(', ')}
-- Perspectives: ${selectedPerspectives.map(p => p.name).join(', ')}
-- Depth: ${analysisDepth}
-
-## Initial Questions
-${generateInitialQuestions(topic, dimensions).map(q => `- ${q}`).join('\n')}
-
-## Initial Decisions
-> Record why these dimensions and focus areas were selected.
+Update state.json with dimensions, perspectives, focus_areas, depth. Mark phase-1 completed, phase-2 in_progress.
 
 ---
 
-## Discussion Timeline
+## Phase 2: Exploration
 
-> Rounds will be appended below as analysis progresses.
-> Each round MUST include a Decision Log section for any decisions made.
+All exploration done inline — no agent delegation.
 
----
+### 2.1 Codebase Detection & Spec Loading
 
-## Decision Trail
+Detect project type:
+- `package.json` → nodejs | `go.mod` → golang | `Cargo.toml` → rust | `pyproject.toml` → python | `pom.xml` → java | `src/` exists → generic | else → none
 
-> Consolidated critical decisions across all rounds (populated in Phase 4).
-`
-Write(`${sessionFolder}/discussion.md`, discussionMd)
-```
+If codebase detected, load project metadata:
+- `functions.exec_command('ccw spec load --category exploration')`
+- `functions.exec_command('ccw spec load --category debug')`
+- Read `.workflow/specs/*.md` for project conventions
 
-**Success Criteria**:
-- Session folder created with discussion.md initialized
-- Analysis dimensions identified and user preferences captured
-- **Initial decisions recorded**: Dimension selection rationale, excluded dimensions with reasons
+### 2.2 Codebase Search
 
-**Progress**: `functions.update_plan([{id: "phase-1", status: "completed"}, {id: "phase-2", status: "in_progress"}])`
+Search using: **Grep**, **Glob**, **Read**, **mcp__ace-tool__search_context**
 
-### Phase 2: Exploration
+Focus on: modules/components relevant to topic, code patterns/structure, integration points, config/dependencies.
 
-**Objective**: Gather codebase context, execute external research, and build understanding. All exploration done inline — no agent delegation.
+Write findings to `exploration-codebase.json` with full schema:
+- `project_type`: detected type
+- `relevant_files[]`: `{path, relevance, summary, dimensions[]}`
+- `patterns[]`: `{pattern, files, description}`
+- `constraints[]`: architectural constraints found
+- `integration_points[]`: `{location, description}`
+- `key_findings[]`: main insights from code search
+- `_metadata`: `{timestamp, exploration_scope}`
 
-##### Step 2.1: Detect Codebase & Explore
+### 2.3 External Research
 
-```javascript
-const hasCodebase = functions.exec_command(`
-  test -f package.json && echo "nodejs" ||
-  test -f go.mod && echo "golang" ||
-  test -f Cargo.toml && echo "rust" ||
-  test -f pyproject.toml && echo "python" ||
-  test -f pom.xml && echo "java" ||
-  test -d src && echo "generic" ||
-  echo "none"
-`).trim()
+**Trigger condition**: dimensions include `architecture|comparison|decision|performance|security`, OR topic matches `best practice|pattern|vs|compare|approach|standard|library|framework`.
 
-if (hasCodebase !== 'none') {
-  // 1. Read project metadata (if exists)
-  //    - functions.exec_command('ccw spec load --category exploration')
-  //    - functions.exec_command('ccw spec load --category debug')
-  //    - .workflow/specs/*.md (project conventions)
+Skip for purely internal codebase questions (e.g., "how does module X work").
 
-  // 2. Search codebase for relevant content
-  //    Use: Grep, Glob, Read, or mcp__ace-tool__search_context
-  //    Focus on: modules/components, patterns/structure, integration points, config/dependencies
+Execute up to 3 `web.run` queries:
+- `{topic} best practices {year}`
+- `{topic} common pitfalls and known issues`
+- Per matching dimension: `{topic} {dimension} patterns and recommendations`
 
-  // 3. Write findings
-  Write(`${sessionFolder}/exploration-codebase.json`, JSON.stringify({
-    project_type: hasCodebase,
-    relevant_files: [...],    // [{path, relevance, summary, dimensions[]}]
-    patterns: [...],          // [{pattern, files, description}]
-    constraints: [...],       // Architectural constraints found
-    integration_points: [...], // [{location, description}]
-    key_findings: [...],      // Main insights from code search
-    _metadata: { timestamp: getUtc8ISOString(), exploration_scope: '...' }
-  }, null, 2))
-}
-```
+Write findings to `research.json` with full schema:
+- `findings[]`: `{finding, detail, confidence, source_url}`
+- `best_practices[]`: `{practice, rationale, source}`
+- `alternatives[]`: `{option, pros, cons, verdict}`
+- `pitfalls[]`: `{issue, mitigation, source}`
+- `codebase_gaps[]`: `{gap, current_approach, recommended_approach}`
+- `sources[]`: `{title, url, key_takeaway}`
+- `_metadata`: `{queries_executed, timestamp}`
 
-##### Step 2.1b: External Research (Parallel with Exploration)
+Cross-reference: flag where codebase patterns diverge from research best practices as `codebase_gaps`.
 
-Determine if external research adds value — skip for purely internal codebase questions (e.g., "how does module X work"), run for topics involving technology choices, best practices, architecture patterns, or comparison.
+### 2.4 Multi-Perspective Analysis
 
-```javascript
-const needsResearch = dimensions.some(d =>
-  ['architecture', 'comparison', 'decision', 'performance', 'security'].includes(d)
-) || topic.match(/best practice|pattern|vs|compare|approach|standard|library|framework/i)
+**Single perspective** (default): Comprehensive analysis across all dimensions using exploration + research context. Write findings directly to discussion.md Round 1.
 
-if (needsResearch) {
-  // Use web.run for external research
-  const researchQueries = [
-    `${topic} best practices ${getUtc8ISOString().substring(0,4)}`,
-    `${topic} common pitfalls and known issues`,
-    ...dimensions.filter(d => ['architecture','security','performance'].includes(d))
-      .map(d => `${topic} ${d} patterns and recommendations`)
-  ]
+**Multi-perspective** (2-4 perspectives, serial): Analyze each perspective sequentially. For each perspective, write a summary subsection in discussion.md Round 1. Then append a synthesis subsection:
+- **Convergent themes**: what all perspectives agree on
+- **Conflicting views**: where perspectives differ
+- **Unique contributions**: insights unique to specific perspectives
 
-  const researchFindings = []
-  for (const query of researchQueries.slice(0, 3)) {
-    const result = web.run({ search_query: query })
-    researchFindings.push({ query, result })
-  }
+### 2.5 Context Budget Gate
 
-  // Write research findings
-  Write(`${sessionFolder}/research.json`, JSON.stringify({
-    topic, timestamp: getUtc8ISOString(),
-    findings: [...],          // [{finding, detail, confidence, source_url}]
-    best_practices: [...],    // [{practice, rationale, source}]
-    alternatives: [...],      // [{option, pros, cons, verdict}]
-    pitfalls: [...],          // [{issue, mitigation, source}]
-    codebase_gaps: [...],     // [{gap, current_approach, recommended_approach}]
-    sources: [...],           // [{title, url, key_takeaway}]
-    _metadata: { queries_executed: researchQueries.length }
-  }, null, 2))
-}
-```
+If exploration found > 30 relevant files in `exploration-codebase.json`:
+- Rank by relevance score, keep top 30 per dimension
+- Update `exploration-codebase.json` with trimmed list + `_budget{original_count, summarized_count}`
+- Note in discussion.md: "探索发现 N 个相关文件，已精简至 30 个高相关文件"
 
-##### Step 2.2: Multi-Perspective Analysis
+### 2.6 Write Round 1 to discussion.md
 
-Analyze from each selected perspective. All analysis done inline by the AI.
+Append to Discussion Timeline using [Round Template](#round-template):
+- Sources analyzed, key findings with evidence refs (file:line)
+- External research findings, best practices, codebase gaps
+- Multi-perspective synthesis (if applicable)
+- Discussion points and open questions
+- Decision Log: why certain search strategies/perspectives were chosen
 
-**Single perspective** (default):
-```javascript
-// Analyze comprehensively across all identified dimensions
-// Use exploration-codebase.json as context
-const findings = {
-  session_id: sessionId, timestamp: getUtc8ISOString(),
-  topic, dimensions,
-  sources: [...],            // [{type, file, summary}]
-  key_findings: [...],       // Main insights
-  discussion_points: [...],  // Questions for user engagement
-  open_questions: [...]      // Unresolved questions
-}
-Write(`${sessionFolder}/explorations.json`, JSON.stringify(findings, null, 2))
-```
+### 2.7 Initial Intent Coverage Check
 
-**Multi-perspective** (2-4 perspectives, serial):
-```javascript
-// Analyze each perspective sequentially, write individual findings
-selectedPerspectives.forEach(perspective => {
-  Write(`${sessionFolder}/explorations/${perspective.name}.json`, JSON.stringify({
-    perspective: perspective.name,
-    relevant_files: [...], patterns: [...],
-    key_findings: [...], perspective_insights: [...], open_questions: [...],
-    _metadata: { timestamp: getUtc8ISOString() }
-  }, null, 2))
-})
-```
+Extract original user intents from discussion.md header. Check each against Round 1 findings:
+- ✅ covered
+- 🔄 in-progress
+- ❌ not yet discussed
 
-##### Step 2.3: Aggregate Findings
+Append to discussion.md: "接下来的讨论将重点关注未覆盖 (❌) 和进行中 (🔄) 的意图。"
 
-```javascript
-// Single perspective → explorations.json already written
-// Multi-perspective → synthesize into perspectives.json
-if (selectedPerspectives.length > 1) {
-  const synthesis = {
-    session_id: sessionId, timestamp: getUtc8ISOString(), topic, dimensions,
-    perspectives: selectedPerspectives.map(p => ({
-      name: p.name,
-      findings: readJson(`${sessionFolder}/explorations/${p.name}.json`).key_findings,
-      insights: readJson(`${sessionFolder}/explorations/${p.name}.json`).perspective_insights,
-      questions: readJson(`${sessionFolder}/explorations/${p.name}.json`).open_questions
-    })),
-    synthesis: {
-      convergent_themes: [...],   // What all perspectives agree on
-      conflicting_views: [...],   // Where perspectives differ
-      unique_contributions: [...]  // Insights unique to specific perspectives
-    },
-    // Merge research findings if available
-    external_research: fileExists(`${sessionFolder}/research.json`)
-      ? { findings: research.findings, best_practices: research.best_practices, codebase_gaps: research.codebase_gaps }
-      : null,
-    aggregated_findings: [...], discussion_points: [...], open_questions: [...]
-  }
-  Write(`${sessionFolder}/perspectives.json`, JSON.stringify(synthesis, null, 2))
-}
+### 2.8 Baseline Confidence Scoring
 
-// For single perspective, merge research into explorations.json
-if (selectedPerspectives.length <= 1 && fileExists(`${sessionFolder}/research.json`)) {
-  const research = readJson(`${sessionFolder}/research.json`)
-  // Merge research best_practices[] and pitfalls[] into discussion points
-  // Cross-reference: flag gaps where codebase patterns diverge from research best practices
-  explorations.external_research = {
-    findings: research.findings, best_practices: research.best_practices,
-    codebase_gaps: research.codebase_gaps, sources: research.sources
-  }
-  Write(`${sessionFolder}/explorations.json`, JSON.stringify(explorations, null, 2))
-}
-```
+Score each dimension on 5 weighted factors (each [0.0, 1.0]):
 
-##### Step 2.4: Update discussion.md
+| Factor | Weight | Measures |
+|--------|--------|----------|
+| findings_depth | 0.30 | How deep the findings go |
+| evidence_strength | 0.25 | Hard evidence vs inference |
+| coverage_breadth | 0.20 | How much of the dimension is covered |
+| user_validation | 0.15 | User confirmed findings (starts at 0, increases in Phase 3) |
+| consistency | 0.10 | Findings don't contradict |
 
-Append Round 1 with exploration results using the [Round Documentation Pattern](#round-documentation-pattern).
+Overall confidence = weighted average across dimensions. Identify weakest dimension.
 
-**Single perspective**: Sources analyzed, key findings with evidence, discussion points, open questions.
-
-**Multi-perspective**: Per-perspective summary (brief), then synthesis (convergent themes, conflicting views, unique contributions), discussion points, open questions.
-
-##### Step 2.5: Initial Intent Coverage Check
-
-Perform the FIRST intent coverage check before entering Phase 3:
-
-```javascript
-// Re-read original user intent from discussion.md header
-// Check each intent item against Round 1 findings
-appendToDiscussion(`
-#### Initial Intent Coverage Check (Post-Exploration)
-${originalIntents.map((intent, i) => {
-  const status = assessCoverage(intent, explorationFindings)
-  return `- ${status.icon} Intent ${i+1}: ${intent} — ${status.detail}`
-}).join('\n')}
-
-> 接下来的讨论将重点关注未覆盖 (❌) 和进行中 (🔄) 的意图。
-`)
-```
-
-**Success Criteria**:
-- exploration-codebase.json created with codebase context (if codebase exists)
-- research.json created with external findings (if topic warrants research)
-- explorations.json (single) or perspectives.json (multi) created with findings
-- Research best practices merged; codebase gaps flagged
-- discussion.md updated with Round 1 results
-- **Initial Intent Coverage Check** completed — early drift detection
-- **Key findings recorded** with evidence references and confidence levels
-- **Exploration decisions recorded** (why certain perspectives/search strategies were chosen)
-
-**Progress**: `functions.update_plan([{id: "phase-2", status: "completed"}, {id: "phase-3", status: "in_progress"}])`
-
-### Phase 3: Interactive Discussion
-
-**Objective**: Iteratively refine understanding through multi-round user-guided discussion cycles. **Max Rounds**: 5.
-
-**Cumulative Context Rule**: Every analysis action in Phase 3 MUST include a summary of ALL prior findings to avoid re-discovering known information:
-
-```javascript
-const allFindings = readJson(`${sessionFolder}/explorations.json`) // or perspectives.json
-const priorContext = `
-## KNOWN FINDINGS (DO NOT re-discover)
-- Established files: ${allFindings.sources?.map(s => s.file).join(', ')}
-- Key findings: ${allFindings.key_findings?.join('; ')}
-- Open questions: ${allFindings.open_questions?.join('; ')}
-## NEW TASK: Focus ONLY on unexplored areas below.
-`
-```
-
-##### Step 3.1: Present Findings & Gather Direction
-
-**Current Understanding Summary** (Round >= 2, BEFORE presenting new findings):
-- Generate 1-2 sentence recap of established consensus and last round's direction
-- Example: "到目前为止，我们已确认 [established facts]。上一轮 [key action/direction]。现在，这是新一轮的发现："
-
-```javascript
-if (!autoYes) {
-  const feedback = functions.request_user_input({
-    questions: [{
-      header: "分析反馈",
-      id: "direction",
-      question: `Analysis round ${round}: Feedback on current findings?`,
-      multiSelect: false,
-      options: [
-        { label: "继续深入(Recommended)", description: "Direction correct — deepen or specify direction" },
-        { label: "外部研究", description: "Need external research on specific technology/pattern" },
-        { label: "调整方向", description: "Different focus or specific questions to address" },
-        { label: "分析完成", description: "Sufficient information, proceed to synthesis" }
-      ]
-    }]
-  })
-}
-```
-
-##### Step 3.2: Process User Response
-
-**Record-Before-Continue Rule**: Each path below MUST write findings and discussion synthesis to `discussion.md` BEFORE proceeding to Step 3.3. After analysis returns results:
-- Append exploration results, reasoning, and any technical approaches to current round section
-- Apply **Technical Solution Triggers** — if an implementation approach is described, 2+ alternatives compared, or user confirms/rejects an approach → record using Technical Solution Record Format
-- **Ambiguity Check**: For each Technical Solution with Status `Proposed`, verify no unresolved alternatives remain. If solution lists 2+ options without a chosen one:
-  ```markdown
-  > **⚠️ Ambiguity**: [Solution] has [N] unresolved alternatives: [list]
-  > - **Needs**: [Decision criteria or exploration to resolve]
-  ```
-  Surface unresolved ambiguities to user in the next feedback round.
-- Only THEN proceed to Step 3.3 for Current Understanding replacement and TOC update
-
-**Recording Checkpoint**: Regardless of option selected, MUST record to discussion.md:
-- User's original choice and expression
-- Impact on analysis direction
-- If direction changed, record a full Decision Record (see [Recording Protocol](#recording-protocol))
-
-| Response | Action |
-|----------|--------|
-| **继续深入** | Sub-question to choose direction (see below). Execute via inline search. Merge new findings. Record confirmed assumptions and exploration angles. |
-| **外部研究** | Ask user for research topic → `web.run({search_query: ...})` → merge findings into explorations.json `external_research` section → record as Key Findings in discussion.md |
-| **调整方向** | Ask user for new focus. Analyze from adjusted perspective. Compare new insights with prior analysis. Record trigger, old vs new direction, expected impact. |
-| **分析完成** | Record why concluding at this round. Exit loop → Phase 4. |
-
-**继续深入** sub-options (dynamically generated, max 4 total):
-
-```javascript
-const deepenOptions = functions.request_user_input({
-  questions: [{
-    header: "深入方向",
-    id: "deepen_dir",
-    question: `Where to focus next?`,
-    multiSelect: false,
-    options: [
-      // Max 3 context-driven from: unresolved questions, low-confidence findings, unexplored dimensions
-      ...generateContextDrivenOptions(allFindings.open_questions, lowConfidenceFindings).slice(0, 3),
-      // 1 heuristic option that breaks current frame
-      { label: "换角度审视", description: "Compare with best practices / review from different perspective / explore simpler alternatives" }
-    ] // Total max 4. "Other" auto-provided for user-specified custom direction
-  }]
-})
-```
-
-**外部研究** flow:
-
-```javascript
-const researchTopic = functions.request_user_input({
-  questions: [{
-    header: "研究主题",
-    id: "research",
-    question: "What specific technology/pattern/approach needs external research?",
-    multiSelect: false,
-    options: [
-      // Dynamic from context: unresolved tech questions, unvalidated patterns
-      ...generateResearchSuggestions(allFindings).slice(0, 3),
-      { label: "自定义", description: "Enter custom research topic (via Other)" }
-    ]
-  }]
-})
-
-// Execute research
-const researchResult = web.run({ search_query: `${researchTopic} best practices ${currentYear}` })
-
-// Merge into explorations.json external_research section
-// Update research.json (append, don't overwrite)
-// Record findings as Key Findings in discussion.md
-```
-
-##### Step 3.3: Document Each Round
-
-Update discussion.md using the [Round Documentation Pattern](#round-documentation-pattern).
-
-**Append** to Discussion Timeline: User Direction, Decision Log, Key Findings, Analysis Results, Corrected Assumptions, Open Items, Narrative Synthesis.
-
-**Replace** (not append):
-
-| Section | Update Rule |
-|---------|-------------|
-| `## Current Understanding` | Overwrite with latest consolidated understanding. Follow [Consolidation Rules](#consolidation-rules). |
-| `## Table of Contents` | Update links to include new Round N sections |
-
-##### Step 3.4: Intent Drift Check (every round >= 2)
-
-Re-read original intent from discussion.md header. Compare against the Initial Intent Coverage Check from Phase 2:
+Update state.json `confidence` section. Append confidence table to discussion.md:
 
 ```markdown
-#### Intent Coverage Check
-- ✅ Intent 1: [addressed in Round N]
-- 🔄 Intent 2: [in-progress, current focus]
-- ⚠️ Intent 3: [implicitly absorbed by X — needs explicit confirmation]
-- ❌ Intent 4: [not yet discussed]
+#### Confidence Score (Baseline)
+| Dimension | Depth | Evidence | Coverage | Validation | Consistency | **Score** |
+|-----------|-------|----------|----------|------------|-------------|-----------|
+| {dim}     | {x}   | {x}     | {x}      | 0.00       | {x}         | **{x}**   |
+
+Overall: {N}% | Weakest: {dim} ({N}%)
+> < 60%: 建议继续深入 | 60-80%: 可选深入或收敛 | > 80%: 建议收敛到结论
 ```
 
-- If any item is "implicitly absorbed" (⚠️), note explicitly — absorbed ≠ addressed
-- If ❌ or ⚠️ items exist → **proactively surface** to user: "以下原始意图尚未充分覆盖：[list]。是否需要调整优先级？"
+**Phase 2 exit criteria**: exploration-codebase.json created (if codebase), research.json created (if topic warrants), discussion.md updated with Round 1, initial intent coverage check done, baseline confidence computed.
 
-**Success Criteria**:
-- User feedback processed for each round
-- discussion.md updated with all rounds, assumptions documented and corrected
-- **All decision points recorded** with Decision Record format
-- **Technical solutions tracked** with Solution Record format where applicable
-- **Direction changes documented** with before/after comparison
+Mark phase-2 completed, phase-3 in_progress.
 
-**Progress**: `functions.update_plan([{id: "phase-3", status: "completed"}, {id: "phase-4", status: "in_progress"}])`
+---
 
-### Phase 4: Synthesis & Conclusion
+## Phase 3: Interactive Discussion
 
-**Objective**: Consolidate insights, generate conclusions and recommendations.
+Max 5 rounds. Each round follows this sequence.
 
-##### Step 4.0: Intent Coverage Verification (MANDATORY gate)
+### Cumulative Context Rule
 
-For EACH original intent item, determine coverage status:
+Every analysis action in Phase 3 MUST include a summary of ALL prior findings to avoid re-discovering known information:
 
-- **✅ Addressed**: Explicitly discussed and concluded
-- **🔀 Transformed**: Original intent evolved — document transformation chain
-- **⚠️ Absorbed**: Implicitly covered — flag for confirmation
-- **❌ Missed**: Not discussed — MUST address or explicitly defer
+```
+## KNOWN FINDINGS (DO NOT re-discover)
+- Established files: {list from exploration-codebase.json}
+- Key findings: {from discussion.md rounds}
+- Open questions: {remaining}
+## NEW TASK: Focus ONLY on unexplored areas below.
+```
 
-Write "Intent Coverage Matrix" to discussion.md:
+### 3.1 Present Findings & Gather Direction
+
+**Round ≥ 2 preamble**: 1-2 sentence recap of established consensus + last round's direction + confidence delta. Example: "到目前为止，我们已确认 [facts]。上一轮 [direction]。Confidence 从 52% 提升到 67%，security 维度仍需深入。"
+
+Read latest confidence from state.json. Identify weakest dimension.
+
+Present via `functions.request_user_input` (single question, multiSelect: false, 4 options):
+- **继续深入: {weakest_dimension} (Recommended)** — deepen the lowest-confidence dimension
+- **外部研究** — web.run for specific technology/pattern
+- **调整方向** — different focus or specific questions
+- **分析完成** — proceed to synthesis (triggers readiness gate)
+
+Question header shows: `Round {N} | Confidence: {N}% | 最弱: {dim} ({N}%)`
+
+### 3.2 Process Response
+
+**Record-Before-Continue Rule**: Each path below MUST write findings and discussion synthesis to discussion.md BEFORE proceeding to state update or next round.
+
+**Recording Checkpoint** (all paths): Record user's original choice, impact on direction, and full Decision Record if direction changed.
+
+**Technical Solution Triggers**: When an implementation approach is described with specific files/patterns, 2+ alternatives compared, or user confirms/rejects an approach → record using [Technical Solution format](#record-formats).
+
+**Ambiguity Check**: For each Technical Solution with Status "Proposed", verify no unresolved alternatives remain. If 2+ options without a chosen one → flag:
+```markdown
+> **⚠️ Ambiguity**: [Solution] has [N] unresolved alternatives: [list]
+> - **Needs**: [Decision criteria or exploration to resolve]
+```
+Surface to user in next feedback round.
+
+#### 继续深入
+
+Ask sub-question via `functions.request_user_input` (multiSelect: false, max 4 total):
+- Up to 3 **context-driven** options generated from: unresolved questions, low-confidence findings, unexplored dimensions
+- 1 **heuristic** option: "换角度审视" — compare with best practices / different perspective / simpler alternatives
+- "Other" auto-provided for user-specified custom direction
+
+Execute inline search using Grep/Glob/Read/mcp__ace-tool__search_context. Merge new findings with prior context. Record confirmed assumptions and exploration angles.
+
+#### 外部研究
+
+Ask research topic via `functions.request_user_input` (max 4 options):
+- Up to 3 suggestions from: unresolved tech questions, unvalidated patterns
+- 1 custom option: "自定义" (via Other)
+
+Execute `web.run({search_query: "{topic} best practices {year}"})`. Merge findings into research.json (append, don't overwrite). Record as Key Findings in discussion.md. Cross-reference with codebase; flag new `codebase_gaps`.
+
+#### 调整方向
+
+Ask new focus. Analyze from adjusted perspective. Compare new insights with prior analysis. Record as Decision: trigger, old→new direction, expected impact.
+
+#### 分析完成
+
+Trigger [Pre-Synthesis Readiness Gate](#35-pre-synthesis-readiness-gate). If passed → exit to Phase 4. If blocked → user chooses to address gaps or accept risk (residual risks recorded in state.json + discussion.md).
+
+Record why concluding at this round.
+
+### 3.3 Document Round
+
+Append to Discussion Timeline using [Round Template](#round-template): User Input, Decision Log, Key Findings, Technical Solutions, Analysis Results, Corrected Assumptions, Open Items, Confidence Score, Narrative Synthesis.
+
+**Overwrite** (not append) `## Current Understanding` with latest consolidated state following [Consolidation Rules](#consolidation-rules).
+
+**Update** `## Table of Contents` with new Round N links.
+
+### 3.4 Quality Mechanisms
+
+Execute after documenting each round.
+
+#### Pressure Pass (mandatory, at least once before Phase 4)
+
+When `quality.pressure_pass_done` is false and current round has key findings:
+
+Select the highest-confidence finding and apply the **pressure ladder** in sequence:
+1. **Evidence demand**: "What concrete evidence supports this? Is there a counter-example?"
+2. **Assumption probe**: "What hidden assumption makes this true? What dependency does this rest on?"
+3. **Boundary/tradeoff**: "If we accept this, what must we give up or explicitly exclude?"
+4. **Root cause check**: "Is this the root cause, or a symptom of something deeper?"
+
+Stay on the same finding until validated or corrected — don't rotate for coverage. A finding that survives is promoted to high-confidence; one that doesn't is flagged.
+
+Record in discussion.md:
+```markdown
+#### Pressure Pass (Round N)
+> **Target**: [finding]
+> - **Confidence claimed**: [level] | **Evidence**: [assessment]
+> - **Hidden assumption**: [identified]
+> - **Boundary impact**: [tradeoff or scope consequence]
+> - **Verdict**: [Confirmed with evidence / Weakened — needs more data / Corrected]
+```
+
+Set `quality.pressure_pass_done = true` in state.json.
+
+#### Challenge Mode Injection (automatic, round ≥ 2)
+
+Each mode fires at most once per session. Track in `quality.challenge_modes_used[]`.
+
+| Mode | Trigger | Challenge |
+|------|---------|-----------|
+| **Devil's Advocate** | Round 2+ AND any dimension confidence > 0.7 | "如果 [finding] 不成立，分析结论会如何改变？有什么证据可能推翻它？" |
+| **Scope Minimizer** | Key findings count > 5 AND scope expanding (new dimensions added) | "哪些发现可以合并？最小可行结论集是什么？是否在分析不必要的方面？" |
+| **Root Cause Probe** | User feedback contains causal language ("因为", "导致", "由于") | "这是根因还是症状？上游还有什么因素在起作用？" |
+
+Record in discussion.md:
+```markdown
+#### Challenge: {Mode}
+> **Target**: [finding or observation]
+> **Counter-scenario / Question**: [challenge content]
+> **Result**: [survived / weakened / corrected]
+```
+
+#### Stall Detection
+
+After each round, assess: new findings? corrected assumptions? confidence delta > 5%?
+
+If NONE of these for 2 consecutive rounds (`quality.stall_counter >= 2`):
+- Auto-inject Root Cause Probe (if unused)
+- Surface to user via `functions.request_user_input` (3 options):
+  - **换维度 (Recommended)**: switch to weakest or unexplored dimension
+  - **外部研究**: break deadlock with external best practices
+  - **收敛结论**: current findings sufficient, proceed to synthesis
+- Reset stall counter
+
+#### Re-score Confidence
+
+Re-compute all dimension scores. `user_validation` factor increases as user confirms findings across rounds.
+
+Update state.json: `confidence.dimensions`, `confidence.overall`, `confidence.weakest`, append to `confidence.history[{round, overall, dimensions}]`.
+
+Append to discussion.md:
+```markdown
+#### Confidence Score (Round N)
+Overall: {N}% ({+/-N}%) | Weakest: {dim} ({N}%)
+```
+
+### 3.5 Pre-Synthesis Readiness Gate
+
+Triggered when user selects "分析完成". Block exit if ANY:
+1. ❌ intents exist in latest coverage check
+2. Any dimension below 40% confidence without explicit deferral
+3. `quality.pressure_pass_done` is false
+4. Unresolved Technical Solution ambiguities (Proposed status with 2+ alternatives)
+
+If gaps found → present via `functions.request_user_input` (2 options):
+- **补充后完成 (Recommended)**: Continue Phase 3 targeting gaps
+- **忽略风险并继续**: Record residual risks in state.json `quality.residual_risks[]` + discussion.md, proceed to Phase 4
+
+### 3.6 Intent Drift Check (round ≥ 2)
+
+Re-read original intents from discussion.md header. Compare with Phase 2 baseline:
+- ✅ addressed in Round N
+- 🔄 in-progress, current focus
+- ⚠️ implicitly absorbed by X — needs explicit confirmation (absorbed ≠ addressed)
+- ❌ not yet discussed
+
+If ⚠️ or ❌ exist → proactively surface: "以下原始意图尚未充分覆盖：[list]。是否需要调整优先级？"
+
+**Phase 3 exit criteria**: Pressure pass completed ≥1, confidence scored each round, readiness gate passed (or risk accepted), challenge modes fired when triggers met, stall detection intervened if needed, discussion.md fully updated.
+
+Mark phase-3 completed, phase-4 in_progress.
+
+---
+
+## Phase 4: Synthesis & Terminal Gate
+
+### 4.1 Intent Coverage Verification (mandatory gate)
+
+Write Intent Coverage Matrix to discussion.md:
 
 ```markdown
 ### Intent Coverage Matrix
 | # | Original Intent | Status | Where Addressed | Notes |
 |---|----------------|--------|-----------------|-------|
-| 1 | [intent text] | ✅ Addressed | Round N, Conclusion #M | |
-| 2 | [intent text] | 🔀 Transformed | Round N → Round M | Original: X → Final: Y |
-| 3 | [intent text] | ❌ Missed | — | Reason for omission |
+| 1 | [text] | ✅ Addressed | Round N, Rec #M | |
+| 2 | [text] | 🔀 Transformed | Round N → M | Original: X → Final: Y |
+| 3 | [text] | ⚠️ Absorbed | Round N | Covered by Rec #M |
+| 4 | [text] | ❌ Missed | — | Reason |
 ```
 
-**Gate**: If any item is ❌ Missed, MUST either (a) add a discussion round to address it, or (b) explicitly confirm with user that it is intentionally deferred.
+**Gate**: ❌ items MUST be (a) addressed in an additional round, or (b) explicitly deferred by user confirmation.
 
-##### Step 4.1: Findings-to-Recommendations Traceability (MANDATORY gate)
+### 4.2 Findings-to-Recommendations Traceability (mandatory gate)
 
-Collect ALL actionable findings from every round and map each to a disposition.
+Collect ALL actionable findings from every round. Sources: key findings with actionable implications, technical solutions (proposed/validated), identified gaps, corrected assumptions that imply fixes.
 
-**Actionable finding sources**: key findings with actionable implications, technical solutions (proposed/validated), identified gaps (API-frontend gaps, missing features, design issues), corrected assumptions that imply fixes.
+Map each to a disposition:
 
 | Disposition | Meaning |
 |-------------|---------|
-| recommendation | Converted to a numbered recommendation |
+| recommendation | Converted to numbered recommendation |
 | absorbed | Covered by another recommendation (specify which) |
-| deferred | Explicitly out-of-scope with reason |
+| deferred | Out-of-scope with reason |
 | informational | Pure insight, no action needed |
 
-```javascript
-const findingsCoverage = allFindings.map(f => ({
-  finding: f.summary, round: f.round,
-  disposition: null,  // MUST be assigned before proceeding
-  target: null,       // e.g., "Rec #1" or "→ Rec #3" or "Reason: ..."
-  reason: null
-}))
+**Gate**: ALL findings must have a disposition. No null allowed.
 
-// Gate: ALL findings MUST have a disposition. Do NOT proceed with any disposition = null.
-```
-
-Append Findings Coverage Matrix to discussion.md:
-
+Write to discussion.md:
 ```markdown
 ### Findings Coverage Matrix
 | # | Finding (Round) | Disposition | Target |
 |---|----------------|-------------|--------|
 | 1 | [finding] (R1) | recommendation | Rec #1 |
 | 2 | [finding] (R2) | absorbed | → Rec #1 |
+| 3 | [finding] (R3) | deferred | Low priority, future work |
+| 4 | [finding] (R1) | informational | — |
 ```
 
-##### Step 4.2: Consolidate Insights
+### 4.3 Write Synthesis to discussion.md
 
-```javascript
-const conclusions = {
-  session_id: sessionId, topic,
-  completed: getUtc8ISOString(),
-  total_rounds: roundCount,
-  summary: '...',                    // Executive summary
-  key_conclusions: [                 // Main conclusions
-    { point: '...', evidence: '...', confidence: 'high|medium|low' }
-  ],
-  recommendations: [                 // MUST include all findings with disposition = 'recommendation'
-    {
-      action: '...',                    // What to do (imperative verb + target)
-      rationale: '...',                 // Why this matters
-      priority: 'high|medium|low',
-      evidence_refs: ['file:line', ...],
-      steps: [                          // Granular sub-steps for execution
-        { description: '...', target: 'file/module', verification: 'how to verify done' }
-      ],
-      review_status: 'accepted|modified|rejected|pending'
-    }
-  ],
-  open_questions: [...],
-  follow_up_suggestions: [
-    { type: 'issue|task|research', summary: '...' }
-  ],
-  decision_trail: [                  // Consolidated decisions from all phases
-    { round: 1, decision: '...', context: '...', options_considered: [...], chosen: '...', rejected_reasons: '...', reason: '...', impact: '...' }
-  ],
-  narrative_trail: [                 // From Narrative Synthesis per round
-    { round: 1, starting_point: '...', key_progress: '...', hypothesis_impact: '...', updated_understanding: '...', remaining_questions: '...' }
-  ],
-  intent_coverage: [                 // From Step 4.0
-    { intent: '...', status: 'addressed|transformed|absorbed|missed', where_addressed: '...', notes: '...' }
-  ],
-  findings_coverage: findingsCoverage // From Step 4.1
-}
-Write(`${sessionFolder}/conclusions.json`, JSON.stringify(conclusions, null, 2))
-```
+Append the following sections:
 
-##### Step 4.3: Final discussion.md Update
+**Synthesis & Conclusions**:
+- Executive summary
+- Key conclusions: `{point, evidence, confidence: high|medium|low}`
+- Recommendations (prioritized, high→low): each with `action` (imperative verb + target), `rationale`, `priority`, `evidence_refs` (file:line), `steps[{description, target, verification}]`
+- Open questions
+- Follow-up suggestions: `{type: issue|task|research, summary}`
 
-**Synthesis & Conclusions**: Executive Summary, Key Conclusions (ranked by confidence), Recommendations (prioritized), Remaining Open Questions.
-
-**Current Understanding (Final)**:
-
-| Subsection | Content |
-|------------|---------|
-| What We Established | Confirmed points and validated findings |
-| What Was Clarified | Important corrections (~~wrong→right~~) |
-| Key Insights | Valuable learnings for future reference |
+**Current Understanding (Final)** — overwrite with:
+- What We Established: confirmed points, validated findings
+- What Was Clarified: important ~~wrong → right~~ corrections
+- Key Insights: valuable learnings for future reference
 
 **Decision Trail**:
+- Critical decisions that shaped the outcome
+- Direction changes with rationale timeline
+- Trade-offs made and why
 
-| Subsection | Content |
-|------------|---------|
-| Critical Decisions | Pivotal decisions that shaped the outcome |
-| Direction Changes | Timeline of scope/focus adjustments with rationale |
-| Trade-offs Made | Key trade-offs and why certain paths were chosen |
+**Session Statistics**: total rounds, key findings count, dimensions covered, artifacts generated, decision count, final confidence score, quality signals summary (pressure pass, challenge modes used, stall events).
 
-**Session Statistics**: Total discussion rounds, key findings count, dimensions covered, artifacts generated, **decision count**.
+Update state.json with final confidence and quality signals.
 
-##### Step 4.4: Interactive Recommendation Review (skip in auto mode)
+### 4.4 Recommendation Review (skip in auto mode)
 
-Batch-confirm via **single `functions.request_user_input` call** (up to 4 questions, ordered by priority high→medium→low):
+Batch via `functions.request_user_input` — max 4 questions per call, ordered by priority high→medium→low:
 
-```javascript
-// 1. Display all recommendations with numbering
-console.log(sortedRecs.map((rec, i) =>
-  `${i+1}. **${rec.action}** [${rec.priority}] — ${rec.rationale} (${rec.steps.length} steps)`
-).join('\n'))
+Per recommendation, 3 options:
+- **确认 (Recommended)**: Accept as-is → status "accepted"
+- **修改**: Adjust scope/steps → follow up for details → status "modified"
+- **删除**: Not needed → status "rejected"
 
-// 2. Batch review (max 4 per call, one question per recommendation)
-const batchSize = 4
-for (let batch = 0; batch < sortedRecs.length; batch += batchSize) {
-  const batchRecs = sortedRecs.slice(batch, batch + batchSize)
-  const review = functions.request_user_input({
-    questions: batchRecs.map((rec, i) => ({
-      header: `建议#${batch + i + 1}`,
-      id: `rec_${batch + i + 1}`,
-      question: `"${rec.action}" (${rec.priority}, ${rec.steps.length} steps):`,
-      multiSelect: false,
-      options: [
-        { label: "确认(Recommended)", description: "Accept as-is" },
-        { label: "修改", description: "Adjust scope/steps" },
-        { label: "删除", description: "Not needed" }
-      ]
-    }))
-  })
-  // 确认 → "accepted" | 修改 → follow up for details → "modified" | 删除 → "rejected"
-  // Record all review decisions to discussion.md + update conclusions.json
-}
-```
+Record all review decisions to discussion.md + state.json.
 
-**Review Summary** (append to discussion.md):
+Append Review Summary:
 ```markdown
 ### Recommendation Review Summary
-| # | Action | Priority | Steps | Review Status | Notes |
-|---|--------|----------|-------|---------------|-------|
+| # | Action | Priority | Steps | Status | Notes |
+|---|--------|----------|-------|--------|-------|
 | 1 | [action] | high | 3 | ✅ Accepted | |
-| 2 | [action] | medium | 2 | ✏️ Modified | [modification notes] |
+| 2 | [action] | medium | 2 | ✏️ Modified | [notes] |
 | 3 | [action] | low | 1 | ❌ Rejected | [reason] |
 ```
 
-##### Step 4.5: MANDATORY Terminal Gate — Next Step Selection
+### 4.5 Terminal Gate (MANDATORY)
 
-> **CRITICAL**: This is a **terminal gate**. The workflow is INCOMPLETE if this step is not executed. After recommendation review, you MUST immediately proceed here.
+> Workflow is INCOMPLETE without this step.
 
-**Progress**: `functions.update_plan([{id: "phase-4", status: "completed"}, {id: "next-step", status: "in_progress"}])`
+Mark phase-4 completed, next-step in_progress.
 
-```javascript
-const nextStep = functions.request_user_input({
-  questions: [{
-    header: "Next Step",
-    id: "next_step",
-    question: "What would you like to do with the analysis results?",
-    multiSelect: false,
-    options: [
-      { label: "执行任务(Recommended)", description: "Build implementation scope and hand off to planning" },
-      { label: "产出Issue", description: "Convert recommendations to tracked issues" },
-      { label: "完成", description: "Analysis sufficient, no further action needed" }
-    ]
-  }]
-})
-```
+`functions.request_user_input` (3 options):
+- **执行任务 (Recommended)**: Build implementation scope, hand off to planning
+- **产出Issue**: Convert recommendations to tracked issues
+- **完成**: Display artifact paths, end
 
-**Handle user selection**:
+#### 执行任务
 
-**"执行任务"** → Implementation Scoping + Handoff:
+**Step A — Build scope**: Filter recommendations where status is "accepted" or "modified". Sort by priority. For each: `{objective, rationale, priority, target_files[], acceptance_criteria[], change_summary}`.
 
-**Step A: Build Implementation Scope** — Transform recommendations into actionable specs:
-```javascript
-const actionableRecs = conclusions.recommendations
-  .filter(r => r.review_status === 'accepted' || r.review_status === 'modified')
-  .sort((a, b) => (a.priority === 'high' ? 0 : 1) - (b.priority === 'high' ? 0 : 1))
+**Step B — User scope confirmation** (skip in auto mode): Present scope summary, then `functions.request_user_input` (3 options):
+- **确认执行 (Recommended)**: Proceed to handoff
+- **调整范围**: Narrow or expand scope → re-confirm
+- **补充标准**: Add/refine acceptance criteria → re-confirm
 
-const implScope = actionableRecs.map(rec => ({
-  objective: rec.action,
-  rationale: rec.rationale,
-  priority: rec.priority,
-  target_files: rec.steps.flatMap(s => s.target ? [s.target] : []),
-  acceptance_criteria: rec.steps.map(s => s.verification || s.description),
-  change_summary: rec.steps.map(s => `${s.target || 'TBD'}: ${s.description}`).join('; ')
-}))
-```
-
-**Step B: User Scope Confirmation** (skip in auto mode):
-```javascript
-if (!autoYes) {
-  // Present implementation scope summary
-  console.log(`## Implementation Scope (${implScope.length} items)`)
-  implScope.forEach((item, i) => {
-    console.log(`${i+1}. **${item.objective}** [${item.priority}]`)
-    console.log(`   Files: ${item.target_files.join(', ') || 'TBD by planning'}`)
-    console.log(`   Done when: ${item.acceptance_criteria.join(' + ')}`)
-  })
-
-  const scopeConfirm = functions.request_user_input({
-    questions: [{
-      header: "Scope确认",
-      id: "scope",
-      question: "Implementation scope correct?",
-      multiSelect: false,
-      options: [
-        { label: "确认执行(Recommended)", description: "Scope is clear, proceed to planning" },
-        { label: "调整范围", description: "Narrow or expand scope before planning" },
-        { label: "补充标准", description: "Add/refine acceptance criteria" }
-      ]
-    }]
-  })
-  // Handle 调整范围 / 补充标准 → update implScope, re-confirm
+**Step C — Write handoff.json** (schema aligned with workflow-lite-plan artifact bridge):
+```json
+{
+  "source": "analyze-with-file",
+  "session_id": "...",
+  "session_folder": "...",
+  "summary": "...",
+  "implementation_scope": [
+    { "objective": "...", "rationale": "...", "priority": "high|medium|low",
+      "target_files": [], "acceptance_criteria": [], "change_summary": "..." }
+  ],
+  "code_anchors": [],
+  "key_files": [],
+  "key_findings": [],
+  "decision_context": [],
+  "exploration_artifacts": {
+    "exploration_codebase": "{sessionFolder}/exploration-codebase.json",
+    "research": "{sessionFolder}/research.json"
+  }
 }
 ```
+> Codex version has no separate explorations.json/perspectives.json (all in discussion.md). Only `exploration_codebase` and `research` are file-backed artifacts.
 
-**Step C: Build Structured Handoff**:
-```javascript
-const handoff = {
-  source: 'analyze-with-file',
-  session_id: sessionId,
-  session_folder: sessionFolder,
-  summary: conclusions.summary,
-  implementation_scope: implScope,
-  key_findings: conclusions.key_conclusions?.slice(0, 5) || [],
-  decision_context: conclusions.decision_trail?.slice(-3) || []
-}
-
-// Append plan checklist to discussion.md
-appendToDiscussion(`
+**Step D — Append plan checklist** to discussion.md:
+```markdown
 ## Plan Checklist
-
 > **This is a plan only — no code was modified.**
+- **Recommendations**: {count}
+- **Generated**: {timestamp}
 
-- **Recommendations**: ${actionableRecs.length}
-- **Generated**: ${getUtc8ISOString()}
-
-${implScope.map((item, i) => `### ${i+1}. ${item.objective}
-- **Priority**: ${item.priority}
-- **Rationale**: ${item.rationale}
-- **Target files**: ${item.target_files.join(', ') || 'TBD'}
-- **Acceptance criteria**: ${item.acceptance_criteria.join('; ')}
-- [ ] Ready for execution`).join('\n\n')}
-`)
-
-// Hand off to downstream planning tool
-functions.exec_command(`echo '${JSON.stringify(handoff)}' > ${sessionFolder}/handoff-spec.json`)
+### 1. {objective}
+- **Priority**: {level}
+- **Rationale**: {reason}
+- **Target files**: {list or TBD}
+- **Acceptance criteria**: {list}
+- [ ] Ready for execution
 ```
 
-**"产出Issue"** → Convert recommendations to issues:
-```javascript
-for (const rec of actionableRecs) {
-  const issueJson = JSON.stringify({
-    title: rec.action,
-    context: `${rec.action}\n\nRationale: ${rec.rationale}\nEvidence: ${rec.evidence_refs?.join(', ')}`,
-    priority: rec.priority === 'high' ? 2 : 3,
-    source: 'discovery',
-    labels: dimensions
-  })
-  functions.exec_command(`echo '${issueJson}' | ccw issue create`)
-}
-// Display created issue IDs with next step hint
+#### 产出Issue
+
+For each accepted recommendation, `ccw issue create` with:
+- `title`: recommendation action
+- `context`: action + rationale + evidence refs
+- `priority`: high→2, medium/low→3
+- `source`: "discovery"
+- `labels`: analysis dimensions
+
+Display created issue IDs with next step hint.
+
+#### 完成
+
+Display artifact paths, end.
+
+Mark next-step completed. **No source code modified throughout.**
+
+---
+
+## Recording Protocol
+
+### Trigger Rules
+
+Record to discussion.md **immediately** on occurrence:
+
+| Trigger | Target Section |
+|---------|----------------|
+| Direction choice / scope adjustment | `#### Decision Log` |
+| Key finding discovered | `#### Key Findings` |
+| Assumption corrected | `#### Corrected Assumptions` |
+| User feedback received | `#### User Input` |
+| Disagreement or trade-off | `#### Decision Log` |
+| Technical solution proposed/validated/rejected | `#### Technical Solutions` |
+| Pressure pass executed | `#### Pressure Pass` |
+| Challenge mode fired | `#### Challenge` |
+
+### Record Formats
+
+**Decision**:
+```markdown
+> **Decision**: [description]
+> - **Context**: [trigger]
+> - **Options considered**: [alternatives]
+> - **Chosen**: [approach] — **Reason**: [rationale]
+> - **Rejected**: [why others discarded]
+> - **Impact**: [effect on direction/conclusions]
 ```
 
-**"完成"** → Display artifact paths, end.
+**Finding**:
+```markdown
+> **Finding**: [content]
+> - **Confidence**: [High/Medium/Low] — **Why**: [evidence basis]
+> - **Hypothesis Impact**: [Confirms/Refutes/Modifies] hypothesis "[name]"
+> - **Scope**: [affected areas]
+```
 
-**Progress**: `functions.update_plan([{id: "next-step", status: "completed"}])`
+**Technical Solution** (record when: implementation approach with specific files/patterns, 2+ alternatives compared, user confirms/modifies/rejects, concrete code change strategy emerges):
+```markdown
+> **Solution**: [approach/pattern/implementation]
+> - **Status**: [Proposed / Validated / Rejected]
+> - **Problem**: [what it solves]
+> - **Rationale**: [why this approach]
+> - **Alternatives**: [other options, why not chosen]
+> - **Evidence**: [file:line refs]
+> - **Next Action**: [follow-up or none]
+```
 
-**Success Criteria**:
-- conclusions.json created with complete synthesis including findings_coverage[]
-- **Findings Coverage Matrix** — all actionable findings mapped to disposition
-- **Intent Coverage Matrix** — all original intents accounted for
-- **Complete decision trail** documented and traceable
-- **Terminal gate executed** — `next-step` is completed
-- **No source code modified** — analysis is read-only throughout
+**Narrative Synthesis** (append after each round):
+```markdown
+### Round N: Narrative Synthesis
+**起点**: 基于上一轮的 [conclusions/questions]，本轮从 [starting point] 切入。
+**关键进展**: [findings] [confirmed/refuted/modified] 了关于 [hypothesis] 的理解。
+**决策影响**: 用户选择 [feedback type]，分析方向 [adjusted/deepened/maintained]。
+**当前理解**: 核心认知更新为 [updated understanding]。
+**遗留问题**: [remaining questions]
+```
 
-## Templates
+### Principles
 
-### Round Documentation Pattern
+- **Immediacy**: Record as decisions happen, not at end of phase
+- **Completeness**: Context, options, chosen, reason, rejected, impact
+- **Traceability**: Later phases can trace back any decision
+- **Depth**: Capture reasoning and hypothesis impact, not just outcomes
 
-Each discussion round follows this structure in discussion.md:
+---
+
+## discussion.md Structure
 
 ```markdown
-### Round N - [Deepen|Research|Adjust|Q&A] (timestamp)
+# Analysis Discussion
 
-#### User Input
-What the user indicated they wanted to focus on
+**Session**: {id} | **Topic**: {topic} | **Started**: {timestamp}
+**Dimensions**: {list} | **Depth**: {level}
 
-#### Decision Log
-<!-- Use Decision Record Format from Recording Protocol -->
+## Table of Contents
+<!-- Auto-updated after each round/phase -->
 
+## Current Understanding
+<!-- OVERWRITE (not append) after each round. Follow Consolidation Rules. -->
+### What We Established
+### What Was Clarified
+### Key Insights
+
+## Analysis Context
+- Focus areas: {list}
+- Perspectives: {list}
+- Depth: {level}
+
+## Initial Questions
+- {generated from topic + dimensions}
+
+## Initial Decisions
+> Record WHY these dimensions/focus areas were selected, what was excluded and why.
+
+---
+## Discussion Timeline
+
+### Round 1 - Exploration ({timestamp})
 #### Key Findings
-<!-- Use Key Finding Record Format from Recording Protocol -->
-
+#### Decision Log
 #### Technical Solutions
-<!-- Use Technical Solution Record Format from Recording Protocol -->
-<!-- Only if implementation approaches were discussed this round -->
-
 #### Analysis Results
-Detailed findings from this round's analysis
-- Finding 1 (evidence: file:line)
-- Finding 2 (evidence: file:line)
-
-#### Corrected Assumptions
-- ~~Previous assumption~~ → Corrected understanding
-  - Reason: Why the assumption was wrong
-
-#### Open Items
-Remaining questions or areas for investigation
-
+#### External Research
+#### Multi-Perspective Synthesis
+#### Intent Coverage Check
+#### Confidence Score (Baseline)
 #### Narrative Synthesis
-<!-- Use Narrative Synthesis Format from Recording Protocol -->
+
+### Round N - [Deepen|Research|Adjust] ({timestamp})
+#### User Input
+#### Decision Log
+#### Key Findings
+#### Pressure Pass
+#### Challenge
+#### Technical Solutions
+#### Analysis Results
+#### Corrected Assumptions
+#### Open Items
+#### Confidence Score (Round N)
+#### Intent Coverage Check
+#### Narrative Synthesis
+
+---
+## Synthesis & Conclusions
+### Intent Coverage Matrix
+### Findings Coverage Matrix
+### Executive Summary
+### Key Conclusions
+### Recommendations
+### Recommendation Review Summary
+### Open Questions
+
+## Decision Trail
+
+## Plan Checklist (if 执行任务)
+
+## Session Statistics
 ```
 
-### discussion.md Evolution Summary
+### Consolidation Rules
 
-- **Header**: Session ID, topic, start time, dimensions
-- **Analysis Context**: Focus areas, perspectives, depth level
-- **Initial Questions**: Key questions to guide the analysis
-- **Initial Decisions**: Why these dimensions and focus areas were selected
-- **Discussion Timeline**: Round-by-round findings
-  - Round 1: Exploration Results + Decision Log + Narrative Synthesis
-  - Round 2-N: Current Understanding Summary + User feedback + direction adjustments + new insights + Decision Log + Key Findings + Narrative Synthesis
-- **Decision Trail**: Consolidated critical decisions across all rounds
-- **Synthesis & Conclusions**: Summary, key conclusions, recommendations
-- **Current Understanding (Final)**: Consolidated insights
-- **Session Statistics**: Rounds completed, findings count, artifacts generated, decision count
+When overwriting `## Current Understanding`:
+
+| Rule | Description |
+|------|-------------|
+| Promote confirmed insights | Move validated findings to "What We Established" |
+| Track corrections | Keep important ~~wrong → right~~ transformations |
+| Focus on current state | What we know NOW, not the journey |
+| No timeline repetition | Don't copy discussion details into consolidated section |
+| Preserve key learnings | Keep insights valuable for future reference |
+
+Bad: "In round 1 we discussed X, then in round 2 user said Y..."
+Good: Structured subsections (Established / Clarified / Key Insights) with current-state facts only.
+
+---
 
 ## Reference
 
-### Output Structure
-
-```
-{projectRoot}/.workflow/.analysis/ANL-{date}-{slug}/
-├── discussion.md              # Evolution of understanding & discussions
-├── exploration-codebase.json  # Phase 2: Codebase context
-├── research.json              # Phase 2: External research findings (if topic warrants)
-├── explorations/              # Phase 2: Multi-perspective explorations (if selected)
-│   ├── technical.json
-│   ├── architectural.json
-│   └── ...
-├── explorations.json          # Phase 2: Single perspective aggregated findings
-├── perspectives.json          # Phase 2: Multi-perspective findings with synthesis
-├── conclusions.json           # Phase 4: Final synthesis with recommendations
-└── handoff-spec.json          # Phase 4: Structured handoff (if "执行任务" selected)
-```
-
-> **Phase 4 Terminal Gate** determines which additional artifacts are generated (plan checklist in discussion.md, handoff-spec.json, or issues).
-
-| File | Phase | Description |
-|------|-------|-------------|
-| `discussion.md` | 1-4 | Session metadata → discussion timeline → conclusions. Plan checklist appended if "执行任务". |
-| `exploration-codebase.json` | 2 | Codebase context: relevant files, patterns, constraints |
-| `research.json` | 2-3 | External research: best practices, pitfalls, codebase gaps (web.run results) |
-| `explorations/*.json` | 2 | Per-perspective exploration results (multi only) |
-| `explorations.json` | 2 | Single perspective aggregated findings |
-| `perspectives.json` | 2 | Multi-perspective findings with cross-perspective synthesis |
-| `conclusions.json` | 4 | Final synthesis: conclusions, recommendations, findings_coverage, open questions |
-| `handoff-spec.json` | 4 | Structured handoff for downstream planning (if "执行任务" selected) |
-
 ### Analysis Dimensions
 
-| Dimension | Keywords | Description |
-|-----------|----------|-------------|
-| architecture | 架构, architecture, design, structure, 设计, pattern | System design, component interactions, design patterns |
-| implementation | 实现, implement, code, coding, 代码, logic | Code patterns, implementation details, algorithms |
-| performance | 性能, performance, optimize, bottleneck, 优化, speed | Bottlenecks, optimization opportunities, resource usage |
-| security | 安全, security, auth, permission, 权限, vulnerability | Vulnerabilities, authentication, access control |
-| concept | 概念, concept, theory, principle, 原理, understand | Foundational ideas, principles, theory |
-| comparison | 比较, compare, vs, difference, 区别, versus | Comparing solutions, evaluating alternatives |
-| decision | 决策, decision, choice, tradeoff, 选择, trade-off | Trade-offs, impact analysis, decision rationale |
+| Dimension | Keywords |
+|-----------|----------|
+| architecture | 架构, architecture, design, structure, 设计, pattern |
+| implementation | 实现, implement, code, coding, 代码, logic |
+| performance | 性能, performance, optimize, bottleneck, 优化, speed |
+| security | 安全, security, auth, permission, 权限, vulnerability |
+| concept | 概念, concept, theory, principle, 原理, understand |
+| comparison | 比较, compare, vs, difference, 区别, versus |
+| decision | 决策, decision, choice, tradeoff, 选择, trade-off |
 
 ### Analysis Perspectives
 
-Optional multi-perspective analysis (single perspective is default, max 4):
-
 | Perspective | Focus | Best For |
 |------------|-------|----------|
-| **Technical** | Implementation patterns, code structure, technical feasibility | Understanding how and technical details |
-| **Architectural** | System design, scalability, component interactions | Understanding structure and organization |
-| **Security** | Security patterns, vulnerabilities, access control | Identifying security risks |
-| **Performance** | Bottlenecks, optimization, resource utilization | Finding performance issues |
+| Technical | Implementation patterns, code structure, feasibility | How and technical details |
+| Architectural | System design, scalability, component interactions | Structure and organization |
+| Security | Security patterns, vulnerabilities, access control | Security risks |
+| Performance | Bottlenecks, optimization, resource utilization | Performance issues |
 
-**Selection**: User can multi-select up to 4 perspectives in Phase 1, or default to single comprehensive view.
+### Depth Levels
 
-### Analysis Depth Levels
-
-| Depth | Scope | Description |
-|-------|-------|-------------|
-| Quick | Surface level understanding | Fast overview, minimal exploration |
-| Standard | Moderate depth with good coverage | Balanced analysis (default) |
-| Deep | Comprehensive detailed analysis | Thorough multi-round investigation |
+| Depth | Scope |
+|-------|-------|
+| Quick | Surface level, minimal exploration |
+| Standard | Balanced analysis with good coverage (default) |
+| Deep | Comprehensive multi-round investigation |
 
 ### Dimension-Direction Mapping
 
-When user selects focus areas, generate directions dynamically:
+Dynamic focus options generated from matched dimensions:
 
 | Dimension | Possible Directions |
 |-----------|-------------------|
@@ -1105,110 +851,37 @@ When user selects focus areas, generate directions dynamically:
 | comparison | Solution Comparison, Pros & Cons Analysis, Technology Evaluation, Approach Differences |
 | decision | Decision Criteria, Trade-off Analysis, Risk Assessment, Impact Analysis, Implementation Implications |
 
-**Implementation**: Present 2-3 top dimension-related directions, allow user to multi-select and add custom directions.
+Present 2-3 top directions per matched dimension, allow multi-select and custom directions.
 
-### Consolidation Rules
+---
 
-When updating "Current Understanding" in discussion.md:
-
-| Rule | Description |
-|------|-------------|
-| Promote confirmed insights | Move validated findings to "What We Established" |
-| Track corrections | Keep important wrong→right transformations |
-| Focus on current state | What do we know NOW, not the journey |
-| Avoid timeline repetition | Don't copy discussion details into consolidated section |
-| Preserve key learnings | Keep insights valuable for future reference |
-
-**Example**:
-
-Bad (cluttered):
-```markdown
-## Current Understanding
-In round 1 we discussed X, then in round 2 user said Y...
-```
-
-Good (consolidated):
-```markdown
-## Current Understanding
-
-### What We Established
-- The authentication flow uses JWT with refresh tokens
-- Rate limiting is implemented at API gateway level
-
-### What Was Clarified
-- ~~Assumed Redis for sessions~~ → Actually uses database-backed sessions
-
-### Key Insights
-- Current architecture supports horizontal scaling
-```
-
-### Error Handling
+## Error Handling
 
 | Situation | Action | Recovery |
 |-----------|--------|----------|
-| No codebase detected | Normal flow, pure topic analysis | Proceed without exploration-codebase.json |
+| No codebase detected | Pure topic analysis | Skip codebase search |
 | Codebase search fails | Continue with available context | Note limitation in discussion.md |
-| No relevant findings | Broaden search keywords | Ask user for clarification |
-| User timeout in discussion | Save state, show resume command | Use `--continue` to resume |
-| Max rounds reached (5) | Force synthesis phase | Highlight remaining questions in conclusions |
-| Session folder conflict | Append timestamp suffix | Create unique folder and continue |
-| Plan generation: no recommendations | No plan to generate | Inform user, suggest alternative |
-| Web research fails | Continue with codebase-only analysis | Note limitation, flag as codebase_gaps |
+| No relevant findings | Broaden keywords | Ask user for clarification |
+| User timeout | Save state | Resume with `--continue` |
+| Max rounds reached (5) | Force synthesis | Highlight remaining questions |
+| Session folder conflict | Append timestamp suffix | Create unique folder |
+| No recommendations generated | No plan to generate | Inform user, suggest alternative |
+| Web research fails | Codebase-only analysis | Note limitation, flag as codebase_gaps |
 | Research conflicts with codebase | Flag as codebase_gaps | Surface divergence for user review |
+| Analysis stalls (2+ rounds) | Auto-inject challenge | User: switch dimension / research / converge |
+| Readiness gate blocks exit | Show gap summary | User addresses gaps or accepts risk |
+| Context budget exceeded | Rank + trim to top 30 | Note in discussion.md |
 
-## Best Practices
-
-### Core Principles
-
-1. **No code modifications**: This skill is strictly read-only and plan-only. Phase 4 generates plan checklists and handoff specs but does NOT modify source code.
-2. **Record Decisions Immediately**: Never defer recording — capture decisions as they happen using the Decision Record format
-3. **Track Technical Solutions**: Record proposed/validated/rejected solutions with Technical Solution Record format
-4. **Evidence-Based**: Every conclusion should reference specific code or patterns with confidence levels
-5. **Embrace Corrections**: Track wrong→right transformations as valuable learnings
-6. **Cumulative Context**: Always include prior findings in follow-up analysis to avoid re-discovery
-
-### Before Starting
-
-1. **Clear Topic Definition**: Detailed topics lead to better dimension identification
-2. **User Context**: Understanding focus preferences helps scope the analysis
-3. **Perspective Selection**: Choose 2-4 perspectives for complex topics, single for focused queries
-4. **Scope Understanding**: Being clear about depth expectations sets correct analysis intensity
-
-### During Analysis
-
-1. **Review Findings**: Check exploration results before proceeding to discussion
-2. **Document Assumptions**: Track what you think is true for correction later
-3. **Use Continue Mode**: Resume sessions to build on previous findings
-4. **Iterate Thoughtfully**: Each discussion round should meaningfully refine understanding
-5. **Link Decisions to Outcomes**: Explicitly reference which decisions led to which outcomes
-
-### Documentation Practices
-
-1. **Timeline Clarity**: Use clear timestamps for traceability
-2. **Evolution Tracking**: Document how understanding changed across rounds
-3. **Multi-Perspective Synthesis**: When using multiple perspectives, document convergent/conflicting themes
+---
 
 ## When to Use
 
-**Use analyze-with-file when:**
-- Exploring complex topics collaboratively with documented trail
-- Need multi-round iterative refinement of understanding
-- Decision-making requires exploring multiple perspectives
-- Building shared understanding before implementation
-- Want to document how understanding evolved
-- Need external research integrated with codebase analysis
+**Use this skill when**: complex topic exploration, multi-round understanding refinement, decision-making with multiple perspectives, building shared understanding before implementation, need documented analysis trail with external research.
 
-**Use Terminal Gate (Phase 4) when:**
-- Analysis conclusions contain clear, actionable recommendations
-- **执行任务**: Build implementation scope → handoff to downstream planning
-- **产出Issue**: Convert recommendations to tracked issues via `ccw issue create`
-- **完成**: Analysis is sufficient, no further action needed
-
-**Consider alternatives when:**
-- Specific bug diagnosis needed → use `debug-with-file`
-- Generating new ideas/solutions → use `brainstorm-with-file`
-- Complex planning with parallel perspectives → use `collaborative-plan-with-file`
-- Ready to implement → use `lite-plan`
+**Consider alternatives**:
+- Bug diagnosis → `debug-with-file`
+- Idea generation → `brainstorm-with-file`
+- Ready to implement → `lite-plan`
 
 ---
 

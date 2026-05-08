@@ -21,7 +21,8 @@ When spawned with `<files_to_read>`, read ALL listed files before any analysis. 
 1. **Structural Analysis** - Module discovery, file patterns, symbol inventory via Bash tools
 2. **Semantic Understanding** - Design intent, architectural patterns via Gemini/Qwen CLI
 3. **Dependency Mapping** - Import/export graphs, circular detection, coupling analysis
-4. **Structured Output** - JSON generation with structure reference
+4. **Implicit Dependency Detection** - Runtime string lookups, template expressions, registry/hub key access, fallback path parameter contracts
+5. **Structured Output** - JSON generation with structure reference
 
 **Analysis Modes**:
 - `quick-scan` → Bash only (10-30s)
@@ -121,6 +122,39 @@ rg "^(class|def) \w+" --type py -n
 rg "^import .* from " -n | head -30
 ```
 
+### Implicit Dependency Scan (MANDATORY for deep-scan, dependency-map)
+
+**WHY**: Static import scanning only captures compile-time dependencies. Runtime dependencies — string-based lookups, template expressions, registry/hub access, fallback paths — are invisible to import graphs but create real coupling. Renaming a key or removing a config entry can break consumers at runtime with no compile-time signal.
+
+**When to run**: Always for `deep-scan` and `dependency-map` modes. For `quick-scan`, run only if topic keywords match: refactor, rename, migrate, deprecate, remove, delete, parameter, config, key, registry, hub, fallback, legacy, compat.
+
+**Scan patterns** (adapt regex to detected language):
+
+```bash
+# 1. Dynamic string lookups — registry/hub/config access by string key
+rg "(get_value|get_param|get_config|getattr|get\[|\.get\()" -n --type {lang} | head -40
+
+# 2. Template / interpolated key references — resolved at runtime
+rg "(#\{?\w+\}?|f[\"'].*\{.*\}|\$\{.*\}|%\(\w+\))" -n --type {lang} | head -40
+
+# 3. Fallback / degradation paths — older implementations still callable
+rg -i "(fallback|legacy|compat|v1|deprecated|old_)" -n --type {lang} | head -30
+
+# 4. String-based dispatch — factory, strategy, or plugin patterns
+rg "(registry\[|dispatch\[|handlers\[|plugins\[|strategies\[)" -n --type {lang} | head -20
+```
+
+**For each hit, classify**:
+- `type`: `dynamic_lookup` | `template_ref` | `fallback_path` | `string_dispatch`
+- `source_file`: Where the reference lives
+- `key_or_pattern`: The string key or expression pattern
+- `resolved_by`: What module/system resolves this at runtime (if determinable)
+- `risk_note`: What breaks if this key is renamed/removed (empty if N/A)
+
+**Output**: Add to findings as `discovery_source: "implicit-dep-scan"`. Flag files with high implicit dependency counts in `risk_note`.
+
+**Limitation acknowledgment**: This scan is still static — it detects patterns that *look like* runtime dependencies but cannot confirm which keys are actually accessed at runtime. For high-risk changes (parameter renames across fallback boundaries), recommend runtime instrumentation or e2e test coverage verification in findings.
+
 ### Gemini Semantic Analysis (deep-scan, dependency-map)
 
 ```bash
@@ -142,7 +176,8 @@ RULES: {from prompt, if template specified} | analysis=READ-ONLY
 2. Gemini results: Semantic understanding, design intent → `discovery_source: "cli-analysis"`
 3. ACE search: Semantic code search → `discovery_source: "ace-search"`
 4. Dependency tracing: Import/export graph → `discovery_source: "dependency-trace"`
-5. Merge with source attribution and generate for each file:
+5. Implicit dependency scan: Runtime string lookups, template refs, fallback paths → `discovery_source: "implicit-dep-scan"`
+6. Merge with source attribution and generate for each file:
    - `rationale`: WHY the file was selected (selection basis)
    - `topic_relation`: HOW the file connects to the exploration angle/topic
    - `key_code`: Detailed descriptions of key symbols with locations (for relevance >= 0.7)
@@ -249,7 +284,7 @@ Brief summary:
 8. Include file:line references in findings
 9. **Every file MUST have rationale**: Specific selection basis tied to the topic (not generic)
 10. **Every file MUST have role**: Classify as modify_target/dependency/pattern_reference/test_target/type_definition/integration_point/config/context_only
-11. **Track discovery source**: Record how each file was found (bash-scan/cli-analysis/ace-search/dependency-trace/manual)
+11. **Track discovery source**: Record how each file was found (bash-scan/cli-analysis/ace-search/dependency-trace/implicit-dep-scan/manual)
 12. **Populate key_code for high-relevance files**: relevance >= 0.7 → key_code array with symbol, location, description
 13. **Populate topic_relation for high-relevance files**: relevance >= 0.7 → topic_relation explaining file-to-angle connection
 
